@@ -1,6 +1,6 @@
 # Codex prompt — continue calorie tracker planning
 
-I am planning a React Native calorie and food tracking app. I already finalized **Section 1 — Scope and MVP**, **Section 2 — Navigation and Screen Map**, and **Section 3 — Data Model and Local Storage** in project documents. Treat those documents as approved product requirements and do not redesign or reinterpret them unless I explicitly ask.
+I am planning a React Native calorie and food tracking app. I already finalized **Section 1 — Scope and MVP**, **Section 2 — Navigation and Screen Map**, **Section 3 — Data Model and Local Storage**, and **Section 4 — Application Architecture and Technology Stack** in project documents. Treat those documents as approved product requirements and do not redesign or reinterpret them unless I explicitly ask.
 
 I want to continue the planning process **one section at a time**.
 
@@ -14,17 +14,17 @@ After a section is created, ask me to review and approve its contents before dis
 
 The current section awaiting review is:
 
-## Section 4 — Application Architecture and Technology Stack
+## Section 5 — Visual Design Direction and Design System
 
-Review the existing Section 4 document with me. It covers:
+Review the existing Section 5 document with me. It covers:
 
-- Expo and React Native platform decisions.
-- Navigation, SQLite, secure storage, async state, forms, validation, gestures, and testing tools.
-- Application layers, module boundaries, and project structure.
-- Local and remote data flow.
-- USDA and Open Food Facts client boundaries.
-- Offline behavior and typed error handling.
-- Environment configuration, secret handling, logging, diagnostics, and performance.
-- Dependency-selection rules and startup sequencing.
+- A Modern Balance visual direction derived from the ten approved reference screenshots.
+- Compact information density rather than oversized cards, titles, and spacing.
+- Semantic light and dark color systems.
+- Typography, spacing, shape, iconography, and elevation tokens.
+- Diary overview, calorie ring, macros, meals, food rows, navigation, search, and settings.
+- The ruler serving selector and its interaction states.
+- Forms, buttons, sheets, dialogs, feedback, motion, haptics, and accessibility.
+- React Native token and reusable-component conventions.
 
-Do not discuss or create Section 5 until I explicitly approve Section 4 and then approve the proposed scope for Section 5.
+Do not discuss or create Section 6 until I explicitly approve Section 5 and then approve the proposed scope for Section 6.
