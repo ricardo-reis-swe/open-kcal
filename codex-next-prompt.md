@@ -1,6 +1,6 @@
 # Codex prompt — continue calorie tracker planning
 
-I am planning a React Native calorie and food tracking app. I already finalized **Section 1 — Scope and MVP**, **Section 2 — Navigation and Screen Map**, **Section 3 — Data Model and Local Storage**, and **Section 4 — Application Architecture and Technology Stack** in project documents. Treat those documents as approved product requirements and do not redesign or reinterpret them unless I explicitly ask.
+I am planning a React Native calorie and food tracking app. I already finalized **Section 1 — Scope and MVP**, **Section 2 — Navigation and Screen Map**, **Section 3 — Data Model and Local Storage**, **Section 4 — Application Architecture and Technology Stack**, and **Section 5 — Visual Design Direction and Design System** in project documents. Treat those documents as approved product requirements and do not redesign or reinterpret them unless I explicitly ask.
 
 I want to continue the planning process **one section at a time**.
 
@@ -12,19 +12,20 @@ Before creating or drafting any new section:
 
 After a section is created, ask me to review and approve its contents before discussing the next section. Never create the next section automatically, even if the previous section appears complete.
 
-The current section awaiting review is:
+The proposed next section is:
 
-## Section 5 — Visual Design Direction and Design System
+## Section 6 — Screen-by-Screen UX Specifications
 
-Review the existing Section 5 document with me. It covers:
+Its proposed scope covers:
 
-- A Modern Balance visual direction derived from the ten approved reference screenshots.
-- Compact information density rather than oversized cards, titles, and spacing.
-- Semantic light and dark color systems.
-- Typography, spacing, shape, iconography, and elevation tokens.
-- Diary overview, calorie ring, macros, meals, food rows, navigation, search, and settings.
-- The ruler serving selector and its interaction states.
-- Forms, buttons, sheets, dialogs, feedback, motion, haptics, and accessibility.
-- React Native token and reusable-component conventions.
+- A compact text wireframe for every MVP screen.
+- Information hierarchy and exact section order.
+- Navigation entry, exit, save, cancel, and deletion behavior.
+- Primary, secondary, and destructive actions.
+- Loading, empty, populated, offline, error, and disabled states.
+- Keyboard and form behavior.
+- Gestures and equivalent non-gesture controls.
+- Accessibility labels, focus order, large-text behavior, and phone-size adaptation.
+- Diary, Meal Detail, food add/edit/search, Quick Calories, custom food, all pickers and sheets, Profile, goals, meals, units, weight, and food database settings.
 
-Do not discuss or create Section 6 until I explicitly approve Section 5 and then approve the proposed scope for Section 6.
+Section 6 does not exist yet. Ask whether I want to add, remove, or change anything, and wait for my explicit approval before creating it. Do not discuss or create Section 7 until Section 6 is both created and explicitly approved.

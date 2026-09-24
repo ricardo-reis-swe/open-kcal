@@ -2,7 +2,7 @@
 
 A local-first React Native calorie and food diary app.
 
-## Planning documents
+## Approved planning documents
 
 - [Section 1 — Scope and MVP](docs/section-01-scope-mvp.md)
 - [Section 2 — Navigation and Screen Map](docs/section-02-navigation-screen-map.md)
@@ -11,3 +11,7 @@ A local-first React Native calorie and food diary app.
 - [Section 5 — Visual Design Direction and Design System](docs/section-05-visual-design-system.md)
 
 Sections are reviewed and approved individually before work begins on the next section.
+
+## Proposed next section
+
+**Section 6 — Screen-by-Screen UX Specifications** has been proposed but not approved for creation. Its proposed scope covers compact wireframes, information hierarchy, actions, navigation behavior, screen states, forms, gestures, and accessibility for every MVP screen.
