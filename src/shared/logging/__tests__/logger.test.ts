@@ -49,7 +49,15 @@ describe('ARCH-15: logger', () => {
 
   it('redacts common diary/weight/search key names too, but not look-alikes such as fatal', () => {
     const { logger, records } = setup(true);
-    logger.warn('x', { q: 'eggs', amount: 2, servingSize: 30, kg: 80, mealTitle: 'Lunch', response: '{}', fatal: true });
+    logger.warn('x', {
+      q: 'eggs',
+      amount: 2,
+      servingSize: 30,
+      kg: 80,
+      mealTitle: 'Lunch',
+      response: '{}',
+      fatal: true,
+    });
     expect(records[0]?.context).toEqual({
       q: REDACTED,
       amount: REDACTED,
