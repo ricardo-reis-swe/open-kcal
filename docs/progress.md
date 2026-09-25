@@ -23,7 +23,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 - [x] T1 Expo app scaffold: SDK 57, dev client, Expo Router (`src/app`), strict TS, ESLint + Prettier, Jest (`jest-expo`) + RNTL, `npm run lint|typecheck|test|check`
 - [x] T2 Typed env config (Zod, `src/shared/config/env.ts`) + `.env.example`; logger with redaction (`src/shared/logging`) (ARCH-14/15)
 - [x] T3 i18n scaffold (`src/shared/i18n`): `en` + `pt-PT`, device locale → language + formatting locale, typed keys, key-parity test (ARCH-22)
-- [ ] T4 Theme from `tokens.ts`: light/dark provider + hook (DS-12)
+- [x] T4 Theme from `tokens.ts` (`src/shared/theme`): light/dark `ThemeProvider` + `useTheme`, platform touch minimum, one elevation style, token contrast test (DS-12, DS-05, DS-11)
 - [ ] T5 DS-12 primitives: `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + tests
 - [ ] T6 Tabs: `Diary + Profile` custom tab bar with `+` opening an empty `BottomSheet` (ARCH-06, DS-07) + navigation tests
 - [ ] T7 Dev builds on iOS simulator + Android emulator; exit demo
@@ -62,4 +62,4 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - `Intl.PluralRules` on Hermes is verified on device in T7 (ARCH-22 polyfill only if missing).
 
 ### Open questions
-- None.
+- **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).
