@@ -1,6 +1,6 @@
 # 08 Implementation roadmap (ROAD)
 
-Status: **DRAFT, written one step at a time.** Step 1 of 4 is ready for review.
+Status: **DRAFT, written one step at a time.** Step 1 approved. Step 2 ready for review.
 
 Read when: deciding what to build next. Milestones are vertical slices, done in order. Each ends with something runnable on both platforms. The specs define behavior; this doc only sequences it.
 
@@ -26,4 +26,48 @@ Read when: deciding what to build next. Milestones are vertical slices, done in 
 - Profile comes late because M1 seeds working defaults (meals, provisional goals, locale units).
 - M7 and M8 are independent of each other and can swap or run in parallel after M6.
 
-<!-- Steps 2–4 pending: definition of done · agent workflow · builds and release -->
+## ROAD-02 Definition of done
+A milestone is done only when **all** of these hold. They are cumulative: earlier milestones must stay green.
+
+**Every milestone**
+- Every behavior in its "Main specs" is implemented. Any deviation was approved by the user and written back into the spec.
+- CI green: lint, `tsc`, and all Jest suites.
+- Tests exist for everything built, at the right ARCH-18 layer:
+
+  | Built | Test |
+  |---|---|
+  | Domain logic | Pure unit tests |
+  | SQL | Repository tests on real SQLite |
+  | Screens | Component tests for their applicable states (loading, empty, populated, error) and a11y labels |
+  | Routes | Navigation tests for entry, return and back rules |
+  | Provider code | Fixture tests |
+
+- Test names cite spec IDs, e.g. `NAV-04: meal change from Meal Detail returns to Diary`.
+- Every new string exists in both `en` and `pt-PT` (CI key parity). pt-PT text may be a draft until M9.
+- The milestone's Maestro E2E flows (table below) pass on the iOS simulator and the Android emulator.
+- The exit demo was run on both platforms. Screenshots of new screens in light + dark, and at default + largest text on a small phone (DS-13 subset), are saved under `docs/qa/<milestone>/`.
+- No placeholder UI for in-scope behavior. Known gaps are listed in the progress log (step 3).
+- Nothing sensitive in logs (ARCH-15): no USDA key, diary content, weights or notes.
+
+**E2E flows by milestone** (ARCH-18)
+| Milestone | Flows added |
+|---|---|
+| M2 | Launch to today's diary · swipe to another date and back to Today |
+| M3 | Add Quick Calories |
+| M4 | Add a (custom) food from a meal · directly edit and delete an entry |
+| M5 | Use cached/custom foods while offline |
+| M8 | Reorder meals · add and edit weight |
+
+**Milestone extras**
+| Milestone | Also required |
+|---|---|
+| M0 | Dev builds install on both platforms. `.env.example` committed. CI runs on every push. |
+| M1 | The seed is idempotent (tested by running init twice). Every migration is tested from an empty DB. Startup failure shows the recovery screen, not a crash. Date tests cover DST, month/year ends and leap days. |
+| M2 | DS-02 density check: a screenshot of the Diary at default text on a small phone shows overview + 2 meal headers. |
+| M4 | The ruler works as an a11y `adjustable` (test). Haptics are off in tests. |
+| M5 | PROV-13 OFF fixtures. Limiter and cooldown tests with fake timers. Fast typing never exceeds the budget (test). |
+| M6 | PROV-13 USDA fixtures. A test asserts the key never reaches the logger, errors or query keys. |
+| M8 | The meal delete + reassign transaction rolls back fully on failure (test). |
+| M9 | The full DS-13 matrix passes. The user reviews the pt-PT copy. ARCH-19 performance checks run. Release builds are made (step 4). |
+
+<!-- Steps 3–4 pending: agent workflow · builds and release -->
