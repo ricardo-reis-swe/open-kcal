@@ -28,14 +28,22 @@
         "expo-localization",
         {
           "supportedLocales": {
-            "ios": ["en", "pt-PT"],
-            "android": ["en", "pt-PT"]
+            "ios": [
+              "en",
+              "pt-PT"
+            ],
+            "android": [
+              "en",
+              "pt-PT"
+            ]
           }
         }
       ],
       "expo-font",
       "expo-asset",
-      "./plugins/withIosSceneLifecycle"
+      "./plugins/withIosSceneLifecycle",
+      "expo-sqlite",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

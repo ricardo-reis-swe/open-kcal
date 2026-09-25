@@ -110,11 +110,20 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
   - `expo-clipboard`: UX-20 `Copy diagnostic info` on the recovery screen. RN core has no clipboard.
   - If yes, both go into the single M1 native rebuild (T8). Until then, T7 wiring uses the `IdGenerator` interface.
 
+### Dependency notes (ARCH-20)
+Named in ARCH-01; pinned exactly and installed with `npx expo install`. Their config plugins (`expo-sqlite`, `expo-secure-store`) were added to `app.json`, so the next dev build must be rebuilt (T8).
+| Package | Need |
+|---|---|
+| `expo-sqlite` 57.0.3 | ARCH-01 DB; repository-owned SQL, no ORM. It sits behind `SqlDatabase`, so moving to another driver means changing only `database.ts` |
+| `expo-secure-store` 57.0.4 | ARCH-01/10 USDA key storage (DATA-01) |
+| `@tanstack/react-query` 5.103.2 | ARCH-01/07 async data. JS only; the cache is never persisted |
+| (dev, transitive) `@types/node` | Referenced only by test files that use `node:sqlite`/`fs` (`/// <reference types="node" />`), so Node globals don't leak into app types |
+
 ### Tasks
 Order per ROAD-03: domain → data → services → startup/screens → tests → QA.
 - [x] T1 Domain (pure, `src/domain` + `src/shared/dates`): units (DATA-04), local dates incl. DST/month/year/leap (DATA-08), nutrition + serving math and unknown-macro aggregation (DATA-05/06, DATA-11), goal resolution (DATA-09), current weight (DATA-13). Jest pins `TZ=Europe/Lisbon` (`jest.config.js`) so DST cases are deterministic; Jest sandboxes `process.env`, so a test can't switch TZ at runtime.
 - [x] T2 Typed errors (ARCH-13, `src/shared/errors`, `category` for branching); injectable `Clock` (`src/shared/dates/clock.ts`); `IdGenerator` interface + v4 formatter (`src/data/db/ids.ts`). The app's random-byte source waits on M1-Q1
-- [ ] T3 DB adapter interface over `expo-sqlite`, migration runner + migration 1 from `schema.sql` (DATA-17, ARCH-09); Jest runs repositories on real SQLite via Node's built-in `node:sqlite` (no extra dependency)
+- [x] T3 `SqlDatabase` adapter (`src/data/db/sql.ts`): a serial queue plus `BEGIN IMMEDIATE` transactions on the one connection, so `foreign_keys` always applies (expo's exclusive transactions open a second connection). `database.ts` has the expo-sqlite driver + `openAppDatabase`. Migration runner (`migrations/runner.ts`): a fresh install runs schema + seed + version in one transaction; upgrades get one transaction per migration; a newer-than-app DB is refused, never reset. Migration 1 equals `schema.sql` (test). Jest runs real SQL through Node's built-in `node:sqlite` (`src/shared/testing/nodeSqlite.ts`, no extra dependency)
 - [ ] T4 Idempotent seed: settings (locale unit defaults), localized meals, provisional goal (DATA-10, DATA-17, UX-01); init-twice test
 - [ ] T5 Repositories: settings, goals, meals (reorder, delete + reassign), foods + servings, diary entries (load day + aggregates), weight, recents, cache metadata (DATA-06/09–16)
 - [ ] T6 `CredentialsService` over `expo-secure-store` (ARCH-10, DATA-01)
