@@ -1,7 +1,5 @@
 # 08 Implementation roadmap (ROAD)
 
-Status: **DRAFT, written one step at a time.** Steps 1–3 approved. Step 4 ready for review.
-
 Read when: deciding what to build next. Milestones are vertical slices, done in order. Each ends with something runnable on both platforms. The specs define behavior; this doc only sequences it.
 
 ## ROAD-01 Milestones
@@ -129,9 +127,9 @@ The milestone is done only after the user accepts it.
 **Build profiles** (`eas.json`)
 | Profile | Purpose | App ID / name | Distribution | From |
 |---|---|---|---|---|
-| `development` | Dev client for daily work (plus an iOS simulator build) | `<bundle-prefix>.calorietracker.dev` · `Calorie Tracker (Dev)` | Internal | M0 |
-| `preview` | Release-like build on real phones | `<bundle-prefix>.calorietracker.preview` · `Calorie Tracker (Preview)` | Internal | M3, optional |
-| `production` | Store builds | `<bundle-prefix>.calorietracker` · `Calorie Tracker` | TestFlight + Play internal testing | M9 |
+| `development` | Dev client for daily work (plus an iOS simulator build) | `com.ricardoreis.calorietracker.dev` · `Calorie Tracker (Dev)` | Internal | M0 |
+| `preview` | Release-like build on real phones | `com.ricardoreis.calorietracker.preview` · `Calorie Tracker (Preview)` | Internal | M3, optional |
+| `production` | Store builds | `com.ricardoreis.calorietracker` · `Calorie Tracker` | TestFlight + Play internal testing | M9 |
 - Separate IDs let all three coexist on one phone without sharing data (ARCH-14).
 - Each profile sets its public `EXPO_PUBLIC_*` values in `eas.json` `env`: variant, OFF contact email (`ricardo_reis@live.com`, used in the PROV-01 `User-Agent`), base URLs. No secrets anywhere; the USDA key is user-supplied at runtime.
 

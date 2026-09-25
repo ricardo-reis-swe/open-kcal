@@ -18,9 +18,10 @@ Approved requirements. Don't reinterpret or redesign them unless the user explic
 | UI strings, translations, locale formatting | ARCH-22 + SCOPE-12 |
 | Food search providers (USDA, Open Food Facts) | `docs/07-providers.md` (PROV) |
 | Styling, components, a11y | `docs/05-design.md` (DS) + `src/shared/theme/tokens.ts` |
+| What to build next, definition of done, workflow, releases | `docs/08-roadmap.md` (ROAD) + `docs/progress.md` (created at M0) |
 | Building a specific screen | `docs/06-screens.md` (UX) + the DS components it names |
 
-Precedence when docs conflict: lower number wins (SCOPE > NAV > DATA > ARCH > DS > UX > PROV). Code files named above are the source of truth for the values they hold. If a conflict looks real, stop and ask.
+Precedence when docs conflict: lower number wins (SCOPE > NAV > DATA > ARCH > DS > UX > PROV > ROAD). Code files named above are the source of truth for the values they hold. If a conflict looks real, stop and ask.
 
 ## Spec format (when editing docs)
 - Terse bullets and tables; `MUST` / `MUST NOT` / `SHOULD`. Add a one-line **Why** only where it stops a wrong "fix".
