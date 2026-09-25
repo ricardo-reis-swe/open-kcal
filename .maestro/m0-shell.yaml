@@ -1,0 +1,31 @@
+# M0 exit demo (ROAD-01): launch to Diary, `+` opens the empty Add Action Sheet, Close dismisses it, Profile selects.
+# Runs against the dev build with Metro on localhost:8081 (scripts/e2e.sh). Labels are the en a11y labels.
+appId: com.ricardoreis.calorietracker
+---
+- stopApp
+- openLink: exp+calorie-tracker://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- tapOn:
+    text: Continue # Android dev-menu onboarding, first launch only
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: tab-add
+    timeout: 90000
+- assertVisible:
+    id: tab-diary
+    selected: true
+- tapOn:
+    id: tab-add
+- assertVisible: Add actions
+- tapOn: Close
+- assertNotVisible: Add actions
+- tapOn:
+    id: tab-profile
+- assertVisible:
+    id: tab-profile
+    selected: true
+- tapOn:
+    id: tab-diary
+- assertVisible:
+    id: tab-diary
+    selected: true

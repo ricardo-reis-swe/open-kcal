@@ -85,11 +85,12 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - Startup covers config → logger → i18n only; SQLite, seed, launch-screen hold and the recovery screen are M1 (ARCH-17, ARCH-13). A config error currently throws at startup.
 - Typed route builders (ARCH-06) are added per route as screens land; M0 has only the tab roots.
 - Any Portuguese device language (e.g. `pt-BR`) uses the pt-PT translation, since it is the only Portuguese one; number/date formatting still follows the device locale (SCOPE-12).
+- E2E tooling: Maestro 2.10.0 CLI (`~/.maestro/bin`, not an npm dependency) runs `.maestro/` flows via `scripts/e2e.sh android|ios` against the dev build + localhost Metro. `.maestro/m0-shell.yaml` covers the M0 exit demo and passes on both platforms (Android 29 s, iOS 14 s). ROAD-02 flows start at M2.
 - Icons use Ionicons (outline; filled only for selected states), DS-06.
 
 ### Open questions
 - ~~**M0-Q2**~~ Resolved 2026-09-25: the user ran `xcode-select`, so the simulator tool works.
-- **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins) and `scripts/` (local tooling) to the ARCH-05 tree?
+- **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins), `scripts/` (local tooling) and `.maestro/` (Maestro E2E flows, ARCH-18) to the ARCH-05 tree?
 - **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).
   - Also failing (review R1-6, all `it.failing`): light `primary` on `primaryTint` 4.30 (pressed TextAction/tab label, success status) · light `primary` on `canvas` 4.41 · light `warning` on `warningTint` 4.32 · boundaries (DS-11 ≥3:1) `borderStrong` on `surfaceSubtle` 1.59 light / 2.47 dark (FormField border) and on `surface` 1.77 / 2.80 (sheet handle). Need new token values from the user.
   - Round 2 adds (light only, not yet in the test): `primary` text on `surfaceSubtle` 4.21, on `warningTint` 4.25, on `dangerTint` 4.01 (InlineStatus recovery action); `focus` ring on `appBar` 1.15 (needs ≥3:1, or an `onAppBar` ring color inside the app bar).
