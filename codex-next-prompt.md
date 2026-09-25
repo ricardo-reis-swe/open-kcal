@@ -1,31 +1,11 @@
-# Codex prompt — continue calorie tracker planning
+# Prompt — continue calorie tracker planning
 
-I am planning a React Native calorie and food tracking app. I already finalized **Section 1 — Scope and MVP**, **Section 2 — Navigation and Screen Map**, **Section 3 — Data Model and Local Storage**, **Section 4 — Application Architecture and Technology Stack**, and **Section 5 — Visual Design Direction and Design System** in project documents. Treat those documents as approved product requirements and do not redesign or reinterpret them unless I explicitly ask.
+Planning a local-first React Native calorie tracker. Read `AGENTS.md` first: it indexes the specs and defines the spec format (terse rules, stable IDs, each fact stated once, values in code files).
 
-I want to continue the planning process **one section at a time**.
+- Approved: `docs/01-scope.md` through `docs/05-design.md`, plus `routes.ts`, `schema.sql` and `tokens.ts`. Treat them as requirements; don't redesign them unless asked.
+- **`docs/06-screens.md` is a DRAFT.** Ask the user to review it, including its "Pending approval" and "Open question" sections. On approval: apply the listed changes to the earlier docs/code, mark 06 approved in `README.md` and in the file header, and remove the Pending section.
 
-Before creating or drafting any new section:
-
-1. Tell me the proposed section title and what it will cover.
-2. Ask me whether I want to add, remove, or change anything.
-3. Wait for my explicit approval before creating the section document.
-
-After a section is created, ask me to review and approve its contents before discussing the next section. Never create the next section automatically, even if the previous section appears complete.
-
-The proposed next section is:
-
-## Section 6 — Screen-by-Screen UX Specifications
-
-Its proposed scope covers:
-
-- A compact text wireframe for every MVP screen.
-- Information hierarchy and exact section order.
-- Navigation entry, exit, save, cancel, and deletion behavior.
-- Primary, secondary, and destructive actions.
-- Loading, empty, populated, offline, error, and disabled states.
-- Keyboard and form behavior.
-- Gestures and equivalent non-gesture controls.
-- Accessibility labels, focus order, large-text behavior, and phone-size adaptation.
-- Diary, Meal Detail, food add/edit/search, Quick Calories, custom food, all pickers and sheets, Profile, goals, meals, units, weight, and food database settings.
-
-Section 6 does not exist yet. Ask whether I want to add, remove, or change anything, and wait for my explicit approval before creating it. Do not discuss or create Section 7 until Section 6 is both created and explicitly approved.
+Process for new sections, one at a time:
+1. Propose the title and scope, and ask whether to add, remove or change anything.
+2. Write it only after explicit approval, using the AGENTS.md spec format.
+3. Ask for approval of the contents before proposing the next section. Never start the next section automatically.

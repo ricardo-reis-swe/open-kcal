@@ -2,16 +2,17 @@
 
 A local-first React Native calorie and food diary app.
 
-## Approved planning documents
+## Specs
 
-- [Section 1 — Scope and MVP](docs/section-01-scope-mvp.md)
-- [Section 2 — Navigation and Screen Map](docs/section-02-navigation-screen-map.md)
-- [Section 3 — Data Model and Local Storage](docs/section-03-data-model-local-storage.md)
-- [Section 4 — Application Architecture and Technology Stack](docs/section-04-application-architecture-technology-stack.md)
-- [Section 5 — Visual Design Direction and Design System](docs/section-05-visual-design-system.md)
+Written for coding agents: terse rules with stable IDs. Start at [AGENTS.md](AGENTS.md), which says which file to read for each task.
 
-Sections are reviewed and approved individually before work begins on the next section.
+| Doc | Status |
+|---|---|
+| [01 Scope](docs/01-scope.md) | Approved |
+| [02 Navigation](docs/02-navigation.md) + [routes.ts](src/shared/navigation/routes.ts) | Approved |
+| [03 Data](docs/03-data.md) + [schema.sql](src/data/db/schema/schema.sql) | Approved |
+| [04 Architecture](docs/04-architecture.md) | Approved |
+| [05 Design system](docs/05-design.md) + [tokens.ts](src/shared/theme/tokens.ts) | Approved |
+| [06 Screens](docs/06-screens.md) | Draft, awaiting approval |
 
-## Proposed next section
-
-**Section 6 — Screen-by-Screen UX Specifications** has been proposed but not approved for creation. Its proposed scope covers compact wireframes, information hierarchy, actions, navigation behavior, screen states, forms, gestures, and accessibility for every MVP screen.
+Each new section is approved before work starts on the next one.
