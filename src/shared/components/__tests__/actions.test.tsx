@@ -34,6 +34,13 @@ describe('DS-12: PrimaryButton', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it('DS-10: the spinner stays visible on the disabled fill', async () => {
+    await renderWithProviders(<PrimaryButton label="Save" onPress={jest.fn()} loading />);
+    expect(screen.getByTestId('primary-button-spinner').props.color).toBe('#FFFFFF');
+    await renderWithProviders(<PrimaryButton label="Save" onPress={jest.fn()} loading disabled />);
+    expect(screen.getByTestId('primary-button-spinner').props.color).toBe(lightColors.textSecondary);
+  });
+
   it('DS-03: uses dark content on the bright dark-mode green', async () => {
     await renderWithProviders(<PrimaryButton label="Add" onPress={jest.fn()} />, { scheme: 'dark' });
     expect(StyleSheet.flatten(screen.getByText('Add').props.style).color).toBe(darkColors.canvas);
@@ -101,6 +108,16 @@ describe('DS-12: ListRow', () => {
     await renderWithProviders(<ListRow label="Open Food Facts" value="Always on" />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByLabelText('Open Food Facts, Always on')).toBeOnTheScreen();
+  });
+
+  it('DS-10: a disabled row blocks presses and has less emphasis', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(<ListRow label="Meals" onPress={onPress} disabled />);
+    const row = screen.getByRole('button', { name: 'Meals' });
+    expect(row).toBeDisabled();
+    await fireEvent.press(row);
+    expect(onPress).not.toHaveBeenCalled();
+    expect(StyleSheet.flatten(screen.getByText('Meals').props.style).color).toBe(lightColors.textSecondary);
   });
 
   it('DS-09: rows are at least 48 high', async () => {

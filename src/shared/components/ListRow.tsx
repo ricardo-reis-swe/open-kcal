@@ -35,7 +35,8 @@ export function ListRow({
   const content = (
     <>
       {icon ? <AppIcon name={icon} color="textSecondary" /> : null}
-      <AppText variant="body" style={styles.label}>
+      {/* DS-10: disabled rows get less emphasis. */}
+      <AppText variant="body" color={disabled ? 'textSecondary' : 'textPrimary'} style={styles.label}>
         {label}
       </AppText>
       {value ? (

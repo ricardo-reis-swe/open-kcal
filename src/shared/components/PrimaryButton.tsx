@@ -54,7 +54,14 @@ export function PrimaryButton({
       ]}
     >
       <View style={styles.content}>
-        {loading ? <ActivityIndicator size="small" color={theme.colors.onPrimary} /> : null}
+        {loading ? (
+          <ActivityIndicator
+            testID="primary-button-spinner"
+            size="small"
+            // DS-10: onPrimary would vanish on the disabled surfaceSubtle fill.
+            color={disabled ? theme.colors.textSecondary : theme.colors.onPrimary}
+          />
+        ) : null}
         <AppText
           variant="bodyStrong"
           style={{ color: disabled ? theme.colors.textSecondary : theme.colors.onPrimary }}
