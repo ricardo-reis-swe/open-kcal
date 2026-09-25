@@ -29,6 +29,19 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 - [x] T7 Dev builds on iOS simulator (iPhone 17e, iOS 27) + Android emulator (Pixel_10); exit demo run (Android fully; iOS launch + tab shell, see gaps)
 - [x] T8 QA screenshots under `docs/qa/M0/` (index in its README; capture scripts in `scripts/qa/`)
 - [ ] T9 Independent review (`docs/qa/M0/review.md`), fix blockers/majors
+  - Round 1 (`4695aae`): not clean, 0 blockers · 3 majors · 9 minors. Fix list, in order:
+  - [x] R1-2 major: BottomSheet swipe-down dismiss. The whole sheet is the drag surface, distance scales with sheet height, the handle is the a11y Close button, and the sheet name is announced on open (also R1-10). Gesture tests added; slow swipe verified on Android.
+  - [ ] R1-3 major: per-app language (SCOPE-12). `expo-localization` `supportedLocales` (en, pt-PT), re-resolve the locale on change, test, rebuild native, verify on both platforms.
+  - [ ] R1-1 major: iOS exit-demo taps + 8 iOS screenshots. **Blocked on M0-Q2.**
+  - [ ] R1-6 minor: add the contrast pairs primitives render; failing ones go to M0-Q1 as `it.failing`.
+  - [ ] R1-7 minor: localized a11y label joining (`a11y.labelWithValue`) in FormField/ListRow.
+  - [ ] R1-8 minor: plural test uses `polyfill-force` + locale data.
+  - [ ] R1-11 minor: disabled PrimaryButton spinner color; disabled ListRow emphasis; tests.
+  - [ ] R1-12 minor: `trap` reset in `scripts/qa/m0-android.sh`; test for `adoptSceneDelegate`.
+  - [ ] R1-5 minor: release-build allowlist for logger context keys; tests.
+  - [ ] R1-4 minor: focus ring on pressable primitives, or log it as an M9 a11y gap.
+  - [ ] R1-9 minor: ARCH-05 append proposal. **Blocked on M0-Q3.**
+  - [ ] Round 2: new fresh reviewer after the majors are fixed.
 
 ### ROAD-02 checklist
 - [ ] Every behavior in Main specs implemented (ARCH-01/02/05/06/14/15/22, DS-12)
@@ -70,4 +83,6 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - Icons use Ionicons (outline; filled only for selected states), DS-06.
 
 ### Open questions
+- **M0-Q2** iOS tap driver for the exit demo (review R1-1). Options: (a) you run `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` so the Claude simulator tool works; (b) approve installing Maestro (needed from M2 anyway, ARCH-18); (c) waive the iOS tap part for M0. Recommendation: (b), plus (a) if convenient.
+- **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins) and `scripts/` (local tooling) to the ARCH-05 tree?
 - **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).

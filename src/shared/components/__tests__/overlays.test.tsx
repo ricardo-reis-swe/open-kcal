@@ -31,7 +31,7 @@ describe('DS-12: BottomSheet', () => {
   it('ARCH-06: backdrop tap runs the cancel path', async () => {
     const onClose = jest.fn();
     await renderWithProviders(<Harness onClose={onClose} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await fireEvent.press(screen.getByTestId('sheet-backdrop'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
