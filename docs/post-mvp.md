@@ -35,7 +35,20 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 - Deferred: during the MVP, fixtures alone cover contract tests.
 
 ## POST-09 Over-the-air updates
-- EAS Update (`expo-updates`) to ship JS fixes without a store build. Needs a runtime-version policy and update channels per build profile (ROAD-04).
+- EAS Update (`expo-updates`) to ship JS fixes without a store build. Needs a runtime-version policy and update channels per build profile. Depends on POST-12.
 
 ## POST-10 Public store release
-- App Store and Play production listing: privacy labels (health data stays on device), screenshots in en + pt-PT, store copy, support URL, review submission. The MVP stops at internal testing (ROAD-04).
+- App Store and Play production listing: privacy labels (health data stays on device), screenshots in en + pt-PT, store copy, support URL, review submission. Depends on POST-12. The MVP has no distribution (ROAD-04).
+
+## POST-11 Continuous integration
+- A hosted pipeline running `npm run check` on every push. The remote is Gitea, so this means Gitea Actions (GitHub-compatible workflow syntax in `.gitea/workflows/`), which needs a runner on the Gitea server. Maestro E2E in CI is a later extension.
+
+## POST-12 Distribution
+- EAS Build profiles in `eas.json`:
+  - `development`: `com.ricardoreis.calorietracker.dev`, "Calorie Tracker (Dev)"
+  - `preview`: `.preview`, "Calorie Tracker (Preview)"
+  - `production`: `com.ricardoreis.calorietracker`
+- Per-profile `EXPO_PUBLIC_*` env. Separate IDs let the builds coexist without sharing data (ARCH-14).
+- Versioning: semver `version` bumped per release; `buildNumber`/`versionCode` from EAS (`appVersionSource: remote`, `autoIncrement` on production).
+- Builds run manually or on a `v*` tag. `eas submit` to TestFlight (internal) and the Play internal testing track.
+- Accounts, all under ricardo_reis@live.com: Expo, Apple Developer Program, Google Play Console. Signing credentials EAS-managed; keep a backup of the Android upload key.

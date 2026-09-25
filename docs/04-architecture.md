@@ -18,14 +18,14 @@ Read when: choosing libraries, placing code, handling errors/network/logging, or
 | Gestures / motion / haptics | Gesture Handler + Reanimated / `expo-haptics` |
 | Tests | Jest (`jest-expo`) + RN Testing Library; Expo Router testing utils; Maestro E2E |
 
-- Pin versions from the Expo SDK compatibility matrix; commit the lockfile; no floating ranges in CI/release. Install native packages with `npx expo install`.
+- Pin versions from the Expo SDK compatibility matrix; commit the lockfile; no floating ranges. Install native packages with `npx expo install`.
 - Generated native dirs must not become the primary location for hand-written app logic.
 - Go bare only if a confirmed requirement can't be met by Expo modules, config plugins or a small local Expo module. Excluded features (SCOPE-10) don't count.
 - The no-ORM decision is reversible later, which is why DB access sits behind repositories.
 
 ## ARCH-02 Code quality
 - No implicit `any`; strict null checks; typed route params, DB rows and domain models; exhaustive switches on unions (e.g. `entry_kind`).
-- ESLint (Expo + hooks rules), Prettier, `tsc` as its own CI step. Add import-boundary lint rules if the layers start to erode.
+- ESLint (Expo + hooks rules), Prettier, `tsc` as its own check (`npm run typecheck`). Add import-boundary lint rules if the layers start to erode.
 - Generated types never replace runtime validation of untrusted data.
 
 ## ARCH-03 Validation (Zod) at every boundary
@@ -117,7 +117,7 @@ src/
 
 ## ARCH-14 Config
 - Public build-time config via Expo env (`EXPO_PUBLIC_*`): provider base URLs, build channel/variant, non-secret diagnostics IDs. Treat all client env as public.
-- The USDA key is user runtime data: NEVER in `.env`, `EXPO_PUBLIC_*`, app config or EAS secrets.
+- The USDA key is user runtime data: NEVER in `.env`, `EXPO_PUBLIC_*`, app config or build-service secrets.
 - Commit `.env.example` with placeholders; local overrides stay gitignored. Validate env once at startup in a typed config module; features never read `process.env`.
 - When distribution starts, use separate app IDs/names for dev/preview so test builds don't overwrite production data.
 
@@ -142,7 +142,7 @@ Validate config → logger → open SQLite → pragmas → migrate + seed → se
 | Repository/migration | Real SQL on a disposable SQLite DB (never mock the repository) | Init + idempotent seed, every forward migration, FK/constraints, rollback, meal delete+reassign, snapshot preservation, unknown-macro aggregation, cache upsert/expiry |
 | Component | RNTL + `jest-expo`; query by role/label/text/user-event; no snapshot-first tests | Loading/empty/populated/error, a11y labels and actions, form validation, direct entry navigation, configurable meals, Quick Calories unknown macros |
 | Navigation | Expo Router in-memory testing | Tabs, modal dismiss, param validation, direct edit paths, return after save/delete/reassign, date preservation |
-| API contract | Sanitized fixtures (PROV-13); no live calls in CI (scheduled live check: POST-08) | Known shapes + edge cases, missing fields |
+| API contract | Sanitized fixtures (PROV-13); no live calls in tests (scheduled live check: POST-08) | Known shapes + edge cases, missing fields |
 | E2E | Maestro, seeded deterministic DB, no live providers | Launch to today; add food from a meal; Quick Calories; direct edit + delete; swipe date + back to today; reorder meals; add + edit weight; offline cached/custom food |
 
 ## ARCH-19 Performance
@@ -156,7 +156,7 @@ Indexed, bounded queries · totals aggregated in SQL · debounce remote search +
 ## ARCH-22 Localization
 - `expo-localization` (device locale/region) + `i18next` / `react-i18next`. Languages: `en` (fallback) and `pt-PT` (SCOPE-12). Add an `Intl.PluralRules` polyfill if the Hermes build lacks it.
 - Strings live in `src/shared/i18n/locales/{en,pt-PT}.json`. Every user-facing string goes through `t()`. No concatenation: use interpolation. Plurals use i18n plural keys.
-- A missing pt-PT key falls back to en. CI fails if the two files have different key sets.
+- A missing pt-PT key falls back to en. A test fails if the two files have different key sets.
 - Numbers, dates and units are formatted with `Intl` in the app locale (comma decimal and day-first dates in pt-PT). Parsing accepts the locale's decimal separator (DS-09).
 - pt-PT means European Portuguese wording (`ecrã`, `pequeno-almoço`), not Brazilian.
 - Component tests run in `en`, plus one render smoke test per screen in `pt-PT` to catch overflow and missing keys.

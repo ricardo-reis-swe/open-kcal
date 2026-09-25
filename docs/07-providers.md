@@ -277,4 +277,4 @@ Implements ARCH-18's API contract tests. Fixtures live in `src/data/api/{usda,op
 | OFF | captured liquid product (ml) | 100 ml basis, ml/fl oz pair |
 | OFF | synthetic: kJ-only; numeric strings; 0 kcal and no macros; `status: 0`; 503 HTML body; 429 | fallbacks, drop rule, not found, rate limit |
 
-No live API calls in CI during the MVP. A scheduled live contract check is post-MVP (POST-08).
+No live API calls in tests during the MVP. A scheduled live contract check is post-MVP (POST-08).
