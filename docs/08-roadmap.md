@@ -1,6 +1,6 @@
 # 08 Implementation roadmap (ROAD)
 
-Status: **DRAFT, written one step at a time.** Steps 1–2 approved. Step 3 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–3 approved. Step 4 ready for review.
 
 Read when: deciding what to build next. Milestones are vertical slices, done in order. Each ends with something runnable on both platforms. The specs define behavior; this doc only sequences it.
 
@@ -123,4 +123,30 @@ Update it in the same commit as the work it describes.
 
 The milestone is done only after the user accepts it.
 
-<!-- Step 4 pending: builds and release -->
+## ROAD-04 Builds and release
+**Accounts (the user creates these; agents never do):** Expo, Apple Developer Program, Google Play Console. Signing credentials are EAS-managed and never committed. The user keeps a download of the Android upload-key backup.
+
+**Build profiles** (`eas.json`)
+| Profile | Purpose | App ID / name | Distribution | From |
+|---|---|---|---|---|
+| `development` | Dev client for daily work (plus an iOS simulator build) | `<bundle-prefix>.calorietracker.dev` · `Calorie Tracker (Dev)` | Internal | M0 |
+| `preview` | Release-like build on real phones | `<bundle-prefix>.calorietracker.preview` · `Calorie Tracker (Preview)` | Internal | M3, optional |
+| `production` | Store builds | `<bundle-prefix>.calorietracker` · `Calorie Tracker` | TestFlight + Play internal testing | M9 |
+- Separate IDs let all three coexist on one phone without sharing data (ARCH-14).
+- Each profile sets its public `EXPO_PUBLIC_*` values in `eas.json` `env`: variant, OFF contact email, base URLs. No secrets anywhere; the USDA key is user-supplied at runtime.
+
+**Versioning:** a semver `version` in app config (user-facing, bumped per release). `buildNumber`/`versionCode` come from EAS with `appVersionSource: remote` + `autoIncrement` on `production`.
+
+**CI and builds**
+- GitHub Actions on every push: lint, `tsc`, Jest (M0).
+- EAS builds run manually or on a `v*` tag, never on every push.
+- Maestro E2E runs locally on the simulator and emulator per ROAD-02. E2E in CI is not part of the MVP.
+
+**MVP release = internal testing only:** production builds submitted with `eas submit` to TestFlight (internal testers) and the Play internal testing track. Public store release is a separate, later decision (POST-10).
+
+**M9 release checklist**
+1. Every milestone accepted; `main` green.
+2. Bump `version`; add a short changelog entry to `docs/progress.md`.
+3. `eas build --profile production` for both platforms, then `eas submit`.
+4. Smoke-test the installed store builds on a real phone: first launch, add Quick Calories, log an OFF food, go offline and log a saved food, relaunch and check the data persisted.
+5. Report to the user (ROAD-03 acceptance).
