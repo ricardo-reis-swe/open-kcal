@@ -31,9 +31,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 - [ ] T9 Independent review (`docs/qa/M0/review.md`), fix blockers/majors
   - Round 1 (`4695aae`): not clean, 0 blockers · 3 majors · 9 minors. Fix list, in order:
   - [x] R1-2 major: BottomSheet swipe-down dismiss. The whole sheet is the drag surface, distance scales with sheet height, the handle is the a11y Close button, and the sheet name is announced on open (also R1-10). Gesture tests added; slow swipe verified on Android.
-  - [ ] R1-3 major: per-app language (SCOPE-12).
-    - [x] Code: `expo-localization` `supportedLocales` (en, pt-PT) in `app.json`; `useSyncAppLocale` in `AppProviders` re-resolves the locale on change; test.
-    - [ ] Next: `npx expo prebuild` + rebuild both dev builds (one batch), then verify. Android: `adb shell cmd locale set-app-locales com.ricardoreis.calorietracker --locales pt-PT` switches the running app. iOS: Settings › Calorie Tracker › Language shows en/pt-PT (or `simctl spawn booted defaults write com.ricardoreis.calorietracker AppleLanguages -array pt-PT` + relaunch).
+  - [x] R1-3 major: per-app language (SCOPE-12). `expo-localization` `supportedLocales` (en, pt-PT) → iOS `CFBundleLocalizations`, Android `localeConfig`; `useSyncAppLocale` re-resolves on change. Both dev builds rebuilt; verified on Android (live switch, no restart) and iOS (Settings › Apps › Calorie Tracker › Language; opens in pt-PT). Screenshots in `docs/qa/M0/`.
   - [x] R1-1 major: iOS exit demo run with the simulator tool (`+` opens the sheet; swipe-down and backdrop close it; Profile tab selects) and the 8 missing iOS screenshots captured. Found and fixed: live Dynamic Type changes left text clipped (`AppText` remounts on font scale).
   - [x] R1-6 minor: contrast test covers the pairs primitives render; the failing ones are `it.failing` and listed in M0-Q1.
   - [x] R1-7 minor: FormField/ListRow join label + value/unit via `a11y.labelWithValue` (en + pt-PT); test.

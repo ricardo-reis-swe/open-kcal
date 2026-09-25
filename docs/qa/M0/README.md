@@ -12,8 +12,10 @@ Captured 2026-09-25 from dev builds (Expo SDK 57) with `scripts/qa/m0-android.sh
 | Diary (tab root) | `android-diary-{light,dark}-{default,largest}.png` | `ios-diary-{light,dark}-{default,largest}.png` |
 | Add Action Sheet (`+`, empty in M0) | `android-add-sheet-{light,dark}-{default,largest}.png` | `ios-add-sheet-{light,dark}-{default,largest}.png` |
 | Profile (tab root) | `android-profile-{light,dark}-{default,largest}.png` | `ios-profile-{light,dark}-{default,largest}.png` |
+| Per-app language pt-PT (SCOPE-12) | `android-per-app-language-pt-PT.png` | `ios-per-app-language-pt-PT.png` · `ios-settings-app-language.png` (Settings › Apps › Calorie Tracker › Language) |
 
 Notes
+- Per-app language (review R1-3): Android `cmd locale set-app-locales … --locales pt-PT` switched the running app to pt-PT and back to en without a restart (same PID). iOS: `AppleLanguages` = pt-PT + relaunch opens in pt-PT; Settings shows the app's Language row.
 - The round gear on Android is the dev client's floating Tools button (dev builds only). It's hidden on iOS via `EXDevMenuShowFloatingActionButton`.
 - iOS sheet/Profile shots and the iOS exit demo (`+` opens the sheet; swipe-down, backdrop close it; Profile tab selects) were done with the Claude simulator tool after `xcode-select` was set (M0-Q2).
 - Found on iOS: a live Dynamic Type change left text measured at the old size (clipped app bar title). `AppText` now remounts on font-scale changes.
