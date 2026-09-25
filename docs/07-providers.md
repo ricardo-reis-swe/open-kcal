@@ -1,7 +1,5 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–8 approved. Step 9 ready for review.
-
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
 Facts below were checked against the live APIs on 2026-09-25. Re-check against the official docs at implementation start: [USDA FDC API guide](https://fdc.nal.usda.gov/api-guide/) · [OFF API](https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/) · [Search-a-licious](https://search.openfoodfacts.org/docs).
@@ -279,4 +277,4 @@ Implements ARCH-18's API contract tests. Fixtures live in `src/data/api/{usda,op
 | OFF | captured liquid product (ml) | 100 ml basis, ml/fl oz pair |
 | OFF | synthetic: kJ-only; numeric strings; 0 kcal and no macros; `status: 0`; 503 HTML body; 429 | fallbacks, drop rule, not found, rate limit |
 
-**Live contract check (optional):** a scheduled CI job (weekly) runs the Zod schemas against the live APIs with a CI-secret USDA key. A failure opens an issue and never blocks PRs or normal test runs (ARCH-18).
+No live API calls in CI during the MVP. A scheduled live contract check is post-MVP (POST-08).

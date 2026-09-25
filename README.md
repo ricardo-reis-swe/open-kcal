@@ -14,7 +14,7 @@ Written for coding agents: terse rules with stable IDs. Start at [AGENTS.md](AGE
 | [04 Architecture](docs/04-architecture.md) | Approved |
 | [05 Design system](docs/05-design.md) + [tokens.ts](src/shared/theme/tokens.ts) | Approved |
 | [06 Screens](docs/06-screens.md) | Approved |
-| [07 Food providers](docs/07-providers.md) | Draft, step by step |
+| [07 Food providers](docs/07-providers.md) | Approved |
 | [Post-MVP backlog](docs/post-mvp.md) | Candidates only |
 
 Each new section is approved before work starts on the next one.

@@ -14,7 +14,7 @@ Approved requirements. Don't reinterpret or redesign them unless the user explic
 | SQLite, repositories, migrations, nutrition math, dates, USDA key | `docs/03-data.md` (DATA) + `src/data/db/schema/schema.sql` |
 | Libraries, layers, folders, errors, offline, logging, tests | `docs/04-architecture.md` (ARCH) |
 | UI strings, translations, locale formatting | ARCH-22 + SCOPE-12 |
-| Food search providers (USDA, Open Food Facts) | `docs/07-providers.md` (PROV, draft) |
+| Food search providers (USDA, Open Food Facts) | `docs/07-providers.md` (PROV) |
 | Styling, components, a11y | `docs/05-design.md` (DS) + `src/shared/theme/tokens.ts` |
 | Building a specific screen | `docs/06-screens.md` (UX) + the DS components it names |
 

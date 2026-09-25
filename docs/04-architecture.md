@@ -142,7 +142,7 @@ Validate config → logger → open SQLite → pragmas → migrate + seed → se
 | Repository/migration | Real SQL on a disposable SQLite DB (never mock the repository) | Init + idempotent seed, every forward migration, FK/constraints, rollback, meal delete+reassign, snapshot preservation, unknown-macro aggregation, cache upsert/expiry |
 | Component | RNTL + `jest-expo`; query by role/label/text/user-event; no snapshot-first tests | Loading/empty/populated/error, a11y labels and actions, form validation, direct entry navigation, configurable meals, Quick Calories unknown macros |
 | Navigation | Expo Router in-memory testing | Tabs, modal dismiss, param validation, direct edit paths, return after save/delete/reassign, date preservation |
-| API contract | Sanitized fixtures; no live calls in CI (optional scheduled upstream check that can't fail normal runs) | Known shapes + edge cases, missing fields |
+| API contract | Sanitized fixtures (PROV-13); no live calls in CI (scheduled live check: POST-08) | Known shapes + edge cases, missing fields |
 | E2E | Maestro, seeded deterministic DB, no live providers | Launch to today; add food from a meal; Quick Calories; direct edit + delete; swipe date + back to today; reorder meals; add + edit weight; offline cached/custom food |
 
 ## ARCH-19 Performance

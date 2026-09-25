@@ -29,3 +29,7 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 
 ## POST-07 Purge soft-deleted foods
 - Physically remove unreferenced soft-deleted custom foods during maintenance (DATA-11).
+
+## POST-08 Scheduled live API contract check
+- A weekly CI job runs the provider Zod schemas (PROV-13) against the live USDA and OFF APIs, with a CI-secret USDA key. A failure opens an issue and never blocks PRs or normal test runs.
+- Deferred: during the MVP, fixtures alone cover contract tests.
