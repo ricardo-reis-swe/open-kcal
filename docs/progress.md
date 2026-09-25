@@ -4,7 +4,7 @@ Single place for implementation status. Updated in the same commit as the work i
 
 | Milestone | Status |
 |---|---|
-| M0 Skeleton | awaiting user acceptance |
+| M0 Skeleton | done |
 | M1 Data + domain | not started |
 | M2 Diary (read) | not started |
 | M3 Quick Calories | not started |
@@ -17,7 +17,7 @@ Single place for implementation status. Updated in the same commit as the work i
 
 ## M0 Skeleton
 
-Status: **awaiting user acceptance** · Start commit: `553efac` (review range `553efac..HEAD`)
+Status: **done** (accepted by the user 2026-09-25) · Start commit: `553efac` (review range `553efac..HEAD`)
 
 ### Tasks
 - [x] T1 Expo app scaffold: SDK 57, dev client, Expo Router (`src/app`), strict TS, ESLint + Prettier, Jest (`jest-expo`) + RNTL, `npm run lint|typecheck|test|check`
@@ -41,7 +41,7 @@ Status: **awaiting user acceptance** · Start commit: `553efac` (review range `5
   - [x] R1-5 minor: release builds keep only allowlisted context keys (`RELEASE_CONTEXT_KEYS`); denylist widened (`q`, amount, serving, kg, title, response…; `fatal` no longer matches `fat`); credential-looking messages redacted; tests.
   - [x] R1-4 minor: `FocusablePressable` draws the DS-10 2px `focus` outline (no layout shift) on every pressable primitive, tab item, dialog action and sheet handle; component tests. Hardware-keyboard check on device is part of the M9 DS-13 pass.
   - [x] R1-9 minor: ARCH-05 append approved (M0-Q3) and applied.
-  - [x] Round 2 (`b5f9245`, `docs/qa/M0/review.md`): **clean**, 0 blockers · 0 majors · 6 minors. Minors left as follow-ups (not blocking):
+  - [x] Round 2 (`b5f9245`, `docs/qa/M0/review.md`): **clean**, 0 blockers · 0 majors · 6 minors. Minors left as follow-ups (not blocking; R2-2…R2-6 carried to M1):
     - [x] R2-1: fixed with the M0-Q1 token values; pairs tested.
     - R2-2: sheet handle target 44 dp on Android; derive `hitSlop` from `touchMin`.
     - R2-3: pt-PT smoke test should also render Profile and the Add sheet.
@@ -92,3 +92,14 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - ~~**M0-Q2**~~ Resolved 2026-09-25: the user ran `xcode-select`, so the simulator tool works.
 - ~~**M0-Q3**~~ Resolved 2026-09-25: yes. ARCH-05 now lists `.maestro/`, `plugins/`, `scripts/` and `shared/config`. Closes review R1-9.
 - ~~**M0-Q1**~~ Resolved 2026-09-25 (user approved all): light `textTertiary` `#687169`, `primary` `#207941`, `primaryPressed` green800 `#185C34`, `warning` `#A06000`, `borderStrong` `#878E89`; dark `borderStrong` `#68726B`; focus ring inside the app bar uses `onAppBar`. All DS-11 contrast tests pass without expected failures (covers review R2-1).
+
+## M1 Data + domain
+
+Status: **not started**
+
+### Carried over from M0 (review round 2 minors, do first)
+- [ ] R2-2 BottomSheet handle target ≥ `touchMin` (derive `hitSlop`), test.
+- [ ] R2-3 pt-PT smoke test also renders Profile and the Add sheet.
+- [ ] R2-4 `tabs.test.tsx`: "backdrop closes it" presses the backdrop testID; separate handle case.
+- [ ] R2-5 Literal `gap`/`hitSlop`/`maxWidth`/`letterSpacing` → tokens (or a one-line rationale).
+- [ ] R2-6 `scripts/qa/m0-ios.sh` EXIT trap + header; `routes.ts` comment.
