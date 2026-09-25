@@ -37,6 +37,11 @@ export function shouldDismissSheet(translationY: number, velocityY: number, shee
   return translationY > distance || velocityY > DISMISS_VELOCITY;
 }
 
+/** Vertical hitSlop that brings the handle (bar + vertical padding) up to the platform touch minimum (DS-02). */
+export function sheetHandleSlop(touchMin: number, handleHeight: number, paddingVertical: number): number {
+  return Math.max(0, (touchMin - (handleHeight + 2 * paddingVertical)) / 2);
+}
+
 /**
  * The app's only sheet (ARCH-06). Content-sized (smallest snap height), 4×36 handle, no title (DS-09).
  * Reduced motion swaps the slide for a fade (DS-10).
@@ -51,6 +56,7 @@ export function BottomSheet({ visible, onClose, accessibilityLabel, closeLabel, 
   const dragY = useSharedValue(0);
   const sheetHeight = useSharedValue(0);
   const duration = theme.motionMs.sheet[0];
+  const handleSlop = sheetHandleSlop(theme.touchMin, theme.sizes.sheetHandle.height, theme.spacing[2]);
 
   // Mount as soon as it opens; unmount only after the close animation finishes.
   if (visible && !mounted) setMounted(true);
@@ -145,7 +151,7 @@ export function BottomSheet({ visible, onClose, accessibilityLabel, closeLabel, 
                 accessibilityRole="button"
                 accessibilityLabel={closeLabel}
                 testID={testID ? `${testID}-handle` : undefined}
-                hitSlop={{ top: 12, bottom: 12 }}
+                hitSlop={{ top: handleSlop, bottom: handleSlop }}
                 style={[styles.handleArea, { paddingVertical: theme.spacing[2] }]}
               >
                 <View

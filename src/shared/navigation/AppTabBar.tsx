@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, AppText, FocusablePressable, type IconName } from '@/shared/components';
 import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme/tokens';
 
 type TabRoute = 'diary' | 'profile';
 
@@ -116,7 +117,7 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
 
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing[0.5] },
   addSlot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   add: { alignItems: 'center', justifyContent: 'center' },
 });

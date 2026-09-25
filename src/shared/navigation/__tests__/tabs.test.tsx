@@ -79,6 +79,14 @@ describe('NAV-03: + Add Action Sheet', () => {
   it('ARCH-06: backdrop closes it', async () => {
     await render('/diary');
     await fireEvent.press(screen.getByRole('button', { name: 'Add' }));
+    await fireEvent.press(screen.getByTestId('add-action-sheet-backdrop'));
+    await flush();
+    expect(screen.queryByTestId('add-action-sheet')).toBeNull();
+  });
+
+  it('ARCH-06: the handle (Close) closes it', async () => {
+    await render('/diary');
+    await fireEvent.press(screen.getByRole('button', { name: 'Add' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
     await flush();
     expect(screen.queryByTestId('add-action-sheet')).toBeNull();

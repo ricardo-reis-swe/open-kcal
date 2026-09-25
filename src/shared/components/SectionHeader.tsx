@@ -23,6 +23,7 @@ export function SectionHeader({ label, uppercase = false, testID }: SectionHeade
         variant="label"
         color="textSecondary"
         accessibilityRole="header"
+        // Letter spacing is typographic tracking for uppercase labels, not layout spacing, so it isn't a spacing token.
         style={uppercase ? { textTransform: 'uppercase', letterSpacing: 0.4 } : undefined}
       >
         {label}

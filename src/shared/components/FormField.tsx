@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme/tokens';
 
 import { AppIcon } from './AppIcon';
 import { AppText } from './AppText';
@@ -100,7 +101,7 @@ export const FormField = forwardRef<TextInput, FormFieldProps>(function FormFiel
 });
 
 const styles = StyleSheet.create({
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   input: { flex: 1 },
   message: { flexDirection: 'row', alignItems: 'flex-start' },
   messageText: { flex: 1 },

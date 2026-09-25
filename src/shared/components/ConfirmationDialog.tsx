@@ -107,6 +107,7 @@ export function ConfirmationDialog({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // Readable dialog width cap on tablets/landscape; phones are narrower, so it never applies there.
   card: { width: '100%', maxWidth: 400 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', flexWrap: 'wrap' },
   action: { alignItems: 'center', justifyContent: 'center' },

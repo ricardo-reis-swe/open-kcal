@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme/tokens';
 
 import { AppText } from './AppText';
 import { FocusablePressable } from './FocusablePressable';
@@ -78,7 +79,7 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   base: { alignItems: 'center', justifyContent: 'center' },
-  content: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  content: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   fullWidth: { alignSelf: 'stretch' },
   intrinsic: { alignSelf: 'flex-start' },
 });

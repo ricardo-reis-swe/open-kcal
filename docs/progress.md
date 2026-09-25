@@ -95,11 +95,23 @@ All versions pinned exactly; installed via `npx expo install` where native.
 
 ## M1 Data + domain
 
-Status: **not started**
+Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`)
 
-### Carried over from M0 (review round 2 minors, do first)
-- [ ] R2-2 BottomSheet handle target ≥ `touchMin` (derive `hitSlop`), test.
-- [ ] R2-3 pt-PT smoke test also renders Profile and the Add sheet.
-- [ ] R2-4 `tabs.test.tsx`: "backdrop closes it" presses the backdrop testID; separate handle case.
-- [ ] R2-5 Literal `gap`/`hitSlop`/`maxWidth`/`letterSpacing` → tokens (or a one-line rationale).
-- [ ] R2-6 `scripts/qa/m0-ios.sh` EXIT trap + header; `routes.ts` comment.
+### Carried over from M0 (review round 2 minors)
+- [x] R2-2 BottomSheet handle `hitSlop` derived from `touchMin` (`sheetHandleSlop`); tests for both platforms.
+- [x] R2-3 pt-PT smoke test also renders Profile and the Add sheet.
+- [x] R2-4 `tabs.test.tsx`: "backdrop closes it" presses the backdrop testID; separate handle case.
+- [x] R2-5 `gap` literals → `spacing` tokens; `letterSpacing` (typographic tracking) and dialog `maxWidth` (tablet cap) keep literals with a one-line rationale.
+- [x] R2-6 `scripts/qa/m0-ios.sh` EXIT trap + header; `routes.ts` comment.
+
+### Tasks
+Order per ROAD-03: domain → data → services → startup/screens → tests → QA.
+- [ ] T1 Domain (pure, `src/domain`): units (DATA-04), local dates incl. DST/month/year/leap (DATA-08), nutrition + serving math and unknown-macro aggregation (DATA-05/06, DATA-11), goal resolution (DATA-09), current weight (DATA-13)
+- [ ] T2 Typed errors (ARCH-13, `src/shared/errors`); clock + ID generator infra
+- [ ] T3 DB adapter interface over `expo-sqlite`, migration runner + migration 1 from `schema.sql` (DATA-17, ARCH-09); Jest runs repositories on real SQLite via Node's built-in `node:sqlite` (no extra dependency)
+- [ ] T4 Idempotent seed: settings (locale unit defaults), localized meals, provisional goal (DATA-10, DATA-17, UX-01); init-twice test
+- [ ] T5 Repositories: settings, goals, meals (reorder, delete + reassign), foods + servings, diary entries (load day + aggregates), weight, recents, cache metadata (DATA-06/09–16)
+- [ ] T6 `CredentialsService` over `expo-secure-store` (ARCH-10, DATA-01)
+- [ ] T7 DB provider + startup sequence (ARCH-09/17), launch screen hold, recovery screen (UX-20, ARCH-13); TanStack Query client
+- [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
+- [ ] T9 Independent review

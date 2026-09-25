@@ -1,6 +1,8 @@
 #!/bin/bash
-# M0 QA capture on iOS (iPhone 17e): light/dark x default/largest text. No taps available (see progress log).
+# M0 QA capture on iOS (iPhone 17e): Diary in light/dark x default/largest text.
+# The sheet and Profile shots are captured by hand with the simulator tool (no taps from this script).
 set -u
+trap 'xcrun simctl ui booted appearance light; xcrun simctl ui booted content_size large' EXIT
 OUT=$1
 PKG=com.ricardoreis.calorietracker
 DEV="exp+calorie-tracker://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
@@ -15,4 +17,3 @@ for scheme in light dark; do
     xcrun simctl io booted screenshot "$OUT/ios-diary-$scheme-$text.png" >/dev/null 2>&1
   done
 done
-xcrun simctl ui booted appearance light; xcrun simctl ui booted content_size large

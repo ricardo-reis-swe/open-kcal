@@ -1,6 +1,6 @@
 // Route parameter contracts (NAV-09). Routes carry IDs and lightweight context only.
 // Params arriving from the router are untrusted and must be validated (ARCH-03) before use.
-// Typed route builders (ARCH-06) are implemented on top of these types once Expo Router is set up.
+// Typed route builders (ARCH-06) are added per route as screens land.
 
 /** Local calendar date, `YYYY-MM-DD` (DATA-08). */
 export type LocalDate = string;

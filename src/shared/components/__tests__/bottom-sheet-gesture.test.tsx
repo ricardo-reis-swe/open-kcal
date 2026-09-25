@@ -1,12 +1,13 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Platform } from 'react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { renderWithProviders } from '@/shared/testing/render';
 
 import { AppText, BottomSheet } from '..';
-import { shouldDismissSheet } from '../BottomSheet';
+import { sheetHandleSlop, shouldDismissSheet } from '../BottomSheet';
+import { sizes, spacing } from '@/shared/theme/tokens';
 
 describe('ARCH-06 / NAV-03: BottomSheet swipe-down dismiss', () => {
   it('scales the distance with a short sheet and accepts a flick', () => {
@@ -18,6 +19,24 @@ describe('ARCH-06 / NAV-03: BottomSheet swipe-down dismiss', () => {
     expect(shouldDismissSheet(81, 0, 600)).toBe(true);
     // A flick dismisses regardless of distance.
     expect(shouldDismissSheet(5, 600, 600)).toBe(true);
+  });
+
+  it.each([
+    ['android', sizes.touchMin.android],
+    ['ios', sizes.touchMin.ios],
+  ])('DS-02: the handle (Close) target reaches the %s touch minimum', (_os, touchMin) => {
+    const visual = sizes.sheetHandle.height + 2 * spacing[2];
+    expect(visual + 2 * sheetHandleSlop(touchMin, sizes.sheetHandle.height, spacing[2])).toBe(touchMin);
+  });
+
+  it('DS-02: the handle renders with the derived hitSlop', async () => {
+    await renderSheet();
+    const slop = sheetHandleSlop(
+      Platform.OS === 'ios' ? sizes.touchMin.ios : sizes.touchMin.android,
+      sizes.sheetHandle.height,
+      spacing[2],
+    );
+    expect(screen.getByTestId('sheet-handle').props.hitSlop).toEqual({ top: slop, bottom: slop });
   });
 
   async function renderSheet(onClose = jest.fn()) {
