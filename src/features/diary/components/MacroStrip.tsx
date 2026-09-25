@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { MacroKey, NutrientTotals } from '@/domain/nutrition/nutrients';
 import { AppIcon, AppText, ProgressTrack } from '@/shared/components';
@@ -22,6 +22,8 @@ const MACROS = [
   { key: 'fatG', label: 'diary.macros.fat', unknown: 'diary.macros.unknownFat', color: 'macroFat' },
 ] as const satisfies readonly { key: MacroKey; label: string; unknown: string; color: keyof Colors }[];
 
+const COLUMN_BASIS = 88;
+
 /**
  * DS-08 macro strip: one row, 3 columns (label, consumed/target, 4pt track). An info icon marks a partial total
  * when Quick Calories or incomplete foods have unknown values (DATA-06); the explanation is in the label (DS-11).
@@ -30,6 +32,9 @@ export function MacroStrip({ totals, targets }: MacroStripProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
+  // DS-11: the column basis grows with the text, so at large sizes the strip wraps/stacks instead of clipping.
+  const { fontScale } = useWindowDimensions();
+  const basis = COLUMN_BASIS * Math.max(fontScale, 1);
   return (
     <View style={[styles.row, { gap: theme.spacing[3] }]} testID="macro-strip">
       {MACROS.map((macro) => {
@@ -58,10 +63,10 @@ export function MacroStrip({ totals, targets }: MacroStripProps) {
             accessible
             accessibilityRole="text"
             accessibilityLabel={partial ? `${base} ${t(macro.unknown)}` : base}
-            style={styles.column}
+            style={[styles.column, { flexBasis: basis }]}
           >
             <View style={[styles.labelRow, { gap: theme.spacing[1] }]}>
-              <AppText variant="label" color="textSecondary" numberOfLines={1} style={styles.shrink}>
+              <AppText variant="label" color="textSecondary" style={styles.shrink}>
                 {name}
               </AppText>
               {partial ? <AppIcon name="information-circle-outline" size="inline" color="textSecondary" /> : null}
@@ -81,8 +86,7 @@ export function MacroStrip({ totals, targets }: MacroStripProps) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap' },
-  // DS-11: at large text the columns wrap instead of clipping.
-  column: { flexGrow: 1, flexBasis: 88 },
+  column: { flexGrow: 1 },
   labelRow: { flexDirection: 'row', alignItems: 'center' },
   shrink: { flexShrink: 1 },
 });

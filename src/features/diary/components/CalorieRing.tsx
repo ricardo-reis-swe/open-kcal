@@ -25,9 +25,11 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
-  const { fontScale } = useWindowDimensions();
-  // DS-11: text scales, so the ring grows with it instead of clipping its content.
-  const diameter = Math.round(DIAMETER * Math.min(Math.max(fontScale, 1), 2));
+  const { fontScale, width } = useWindowDimensions();
+  // DS-11: text scales, so the ring grows with it (up to the screen width) instead of clipping its content.
+  // Shrink-to-fit only at large sizes; at default text the content always fits the 140 ring.
+  const large = fontScale >= 1.5;
+  const diameter = Math.round(Math.min(DIAMETER * Math.max(fontScale, 1), width - 2 * theme.spacing[4]));
   const unitLabel = t(`diary.units.${unit}`);
   const unitSpoken = t(`diary.units.${unit}Spoken`);
   const fmt = (kcal: number) => formatEnergy(kcal, unit, locale);
@@ -78,15 +80,28 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
         color={theme.colors[ringColor]}
         track={theme.colors.divider}
       />
-      <View style={[StyleSheet.absoluteFill, styles.center, { padding: STROKE + theme.spacing[1] }]}>
+      <View style={[StyleSheet.absoluteFill, styles.center, { padding: STROKE + theme.spacing[large ? 3 : 1] }]}>
         <AppText variant="displayNumber" tabular color={tone} numberOfLines={1} adjustsFontSizeToFit>
           {value}
         </AppText>
-        <AppText variant="compact" color={tone === 'warning' ? 'warning' : 'textSecondary'} align="center">
+        <AppText
+          variant="compact"
+          color={tone === 'warning' ? 'warning' : 'textSecondary'}
+          align="center"
+          numberOfLines={1}
+          adjustsFontSizeToFit={large}
+        >
           {caption}
         </AppText>
         {detail ? (
-          <AppText variant="compact" color="textSecondary" tabular align="center">
+          <AppText
+            variant="compact"
+            color="textSecondary"
+            tabular
+            align="center"
+            numberOfLines={1}
+            adjustsFontSizeToFit={large}
+          >
             {detail}
           </AppText>
         ) : null}

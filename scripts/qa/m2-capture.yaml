@@ -1,0 +1,22 @@
+# M2 QA capture (ROAD-02, DS-13 subset): today (typical + partial macros), tomorrow (over goal), an empty day.
+# Run by scripts/qa/m2.sh with -e SHOT=docs/qa/M2/<platform>-<scheme>-<text>. Needs the dev seed (EXPO_PUBLIC_DEV_SEED_DIARY=1).
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: ../../.maestro/subflows/launch.yaml
+- extendedWaitUntil:
+    visible: Showing Today
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-today
+- tapOn: Next day, .*
+- extendedWaitUntil:
+    visible: Showing Tomorrow
+    timeout: 5000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-over-goal
+- tapOn: Next day, .*
+- extendedWaitUntil:
+    visible: Go to today
+    timeout: 5000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-empty

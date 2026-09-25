@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { AppText, FocusablePressable } from '@/shared/components';
+import { AppIcon, AppText, FocusablePressable } from '@/shared/components';
 import { addDays, type LocalDate } from '@/shared/dates';
 import { formatShortDate, relativeDay } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
@@ -34,6 +34,9 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
   const prev = addDays(date, -1);
   const next = addDays(date, 1);
   const selected = label(date, today);
+  // DS-11: at large text the neighbours shrink to chevrons (full names stay in their labels) and the selected
+  // date shrinks to fit, so nothing essential is truncated.
+  const compact = useWindowDimensions().fontScale >= LARGE_TEXT;
   const cell = { minHeight: Math.max(theme.sizes.dateStrip, theme.touchMin), paddingHorizontal: theme.spacing[1] };
   return (
     <View style={[styles.row, { paddingHorizontal: theme.spacing[2] }]} testID="diary-date-strip">
@@ -42,11 +45,15 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
         accessibilityRole="button"
         accessibilityLabel={t('diary.previousDay', { label: label(prev, today) })}
         onPress={() => onChange(prev)}
-        style={({ pressed }) => [styles.cell, cell, pressed && styles.pressed]}
+        style={({ pressed }) => [compact ? styles.chevron : styles.cell, cell, pressed && styles.pressed]}
       >
-        <AppText variant="compact" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
-          {`‹ ${label(prev, today)}`}
-        </AppText>
+        {compact ? (
+          <AppIcon name="chevron-back" color="onAppBar" />
+        ) : (
+          <AppText variant="compact" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
+            {`‹ ${label(prev, today)}`}
+          </AppText>
+        )}
       </FocusablePressable>
       <View
         testID="diary-selected-day"
@@ -55,7 +62,15 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
         accessibilityLabel={t('diary.selectedDay', { label: selected })}
         style={[styles.cell, cell]}
       >
-        <AppText variant="compactStrong" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
+        {/* At the largest sizes the date shrinks a little to stay whole instead of truncating or breaking a word. */}
+        <AppText
+          variant="compactStrong"
+          numberOfLines={1}
+          adjustsFontSizeToFit={compact}
+          minimumFontScale={0.5}
+          align="center"
+          style={{ color: theme.colors.onAppBar }}
+        >
           {selected}
         </AppText>
         <View style={[styles.indicator, { backgroundColor: theme.colors.onAppBar, marginTop: theme.spacing[0.5] }]} />
@@ -65,11 +80,15 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
         accessibilityRole="button"
         accessibilityLabel={t('diary.nextDay', { label: label(next, today) })}
         onPress={() => onChange(next)}
-        style={({ pressed }) => [styles.cell, cell, pressed && styles.pressed]}
+        style={({ pressed }) => [compact ? styles.chevron : styles.cell, cell, pressed && styles.pressed]}
       >
-        <AppText variant="compact" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
-          {`${label(next, today)} ›`}
-        </AppText>
+        {compact ? (
+          <AppIcon name="chevron-forward" color="onAppBar" />
+        ) : (
+          <AppText variant="compact" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
+            {`${label(next, today)} ›`}
+          </AppText>
+        )}
       </FocusablePressable>
       {date !== today ? (
         <FocusablePressable
@@ -98,7 +117,10 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
   );
 }
 
+const LARGE_TEXT = 1.5;
+
 const styles = StyleSheet.create({
+  chevron: { alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center' },
   cell: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   // Short underline under the selected date (DS-07); the text weight also marks it.

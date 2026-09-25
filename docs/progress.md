@@ -182,7 +182,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T5b NAV-02: the Diary tab tapped at the Diary root scrolls the selected day to the top (deeper, it still pops to root); navigation test
 - [ ] T6 Date Picker (UX-13) + app-bar calendar action "Choose date": **blocked on M2-Q1**
 - [x] T7 Maestro flows (ARCH-18): `m2-launch-today` and `m2-swipe-date` (full-width fling both ways, prev button, Today) with a shared `subflows/launch.yaml`. Both pass on Android and iOS. A Maestro swipe `from: id` with a direction only drags half the width and snaps back, so the flow uses explicit start/end points
-- [ ] T8 Exit demo on both platforms; QA screenshots (light/dark × default/largest text, small phone) + DS-02 density check in `docs/qa/M2/`
+- [x] T8 QA screenshots on both platforms (light/dark × default/largest text × today/over goal/empty, small Android phone) + DS-02 density check (pass) in `docs/qa/M2/` (`scripts/qa/m2.sh`). Found and fixed at the largest text: ring overflow, macro values splitting, date-strip truncation (see its README). The full exit demo still needs the Date Picker (M2-Q1)
 - [ ] T9 Independent review
 
 ### Known gaps
