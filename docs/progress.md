@@ -6,7 +6,7 @@ Single place for implementation status. Updated in the same commit as the work i
 |---|---|
 | M0 Skeleton | done |
 | M1 Data + domain | done |
-| M2 Diary (read) | in progress |
+| M2 Diary (read) | awaiting user acceptance |
 | M3 Quick Calories | not started |
 | M4 Custom foods + ruler | not started |
 | M5 Search + Open Food Facts | not started |
@@ -170,7 +170,7 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
 
 ## M2 Diary (read)
 
-Status: **in progress** · Start commit: `7ef1cf8` (review range `7ef1cf8..HEAD`)
+Status: **awaiting user acceptance** · Start commit: `7ef1cf8` (review range `7ef1cf8..HEAD`)
 
 ### Tasks
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
@@ -183,7 +183,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T6 Date Picker (UX-13, NAV-05) + the app-bar calendar action "Choose date". `src/shared/navigation/DatePicker.tsx` is the only module importing the picker: iOS shows the native inline calendar in our `BottomSheet` (title, Cancel, Today, Done; the sheet handle is also Cancel); Android opens the platform calendar dialog (Cancel, Done, Today as the neutral button). Opens on the active date, any date allowed, Done → Diary on that date, Cancel → no change, Today = the Today action; a `title` prop covers destination mode (UX-12, M7). Dates cross as local noon so DST never shifts them. Tests for both platforms' paths + the Diary integration; both dev builds rebuilt; checked by hand on both devices (pick → Done, reopen on the active date, Cancel, Today). Screenshots found and fixed an iOS largest-text overflow: the sheet scrolls, the actions wrap and the native wheel replaces the inline calendar there
 - [x] T7 Maestro flows (ARCH-18): `m2-launch-today` and `m2-swipe-date` (full-width fling both ways, prev button, Today) with a shared `subflows/launch.yaml`. Both pass on Android and iOS. A Maestro swipe `from: id` with a direction only drags half the width and snaps back, so the flow uses explicit start/end points
 - [x] T8 QA screenshots on both platforms (light/dark × default/largest text × today/over goal/empty, small Android phone) + DS-02 density check (pass) in `docs/qa/M2/` (`scripts/qa/m2.sh`). Found and fixed at the largest text: ring overflow, macro values splitting, date-strip truncation (see its README). The Date Picker is captured too (`*-date-picker.png`)
-- [ ] T9 Independent review
+- [x] T9 Independent review
   - Round 1 (`69a6673`, `docs/qa/M2/review-round1.md` after the move): not clean, 0 blockers · 1 major · 7 minors. All fixed:
     - [x] R1 major: "today" refreshes when the app becomes active and at local midnight (`useToday` in `DiaryDateContext`), so Today/Yesterday labels and the Today action follow the real date; the selected date never jumps (NAV-05). Fake-timer and AppState tests.
     - [x] R2 minor: a macro no entry knows shows `—` and "unknown" instead of `0` (UX-00, DATA-06); a mixed day stays a partial total. Tests.
@@ -193,15 +193,16 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
     - [x] R6 minor: startup tests: no dev seed with the flag off, seeded with it on in `__DEV__`, never outside `__DEV__`.
     - [x] R7 minor: `scripts/qa/m2.sh` restores the iOS dev-client floating-button setting on exit.
     - [x] R8 minor: the date-picker test name cites UX-13.
+  - Round 2 (`a2cb27d`, `docs/qa/M2/review.md`, delta, Sonnet): **clean**, 0 blockers · 0 majors · 0 minors. All 8 round-1 findings were confirmed fixed; `npm run check` 275/275; all 3 flows pass on both platforms.
 
 ### ROAD-02 checklist
 - [x] Every behavior in Main specs implemented (UX-02, UX-13, NAV-02/05, DS-07/08), except the actions whose target screens come later (see known gaps)
-- [x] `npm run check` green (265 tests)
+- [x] `npm run check` green (275 tests)
 - [x] Tests at the right ARCH-18 layer (pure formatting; real-SQLite dev seed; component tests for populated/empty/over-goal/unknown/no-goal/error + a11y labels; navigation tests for date preservation and tab re-tap); names cite spec IDs
 - [x] Every string in `en` + `pt-PT` (parity test; pt-PT smoke render of the Diary)
 - [x] E2E flows `m2-launch-today` + `m2-swipe-date` (and `m0-shell`) pass on the iOS simulator and the Android emulator
 - [x] Exit demo on both platforms: browse past/today/future (swipe, prev/next, Today, Date Picker), empty days show every meal, over goal and unknown macros render. Screenshots (light + dark, default + largest text, small phone) and the DS-02 density check in `docs/qa/M2/`
-- [ ] Independent review clean
+- [x] Independent review clean (round 2)
 - [x] No placeholder UI for in-scope behavior (later-milestone actions are disabled and listed as known gaps)
 - [x] Nothing sensitive in logs (no new logging; the dev seed logs nothing)
 - [x] M2 extra: DS-02 density check at default text on a small phone passes
