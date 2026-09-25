@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–3 approved. Step 4 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–4 approved. Step 5 ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -136,4 +136,25 @@ Applied in `mapToCandidate` (ARCH-11) to search hits and again to detail respons
 | Brand | USDA `brandName` → `brandOwner`; OFF first entry of `brands` (array in search, comma-separated string in detail). Trim; all-caps → title case. Empty → `null`. |
 | External ID | USDA `fdcId` as a string; OFF `code` exactly as returned (no padding or trimming of leading zeros). |
 
-<!-- Steps 5–9 pending: ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
+## PROV-08 Matching, ranking and paging
+Section order and debounce: UX-04, PROV-04. Language: PROV-03.
+
+**Local sections (`My foods` = active custom foods, `Saved` = cached external foods)**
+- Match against `foods.search_text`: name + brand, lowercased, **diacritics stripped** (`pao` finds `Pão`), whitespace collapsed. It's written at every upsert or custom-food save.
+- **Why a column:** expo-sqlite can't register JS functions, so normalization can't happen inside SQL.
+- A food matches if every query token (normalized the same way) is a substring of `search_text`.
+- Rank: name equals the query → name starts with the query → every token starts a word → any other match. Ties: `recent_foods.use_count` desc → `last_used_at` desc → shorter name.
+- 20 per section, plus `Show more` for the next 20.
+
+**Remote sections (`Open Food Facts`, `USDA`)**
+- Keep the provider's relevance order; send no `sort_by`/`sortBy`.
+- USDA: within each page, stably move Foundation / SR Legacy / Survey (FNDDS) above Branded. **Why:** for generic terms (`egg`, `rice`), branded products otherwise bury the generic reference foods.
+- Hide any remote hit whose `(source, external_id)` already appears in `Saved` (DATA-15 dedupe). The local copy shows instead.
+- Query sent as typed: trimmed and whitespace collapsed, diacritics kept.
+- Page size 20. `Show more` fetches the next page and appends it. The row disappears when the last page is reached (USDA `currentPage ≥ totalPages`, OFF `page ≥ page_count`) or after **5 pages** (100 results) per section per query. Each OFF page spends search budget (PROV-04).
+- Drops (PROV-07) can make a page shorter than 20. Never auto-fetch to refill it.
+- Ignore responses for a query that is no longer current (belt and braces on top of `AbortController`).
+
+**Empty sections:** an empty local section is hidden. An empty remote section that was searched shows one compact `No results` row, so the user knows it was checked. UX-04's "Nothing anywhere" state still applies when every section is empty.
+
+<!-- Steps 6–9 pending: cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
