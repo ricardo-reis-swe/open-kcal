@@ -34,7 +34,7 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 | Refresh cached | Same as select | Rules come in the cache step. |
 - Use Search-a-licious for full-text search, as the OFF docs recommend. They mark `/cgi/search.pl` as legacy, and `/api/v2/search` only filters (no full-text search).
 - Limits per IP: **10 searches/min**, **15 product reads/min**. Going over repeatedly can get the IP banned. OFF also has global rate limits that answer **HTTP 503**: treat 503 as rate-limited and back off, not as "service down".
-- No region/country filter (product decision). Portuguese queries may also return Brazilian products; that's accepted.
+- No region/country filter in the MVP (POST-01). Portuguese queries may also return Brazilian products; that's accepted.
 - `langs=<appLang>,en` (pt-PT → `pt,en`). OFF names come back in that language when available. USDA is English-only: Portuguese terms return 0 USDA hits (checked: `bacalhau`), so the USDA section usually shows `No results` for Portuguese queries.
 - Search-a-licious is at version 0.1.0 (young). Keep it fully behind the OFF adapter so a switch touches one module.
 
