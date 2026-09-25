@@ -5,7 +5,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | Milestone | Status |
 |---|---|
 | M0 Skeleton | done |
-| M1 Data + domain | not started |
+| M1 Data + domain | awaiting user acceptance |
 | M2 Diary (read) | not started |
 | M3 Quick Calories | not started |
 | M4 Custom foods + ruler | not started |
@@ -95,7 +95,7 @@ All versions pinned exactly; installed via `npx expo install` where native.
 
 ## M1 Data + domain
 
-Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`)
+Status: **awaiting user acceptance** · Start commit: `888b774` (review range `888b774..HEAD`)
 
 ### Carried over from M0 (review round 2 minors)
 - [x] R2-2 BottomSheet handle `hitSlop` derived from `touchMin` (`sheetHandleSlop`); tests for both platforms.
@@ -121,7 +121,7 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
 - [x] Every string in `en` + `pt-PT` (parity test; pt-PT smoke of the recovery screen)
 - [x] E2E flows: none added for M1; `m0-shell` passes on both platforms through the real startup (fresh install included)
 - [x] Exit demo on both platforms; recovery screenshots (light + dark, default + largest, small phone) in `docs/qa/M1/`
-- [ ] Independent review clean
+- [x] Independent review clean (round 2)
 - [x] No placeholder UI for in-scope behavior
 - [x] Nothing sensitive in logs (migrations log version/duration/outcome only; startup logs category/version; the USDA key never reaches errors)
 - [x] M1 extras: seed idempotent (init twice) · migration 1 tested from an empty DB · startup failures (DB, migration, config) show the recovery screen · date tests cover DST, month/year ends, leap days
@@ -154,8 +154,8 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
   - [x] iOS recovery screenshots (light/dark × default/largest). They found and fixed two bugs: the screen didn't scroll at the largest text (Retry clipped), and `logger.error` got its context in the `error` slot, so the category/version were lost
   - [x] Android recovery screenshots on a small phone (light/dark × default/2.0 font); the DB was restored afterwards and the app reopens normally
   - [x] Rebuilt with `expo-crypto` + `expo-clipboard`. `m0-shell` passes on a fresh Android install, a warm Android launch and iOS. The recovery screenshots were recaptured with Copy. Copy (clipboard contents) and Retry (recovers in place) were checked end to end on iOS
-- [ ] T9 Independent review
-  - Round 1 (`2fa66f8`, `docs/qa/M1/review.md`): not clean, 0 blockers · 2 majors · 7 minors. All fixed:
+- [x] T9 Independent review
+  - Round 1 (`2fa66f8`, `docs/qa/M1/review-round1.md`): not clean, 0 blockers · 2 majors · 7 minors. All fixed:
     - [x] R1-1 major: config validation runs inside the gated startup (i18n first); `ConfigError` is a `ValidationError`, so an invalid config shows the recovery screen; tests.
     - [x] R1-2 major: `SqlDatabase` maps raw driver failures to `DatabaseError` with a static message; typed errors pass through transactions; tests.
     - [x] R1-3 minor: an external refresh merges servings by `(label, unit)` case-insensitively (PROV-09), so serving IDs and recents' `last_serving_id` survive; test.
@@ -165,3 +165,4 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
     - [x] R1-7 minor: `loadDay` reads goal, meals, entries and totals in one transaction.
     - [x] R1-8 minor: known gaps list Copy meal (M7).
     - [x] R1-9 minor: ROAD-02 checklist and dependency notes restored in the M1 section (an earlier edit had removed them).
+  - Round 2 (`ab660c6`, `docs/qa/M1/review.md`, delta, Sonnet): **clean**, 0 blockers · 0 majors · 0 minors. All 9 round-1 findings were confirmed fixed; `npm run check` 234/234; `m0-shell` passes on both platforms.
