@@ -37,7 +37,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
   - [x] R1-1 major: iOS exit demo run with the simulator tool (`+` opens the sheet; swipe-down and backdrop close it; Profile tab selects) and the 8 missing iOS screenshots captured. Found and fixed: live Dynamic Type changes left text clipped (`AppText` remounts on font scale).
   - [x] R1-6 minor: contrast test covers the pairs primitives render; the failing ones are `it.failing` and listed in M0-Q1.
   - [x] R1-7 minor: FormField/ListRow join label + value/unit via `a11y.labelWithValue` (en + pt-PT); test.
-  - [ ] R1-8 minor: plural test uses `polyfill-force` + locale data.
+  - [x] R1-8 minor: plural test removes Node's `Intl.PluralRules` and loads the app's polyfill module + locale data. An i18next `_one`/`_other` test comes with the first plural key.
   - [ ] R1-11 minor: disabled PrimaryButton spinner color; disabled ListRow emphasis; tests.
   - [ ] R1-12 minor: `trap` reset in `scripts/qa/m0-android.sh`; test for `adoptSceneDelegate`.
   - [ ] R1-5 minor: release-build allowlist for logger context keys; tests.
