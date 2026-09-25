@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–5 approved.
+Status: **DRAFT, written one step at a time.** Steps 1–5 approved. Step 6 ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -156,4 +156,34 @@ Section order and debounce: UX-04, PROV-04. Language: PROV-03.
 
 **Empty sections:** an empty local section is hidden. An empty remote section that was searched shows one compact `No results` row, so the user knows it was checked. UX-04's "Nothing anywhere" state still applies when every section is empty.
 
-<!-- Steps 6–9 pending: cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
+## PROV-09 Cache freshness and refresh
+Rules for `food_cache_metadata` (DATA-15). Expiry controls refresh only. Expired foods stay searchable and loggable, online or offline.
+
+**What gets cached:** only foods the user **selects** (the tap → detail → upsert in UX-04). Search hits that aren't tapped are never written to SQLite. So `Saved` = external foods the user has opened.
+
+**TTL:** `expires_at = fetched_at + TTL`. OFF: **30 days** (community data changes often). USDA: **90 days** (published releases). No eviction in the MVP.
+
+**Parser version:** each adapter has a `PARSER_VERSION` constant, stored in `schema_version`. A row with an older version counts as expired, so a mapping fix (PROV-05/06/07) reaches cached foods the next time each is opened.
+
+**When a refresh runs:** only when an expired (or old-parser) food is opened from Search or Recent while online. It runs in the background and never changes an open screen (UX-04). No refresh on app start, no bulk refresh, no background jobs (ARCH-12).
+
+**How a refresh writes** (one transaction):
+- Detail call (PROV-02/03) → PROV-05/06/07 → update the existing `foods` row in place. The local `id` never changes; match on `(source, external_id)`.
+- Servings: match existing rows by `(label, unit)`, case-insensitive. Update matches in place, insert new ones, delete missing ones. Deleting sets `recent_foods.last_serving_id` to NULL, which is acceptable.
+- Metadata: new `fetched_at`, `expires_at` and `schema_version`.
+- Diary snapshots are never touched (DATA-05).
+
+**Refresh outcomes:**
+| Result | Action |
+|---|---|
+| Success | Write as above |
+| Not found (USDA 404, OFF `status: 0`) | Keep the cached food as-is and push `expires_at` out by one TTL, so it isn't retried on every open |
+| Fails PROV-07 | Keep the cached food; push `expires_at` out by one TTL |
+| Network/HTTP error, rate-limited | Keep the cached food; change nothing, so the next open retries |
+- All refresh failures are silent to the user (dev log only).
+
+**`raw_payload_json`:** store only the fields the adapter reads (PROV-02/03 field lists), as JSON, never headers or keys. Skip storing it (NULL) if it's over 64 KB.
+
+**Stale indicator:** none per row. Membership in the `Saved` section is the cache indicator (ARCH-12).
+
+<!-- Steps 7–9 pending: timeouts/retries · USDA key validation · error mapping + fixtures -->
