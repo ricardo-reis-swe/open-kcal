@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { sequentialIds } from '@/data/db/ids';
+import { parseConfig } from '@/shared/config/env';
 import { fixedClock } from '@/shared/dates';
 import { DatabaseError, MigrationError } from '@/shared/errors';
 import { initI18n } from '@/shared/i18n/i18n';
@@ -74,6 +75,35 @@ describe('ARCH-17 / UX-20: StartupGate', () => {
     await act(async () => undefined);
     expect(start).toHaveBeenCalledTimes(2);
     expect(screen.getByText('services ready')).toBeOnTheScreen();
+  });
+});
+
+describe('ARCH-13 / ROAD-02 M1: an invalid config shows the recovery screen, not a crash', () => {
+  const badConfig = () => parseConfig({ EXPO_PUBLIC_USDA_BASE_URL: 'http://insecure.example' }, '0.1.0');
+
+  it('startServices rejects with a typed ValidationError naming keys only', async () => {
+    const error = await startServices({ ids: sequentialIds(), loadConfig: badConfig }).catch((e: unknown) => e);
+    expect(error).toMatchObject({ category: 'validation' });
+    expect((error as { fields: string[] }).fields).toContain('EXPO_PUBLIC_USDA_BASE_URL');
+    expect((error as Error).message).not.toContain('insecure.example');
+  });
+
+  it('StartupGate renders the recovery screen with category-only diagnostics', async () => {
+    const copyText = jest.fn();
+    await renderWithProviders(
+      <StartupGate
+        start={() => startServices({ ids: sequentialIds(), loadConfig: badConfig })}
+        appVersion="0.1.0"
+        copyText={copyText}
+      >
+        <MealCount />
+      </StartupGate>,
+    );
+    await act(async () => undefined);
+    expect(screen.getByRole('header', { name: "Couldn't open your diary." })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy diagnostic info' }));
+    expect(copyText.mock.calls[0][0]).toMatch(/error validation$/);
+    expect(copyText.mock.calls[0][0]).not.toMatch(/insecure|EXPO_PUBLIC/);
   });
 });
 

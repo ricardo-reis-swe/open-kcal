@@ -99,7 +99,7 @@ describe('DATA-10: meals repository', () => {
     await deps.db.exec(
       `CREATE TRIGGER fail_compact BEFORE UPDATE OF sort_order ON meals BEGIN SELECT RAISE(ABORT, 'boom'); END`,
     );
-    await expect(meals.delete(byName('Lunch'), byName('Dinner'))).rejects.toThrow();
+    await expect(meals.delete(byName('Lunch'), byName('Dinner'))).rejects.toMatchObject({ category: 'database' });
     await deps.db.exec('DROP TRIGGER fail_compact');
     expect(await deps.db.getAll('SELECT * FROM meals ORDER BY sort_order')).toEqual(before.meals);
     expect(await deps.db.getAll('SELECT * FROM diary_entries')).toEqual(before.entries);

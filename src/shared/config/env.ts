@@ -1,6 +1,8 @@
 import Constants from 'expo-constants';
 import { z } from 'zod';
 
+import { ValidationError } from '@/shared/errors';
+
 // Typed public config (ARCH-14). The only module that reads `process.env`; features import `getConfig()`.
 // Treat every value as public: it ships in the bundle.
 
@@ -23,13 +25,13 @@ export type AppConfig = {
   offContactEmail: string;
 };
 
-export class ConfigError extends Error {
-  override readonly name = 'ConfigError';
+/** A typed `ValidationError` (ARCH-13), so startup shows the recovery screen instead of crashing (UX-20). */
+export class ConfigError extends ValidationError {
   /** Names of the invalid or missing variables. Never their values. */
   readonly invalidKeys: readonly string[];
 
   constructor(invalidKeys: readonly string[]) {
-    super(`Invalid app config: ${invalidKeys.join(', ')}`);
+    super(`Invalid app config: ${invalidKeys.join(', ')}`, invalidKeys);
     this.invalidKeys = invalidKeys;
   }
 }
@@ -62,8 +64,13 @@ function readProcessEnv(): RawEnv {
 
 let cached: AppConfig | undefined;
 
+/** The app version from the native config; needs no validation, so the recovery screen can always show it. */
+export function getAppVersion(): string {
+  return Constants.expoConfig?.version ?? '0.0.0';
+}
+
 /** Validates once (startup, ARCH-17) and returns the cached config. Throws `ConfigError`. */
 export function getConfig(): AppConfig {
-  cached ??= parseConfig(readProcessEnv(), Constants.expoConfig?.version ?? '0.0.0');
+  cached ??= parseConfig(readProcessEnv(), getAppVersion());
   return cached;
 }

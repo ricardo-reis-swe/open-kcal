@@ -10,13 +10,27 @@ import { createSettingsRepository } from '@/data/db/repositories/settingsReposit
 import { createWeightRepository } from '@/data/db/repositories/weightRepository';
 import type { SqlDatabase } from '@/data/db/sql';
 import { createCredentialsService, type CredentialsService } from '@/data/secure-storage/credentialsService';
+import type { AppConfig } from '@/shared/config/env';
 import type { Clock } from '@/shared/dates';
 
-export function createServices(db: SqlDatabase, clock: Clock, ids: IdGenerator, credentials?: CredentialsService) {
+export function createServices({
+  db,
+  clock,
+  ids,
+  config,
+  credentials,
+}: {
+  db: SqlDatabase;
+  clock: Clock;
+  ids: IdGenerator;
+  config: AppConfig;
+  credentials?: CredentialsService;
+}) {
   const deps = { db, clock, ids };
   return {
     db,
     clock,
+    config,
     settings: createSettingsRepository(deps),
     goals: createGoalsRepository(deps),
     meals: createMealsRepository(deps),

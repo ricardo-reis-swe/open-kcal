@@ -138,6 +138,9 @@ describe('DATA-17: migrations', () => {
       db.run(
         "INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_name_snapshot, energy_kcal, sort_order, created_at, updated_at) VALUES ('e', 'quick_calories', '2026-09-25', 'missing', 'Quick Calories', 1, 0, 'x', 'x')",
       ),
-    ).rejects.toThrow(/FOREIGN KEY/);
+    ).rejects.toMatchObject({
+      category: 'database',
+      cause: expect.objectContaining({ message: expect.stringMatching(/FOREIGN KEY/) }),
+    });
   });
 });
