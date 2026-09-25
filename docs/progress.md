@@ -35,7 +35,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
     - [x] Code: `expo-localization` `supportedLocales` (en, pt-PT) in `app.json`; `useSyncAppLocale` in `AppProviders` re-resolves the locale on change; test.
     - [ ] Next: `npx expo prebuild` + rebuild both dev builds (one batch), then verify. Android: `adb shell cmd locale set-app-locales com.ricardoreis.calorietracker --locales pt-PT` switches the running app. iOS: Settings › Calorie Tracker › Language shows en/pt-PT (or `simctl spawn booted defaults write com.ricardoreis.calorietracker AppleLanguages -array pt-PT` + relaunch).
   - [x] R1-1 major: iOS exit demo run with the simulator tool (`+` opens the sheet; swipe-down and backdrop close it; Profile tab selects) and the 8 missing iOS screenshots captured. Found and fixed: live Dynamic Type changes left text clipped (`AppText` remounts on font scale).
-  - [ ] R1-6 minor: add the contrast pairs primitives render; failing ones go to M0-Q1 as `it.failing`.
+  - [x] R1-6 minor: contrast test covers the pairs primitives render; the failing ones are `it.failing` and listed in M0-Q1.
   - [ ] R1-7 minor: localized a11y label joining (`a11y.labelWithValue`) in FormField/ListRow.
   - [ ] R1-8 minor: plural test uses `polyfill-force` + locale data.
   - [ ] R1-11 minor: disabled PrimaryButton spinner color; disabled ListRow emphasis; tests.
@@ -87,3 +87,4 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - ~~**M0-Q2**~~ Resolved 2026-09-25: the user ran `xcode-select`, so the simulator tool works.
 - **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins) and `scripts/` (local tooling) to the ARCH-05 tree?
 - **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).
+  - Also failing (review R1-6, all `it.failing`): light `primary` on `primaryTint` 4.30 (pressed TextAction/tab label, success status) · light `primary` on `canvas` 4.41 · light `warning` on `warningTint` 4.32 · boundaries (DS-11 ≥3:1) `borderStrong` on `surfaceSubtle` 1.59 light / 2.47 dark (FormField border) and on `surface` 1.77 / 2.80 (sheet handle). Need new token values from the user.

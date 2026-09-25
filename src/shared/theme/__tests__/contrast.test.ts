@@ -25,6 +25,24 @@ const textPairs: [keyof ThemeColors, keyof ThemeColors][] = [
   ['primary', 'surface'],
   ['danger', 'surface'],
   ['warning', 'surface'],
+  ['danger', 'dangerTint'],
+  ['danger', 'surfaceSubtle'],
+  ['textSecondary', 'surfaceSubtle'],
+  ['textPrimary', 'primaryTint'],
+  ['textPrimary', 'dangerTint'],
+];
+
+// Pairs primitives render that currently fail in light mode (M0-Q1). Each is its own `.failing` case so a fix flips it red.
+const lightTextFailures: [keyof ThemeColors, keyof ThemeColors][] = [
+  ['primary', 'primaryTint'], // pressed TextAction / tab label, InlineStatus success
+  ['primary', 'canvas'], // TextAction on the canvas
+  ['warning', 'warningTint'], // InlineStatus warning
+];
+
+// Essential boundaries (DS-11 ≥3:1): FormField input border, BottomSheet handle.
+const boundaryPairs: [keyof ThemeColors, keyof ThemeColors][] = [
+  ['borderStrong', 'surfaceSubtle'],
+  ['borderStrong', 'surface'],
 ];
 
 describe('DS-11: token contrast', () => {
@@ -38,6 +56,23 @@ describe('DS-11: token contrast', () => {
         ok: true,
       });
     }
+  });
+
+  it('dark primary/primaryTint, primary/canvas and warning/warningTint reach 4.5:1', () => {
+    for (const [fg, bg] of lightTextFailures) {
+      expect(contrast(darkColors[fg], darkColors[bg])).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it.failing.each(lightTextFailures)('light %s on %s reaches 4.5:1 (M0-Q1)', (fg, bg) => {
+    expect(contrast(lightColors[fg], lightColors[bg])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.failing.each(
+    (['light', 'dark'] as const).flatMap((mode) => boundaryPairs.map(([fg, bg]) => [mode, fg, bg] as const)),
+  )('%s boundary %s on %s reaches 3:1 (M0-Q1)', (mode, fg, bg) => {
+    const colors = mode === 'light' ? lightColors : darkColors;
+    expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(3);
   });
 
   it('dark textTertiary on surface reaches 4.5:1', () => {
