@@ -91,6 +91,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Nothing anywhere: `No foods found for "<q>".` + `Create custom food`.
 - Tapping a remote result: row spinner → upsert (DATA-15) → Food Detail. Failure → inline row error `Couldn't load this food.`
 - Tapping an expired cached food opens it immediately with cached values; a background refresh (when online) updates it for next time and never changes values on an open screen.
+- **Delete custom food**: swipe left on any custom-food row (in `My foods` or Recent) to reveal a danger `Delete` button. Tapping it soft-deletes the food (DATA-11): the row disappears, and existing diary entries keep their snapshots. No dialog, because tapping the revealed button is the confirmation. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11). External-food rows have no swipe action. Custom foods can't be edited in the MVP.
 - Clearing the field returns to the no-query state. Returning from Food Detail keeps the query and results. Search key = `search`.
 
 ## UX-05 Food Detail / Add Entry
@@ -229,6 +230,4 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 2. UX-00: `Discard changes?` confirmation added (beyond the NAV-08 list) for two forms.
 3. UX-07: Quick Calories requires ≥1 kcal in the UI (DATA allows ≥0).
 4. UX-14: weight date max = today.
-
-## Open question
-- DATA-11 supports soft-deleting custom foods, but NAV has no screen to edit or delete them. Proposal: leave it out of the MVP (no route), and revisit after launch.
+5. UX-04: swipe-to-delete for custom foods in Food Search (adds an action to the NAV-04 Food Search row; no new route). Not in the NAV-08 confirmation list.
