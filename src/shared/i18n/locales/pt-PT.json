@@ -20,5 +20,13 @@
   },
   "a11y": {
     "labelWithValue": "{{label}}, {{value}}"
+  },
+  "seed": {
+    "meals": {
+      "breakfast": "Pequeno-almoço",
+      "lunch": "Almoço",
+      "dinner": "Jantar",
+      "snacks": "Lanches"
+    }
   }
 }

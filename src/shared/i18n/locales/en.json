@@ -20,5 +20,13 @@
   },
   "a11y": {
     "labelWithValue": "{{label}}, {{value}}"
+  },
+  "seed": {
+    "meals": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snacks": "Snacks"
+    }
   }
 }
