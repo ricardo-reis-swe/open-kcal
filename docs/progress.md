@@ -133,7 +133,7 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
   - [x] settings (Zod-validated row, unit changes rewrite nothing), goals (effective-dated upsert, UX-01 first save in place), meals (create/rename, two-phase reorder, delete + reassign entries and recents with full rollback, last meal protected)
   - [x] foods + servings (custom create/soft delete; external upsert keyed on `(source, external_id)` with cache metadata in the same transaction, expiry flags refresh only), diary entries (load day with SQL known-sum/unknown-count aggregates, add/edit/move/delete food entries with unrounded snapshots, Quick Calories), recents (DATA-14; soft-deleted foods drop out)
   - [x] weight: `measured_at` derived from the date (now for today, local noon otherwise), date ≤ today, current = latest `measured_at` then `created_at`, physical delete
-- [ ] T6 `CredentialsService` over `expo-secure-store` (ARCH-10, DATA-01)
+- [x] T6 `CredentialsService` (`src/data/secure-storage`) over `expo-secure-store`: the four ARCH-10 methods plus a masked hint (UX-18), stored device-only (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`), Zod-validated reads, and `SecureStorageError` with no native cause attached (native messages could echo the key)
 - [ ] T7 DB provider + startup sequence (ARCH-09/17), launch screen hold, recovery screen (UX-20, ARCH-13); TanStack Query client
 - [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
 - [ ] T9 Independent review
