@@ -24,7 +24,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 - [x] T2 Typed env config (Zod, `src/shared/config/env.ts`) + `.env.example`; logger with redaction (`src/shared/logging`) (ARCH-14/15)
 - [x] T3 i18n scaffold (`src/shared/i18n`): `en` + `pt-PT`, device locale → language + formatting locale, typed keys, key-parity test (ARCH-22)
 - [x] T4 Theme from `tokens.ts` (`src/shared/theme`): light/dark `ThemeProvider` + `useTheme`, platform touch minimum, one elevation style, token contrast test (DS-12, DS-05, DS-11)
-- [ ] T5 DS-12 primitives: `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + tests
+- [x] T5 DS-12 primitives (`src/shared/components`): `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + component tests; `renderWithProviders` test helper
 - [ ] T6 Tabs: `Diary + Profile` custom tab bar with `+` opening an empty `BottomSheet` (ARCH-06, DS-07) + navigation tests
 - [ ] T7 Dev builds on iOS simulator + Android emulator; exit demo
 - [ ] T8 QA screenshots under `docs/qa/M0/`
@@ -51,7 +51,7 @@ All versions pinned exactly; installed via `npx expo install` where native.
 | `expo-system-ui` | Root background follows light/dark on Android (`userInterfaceStyle: automatic`) |
 | `expo-localization`, `i18next`, `react-i18next` | ARCH-01/22 localization |
 | `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler` | ARCH-01 gestures/motion; worklets is Reanimated 4's required peer |
-| `@expo/vector-icons` + `expo-font` (peer) | DS-06 one rounded icon family from the Expo stack |
+| `@expo/vector-icons` + `expo-font`, `expo-asset` (peers) | DS-06 one rounded icon family from the Expo stack |
 | `zod` | ARCH-01/03 validation |
 | dev: `jest`, `jest-expo`, `@testing-library/react-native`, `test-renderer`, `@types/jest` | ARCH-01/18 tests (`test-renderer` is RNTL 14's peer) |
 | dev: `eslint`, `eslint-config-expo`, `prettier`, `eslint-config-prettier`, `eslint-plugin-prettier` | ARCH-02 lint/format |
@@ -59,6 +59,7 @@ All versions pinned exactly; installed via `npx expo install` where native.
 
 ### Known gaps
 - Any Portuguese device language (e.g. `pt-BR`) uses the pt-PT translation, since it is the only Portuguese one; number/date formatting still follows the device locale (SCOPE-12).
+- Icons use Ionicons (outline; filled only for selected states), DS-06.
 - `Intl.PluralRules` on Hermes is verified on device in T7 (ARCH-22 polyfill only if missing).
 
 ### Open questions

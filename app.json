@@ -25,7 +25,8 @@
       "expo-router",
       "expo-status-bar",
       "expo-localization",
-      "expo-font"
+      "expo-font",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

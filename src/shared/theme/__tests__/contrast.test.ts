@@ -49,6 +49,10 @@ describe('DS-11: token contrast', () => {
     expect(contrast(lightColors.textTertiary, lightColors.surface)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it('dark onPrimary (canvas) on the dark primary reaches 4.5:1', () => {
+    expect(contrast(darkColors.canvas, darkColors.primary)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('white text on the light primary and app bar reaches 4.5:1', () => {
     expect(contrast('#FFFFFF', lightColors.primary)).toBeGreaterThanOrEqual(4.5);
     expect(contrast('#FFFFFF', lightColors.appBar)).toBeGreaterThanOrEqual(4.5);

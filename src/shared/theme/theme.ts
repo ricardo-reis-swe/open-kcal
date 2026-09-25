@@ -7,9 +7,17 @@ import { darkColors, lightColors, motionMs, radii, sizes, spacing, typography, t
 export type ColorScheme = 'light' | 'dark';
 export type Elevation = 0 | 1 | 2;
 
+/** Semantic tokens plus content colors derived for filled surfaces. */
+export type Colors = ThemeColors & {
+  /** Text/icons on a filled `primary` control (white in light; dark text on the bright dark-mode green). */
+  onPrimary: string;
+  /** Text/icons on the app bar (DS-07: high-contrast on the light green bar, normal text on the dark surface bar). */
+  onAppBar: string;
+};
+
 export type Theme = {
   scheme: ColorScheme;
-  colors: ThemeColors;
+  colors: Colors;
   typography: typeof typography;
   spacing: typeof spacing;
   radii: typeof radii;
@@ -22,8 +30,9 @@ export type Theme = {
 };
 
 const SHADOW_COLOR = '#000000';
+const ON_GREEN_LIGHT = '#FFFFFF'; // DS-03: white only on greens that pass contrast (tested)
 
-function elevationFor(scheme: ColorScheme, colors: ThemeColors) {
+function elevationFor(scheme: ColorScheme, colors: Colors) {
   return (level: Elevation): ViewStyle => {
     if (level === 0) return {};
     // Dark mode relies on contrast + borders, not heavier shadows (DS-03, DS-05).
@@ -41,7 +50,12 @@ function elevationFor(scheme: ColorScheme, colors: ThemeColors) {
 }
 
 export function createTheme(scheme: ColorScheme): Theme {
-  const colors = scheme === 'dark' ? darkColors : lightColors;
+  const base: ThemeColors = scheme === 'dark' ? darkColors : lightColors;
+  const colors: Colors = {
+    ...base,
+    onPrimary: scheme === 'dark' ? base.canvas : ON_GREEN_LIGHT,
+    onAppBar: scheme === 'dark' ? base.textPrimary : ON_GREEN_LIGHT,
+  };
   return {
     scheme,
     colors,
