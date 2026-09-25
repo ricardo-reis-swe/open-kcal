@@ -6,7 +6,7 @@ Single place for implementation status. Updated in the same commit as the work i
 |---|---|
 | M0 Skeleton | done |
 | M1 Data + domain | done |
-| M2 Diary (read) | awaiting user acceptance |
+| M2 Diary (read) | done |
 | M3 Quick Calories | not started |
 | M4 Custom foods + ruler | not started |
 | M5 Search + Open Food Facts | not started |
@@ -170,7 +170,7 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
 
 ## M2 Diary (read)
 
-Status: **awaiting user acceptance** · Start commit: `7ef1cf8` (review range `7ef1cf8..HEAD`)
+Status: **done** (accepted by the user 2026-09-25) · Start commit: `7ef1cf8` (review range `7ef1cf8..HEAD`)
 
 ### Tasks
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
