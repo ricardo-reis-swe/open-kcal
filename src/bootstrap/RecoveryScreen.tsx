@@ -26,8 +26,8 @@ export type RecoveryScreenProps = {
   diagnostics: DiagnosticContext;
   onRetry: () => void;
   retrying?: boolean;
-  /** Clipboard writer; the action is hidden until one is available (M1-Q1). */
-  copyText?: (text: string) => Promise<void> | void;
+  /** Clipboard writer (expo-clipboard in the app). */
+  copyText: (text: string) => Promise<void> | void;
 };
 
 export function RecoveryScreen({ error, diagnostics, onRetry, retrying = false, copyText }: RecoveryScreenProps) {
@@ -56,13 +56,11 @@ export function RecoveryScreen({ error, diagnostics, onRetry, retrying = false, 
       <AppText color="textSecondary">{t('startup.body')}</AppText>
       <View style={{ gap: theme.spacing[2], alignItems: 'flex-start' }}>
         <PrimaryButton label={t('startup.retry')} onPress={onRetry} loading={retrying} testID="recovery-retry" />
-        {copyText ? (
-          <TextAction
-            label={t('startup.copyDiagnostics')}
-            icon="copy-outline"
-            onPress={() => void copyText(diagnosticInfo(error, diagnostics))}
-          />
-        ) : null}
+        <TextAction
+          label={t('startup.copyDiagnostics')}
+          icon="copy-outline"
+          onPress={() => void copyText(diagnosticInfo(error, diagnostics))}
+        />
       </View>
     </ScrollView>
   );

@@ -106,30 +106,16 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
 
 ### Known gaps
 - Local food search queries (custom + recent + cache lookup, DATA-15/PROV-08) arrive with the M4/M5 Food Search screens. M1 has the tables and indexes only.
-- `Copy diagnostic info` (UX-20) is hidden until a clipboard module exists (M1-Q1). The Retry path is complete.
-- Record IDs come from `src/data/db/appIds.ts`: `crypto.getRandomValues` if present, otherwise `Math.random` bytes, as v4 UUIDs. Interim until M1-Q1; the swap stays inside that one file.
 - Launch-screen hold: the native splash hands over to a plain canvas view (`launch-screen`) while SQLite opens. There is no `expo-splash-screen` dependency.
 - Editing a food entry with only a quantity change scales the snapshot instead of re-reading the food. Nutrition is linear in quantity, so the result is the same, and it keeps entries editable after the food is gone (DATA-05).
 
 ### Open questions
-- **M1-Q1** Two native dependencies not named in ARCH-01. OK to add them, pinned via `npx expo install`?
-  - `expo-crypto`: `randomUUID()` for record IDs (DATA-03). Hermes has no `crypto.randomUUID`/`getRandomValues`, and a `Math.random` UUID is weak if sync ever arrives. The rejected alternative is SQLite `randomblob(16)`, which costs an async DB round-trip per ID.
-  - `expo-clipboard`: UX-20 `Copy diagnostic info` on the recovery screen. RN core has no clipboard.
-  - If yes, both go into the single M1 native rebuild (T8). Until then, T7 wiring uses the `IdGenerator` interface.
-
-### Dependency notes (ARCH-20)
-Named in ARCH-01; pinned exactly and installed with `npx expo install`. Their config plugins (`expo-sqlite`, `expo-secure-store`) were added to `app.json`, so the next dev build must be rebuilt (T8).
-| Package | Need |
-|---|---|
-| `expo-sqlite` 57.0.3 | ARCH-01 DB; repository-owned SQL, no ORM. It sits behind `SqlDatabase`, so moving to another driver means changing only `database.ts` |
-| `expo-secure-store` 57.0.4 | ARCH-01/10 USDA key storage (DATA-01) |
-| `@tanstack/react-query` 5.103.2 | ARCH-01/07 async data. JS only; the cache is never persisted |
-| (dev, transitive) `@types/node` | Referenced only by test files that use `node:sqlite`/`fs` (`/// <reference types="node" />`), so Node globals don't leak into app types |
+- ~~**M1-Q1**~~ Resolved 2026-09-25: the user said yes. `expo-crypto` (`randomUUID` for record IDs) and `expo-clipboard` (UX-20 Copy diagnostic info) were added, and both dev builds were rebuilt.
 
 ### Tasks
 Order per ROAD-03: domain → data → services → startup/screens → tests → QA.
 - [x] T1 Domain (pure, `src/domain` + `src/shared/dates`): units (DATA-04), local dates incl. DST/month/year/leap (DATA-08), nutrition + serving math and unknown-macro aggregation (DATA-05/06, DATA-11), goal resolution (DATA-09), current weight (DATA-13). Jest pins `TZ=Europe/Lisbon` (`jest.config.js`) so DST cases are deterministic; Jest sandboxes `process.env`, so a test can't switch TZ at runtime.
-- [x] T2 Typed errors (ARCH-13, `src/shared/errors`, `category` for branching); injectable `Clock` (`src/shared/dates/clock.ts`); `IdGenerator` interface + v4 formatter (`src/data/db/ids.ts`). The app's random-byte source waits on M1-Q1
+- [x] T2 Typed errors (ARCH-13, `src/shared/errors`, `category` for branching); injectable `Clock` (`src/shared/dates/clock.ts`); `IdGenerator` interface + v4 formatter (`src/data/db/ids.ts`). The app uses `expo-crypto` `randomUUID` (`src/data/db/appIds.ts`)
 - [x] T3 `SqlDatabase` adapter (`src/data/db/sql.ts`): a serial queue plus `BEGIN IMMEDIATE` transactions on the one connection, so `foreign_keys` always applies (expo's exclusive transactions open a second connection). `database.ts` has the expo-sqlite driver + `openAppDatabase`. Migration runner (`migrations/runner.ts`): a fresh install runs schema + seed + version in one transaction; upgrades get one transaction per migration; a newer-than-app DB is refused, never reset. Migration 1 equals `schema.sql` (test). Jest runs real SQL through Node's built-in `node:sqlite` (`src/shared/testing/nodeSqlite.ts`, no extra dependency)
 - [x] T4 Idempotent seed (`src/data/db/seed.ts`): settings with locale unit defaults, meals in the app language (`seed.meals.*` keys, en + pt-PT), and the provisional goal effective from the first-launch date. Everything is keyed on inserting the settings singleton. Tests: init twice, pt-PT names never re-translated, US units, and a failed first seed rolls back the schema
 - [x] T5 Repositories (`src/data/db/repositories`, tests on real SQLite via `openSeededTestDatabase`)
@@ -138,9 +124,9 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
   - [x] weight: `measured_at` derived from the date (now for today, local noon otherwise), date ≤ today, current = latest `measured_at` then `created_at`, physical delete
 - [x] T6 `CredentialsService` (`src/data/secure-storage`) over `expo-secure-store`: the four ARCH-10 methods plus a masked hint (UX-18), stored device-only (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`), Zod-validated reads, and `SecureStorageError` with no native cause attached (native messages could echo the key)
 - [x] T7 Startup (`src/bootstrap`): `startServices` opens SQLite, migrates + seeds (meal names from `seed.meals.*` in the app language, units from the device measurement system) and builds the repositories + `CredentialsService`. `StartupGate` keeps a launch-screen continuation until that succeeds, then mounts `ServicesProvider` + `QueryClientProvider` (local queries: `networkMode: 'always'`, never stale on their own, no retry, never persisted). On failure it shows the UX-20 `RecoveryScreen`, whose Retry reruns startup and never resets. Diagnostic info carries versions + error category only. In Jest, `expo-sqlite` is mocked with `node:sqlite`, so route tests go through the real startup
-- [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
+- [x] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
   - [x] Both dev builds rebuilt with `expo-sqlite` + `expo-secure-store`. The M0 Maestro flow passes on both through the real startup, and the seeded on-device DBs were checked (`docs/qa/M1/README.md`)
   - [x] iOS recovery screenshots (light/dark × default/largest). They found and fixed two bugs: the screen didn't scroll at the largest text (Retry clipped), and `logger.error` got its context in the `error` slot, so the category/version were lost
   - [x] Android recovery screenshots on a small phone (light/dark × default/2.0 font); the DB was restored afterwards and the app reopens normally
-  - [ ] Rebuild + rerun if M1-Q1 adds native deps; exit demo recorded for the review
+  - [x] Rebuilt with `expo-crypto` + `expo-clipboard`. `m0-shell` passes on a fresh Android install, a warm Android launch and iOS. The recovery screenshots were recaptured with Copy. Copy (clipboard contents) and Retry (recovers in place) were checked end to end on iOS
 - [ ] T9 Independent review

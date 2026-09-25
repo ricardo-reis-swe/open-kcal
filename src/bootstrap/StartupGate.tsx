@@ -22,7 +22,7 @@ type State =
 export type StartupGateProps = {
   start: () => Promise<AppServices>;
   appVersion: string;
-  copyText?: (text: string) => Promise<void> | void;
+  copyText: (text: string) => Promise<void> | void;
   children: ReactNode;
 };
 

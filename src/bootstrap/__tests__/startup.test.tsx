@@ -44,7 +44,7 @@ describe('ARCH-17 / UX-20: StartupGate', () => {
   it('holds the launch screen until startup succeeds, then mounts the app', async () => {
     const start = deferred<AppServices>();
     await renderWithProviders(
-      <StartupGate start={() => start.promise} appVersion="0.1.0">
+      <StartupGate start={() => start.promise} appVersion="0.1.0" copyText={jest.fn()}>
         <MealCount />
       </StartupGate>,
     );
@@ -63,7 +63,7 @@ describe('ARCH-17 / UX-20: StartupGate', () => {
       .mockRejectedValueOnce(new MigrationError('Migration failed', 2))
       .mockResolvedValueOnce(services);
     await renderWithProviders(
-      <StartupGate start={start} appVersion="0.1.0">
+      <StartupGate start={start} appVersion="0.1.0" copyText={jest.fn()}>
         <MealCount />
       </StartupGate>,
     );
@@ -89,14 +89,9 @@ describe('UX-20: RecoveryScreen', () => {
     );
   });
 
-  it('copies diagnostic info when a clipboard is available; hides the action otherwise', async () => {
+  it('Copy diagnostic info copies versions + category; Retry retries', async () => {
     const copyText = jest.fn();
     const onRetry = jest.fn();
-    const first = await renderWithProviders(
-      <RecoveryScreen error={error} diagnostics={{ appVersion: '0.1.0', schemaVersion: 1 }} onRetry={onRetry} />,
-    );
-    expect(screen.queryByRole('button', { name: 'Copy diagnostic info' })).toBeNull();
-    await first.unmount();
     await renderWithProviders(
       <RecoveryScreen
         error={error}
@@ -107,6 +102,7 @@ describe('UX-20: RecoveryScreen', () => {
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Copy diagnostic info' }));
     expect(copyText).toHaveBeenCalledWith(expect.stringContaining('error migration (v3)'));
+    expect(copyText.mock.calls[0][0]).not.toMatch(/SQLITE|meals/);
     await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });

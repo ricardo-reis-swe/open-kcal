@@ -7,10 +7,19 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     text: Continue # Android dev-menu onboarding, first launch only
     optional: true
+- extendedWaitUntil: # the Diary app bar title; the tab bar may still be under the dev-client menu
+    visible: Diary
+    timeout: 90000
+- waitForAnimationToEnd
+- runFlow: # Android dev-client menu, shown on the first launch after install or data clear
+    when:
+      visible: 'Runtime version.*'
+    commands:
+      - pressKey: Back
 - extendedWaitUntil:
     visible:
       id: tab-add
-    timeout: 90000
+    timeout: 10000
 - assertVisible:
     id: tab-diary
     selected: true

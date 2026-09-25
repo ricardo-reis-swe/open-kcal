@@ -1,12 +1,13 @@
-import { isUuid, sequentialIds, uuidV4FromBytes } from '../ids';
+import { appIds } from '../appIds';
+import { isUuid, sequentialIds } from '../ids';
 
 describe('DATA-03: UUID ids', () => {
-  it('formats random bytes as a version-4 UUID', () => {
-    const id = uuidV4FromBytes(new Uint8Array(16).fill(0xff));
-    expect(id).toBe('ffffffff-ffff-4fff-bfff-ffffffffffff');
-    expect(isUuid(id)).toBe(true);
-    expect(isUuid(uuidV4FromBytes(new Uint8Array(16)))).toBe(true);
-    expect(() => uuidV4FromBytes(new Uint8Array(15))).toThrow(RangeError);
+  it('the app generates distinct v4 UUIDs', () => {
+    const a = appIds.newId();
+    const b = appIds.newId();
+    expect(isUuid(a)).toBe(true);
+    expect(isUuid(b)).toBe(true);
+    expect(a).not.toBe(b);
   });
 
   it('sequential test ids are valid and distinct', () => {
