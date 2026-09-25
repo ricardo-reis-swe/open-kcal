@@ -4,7 +4,7 @@ Single place for implementation status. Updated in the same commit as the work i
 
 | Milestone | Status |
 |---|---|
-| M0 Skeleton | in progress |
+| M0 Skeleton | awaiting user acceptance |
 | M1 Data + domain | not started |
 | M2 Diary (read) | not started |
 | M3 Quick Calories | not started |
@@ -17,7 +17,7 @@ Single place for implementation status. Updated in the same commit as the work i
 
 ## M0 Skeleton
 
-Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`)
+Status: **awaiting user acceptance** · Start commit: `553efac` (review range `553efac..HEAD`)
 
 ### Tasks
 - [x] T1 Expo app scaffold: SDK 57, dev client, Expo Router (`src/app`), strict TS, ESLint + Prettier, Jest (`jest-expo`) + RNTL, `npm run lint|typecheck|test|check`
@@ -26,10 +26,10 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 - [x] T4 Theme from `tokens.ts` (`src/shared/theme`): light/dark `ThemeProvider` + `useTheme`, platform touch minimum, one elevation style, token contrast test (DS-12, DS-05, DS-11)
 - [x] T5 DS-12 primitives (`src/shared/components`): `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + component tests; `renderWithProviders` test helper
 - [x] T6 Tabs: `(tabs)/{diary,profile}` stacks, custom `AppTabBar` (`Diary + Profile`) with `+` opening the empty Add Action Sheet, `AppBar` (DS-07), app providers + `initializeApp` (ARCH-17 M0 subset), navigation tests incl. pt-PT smoke
-- [x] T7 Dev builds on iOS simulator (iPhone 17e, iOS 27) + Android emulator (Pixel_10); exit demo run (Android fully; iOS launch + tab shell, see gaps)
+- [x] T7 Dev builds on iOS simulator (iPhone 17e, iOS 27) + Android emulator (Pixel_10); exit demo run on both platforms (iOS completed in R1-1)
 - [x] T8 QA screenshots under `docs/qa/M0/` (index in its README; capture scripts in `scripts/qa/`)
-- [ ] T9 Independent review (`docs/qa/M0/review.md`), fix blockers/majors
-  - Round 1 (`4695aae`): not clean, 0 blockers · 3 majors · 9 minors. Fix list, in order:
+- [x] T9 Independent review (`docs/qa/M0/review.md`), fix blockers/majors
+  - Round 1 (`4695aae`, now `docs/qa/M0/review-round1.md`): not clean, 0 blockers · 3 majors · 9 minors. Fix list, in order:
   - [x] R1-2 major: BottomSheet swipe-down dismiss. The whole sheet is the drag surface, distance scales with sheet height, the handle is the a11y Close button, and the sheet name is announced on open (also R1-10). Gesture tests added; slow swipe verified on Android.
   - [x] R1-3 major: per-app language (SCOPE-12). `expo-localization` `supportedLocales` (en, pt-PT) → iOS `CFBundleLocalizations`, Android `localeConfig`; `useSyncAppLocale` re-resolves on change. Both dev builds rebuilt; verified on Android (live switch, no restart) and iOS (Settings › Apps › Calorie Tracker › Language; opens in pt-PT). Screenshots in `docs/qa/M0/`.
   - [x] R1-1 major: iOS exit demo run with the simulator tool (`+` opens the sheet; swipe-down and backdrop close it; Profile tab selects) and the 8 missing iOS screenshots captured. Found and fixed: live Dynamic Type changes left text clipped (`AppText` remounts on font scale).
@@ -41,19 +41,25 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
   - [x] R1-5 minor: release builds keep only allowlisted context keys (`RELEASE_CONTEXT_KEYS`); denylist widened (`q`, amount, serving, kg, title, response…; `fatal` no longer matches `fat`); credential-looking messages redacted; tests.
   - [x] R1-4 minor: `FocusablePressable` draws the DS-10 2px `focus` outline (no layout shift) on every pressable primitive, tab item, dialog action and sheet handle; component tests. Hardware-keyboard check on device is part of the M9 DS-13 pass.
   - [ ] R1-9 minor: ARCH-05 append proposal. **Blocked on M0-Q3.**
-  - [ ] Round 2: new fresh reviewer after the majors are fixed.
+  - [x] Round 2 (`b5f9245`, `docs/qa/M0/review.md`): **clean**, 0 blockers · 0 majors · 6 minors. Minors left as follow-ups (not blocking):
+    - R2-1: more light-mode pairs → M0-Q1 (InlineStatus action text; focus ring on the app bar).
+    - R2-2: sheet handle target 44 dp on Android; derive `hitSlop` from `touchMin`.
+    - R2-3: pt-PT smoke test should also render Profile and the Add sheet.
+    - R2-4: `tabs.test.tsx` "backdrop closes it" presses the handle; press the backdrop testID.
+    - R2-5: literal `gap`/`hitSlop`/`maxWidth`/`letterSpacing` values → tokens.
+    - R2-6: `m0-ios.sh` EXIT trap + header; `routes.ts` comment. (Progress-log part fixed here.)
 
 ### ROAD-02 checklist
-- [ ] Every behavior in Main specs implemented (ARCH-01/02/05/06/14/15/22, DS-12)
-- [ ] `npm run check` green
-- [ ] Tests at the right ARCH-18 layer; names cite spec IDs
-- [ ] Every string in `en` + `pt-PT` (parity test)
-- [ ] E2E flows: none for M0
-- [ ] Exit demo on both platforms; screenshots (light + dark, default + largest text, small phone) in `docs/qa/M0/`
-- [ ] Independent review clean
-- [ ] No placeholder UI for in-scope behavior
-- [ ] Nothing sensitive in logs
-- [ ] M0 extras: dev builds on both platforms · `.env.example` committed · `npm run check` exists and passes
+- [x] Every behavior in Main specs implemented (ARCH-01/02/05/06/14/15/22, DS-12)
+- [x] `npm run check` green
+- [x] Tests at the right ARCH-18 layer; names cite spec IDs
+- [x] Every string in `en` + `pt-PT` (parity test)
+- [x] E2E flows: none for M0
+- [x] Exit demo on both platforms; screenshots (light + dark, default + largest text, small phone) in `docs/qa/M0/`
+- [x] Independent review clean (round 2)
+- [x] No placeholder UI for in-scope behavior
+- [x] Nothing sensitive in logs
+- [x] M0 extras: dev builds on both platforms · `.env.example` committed · `npm run check` exists and passes
 
 ### Dependency notes (ARCH-20)
 All versions pinned exactly; installed via `npx expo install` where native.
@@ -86,3 +92,4 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins) and `scripts/` (local tooling) to the ARCH-05 tree?
 - **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).
   - Also failing (review R1-6, all `it.failing`): light `primary` on `primaryTint` 4.30 (pressed TextAction/tab label, success status) · light `primary` on `canvas` 4.41 · light `warning` on `warningTint` 4.32 · boundaries (DS-11 ≥3:1) `borderStrong` on `surfaceSubtle` 1.59 light / 2.47 dark (FormField border) and on `surface` 1.77 / 2.80 (sheet handle). Need new token values from the user.
+  - Round 2 adds (light only, not yet in the test): `primary` text on `surfaceSubtle` 4.21, on `warningTint` 4.25, on `dangerTint` 4.01 (InlineStatus recovery action); `focus` ring on `appBar` 1.15 (needs ≥3:1, or an `onAppBar` ring color inside the app bar).
