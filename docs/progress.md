@@ -5,7 +5,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | Milestone | Status |
 |---|---|
 | M0 Skeleton | done |
-| M1 Data + domain | awaiting user acceptance |
+| M1 Data + domain | done |
 | M2 Diary (read) | not started |
 | M3 Quick Calories | not started |
 | M4 Custom foods + ruler | not started |
@@ -95,7 +95,7 @@ All versions pinned exactly; installed via `npx expo install` where native.
 
 ## M1 Data + domain
 
-Status: **awaiting user acceptance** · Start commit: `888b774` (review range `888b774..HEAD`)
+Status: **done** (accepted by the user 2026-09-25) · Start commit: `888b774` (review range `888b774..HEAD`)
 
 ### Carried over from M0 (review round 2 minors)
 - [x] R2-2 BottomSheet handle `hitSlop` derived from `touchMin` (`sheetHandleSlop`); tests for both platforms.
