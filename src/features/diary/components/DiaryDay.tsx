@@ -18,10 +18,12 @@ export type DiaryDayProps = {
   date: LocalDate;
   /** The selected page. Inactive (pre-rendered) pages jump back to the top, so a new day opens there (UX-02). */
   active: boolean;
+  /** Bumped when the Diary tab is tapped at the root; the active page scrolls to the top (NAV-02). */
+  scrollToTop?: number;
 };
 
 /** One diary day: overview (ring + macros), the default-goals row, and every meal in saved order (UX-02). */
-export function DiaryDay({ date, active }: DiaryDayProps) {
+export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const day = useDiaryDay(date);
@@ -31,6 +33,12 @@ export function DiaryDay({ date, active }: DiaryDayProps) {
   useEffect(() => {
     if (!active) list.current?.scrollToOffset({ offset: 0, animated: false });
   }, [active]);
+
+  useEffect(() => {
+    if (active && scrollToTop > 0) list.current?.scrollToOffset({ offset: 0, animated: true });
+    // Only a new tap scrolls; becoming active is handled above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollToTop]);
 
   if (day.isError || settings.isError) {
     // UX-02: a DB load failure is full-screen with Retry (never an offline banner).

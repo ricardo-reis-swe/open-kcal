@@ -7,6 +7,12 @@ import { createTestServices, renderWithServices } from '@/shared/testing/service
 import { DiaryDateProvider } from '../hooks/DiaryDateContext';
 import { DiaryScreen } from '../screens/DiaryScreen';
 
+// Component tests render the screen without a navigator; tab presses are covered by diary-date.nav.test.tsx.
+jest.mock('expo-router', () => {
+  const navigation = { getParent: () => undefined, isFocused: () => true };
+  return { ...jest.requireActual('expo-router'), useNavigation: () => navigation };
+});
+
 const TODAY = '2026-09-25';
 
 async function setup(seed?: (services: AppServices) => Promise<void>, language?: 'en' | 'pt-PT') {

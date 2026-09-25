@@ -179,6 +179,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T3 DS-08 components (`src/features/diary/components`): `DiaryDateStrip` (in the app bar via a new `AppBar.bottom` slot, DS-07), `CalorieRing` (two clipped half-rings + round caps; no SVG dependency; grows with text size), `MacroStrip` (partial totals marked by an info icon, explained in the label), `MealHeader`, `DiaryEntryRow`, `QuickCaloriesRow`, Add food row
 - [x] T4 Diary screen (UX-02): 3-page native paging pager (adjacent days pre-rendered, re-centers after a swipe, inactive pages reset to top), overview, UX-01 default-goals row, every meal in saved order, full-screen load error with Retry. Found on the Android emulator and fixed: one swipe moved two days (Android reports the momentum end twice); only the first end after a drag counts
 - [x] T5 Dev-only seed data (`src/bootstrap/devSeed.ts`): `EXPO_PUBLIC_DEV_SEED_DIARY=1` in a dev build inserts sample foods/entries once (today typical + partial macros, tomorrow over goal, yesterday known macros, later days empty). Ignored outside `__DEV__`; `.env.example` documents it (default 0)
+- [x] T5b NAV-02: the Diary tab tapped at the Diary root scrolls the selected day to the top (deeper, it still pops to root); navigation test
 - [ ] T6 Date Picker (UX-13) + app-bar calendar action "Choose date": **blocked on M2-Q1**
 - [x] T7 Maestro flows (ARCH-18): `m2-launch-today` and `m2-swipe-date` (full-width fling both ways, prev button, Today) with a shared `subflows/launch.yaml`. Both pass on Android and iOS. A Maestro swipe `from: id` with a direction only drags half the width and snaps back, so the flow uses explicit start/end points
 - [ ] T8 Exit demo on both platforms; QA screenshots (light/dark × default/largest text, small phone) + DS-02 density check in `docs/qa/M2/`
@@ -188,7 +189,6 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - Diary actions whose target screens come later are shown but disabled: header `+` and `Add food` (Food Search, M4), row taps (Edit Quick Calories M3, Edit Food Entry M4), meal header tap (Meal Detail, M7). The default-goals row shows the message; its `Set goals` action arrives with Calories & Macros (M8).
 - A date before the first goal's `effective_from` (e.g. before the first launch) has no goal (DATA-09): the ring shows kcal eaten + "No goal for this date", and macros show consumed grams only.
 - "Today" is read from the clock on each render; a midnight rollover while the Diary stays open updates on the next render, not on a timer.
-- NAV-02 "Diary tab tapped while at root → scroll to top" is not wired yet (the day list has no tab-press hook).
 
 ### Open questions
 - **M2-Q1** UX-13 asks for the *native* calendar. Expo has no calendar picker built in, so this needs `@react-native-community/datetimepicker` (the Expo-supported package, installed with `npx expo install`; a native module, so both dev builds are rebuilt). Recommended: yes. Alternative: a JS month grid inside our `BottomSheet`, which would be a spec deviation. Until then the calendar action is hidden.
