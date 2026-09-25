@@ -18,4 +18,10 @@ case "$platform" in
 esac
 [ -n "$device" ] || { echo "no booted $platform device" >&2; exit 1; }
 [ $# -gt 0 ] || set -- .maestro
-exec "$MAESTRO" --device "$device" test "$@"
+# A final summary line that output filters can't hide; the exit code is Maestro's.
+start=$SECONDS
+status=0
+"$MAESTRO" --device "$device" test "$@" || status=$?
+[ $status -eq 0 ] && result=PASS || result=FAIL
+echo "E2E $platform: $result ($((SECONDS - start))s, exit $status)"
+exit $status

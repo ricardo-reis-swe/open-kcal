@@ -112,6 +112,7 @@ Status: **awaiting user acceptance** · Start commit: `888b774` (review range `8
 - The M0 gap "a config error throws at startup" is closed: config validation runs inside the gated startup, and an invalid config shows the recovery screen (ARCH-17, UX-20).
 
 ### Open questions
+- ~~**M1-Q2**~~ Resolved 2026-09-25 (user approved all 4 speed-ups after the M1 time review): ROAD-03 now lets the reviewer write its own `review.md`, and a re-review reruns the E2E flows only when the delta touches UI, navigation, startup or native config. `/roadmap-loop` also says not to clear app data just to check a fresh install, and to read results from summary lines instead of rerunning. `scripts/e2e.sh` ends with `E2E <platform>: PASS|FAIL (<s>, exit <n>)`.
 - ~~**M1-Q1**~~ Resolved 2026-09-25: the user said yes. `expo-crypto` (`randomUUID` for record IDs) and `expo-clipboard` (UX-20 Copy diagnostic info) were added, and both dev builds were rebuilt.
 
 ### ROAD-02 checklist

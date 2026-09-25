@@ -103,12 +103,13 @@ Update it in the same commit as the work it describes.
 
 **Independent review** (before asking the user to accept)
 - Once the builder believes ROAD-02 is met, it spins up a **separate reviewer agent** with fresh context: a new session or subagent, never the builder's own context. It may use a different model.
-- The reviewer is **read-only** (no edits or commits) and is given the milestone ID, its spec IDs, the ROAD-02 checklist, and the commit range `<milestone start>..HEAD`.
+- The reviewer is **read-only** (no commits; no edits except its own report, below) and is given the milestone ID, its spec IDs, the ROAD-02 checklist, and the commit range `<milestone start>..HEAD`.
 - The reviewer:
   - traces every listed spec ID to its code and tests
   - runs lint, `tsc`, the tests and the milestone's E2E flows itself (and the exit demo when a simulator is available)
   - checks for spec deviations, SCOPE-10/POST leaks, sensitive logging (ARCH-15), missing pt-PT keys and correctness bugs
-- Output: `docs/qa/<milestone>/review.md`, with findings labeled **blocker / major / minor**, each citing a spec ID and `file:line`.
+- Output: the reviewer writes its report to `docs/qa/<milestone>/review.md` itself, with findings labeled **blocker / major / minor**, each citing a spec ID and `file:line`. Before a new round, the builder moves the previous report to `review-round<N>.md`.
+- A re-review (round 2+) covers only the commits since the previous review and confirms each earlier finding is fixed. It always runs lint, `tsc` and the tests. It reruns the E2E flows only when those commits touch UI, navigation, startup or native config; otherwise it cites the earlier evidence.
 - The builder fixes every blocker and major, then runs a **new** reviewer (fresh again). Repeat until none remain. Minors may be fixed or logged as known gaps.
 
 **Milestone acceptance:** when ROAD-02 is met and the review is clean, set the status to "awaiting user acceptance" and report to the user:
