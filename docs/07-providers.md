@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–7 approved. Step 8 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–8 approved. Step 9 ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -240,4 +240,43 @@ Implements UX-18 (Food Databases). Only `CredentialsService` touches the key (AR
 - Signup link: `https://api.data.gov/signup/`, opened in the system browser.
 - Never log the key or the test request's URL/headers; redact per ARCH-15.
 
-<!-- Steps 9 pending: error mapping + fixtures -->
+## PROV-12 Error mapping
+Every failure (after PROV-10 retries) becomes an ARCH-13 typed error before it leaves the adapter. Error payload: `provider`, `endpoint` (`search` | `detail` | `keyCheck`), optional `status` and `retryAfterMs`. **Never** the URL, query terms, headers, key or response body (ARCH-15).
+
+| Condition | Error | User sees (UX-04 / UX-18) |
+|---|---|---|
+| Aborted (new query, left screen) | none; ignore silently | nothing |
+| Connectivity offline | `OfflineError` | `Offline. Showing saved foods only.` |
+| Timeout | `TimeoutError` | `<Provider> search failed.` + `Retry` |
+| Network error while online, 5xx, 400 | `ProviderResponseError` | `<Provider> search failed.` + `Retry` |
+| 429, OFF 503 | `RateLimitError` (+ cooldown, PROV-10) | `<Provider> is busy. Try again later.` |
+| No USDA key | `ProviderConfigurationError` (`usda_key_missing`) | `Add a USDA API key to search USDA` → Food Databases |
+| USDA 401/403 | `ProviderConfigurationError` (`usda_key_rejected`) | `USDA rejected your key.` → Food Databases |
+| Whole response fails its Zod schema | `ProviderResponseError` (`schema`) | `<Provider> search failed.` + `Retry` |
+| Single hit fails PROV-07 | not an error; dropped | nothing |
+| Detail 404 / OFF `status: 0` | `NotFoundError` | row error `Couldn't load this food.` |
+| Detail fails PROV-07 | `ProviderResponseError` (`insufficient_data`) | row error `Couldn't load this food.` |
+| Anything else | `UnexpectedError` | `<Provider> search failed.` + `Retry` |
+- The UX-04 status texts generalize to `<Provider>` (`Open Food Facts` / `USDA`). One provider failing never hides the other sections (ARCH-12).
+- Dev builds log provider, endpoint, status and Zod issue path. Release builds log only the error type and provider.
+
+## PROV-13 Fixtures and contract tests
+Implements ARCH-18's API contract tests. Fixtures live in `src/data/api/{usda,open-food-facts}/__fixtures__/`.
+- **Captured** fixtures are real responses, trimmed to the fields the adapter reads (PROV-02/03), with no headers or keys. A dev-only script records them using a key from the developer's local env, never committed. **Synthetic** fixtures (hand-written edge cases) are prefixed `synthetic-`.
+- Each fixture has an explicitly written expected mapper output (candidate, servings, or error). No auto-generated snapshots (ARCH-18).
+
+**Required fixtures**
+| Provider | Fixture | Covers |
+|---|---|---|
+| USDA | search `egg` (mixed data types) | PROV-05 search shape, PROV-08 generic-before-Branded |
+| USDA | detail Foundation `747997` | `measureUnit` portions, detail nutrient shape |
+| USDA | detail SR Legacy `174980` | modifier portions, skipped `oz` |
+| USDA | detail FNDDS `2705413` | `portionDescription`, filler rows skipped |
+| USDA | detail Branded `2035482` | all-caps name, `serving` + household `Tbsp`, fibre subtraction |
+| USDA | synthetic: no `208`, has `958`/`957`; kJ-only; 401; 429 with `Retry-After` | energy fallbacks, key rejected, cooldown |
+| OFF | search `iogurte grego` | `brands` array, `*_100g` nutriments |
+| OFF | product `0894700010137` | `serving_quantity`, `nutrition_data_per: serving`, comma-string `brands` |
+| OFF | captured liquid product (ml) | 100 ml basis, ml/fl oz pair |
+| OFF | synthetic: kJ-only; numeric strings; 0 kcal and no macros; `status: 0`; 503 HTML body; 429 | fallbacks, drop rule, not found, rate limit |
+
+**Live contract check (optional):** a scheduled CI job (weekly) runs the Zod schemas against the live APIs with a CI-secret USDA key. A failure opens an issue and never blocks PRs or normal test runs (ARCH-18).
