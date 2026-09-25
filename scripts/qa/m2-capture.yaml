@@ -1,4 +1,5 @@
-# M2 QA capture (ROAD-02, DS-13 subset): today (typical + partial macros), tomorrow (over goal), an empty day.
+# M2 QA capture (ROAD-02, DS-13 subset): today (typical + partial macros), the Date Picker, tomorrow (over goal),
+# an empty day.
 # Run by scripts/qa/m2.sh with -e SHOT=docs/qa/M2/<platform>-<scheme>-<text>. Needs the dev seed (EXPO_PUBLIC_DEV_SEED_DIARY=1).
 appId: com.ricardoreis.calorietracker
 ---
@@ -8,6 +9,27 @@ appId: com.ricardoreis.calorietracker
     timeout: 10000
 - waitForAnimationToEnd
 - takeScreenshot: ${SHOT}-today
+- tapOn:
+    id: diary-choose-date
+- extendedWaitUntil: # iOS sheet title / Android dialog header
+    visible: '(Choose date|Fri, Sep 25|.*2026)'
+    timeout: 5000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-date-picker
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: date-picker-cancel
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - pressKey: Back
+- extendedWaitUntil:
+    visible: Showing Today
+    timeout: 5000
 - tapOn: Next day, .*
 - extendedWaitUntil:
     visible: Showing Tomorrow

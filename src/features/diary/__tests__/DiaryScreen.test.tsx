@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import type { AppServices } from '@/bootstrap/services';
-import { addDays } from '@/shared/dates';
+import { addDays, localDateTime } from '@/shared/dates';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
 
 import { DiaryDateProvider } from '../hooks/DiaryDateContext';
@@ -12,6 +12,8 @@ jest.mock('expo-router', () => {
   const navigation = { getParent: () => undefined, isFocused: () => true };
   return { ...jest.requireActual('expo-router'), useNavigation: () => navigation };
 });
+
+jest.mock('@react-native-community/datetimepicker', () => jest.requireActual('@/shared/testing/datePickerMock'));
 
 const TODAY = '2026-09-25';
 
@@ -156,5 +158,29 @@ describe('UX-02 Diary', () => {
     expect(await active().findAllByRole('button', { name: 'Adicionar alimento' })).toHaveLength(4);
     expect(screen.getByLabelText('A mostrar Hoje')).toBeOnTheScreen();
     expect(active().getByText('A usar objetivos predefinidos')).toBeOnTheScreen();
+  });
+
+  it('UX-02 / NAV-05: Choose date opens the picker on the active date; Done shows that date', async () => {
+    await setup();
+    await fireEvent.press(screen.getByRole('button', { name: 'Next day, Tomorrow' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose date' }));
+    const calendar = await screen.findByTestId('date-picker-calendar');
+    expect(calendar.props.value).toEqual(localDateTime('2026-09-26', 12));
+    await fireEvent(calendar, 'onChange', { type: 'set' }, localDateTime('2027-03-01', 12));
+    await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.getByLabelText(/^Showing Mon,? (1 Mar|Mar 1),? 2027$/)).toBeOnTheScreen();
+    expect(await active().findByRole('header', { name: 'Breakfast, 0 kilocalories' })).toBeOnTheScreen();
+  });
+
+  it('NAV-05: in the picker, Cancel keeps the date and Today is the Today action', async () => {
+    await setup();
+    await fireEvent.press(screen.getByRole('button', { name: 'Next day, Tomorrow' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose date' }));
+    await fireEvent.press(await screen.findByTestId('date-picker-cancel'));
+    expect(screen.getByLabelText('Showing Tomorrow')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose date' }));
+    await fireEvent.press(await screen.findByTestId('date-picker-today'));
+    expect(screen.getByLabelText('Showing Today')).toBeOnTheScreen();
   });
 });

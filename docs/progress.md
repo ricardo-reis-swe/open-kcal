@@ -180,15 +180,22 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T4 Diary screen (UX-02): 3-page native paging pager (adjacent days pre-rendered, re-centers after a swipe, inactive pages reset to top), overview, UX-01 default-goals row, every meal in saved order, full-screen load error with Retry. Found on the Android emulator and fixed: one swipe moved two days (Android reports the momentum end twice); only the first end after a drag counts
 - [x] T5 Dev-only seed data (`src/bootstrap/devSeed.ts`): `EXPO_PUBLIC_DEV_SEED_DIARY=1` in a dev build inserts sample foods/entries once (today typical + partial macros, tomorrow over goal, yesterday known macros, later days empty). Ignored outside `__DEV__`; `.env.example` documents it (default 0)
 - [x] T5b NAV-02: the Diary tab tapped at the Diary root scrolls the selected day to the top (deeper, it still pops to root); navigation test
-- [ ] T6 Date Picker (UX-13) + app-bar calendar action "Choose date": **blocked on M2-Q1**
+- [x] T6 Date Picker (UX-13, NAV-05) + the app-bar calendar action "Choose date". `src/shared/navigation/DatePicker.tsx` is the only module importing the picker: iOS shows the native inline calendar in our `BottomSheet` (title, Cancel, Today, Done; the sheet handle is also Cancel); Android opens the platform calendar dialog (Cancel, Done, Today as the neutral button). Opens on the active date, any date allowed, Done → Diary on that date, Cancel → no change, Today = the Today action; a `title` prop covers destination mode (UX-12, M7). Dates cross as local noon so DST never shifts them. Tests for both platforms' paths + the Diary integration; both dev builds rebuilt; checked by hand on both devices (pick → Done, reopen on the active date, Cancel, Today). Screenshots found and fixed an iOS largest-text overflow: the sheet scrolls, the actions wrap and the native wheel replaces the inline calendar there
 - [x] T7 Maestro flows (ARCH-18): `m2-launch-today` and `m2-swipe-date` (full-width fling both ways, prev button, Today) with a shared `subflows/launch.yaml`. Both pass on Android and iOS. A Maestro swipe `from: id` with a direction only drags half the width and snaps back, so the flow uses explicit start/end points
-- [x] T8 QA screenshots on both platforms (light/dark × default/largest text × today/over goal/empty, small Android phone) + DS-02 density check (pass) in `docs/qa/M2/` (`scripts/qa/m2.sh`). Found and fixed at the largest text: ring overflow, macro values splitting, date-strip truncation (see its README). The full exit demo still needs the Date Picker (M2-Q1)
+- [x] T8 QA screenshots on both platforms (light/dark × default/largest text × today/over goal/empty, small Android phone) + DS-02 density check (pass) in `docs/qa/M2/` (`scripts/qa/m2.sh`). Found and fixed at the largest text: ring overflow, macro values splitting, date-strip truncation (see its README). The Date Picker is captured too (`*-date-picker.png`)
 - [ ] T9 Independent review
 
 ### Known gaps
 - Diary actions whose target screens come later are shown but disabled: header `+` and `Add food` (Food Search, M4), row taps (Edit Quick Calories M3, Edit Food Entry M4), meal header tap (Meal Detail, M7). The default-goals row shows the message; its `Set goals` action arrives with Calories & Macros (M8).
 - A date before the first goal's `effective_from` (e.g. before the first launch) has no goal (DATA-09): the ring shows kcal eaten + "No goal for this date", and macros show consumed grams only.
+- The Android calendar dialog uses the platform theme's accent (teal), not the app green; the picker's config plugin can set `colorAccent`. Left for the M9 DS-13 pass since it needs a native rebuild.
+- Dev builds only: on Android the Expo dev-client floating gear sits over the calendar icon until it's dragged away.
 - "Today" is read from the clock on each render; a midnight rollover while the Diary stays open updates on the next render, not on a timer.
 
+### Dependency notes (ARCH-20)
+| Package | Need |
+|---|---|
+| `@react-native-community/datetimepicker` 9.1.0 | UX-13 native calendar (Expo has none built in). Expo-supported, installed with `npx expo install`, config plugin in `app.json`. Sits behind `DatePicker`, so swapping it touches one file. Rejected: a JS month grid (not native, a spec deviation). Approved in M2-Q1 |
+
 ### Open questions
-- **M2-Q1** UX-13 asks for the *native* calendar. Expo has no calendar picker built in, so this needs `@react-native-community/datetimepicker` (the Expo-supported package, installed with `npx expo install`; a native module, so both dev builds are rebuilt). Recommended: yes. Alternative: a JS month grid inside our `BottomSheet`, which would be a spec deviation. Until then the calendar action is hidden.
+- ~~**M2-Q1**~~ Resolved 2026-09-25: the user said yes. `@react-native-community/datetimepicker` was added for the UX-13 native calendar and both dev builds were rebuilt.

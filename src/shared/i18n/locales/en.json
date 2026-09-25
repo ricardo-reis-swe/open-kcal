@@ -96,5 +96,11 @@
     "retry": "Retry",
     "copyDiagnostics": "Copy diagnostic info",
     "loading": "Opening your diary"
+  },
+  "datePicker": {
+    "title": "Choose date",
+    "done": "Done",
+    "today": "Today",
+    "todayHint": "Shows today's diary"
   }
 }

@@ -96,5 +96,11 @@
     "retry": "Tentar novamente",
     "copyDiagnostics": "Copiar informações de diagnóstico",
     "loading": "A abrir o seu diário"
+  },
+  "datePicker": {
+    "title": "Escolher data",
+    "done": "Concluído",
+    "today": "Hoje",
+    "todayHint": "Mostra o diário de hoje"
   }
 }
