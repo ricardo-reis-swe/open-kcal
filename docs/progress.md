@@ -104,6 +104,10 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
 - [x] R2-5 `gap` literals → `spacing` tokens; `letterSpacing` (typographic tracking) and dialog `maxWidth` (tablet cap) keep literals with a one-line rationale.
 - [x] R2-6 `scripts/qa/m0-ios.sh` EXIT trap + header; `routes.ts` comment.
 
+### Known gaps
+- Local food search queries (custom + recent + cache lookup, DATA-15/PROV-08) arrive with the M4/M5 Food Search screens. M1 has the tables and indexes only.
+- Editing a food entry with only a quantity change scales the snapshot instead of re-reading the food. Nutrition is linear in quantity, so the result is the same, and it keeps entries editable after the food is gone (DATA-05).
+
 ### Open questions
 - **M1-Q1** Two native dependencies not named in ARCH-01. OK to add them, pinned via `npx expo install`?
   - `expo-crypto`: `randomUUID()` for record IDs (DATA-03). Hermes has no `crypto.randomUUID`/`getRandomValues`, and a `Math.random` UUID is weak if sync ever arrives. The rejected alternative is SQLite `randomblob(16)`, which costs an async DB round-trip per ID.
@@ -127,8 +131,8 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
 - [x] T4 Idempotent seed (`src/data/db/seed.ts`): settings with locale unit defaults, meals in the app language (`seed.meals.*` keys, en + pt-PT), and the provisional goal effective from the first-launch date. Everything is keyed on inserting the settings singleton. Tests: init twice, pt-PT names never re-translated, US units, and a failed first seed rolls back the schema
 - [ ] T5 Repositories (`src/data/db/repositories`, tests on real SQLite via `openSeededTestDatabase`)
   - [x] settings (Zod-validated row, unit changes rewrite nothing), goals (effective-dated upsert, UX-01 first save in place), meals (create/rename, two-phase reorder, delete + reassign entries and recents with full rollback, last meal protected)
-  - [ ] foods + servings, diary entries (load day + known-sum/unknown-count aggregates, snapshots), recents
-  - [ ] weight, cache metadata
+  - [x] foods + servings (custom create/soft delete; external upsert keyed on `(source, external_id)` with cache metadata in the same transaction, expiry flags refresh only), diary entries (load day with SQL known-sum/unknown-count aggregates, add/edit/move/delete food entries with unrounded snapshots, Quick Calories), recents (DATA-14; soft-deleted foods drop out)
+  - [ ] weight
 - [ ] T6 `CredentialsService` over `expo-secure-store` (ARCH-10, DATA-01)
 - [ ] T7 DB provider + startup sequence (ARCH-09/17), launch screen hold, recovery screen (UX-20, ARCH-13); TanStack Query client
 - [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
