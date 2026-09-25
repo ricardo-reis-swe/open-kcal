@@ -1,0 +1,11 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "close": "Fechar"
+  },
+  "tabs": {
+    "diary": "Diário",
+    "profile": "Perfil",
+    "add": "Adicionar"
+  }
+}

@@ -22,7 +22,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 ### Tasks
 - [x] T1 Expo app scaffold: SDK 57, dev client, Expo Router (`src/app`), strict TS, ESLint + Prettier, Jest (`jest-expo`) + RNTL, `npm run lint|typecheck|test|check`
 - [x] T2 Typed env config (Zod, `src/shared/config/env.ts`) + `.env.example`; logger with redaction (`src/shared/logging`) (ARCH-14/15)
-- [ ] T3 i18n scaffold: `en` + `pt-PT`, device locale, key-parity test (ARCH-22)
+- [x] T3 i18n scaffold (`src/shared/i18n`): `en` + `pt-PT`, device locale → language + formatting locale, typed keys, key-parity test (ARCH-22)
 - [ ] T4 Theme from `tokens.ts`: light/dark provider + hook (DS-12)
 - [ ] T5 DS-12 primitives: `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + tests
 - [ ] T6 Tabs: `Diary + Profile` custom tab bar with `+` opening an empty `BottomSheet` (ARCH-06, DS-07) + navigation tests
@@ -58,7 +58,8 @@ All versions pinned exactly; installed via `npx expo install` where native.
 | dev: `react-dom` | Pinned to `react`'s version only to satisfy optional peers during install; never imported (web is not a deliverable) |
 
 ### Known gaps
-- None yet.
+- Any Portuguese device language (e.g. `pt-BR`) uses the pt-PT translation, since it is the only Portuguese one; number/date formatting still follows the device locale (SCOPE-12).
+- `Intl.PluralRules` on Hermes is verified on device in T7 (ARCH-22 polyfill only if missing).
 
 ### Open questions
 - None.

@@ -7,7 +7,7 @@
     "start": "expo start --dev-client",
     "ios": "expo run:ios",
     "android": "expo run:android",
-    "lint": "expo lint",
+    "lint": "expo lint --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "check": "npm run lint && npm run typecheck && npm test",
