@@ -2,7 +2,9 @@
   "common": {
     "cancel": "Cancel",
     "close": "Close",
-    "back": "Back"
+    "back": "Back",
+    "notFound": "This item no longer exists.",
+    "backToDiary": "Back to Diary"
   },
   "tabs": {
     "diary": "Diary",
@@ -83,7 +85,10 @@
     "title": "Profile"
   },
   "addActions": {
-    "sheetLabel": "Add actions"
+    "sheetLabel": "Add actions",
+    "addFood": "Add food",
+    "quickCalories": "Quick calories",
+    "updateWeight": "Update weight"
   },
   "a11y": {
     "labelWithValue": "{{label}}, {{value}}"
@@ -108,5 +113,25 @@
     "done": "Done",
     "today": "Today",
     "todayHint": "Shows today's diary"
+  },
+  "mealPicker": {
+    "title": "Choose meal"
+  },
+  "quickCalories": {
+    "title": "Quick calories",
+    "editTitle": "Edit quick calories",
+    "meal": "Meal",
+    "mealHint": "Opens the meal picker",
+    "calories": "Calories",
+    "note": "Note",
+    "date": "Date",
+    "add": "Add",
+    "save": "Save",
+    "delete": "Delete entry",
+    "caloriesError": "Enter a whole number from {{min}} to {{max}} {{unit}}.",
+    "saveError": "Couldn't save. Try again.",
+    "deleteError": "Couldn't delete. Try again.",
+    "deleteTitle": "Delete quick calories?",
+    "deleteBody": "{{energy}} from {{meal}} on {{date}}."
   }
 }

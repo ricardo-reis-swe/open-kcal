@@ -19,6 +19,43 @@ describe('DS-12: BottomSheet', () => {
     expect(screen.getByText('Sheet content')).toBeOnTheScreen();
   });
 
+  it('NAV-03: onDismissed fires once after a shown sheet closes, never for the initial hidden mount', async () => {
+    jest.useFakeTimers();
+    const onDismissed = jest.fn();
+    function Toggle() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <AppText onPress={() => setOpen((o) => !o)}>Toggle</AppText>
+          <BottomSheet
+            visible={open}
+            onClose={() => setOpen(false)}
+            onDismissed={onDismissed}
+            accessibilityLabel="Add"
+            closeLabel="Close"
+            testID="sheet"
+          >
+            <AppText>Sheet content</AppText>
+          </BottomSheet>
+        </>
+      );
+    }
+    await renderWithProviders(<Toggle />);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(onDismissed).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Toggle'));
+    await fireEvent.press(screen.getByTestId('sheet-backdrop'));
+    expect(onDismissed).not.toHaveBeenCalled(); // still animating out
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(onDismissed).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Sheet content')).toBeNull();
+    jest.useRealTimers();
+  });
+
   it('renders nothing when not visible', async () => {
     await renderWithProviders(
       <BottomSheet visible={false} onClose={jest.fn()} accessibilityLabel="Add" closeLabel="Close">

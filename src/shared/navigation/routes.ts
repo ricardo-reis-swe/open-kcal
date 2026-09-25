@@ -1,6 +1,11 @@
 // Route parameter contracts (NAV-09). Routes carry IDs and lightweight context only.
 // Params arriving from the router are untrusted and must be validated (ARCH-03) before use.
 // Typed route builders (ARCH-06) are added per route as screens land.
+import type { Href } from 'expo-router';
+import { z } from 'zod';
+
+import { isLocalDate } from '@/shared/dates';
+
 
 /** Local calendar date, `YYYY-MM-DD` (DATA-08). */
 export type LocalDate = string;
@@ -24,3 +29,37 @@ export type RouteParams = {
 };
 
 export type RouteName = keyof RouteParams;
+
+// ---- Typed route builders (ARCH-06) and param parsers (ARCH-03) ----
+
+const originSchema = z.enum(['diary', 'mealDetail', 'profile', 'weightHistory']);
+const idSchema = z.string().min(1);
+const dateSchema = z.string().refine(isLocalDate);
+
+/** Router params arrive as strings (or string arrays); anything else is invalid. */
+type RawParams = Record<string, string | string[] | undefined>;
+
+const paramSchemas = {
+  quickCalories: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
+  editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
+};
+
+type ParsedParams = { [K in keyof typeof paramSchemas]: z.output<(typeof paramSchemas)[K]> };
+
+/** Validated params, or `null` for bad params (the screen then shows "no longer exists", UX-00). */
+export function parseRouteParams<K extends keyof typeof paramSchemas>(route: K, raw: RawParams): ParsedParams[K] | null {
+  const result = paramSchemas[route].safeParse(raw);
+  return result.success ? (result.data as ParsedParams[K]) : null;
+}
+
+export const routes = {
+  diary: (): Href => '/diary',
+  quickCalories: (p: RouteParams['quickCalories']): Href => ({
+    pathname: '/diary/quick-calories',
+    params: { mealId: p.mealId, date: p.date, origin: p.origin ?? 'diary' },
+  }),
+  editQuickCalories: (p: RouteParams['editQuickCalories']): Href => ({
+    pathname: '/diary/quick-calories/[entryId]',
+    params: { entryId: p.entryId, origin: p.origin ?? 'diary' },
+  }),
+};

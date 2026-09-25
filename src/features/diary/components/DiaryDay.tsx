@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, View } from 'react-native';
@@ -6,6 +7,7 @@ import type { DiaryDay as DiaryDayModel, DiaryMeal } from '@/data/db/repositorie
 import type { EnergyUnit } from '@/domain/units/units';
 import { AppText, InlineStatus, PrimaryButton, TextAction } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
+import { routes } from '@/shared/navigation/routes';
 import { useTheme } from '@/shared/theme';
 
 import { useAppSettings, useDiaryDay } from '../diary.queries';
@@ -121,7 +123,15 @@ function MealSection({ meal, unit }: { meal: DiaryMeal; unit: EnergyUnit }) {
           case 'food':
             return <DiaryEntryRow key={entry.id} entry={entry} unit={unit} />;
           case 'quick_calories':
-            return <QuickCaloriesRow key={entry.id} entry={entry} unit={unit} />;
+            return (
+              <QuickCaloriesRow
+                key={entry.id}
+                entry={entry}
+                unit={unit}
+                // UX-02: row tap → the matching edit screen; it returns here (NAV-04).
+                onPress={() => router.push(routes.editQuickCalories({ entryId: entry.id, origin: 'diary' }))}
+              />
+            );
         }
       })}
       {/* DS-08 Add Food row (42–44): the last row per meal. Food Search arrives with M4. */}

@@ -82,6 +82,7 @@ export function ConfirmationDialog({
               onPress={onCancel}
               accessibilityRole="button"
               accessibilityLabel={cancelLabel}
+              testID={testID ? `${testID}-cancel` : undefined}
               style={actionStyle}
             >
               <AppText variant="compactStrong" color="textPrimary">
@@ -92,6 +93,7 @@ export function ConfirmationDialog({
               onPress={onConfirm}
               accessibilityRole="button"
               accessibilityLabel={confirmLabel}
+              testID={testID ? `${testID}-confirm` : undefined}
               style={actionStyle}
             >
               <AppText variant="compactStrong" color={destructive ? 'danger' : 'primary'}>

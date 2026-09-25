@@ -7,7 +7,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M0 Skeleton | done |
 | M1 Data + domain | done |
 | M2 Diary (read) | done |
-| M3 Quick Calories | not started |
+| M3 Quick Calories | in progress |
 | M4 Custom foods + ruler | not started |
 | M5 Search + Open Food Facts | not started |
 | M6 USDA | not started |
@@ -220,3 +220,25 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ### Open questions
 - ~~**M2-Q1**~~ Resolved 2026-09-25: the user said yes. `@react-native-community/datetimepicker` was added for the UX-13 native calendar and both dev builds were rebuilt.
+
+## M3 Quick Calories
+
+Status: **in progress** · Start commit: `9297f1f` (review range `9297f1f..HEAD`)
+
+### Tasks
+Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
+- [x] T1 Domain + queries: Quick Calories input rules in `src/domain/diary/entries.ts` (whole number in the energy unit, 1–10,000 kcal canonical, so 5–41,840 kJ; UX-00/07). `useMeals`, `useDiaryEntry` and `useDiaryWrites` in `diary.queries.ts`: writes commit, then invalidate and refetch every diary query before resolving (ARCH-07/08, NAV-09). The repository write paths already existed from M1.
+- [x] T2 `+` flow (NAV-03, UX-09, UX-10): the Add Action Sheet has `Add food`, `Quick calories`, `Update weight` (icon + label, no barcode). `BottomSheet.onDismissed` lets each sheet close fully before the next sheet or route opens. `MealPicker` (`src/shared/navigation`): compact `Choose meal` title, meals in saved order, check on the current meal when changing, skipped with exactly one meal. `GlobalAddFlow` wires them. The Diary date context moved from the Diary stack layout to the tabs layout, so `+` from Profile uses the selected diary date (NAV-03/05, ARCH-06).
+- [x] T3 Quick Calories + Edit Quick Calories (UX-07, NAV-04, NAV-08, UX-19): `(tabs)/diary/quick-calories` and `quick-calories/[entryId]`, params validated with Zod (`parseRouteParams`, typed builders in `routes.ts`). Meal row → Meal Picker, Calories focused on open (`number-pad`, unit shown), optional one-line note (80), display-only date, primary pinned above the keyboard, validation on blur/submit, inline save error, `Delete entry` → confirmation dialog (`<kcal> from <meal> on <date>.`). Add ends on the Diary on the target date; edit returns to its origin (a meal change from Meal Detail lands on the Diary). Bad params or a deleted entry show `This item no longer exists.` (`NotFoundState`). Diary Quick Calories rows open the edit screen.
+- [x] T4 Tests: domain (range, parsing in kcal/kJ), `BottomSheet.onDismissed`, component tests (fields, validation, kJ storage, save failure, pt-PT smoke) and navigation tests on real SQLite (sheet rows, picker order + cancel, SCOPE-11 flow 2, start from Profile on another date, back saves nothing, edit + meal change, delete confirm/cancel, not found). 309 tests.
+- [x] T5 Maestro `m3-quick-calories` (add → edit → delete; a unique note per run). Passes on iOS and Android. It found and fixed: the Android keyboard covered the primary action (Android is edge-to-edge, so `KeyboardAvoidingView` pads on both platforms). `ConfirmationDialog` actions got test IDs.
+- [ ] T6 QA screenshots (light/dark × default/largest text, small phone) of the sheet, Meal Picker, Quick Calories, Edit + delete dialog in `docs/qa/M3/`
+- [ ] T7 Independent review
+
+### Known gaps
+- `Add food` (Food Search, M4) and `Update weight` (Weight Entry Sheet, M8) show in the Add Action Sheet but are disabled until their flows land. Food rows on the Diary stay unpressable until Edit Food Entry (M4).
+- The iOS number pad has no Return key, so Calories → Note uses the iOS keyboard's Next accessory or a tap (UX-00 Return rule holds on Android).
+- With the keyboard open on a short screen, `Delete entry` sits below the fold; scrolling dismisses the keyboard and shows it.
+
+### Open questions
+- None.

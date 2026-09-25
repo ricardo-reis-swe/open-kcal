@@ -4,6 +4,8 @@ import { Text } from 'react-native';
 import TabsLayout from '@/app/(tabs)/_layout';
 import DiaryStackLayout from '@/app/(tabs)/diary/_layout';
 import DiaryIndex from '@/app/(tabs)/diary/index';
+import EditQuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/[entryId]';
+import QuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/index';
 import ProfileStackLayout from '@/app/(tabs)/profile/_layout';
 import ProfileIndex from '@/app/(tabs)/profile/index';
 import RootLayout from '@/app/_layout';
@@ -17,6 +19,8 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/_layout': TabsLayout,
     '(tabs)/diary/_layout': DiaryStackLayout,
     '(tabs)/diary/index': DiaryIndex,
+    '(tabs)/diary/quick-calories/index': QuickCaloriesRoute,
+    '(tabs)/diary/quick-calories/[entryId]': EditQuickCaloriesRoute,
     '(tabs)/profile/_layout': ProfileStackLayout,
     '(tabs)/profile/index': ProfileIndex,
     ...extra,

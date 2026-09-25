@@ -2,7 +2,9 @@
   "common": {
     "cancel": "Cancelar",
     "close": "Fechar",
-    "back": "Voltar"
+    "back": "Voltar",
+    "notFound": "Este item já não existe.",
+    "backToDiary": "Voltar ao diário"
   },
   "tabs": {
     "diary": "Diário",
@@ -83,7 +85,10 @@
     "title": "Perfil"
   },
   "addActions": {
-    "sheetLabel": "Ações de adicionar"
+    "sheetLabel": "Ações de adicionar",
+    "addFood": "Adicionar alimento",
+    "quickCalories": "Calorias rápidas",
+    "updateWeight": "Atualizar peso"
   },
   "a11y": {
     "labelWithValue": "{{label}}, {{value}}"
@@ -108,5 +113,25 @@
     "done": "Concluído",
     "today": "Hoje",
     "todayHint": "Mostra o diário de hoje"
+  },
+  "mealPicker": {
+    "title": "Escolher refeição"
+  },
+  "quickCalories": {
+    "title": "Calorias rápidas",
+    "editTitle": "Editar calorias rápidas",
+    "meal": "Refeição",
+    "mealHint": "Abre a escolha de refeição",
+    "calories": "Calorias",
+    "note": "Nota",
+    "date": "Data",
+    "add": "Adicionar",
+    "save": "Guardar",
+    "delete": "Eliminar registo",
+    "caloriesError": "Introduza um número inteiro de {{min}} a {{max}} {{unit}}.",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "deleteError": "Não foi possível eliminar. Tente novamente.",
+    "deleteTitle": "Eliminar calorias rápidas?",
+    "deleteBody": "{{energy}} de {{meal}} em {{date}}."
   }
 }

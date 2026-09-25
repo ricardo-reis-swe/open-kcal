@@ -12,3 +12,4 @@ export { PrimaryButton, type PrimaryButtonProps } from './PrimaryButton';
 export { ProgressTrack, type ProgressTrackProps } from './ProgressTrack';
 export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
 export { TextAction, type TextActionProps } from './TextAction';
+export { NotFoundState, type NotFoundStateProps } from './NotFoundState';

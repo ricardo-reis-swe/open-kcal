@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -18,6 +18,8 @@ export type BottomSheetProps = {
   accessibilityLabel: string;
   /** Label for the backdrop's close action, e.g. `Close`. */
   closeLabel: string;
+  /** Called once the close animation has finished and the sheet is gone, e.g. to open the next sheet (NAV-03). */
+  onDismissed?: () => void;
   children: ReactNode;
   testID?: string;
 };
@@ -46,7 +48,15 @@ export function sheetHandleSlop(touchMin: number, handleHeight: number, paddingV
  * The app's only sheet (ARCH-06). Content-sized (smallest snap height), 4×36 handle, no title (DS-09).
  * Reduced motion swaps the slide for a fade (DS-10).
  */
-export function BottomSheet({ visible, onClose, accessibilityLabel, closeLabel, children, testID }: BottomSheetProps) {
+export function BottomSheet({
+  visible,
+  onClose,
+  onDismissed,
+  accessibilityLabel,
+  closeLabel,
+  children,
+  testID,
+}: BottomSheetProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
@@ -58,17 +68,30 @@ export function BottomSheet({ visible, onClose, accessibilityLabel, closeLabel, 
   const duration = theme.motionMs.sheet[0];
   const handleSlop = sheetHandleSlop(theme.touchMin, theme.sizes.sheetHandle.height, theme.spacing[2]);
 
+  const dismissedRef = useRef(onDismissed);
+  useEffect(() => {
+    dismissedRef.current = onDismissed;
+  }, [onDismissed]);
+  const shownRef = useRef(false);
   // Mount as soon as it opens; unmount only after the close animation finishes.
   if (visible && !mounted) setMounted(true);
+  const finishClose = () => {
+    setMounted(false);
+    // Only a sheet that was actually shown reports a dismissal (not the initial hidden mount).
+    if (!shownRef.current) return;
+    shownRef.current = false;
+    dismissedRef.current?.();
+  };
 
   useEffect(() => {
     if (visible) {
+      shownRef.current = true;
       dragY.set(0);
       progress.set(withTiming(1, { duration }));
     } else {
       progress.set(
         withTiming(0, { duration }, (finished) => {
-          if (finished) scheduleOnRN(setMounted, false);
+          if (finished) scheduleOnRN(finishClose);
         }),
       );
     }
