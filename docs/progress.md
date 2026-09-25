@@ -21,7 +21,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 
 ### Tasks
 - [x] T1 Expo app scaffold: SDK 57, dev client, Expo Router (`src/app`), strict TS, ESLint + Prettier, Jest (`jest-expo`) + RNTL, `npm run lint|typecheck|test|check`
-- [ ] T2 Typed env config (Zod) + `.env.example`; logger interface (ARCH-14/15)
+- [x] T2 Typed env config (Zod, `src/shared/config/env.ts`) + `.env.example`; logger with redaction (`src/shared/logging`) (ARCH-14/15)
 - [ ] T3 i18n scaffold: `en` + `pt-PT`, device locale, key-parity test (ARCH-22)
 - [ ] T4 Theme from `tokens.ts`: light/dark provider + hook (DS-12)
 - [ ] T5 DS-12 primitives: `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + tests
