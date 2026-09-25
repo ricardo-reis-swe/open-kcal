@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–6 approved. Step 7 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–7 approved. Step 8 ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -189,6 +189,8 @@ Rules for `food_cache_metadata` (DATA-15). Expiry controls refresh only. Expired
 ## PROV-10 Timeouts, retries and cooldowns
 Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in the error-mapping step.
 
+**Debounce** (defined in UX-04 and PROV-04; don't redefine): local 150 ms · USDA ≥2 chars after 400 ms · OFF ≥3 chars after 800 ms. A request is only sent once the debounce settles.
+
 **Timeouts** (whole request, via `AbortController`): search **8 s** · detail **10 s** · USDA key check **10 s**.
 
 **Retries**
@@ -211,4 +213,23 @@ Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in 
 
 **Cancellation:** a new query aborts the previous one's requests (ARCH-11). Leaving Food Search aborts its in-flight searches. Leaving while a tapped row loads aborts that detail call; nothing is upserted.
 
-<!-- Steps 8–9 pending: USDA key validation · error mapping + fixtures -->
+## PROV-11 USDA key check
+Implements UX-18 (Food Databases). Only `CredentialsService` touches the key (ARCH-10).
+
+**Local checks before anything is sent:** trim; must be non-empty with no internal whitespace; `DEMO_KEY` is rejected (`Use your own key; DEMO_KEY is limited to 30 requests per hour.`). No length or format check beyond that.
+
+**Test request** (when online): `GET /foods/search?query=apple&pageSize=1` with `X-Api-Key`. Timeout and no retries per PROV-10.
+| Result | Save key? | Status shown |
+|---|---|---|
+| 200 | Yes | `Active` |
+| 401 / 403 | **No** | Inline error `USDA rejected this key.` |
+| 429 | Yes (the key is recognized, just over its limit) | `Active` |
+| Offline, timeout, network or 5xx | Yes | `Saved · will check when online` |
+
+**Status is session-only (no DB column).** On launch, a stored key shows `Saved · will check when online`. It becomes `Active` after any successful USDA request, or `Key rejected` after any 401/403.
+- On a 401/403 during search, the USDA section shows `USDA rejected your key.` + a link to Food Databases. The key is **never** deleted automatically.
+- Replace: the old key stays until the new one passes the flow above. Remove: UX-19 dialog → delete from secure storage. Cached USDA foods and history stay (DATA-15).
+- Signup link: `https://api.data.gov/signup/`, opened in the system browser.
+- Never log the key or the test request's URL/headers; redact per ARCH-15.
+
+<!-- Steps 9 pending: error mapping + fixtures -->
