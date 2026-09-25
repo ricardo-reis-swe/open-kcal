@@ -1,9 +1,6 @@
-import { Text, View } from 'react-native';
+import { Redirect } from 'expo-router';
 
+// NAV-01: Diary is the default destination.
 export default function Index() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Calorie Tracker</Text>
-    </View>
-  );
+  return <Redirect href="/diary" />;
 }

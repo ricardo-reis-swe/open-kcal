@@ -1,3 +1,4 @@
+export { AppBar, type AppBarProps } from './AppBar';
 export { AppIcon, type AppIconProps, type IconName, type IconSize } from './AppIcon';
 export { AppText, type AppTextProps, type TextVariant } from './AppText';
 export { BottomSheet, type BottomSheetProps } from './BottomSheet';

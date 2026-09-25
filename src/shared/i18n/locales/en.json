@@ -1,11 +1,21 @@
 {
   "common": {
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "back": "Back"
   },
   "tabs": {
     "diary": "Diary",
     "profile": "Profile",
     "add": "Add"
+  },
+  "diary": {
+    "title": "Diary"
+  },
+  "profile": {
+    "title": "Profile"
+  },
+  "addActions": {
+    "sheetLabel": "Add actions"
   }
 }

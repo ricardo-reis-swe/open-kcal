@@ -25,7 +25,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
 - [x] T3 i18n scaffold (`src/shared/i18n`): `en` + `pt-PT`, device locale → language + formatting locale, typed keys, key-parity test (ARCH-22)
 - [x] T4 Theme from `tokens.ts` (`src/shared/theme`): light/dark `ThemeProvider` + `useTheme`, platform touch minimum, one elevation style, token contrast test (DS-12, DS-05, DS-11)
 - [x] T5 DS-12 primitives (`src/shared/components`): `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + component tests; `renderWithProviders` test helper
-- [ ] T6 Tabs: `Diary + Profile` custom tab bar with `+` opening an empty `BottomSheet` (ARCH-06, DS-07) + navigation tests
+- [x] T6 Tabs: `(tabs)/{diary,profile}` stacks, custom `AppTabBar` (`Diary + Profile`) with `+` opening the empty Add Action Sheet, `AppBar` (DS-07), app providers + `initializeApp` (ARCH-17 M0 subset), navigation tests incl. pt-PT smoke
 - [ ] T7 Dev builds on iOS simulator + Android emulator; exit demo
 - [ ] T8 QA screenshots under `docs/qa/M0/`
 - [ ] T9 Independent review (`docs/qa/M0/review.md`), fix blockers/majors
@@ -58,6 +58,10 @@ All versions pinned exactly; installed via `npx expo install` where native.
 | dev: `react-dom` | Pinned to `react`'s version only to satisfy optional peers during install; never imported (web is not a deliverable) |
 
 ### Known gaps
+- Add Action Sheet is empty by design in M0 (exit demo); its rows arrive with their flows (NAV-03: M3 Quick Calories, M4/M5 Add Food, M8 Update Weight).
+- Diary and Profile are app-bar shells until M2 / M8.
+- Startup covers config → logger → i18n only; SQLite, seed, launch-screen hold and the recovery screen are M1 (ARCH-17, ARCH-13). A config error currently throws at startup.
+- Typed route builders (ARCH-06) are added per route as screens land; M0 has only the tab roots.
 - Any Portuguese device language (e.g. `pt-BR`) uses the pt-PT translation, since it is the only Portuguese one; number/date formatting still follows the device locale (SCOPE-12).
 - Icons use Ionicons (outline; filled only for selected states), DS-06.
 - `Intl.PluralRules` on Hermes is verified on device in T7 (ARCH-22 polyfill only if missing).

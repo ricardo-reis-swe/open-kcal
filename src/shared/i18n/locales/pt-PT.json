@@ -1,11 +1,21 @@
 {
   "common": {
     "cancel": "Cancelar",
-    "close": "Fechar"
+    "close": "Fechar",
+    "back": "Voltar"
   },
   "tabs": {
     "diary": "Diário",
     "profile": "Perfil",
     "add": "Adicionar"
+  },
+  "diary": {
+    "title": "Diário"
+  },
+  "profile": {
+    "title": "Perfil"
+  },
+  "addActions": {
+    "sheetLabel": "Ações de adicionar"
   }
 }
