@@ -53,6 +53,7 @@ All versions pinned exactly; installed via `npx expo install` where native.
 | `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler` | ARCH-01 gestures/motion; worklets is Reanimated 4's required peer |
 | `@expo/vector-icons` + `expo-font`, `expo-asset` (peers) | DS-06 one rounded icon family from the Expo stack |
 | `zod` | ARCH-01/03 validation |
+| `@formatjs/intl-pluralrules` | ARCH-22 polyfill: Hermes on SDK 57 lacks `Intl.PluralRules` on both platforms (checked on device). Loads en + pt/pt-PT data only |
 | dev: `jest`, `jest-expo`, `@testing-library/react-native`, `test-renderer`, `@types/jest` | ARCH-01/18 tests (`test-renderer` is RNTL 14's peer) |
 | dev: `eslint`, `eslint-config-expo`, `prettier`, `eslint-config-prettier`, `eslint-plugin-prettier` | ARCH-02 lint/format |
 | dev: `react-dom` | Pinned to `react`'s version only to satisfy optional peers during install; never imported (web is not a deliverable) |
@@ -64,7 +65,6 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - Typed route builders (ARCH-06) are added per route as screens land; M0 has only the tab roots.
 - Any Portuguese device language (e.g. `pt-BR`) uses the pt-PT translation, since it is the only Portuguese one; number/date formatting still follows the device locale (SCOPE-12).
 - Icons use Ionicons (outline; filled only for selected states), DS-06.
-- `Intl.PluralRules` on Hermes is verified on device in T7 (ARCH-22 polyfill only if missing).
 
 ### Open questions
 - **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).

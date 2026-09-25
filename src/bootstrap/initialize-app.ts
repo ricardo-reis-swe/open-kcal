@@ -1,3 +1,5 @@
+import './polyfills';
+
 import { getConfig, type AppConfig } from '@/shared/config/env';
 import { initI18n } from '@/shared/i18n/i18n';
 import { logger } from '@/shared/logging/logger';
@@ -11,6 +13,9 @@ export type AppInit = { config: AppConfig };
 export function initializeApp(): AppInit {
   const config = getConfig();
   initI18n();
-  logger.info('app initialized', { appVersion: config.appVersion });
+  // ARCH-22: i18next plurals need Intl.PluralRules (polyfilled in ./polyfills when the engine lacks it).
+  const pluralRules = typeof Intl !== 'undefined' && typeof Intl.PluralRules === 'function';
+  if (!pluralRules) logger.warn('Intl.PluralRules missing; plural strings fall back to the other form');
+  logger.info('app initialized', { appVersion: config.appVersion, pluralRules });
   return { config };
 }
