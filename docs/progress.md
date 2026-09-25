@@ -232,13 +232,14 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T3 Quick Calories + Edit Quick Calories (UX-07, NAV-04, NAV-08, UX-19): `(tabs)/diary/quick-calories` and `quick-calories/[entryId]`, params validated with Zod (`parseRouteParams`, typed builders in `routes.ts`). Meal row → Meal Picker, Calories focused on open (`number-pad`, unit shown), optional one-line note (80), display-only date, primary pinned above the keyboard, validation on blur/submit, inline save error, `Delete entry` → confirmation dialog (`<kcal> from <meal> on <date>.`). Add ends on the Diary on the target date; edit returns to its origin (a meal change from Meal Detail lands on the Diary). Bad params or a deleted entry show `This item no longer exists.` (`NotFoundState`). Diary Quick Calories rows open the edit screen.
 - [x] T4 Tests: domain (range, parsing in kcal/kJ), `BottomSheet.onDismissed`, component tests (fields, validation, kJ storage, save failure, pt-PT smoke) and navigation tests on real SQLite (sheet rows, picker order + cancel, SCOPE-11 flow 2, start from Profile on another date, back saves nothing, edit + meal change, delete confirm/cancel, not found). 309 tests.
 - [x] T5 Maestro `m3-quick-calories` (add → edit → delete; a unique note per run). Passes on iOS and Android. It found and fixed: the Android keyboard covered the primary action (Android is edge-to-edge, so `KeyboardAvoidingView` pads on both platforms). `ConfirmationDialog` actions got test IDs.
-- [ ] T6 QA screenshots (light/dark × default/largest text, small phone) of the sheet, Meal Picker, Quick Calories, Edit + delete dialog in `docs/qa/M3/`
+- [x] T6 QA screenshots on both platforms (light/dark × default/largest text, small Android phone): Add Action Sheet, Meal Picker, Quick Calories with a validation error and filled, Edit, delete dialog, in `docs/qa/M3/` (`scripts/qa/m3.sh`). The capture found that Lunch sits below the fold on the small phone and that `Delete entry` is off-screen with the keyboard open; both flows now scroll to them.
 - [ ] T7 Independent review
 
 ### Known gaps
 - `Add food` (Food Search, M4) and `Update weight` (Weight Entry Sheet, M8) show in the Add Action Sheet but are disabled until their flows land. Food rows on the Diary stay unpressable until Edit Food Entry (M4).
 - The iOS number pad has no Return key, so Calories → Note uses the iOS keyboard's Next accessory or a tap (UX-00 Return rule holds on Android).
 - With the keyboard open on a short screen, `Delete entry` sits below the fold; scrolling dismisses the keyboard and shows it.
+- At the largest iOS text size the app bar truncates long titles (`Quick ca…`, `ios-*-largest-quick-calories.png`). `AppBar` is the shared M0 component, so this affects every long title; left for the M9 DS-11 large-text pass.
 
 ### Open questions
 - None.

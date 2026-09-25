@@ -1,0 +1,72 @@
+# M3 QA capture (ROAD-02, DS-13 subset): Add Action Sheet, Meal Picker, Quick Calories (with a validation error and
+# filled), Edit quick calories and the delete dialog. The entry is deleted at the end.
+# Run by scripts/qa/m3.sh with -e SHOT=docs/qa/M3/<platform>-<scheme>-<text>.
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: ../../.maestro/subflows/launch.yaml
+- evalScript: ${output.note = 'QA ' + Date.now()}
+- tapOn:
+    id: tab-add
+- extendedWaitUntil:
+    visible:
+      id: add-action-quick-calories
+    timeout: 5000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-add-sheet
+- tapOn:
+    id: add-action-quick-calories
+- extendedWaitUntil:
+    visible: Choose meal
+    timeout: 5000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-meal-picker
+- tapOn: Lunch
+- extendedWaitUntil:
+    visible:
+      id: quick-calories-kcal
+    timeout: 5000
+- inputText: '0'
+- tapOn:
+    id: quick-calories-note
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-quick-calories-error
+- tapOn:
+    id: quick-calories-kcal
+- eraseText: 3
+- inputText: '450'
+- tapOn:
+    id: quick-calories-note
+- inputText: ${output.note}
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-quick-calories
+- tapOn:
+    id: quick-calories-submit
+# Lunch can sit below the fold (small phone, large text, sample data): scroll the day to the entry.
+- scrollUntilVisible:
+    element: '${output.note}, Quick Calories, 450 .*'
+    direction: DOWN
+    timeout: 15000
+- tapOn: '${output.note}, Quick Calories, 450 .*'
+- extendedWaitUntil:
+    visible: Edit quick calories
+    timeout: 5000
+# The keyboard opens with the screen; scrolling dismisses it and brings Delete entry into view.
+- scrollUntilVisible:
+    element:
+      id: quick-calories-delete
+    direction: DOWN
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-edit
+- tapOn:
+    id: quick-calories-delete
+- extendedWaitUntil:
+    visible:
+      id: quick-calories-delete-dialog-confirm
+    timeout: 5000
+- waitForAnimationToEnd
+- takeScreenshot: ${SHOT}-delete-dialog
+- tapOn:
+    id: quick-calories-delete-dialog-confirm
+- extendedWaitUntil:
+    notVisible: '${output.note}.*'
+    timeout: 5000

@@ -23,9 +23,11 @@ appId: com.ricardoreis.calorietracker
 - inputText: ${output.note}
 - tapOn:
     id: quick-calories-submit
-- extendedWaitUntil:
-    visible: '${output.note}, Quick Calories, 450 .*'
-    timeout: 5000
+# Lunch can sit below the fold (small phone, large text, sample data): scroll the day to the entry.
+- scrollUntilVisible:
+    element: '${output.note}, Quick Calories, 450 .*'
+    direction: DOWN
+    timeout: 15000
 # Edit: change the amount and save.
 - tapOn: '${output.note}, Quick Calories, 450 .*'
 - extendedWaitUntil:
@@ -35,17 +37,22 @@ appId: com.ricardoreis.calorietracker
 - inputText: '500'
 - tapOn:
     id: quick-calories-submit
-- extendedWaitUntil:
-    visible: '${output.note}, Quick Calories, 500 .*'
-    timeout: 5000
+# Lunch can sit below the fold (small phone, large text, sample data): scroll the day to the entry.
+- scrollUntilVisible:
+    element: '${output.note}, Quick Calories, 500 .*'
+    direction: DOWN
+    timeout: 15000
 # Delete: confirm in the dialog.
 - tapOn: '${output.note}, Quick Calories, 500 .*'
 - extendedWaitUntil:
-    visible:
-      id: quick-calories-delete
+    visible: Edit quick calories
     timeout: 5000
-# The keyboard opens with the screen; a scroll dismisses it and shows Delete entry at the end of the content.
+# The keyboard opens with the screen; scrolling dismisses it and brings Delete entry into view.
 - scroll
+- scrollUntilVisible:
+    element:
+      id: quick-calories-delete
+    direction: DOWN
 - tapOn:
     id: quick-calories-delete
 - assertVisible: 'Delete quick calories\?'
