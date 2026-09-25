@@ -14,6 +14,7 @@ Read when: choosing libraries, placing code, handling errors/network/logging, or
 | Async data | TanStack Query |
 | UI state | React state + small scoped contexts; **no global store** |
 | Forms / validation | React Hook Form / Zod |
+| Localization | `expo-localization` + `i18next` / `react-i18next` (ARCH-22) |
 | Gestures / motion / haptics | Gesture Handler + Reanimated / `expo-haptics` |
 | Tests | Jest (`jest-expo`) + RN Testing Library; Expo Router testing utils; Maestro E2E |
 
@@ -55,7 +56,7 @@ src/
 ├── data/db/{migrations,repositories,schema}/ + database.ts
 ├── data/api/{usda,open-food-facts}/
 ├── data/secure-storage/
-├── shared/{components,hooks,validation,errors,logging,dates,testing,theme,navigation}/
+├── shared/{components,hooks,validation,errors,logging,dates,testing,theme,navigation,i18n}/
 └── bootstrap/{providers.tsx,initialize-app.ts}
 ```
 - Features may import domain + shared. Domain imports nothing above it. A feature must not reach into another feature's internals; move shared logic to domain/shared behind an interface.
@@ -151,6 +152,14 @@ Indexed, bounded queries · totals aggregated in SQL · debounce remote search +
 - Add one only if it: meets an approved requirement or a demonstrated need; supports the Expo SDK on both platforms; is maintained and documented; needs no account/backend/paid service for core behavior; has acceptable size/native/privacy/maintenance cost; can sit behind an internal interface at domain/infra boundaries.
 - Prefer Expo-maintained packages. One router, one DB, one form lib, one validation lib; no global store until justified; no second persistence cache.
 - Every dependency must satisfy a recorded product or engineering need. A major one needs a short architecture note: problem, choice, rejected options, migration cost.
+
+## ARCH-22 Localization
+- `expo-localization` (device locale/region) + `i18next` / `react-i18next`. Languages: `en` (fallback) and `pt-PT` (SCOPE-12). Add an `Intl.PluralRules` polyfill if the Hermes build lacks it.
+- Strings live in `src/shared/i18n/locales/{en,pt-PT}.json`. Every user-facing string goes through `t()`. No concatenation: use interpolation. Plurals use i18n plural keys.
+- A missing pt-PT key falls back to en. CI fails if the two files have different key sets.
+- Numbers, dates and units are formatted with `Intl` in the app locale (comma decimal and day-first dates in pt-PT). Parsing accepts the locale's decimal separator (DS-09).
+- pt-PT means European Portuguese wording (`ecrã`, `pequeno-almoço`), not Brazilian.
+- Component tests run in `en`, plus one render smoke test per screen in `pt-PT` to catch overflow and missing keys.
 
 ## ARCH-21 Official docs
 Check the current versions: Expo [dev builds](https://docs.expo.dev/develop/development-builds/use-development-builds/) · [Router](https://docs.expo.dev/versions/latest/sdk/router/) · [SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) · [SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) · [Haptics](https://docs.expo.dev/versions/latest/sdk/haptics/) · [env vars](https://docs.expo.dev/guides/environment-variables/) · [unit testing](https://docs.expo.dev/develop/unit-testing/) · [Router testing](https://docs.expo.dev/router/reference/testing/) · [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview) · [React Hook Form](https://react-hook-form.com/) · [Zod](https://zod.dev/).

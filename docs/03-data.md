@@ -52,7 +52,7 @@ FROM diary_entries WHERE diary_date = ?;
 - The schema supports other effective dates. A later section may add a UI for choosing one; it is not required in the first release.
 
 ## DATA-10 Meals
-- Seeded Breakfast, Lunch, Dinner, Snacks as ordinary records with no special behavior.
+- Seeded Breakfast, Lunch, Dinner, Snacks as ordinary records with no special behavior. Names are written in the app language at first launch (pt-PT: `Pequeno-almoço`, `Almoço`, `Jantar`, `Lanches`) and never re-translated.
 - Names may repeat (the UI may warn about ambiguous duplicates). At least one meal must always exist.
 - Reorder: one transaction; verify every meal ID appears exactly once. SQLite can't defer UNIQUE, so use a two-phase update (e.g. temporary large positive values, since `sort_order ≥ 0`).
 - Delete (one transaction, full rollback on failure): user picks a different target meal → reassign all `diary_entries.meal_id` → clear/update matching `recent_foods.last_meal_id` → delete the meal → compact `sort_order`. The last meal can't be deleted.

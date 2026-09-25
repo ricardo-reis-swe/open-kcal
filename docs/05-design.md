@@ -79,7 +79,7 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 ## DS-11 Accessibility
 - Contrast: text ≥4.5:1, large text ≥3:1, essential boundaries/indicators ≥3:1 against adjacent colors. Test token pairs on device before release.
 - Text scaling: all meaningful text scales. At large sizes the macro strip may wrap/stack, rows grow (never clip), app-bar actions may move to overflow, fixed heights become minimums.
-- Screen readers: one coherent label + action per row; hide decorative and duplicate elements. Examples: `Scrambled eggs, 2 eggs, 199 kilocalories. Button. Edit diary entry.` · `Protein, 41 of 150 grams. Some entries have unknown protein.` · `Calories remaining, 1,731 of 2,400 kilocalories.`
+- Screen readers: one coherent label + action per row; hide decorative and duplicate elements. Examples: `Scrambled eggs, 2, egg, 199 kilocalories. Button. Edit diary entry.` · `Protein, 41 of 150 grams. Some entries have unknown protein.` · `Calories remaining, 1,731 of 2,400 kilocalories.`
 - Color independence: macros always have text; warnings/errors have an icon or words; selected tabs use color + weight/indicator/fill.
 - Every gesture has an alternative: date via buttons + calendar; ruler via increment/decrement actions or direct entry; meal reorder via move actions as well as drag.
 

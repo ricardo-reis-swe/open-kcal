@@ -31,7 +31,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 ```text
 BREAKFAST                         700 kcal
 Scrambled eggs
-2 eggs                            199 kcal
+2 × egg                           199 kcal
 + Add food
 ```
 
@@ -68,6 +68,11 @@ Barcode scanner · accounts · cloud sync · social · recipes · meal plans · 
 Other docs refer to this list instead of repeating it.
 
 ## SCOPE-11 Success flows (acceptance)
-1. Open → Today → meal → search "eggs" → select → ruler to 2 eggs → save → diary updates instantly.
+1. Open → Today → meal → search "eggs" → select → ruler to 2 × egg → save → diary updates instantly.
 2. Open → Quick Calories → Lunch → 450 kcal → save.
 3. Open → tap an existing entry → change amount/unit/meal → save → diary updates instantly.
+
+## SCOPE-12 Languages and region
+- UI in **English** (default and fallback) and **European Portuguese (pt-PT)**. The app follows the device/OS per-app language; there is no in-app switcher.
+- Primary market: Portugal. Food search favors the device region (PROV-03). Units, decimals and dates follow the device locale.
+- User data (food and meal names, notes) is never translated.

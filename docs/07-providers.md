@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–2 approved.
+Status: **DRAFT, written one step at a time.** Steps 1–2 approved. Step 3 updated for Portugal, ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -29,11 +29,14 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 ## PROV-03 OFF endpoints
 | Use | Call | Notes |
 |---|---|---|
-| Search | `GET /search?q=&langs=<lang>,en&page_size=20&page=&fields=code,product_name,brands,nutriments` (search host) | Search-a-licious. Response has `hits[]`, `count`, `page`, `page_count`, `is_count_exact`. `brands` is an array. `nutriments` holds only `*_100g` values. |
+| Search | `GET /search?q=<terms> countries_tags:"en:<country>"&langs=<appLang>,en&page_size=20&page=&fields=code,product_name,brands,nutriments` (search host) | Search-a-licious. Response has `hits[]`, `count`, `page`, `page_count`, `is_count_exact`. `brands` is an array. `nutriments` holds only `*_100g` values. |
 | Select a result | `GET /api/v2/product/{code}?fields=code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments` (product host) | Called on tap before upsert. It's the only source of serving data. `status: 1` means found. `brands` is a comma-separated string here. |
 | Refresh cached | Same as select | Rules come in the cache step. |
 - Use Search-a-licious for full-text search, as the OFF docs recommend. They mark `/cgi/search.pl` as legacy, and `/api/v2/search` only filters (no full-text search).
 - Limits per IP: **10 searches/min**, **15 product reads/min**. Going over repeatedly can get the IP banned. OFF also has global rate limits that answer **HTTP 503**: treat 503 as rate-limited and back off, not as "service down".
+- **Region filter:** `<country>` is OFF's English country tag for the device region (PT → `en:portugal`; keep a small ISO → tag map, and use no filter for unmapped regions). **Why:** unfiltered Portuguese queries rank Brazilian products first. Checked live: `iogurte grego` gives 1,287 hits unfiltered (Brazil first) vs 528 with the filter (Portugal only).
+- If the filtered page 1 returns 0 hits, run the same query once without the filter (this counts against PROV-04's budget).
+- `langs=<appLang>,en` (pt-PT → `pt,en`). OFF names come back in that language when available. USDA is English-only: Portuguese terms return 0 USDA hits (checked: `bacalhau`), so the USDA section usually shows `No results` for Portuguese queries.
 - Search-a-licious is at version 0.1.0 (young). Keep it fully behind the OFF adapter so a switch touches one module.
 
 ## PROV-04 Request budget
@@ -57,9 +60,9 @@ Output per food: `energy_kcal` (required) and `protein_g`, `carbohydrate_g`, `fa
 | `energy_kcal` | `208` → `958` (Atwater specific) → `957` (Atwater general) → `268` ÷ 4.184 | kcal (kJ for 268) |
 | `protein_g` | `203` | g |
 | `fat_g` | `204` (total lipid) | g |
-| `carbohydrate_g` | `205` (by difference) → `205.2` (by summation) | g |
+| `carbohydrate_g` | `205` − `291` (fibre) when both exist → `205` → `205.2` (by summation); clamp ≥ 0 | g |
 - Values are per 100 g for every data type (for Branded, per 100 g or 100 ml, see PROV-06). Checked: Branded `208 = 467` per 100 g matches label calories of 140 per 30 g serving.
-- Branded fallback: if `foodNutrients` has no energy but `labelNutrients.calories` and `servingSize` exist, then `per100 = label value ÷ servingSize × 100`. Macros use the same fallback from `labelNutrients.{protein, fat, carbohydrates}`.
+- Branded fallback: if `foodNutrients` has no energy but `labelNutrients.calories` and `servingSize` exist, then `per100 = label value ÷ servingSize × 100`. Macros use the same fallback from `labelNutrients.{protein, fat, carbohydrates}`; carbs subtract `labelNutrients.fiber` when present.
 
 **OFF.** Read from `nutriments`, as-sold values only (ignore `*_prepared_*`).
 
@@ -77,4 +80,40 @@ Output per food: `energy_kcal` (required) and `protein_g`, `carbohydrate_g`, `fa
 - Energy > 900 kcal or negative → energy invalid. That food fails the minimum-data check (drop rules step).
 - Keep full precision (DATA-04). No rounding and no Atwater "correction" of provider values.
 
-<!-- Steps 3–9 pending: servings · drop rules · ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
+**Carbohydrate convention: EU "available carbs" (fibre excluded).** **Why:** the main market is Portugal (SCOPE-12). EU labels exclude fibre, while USDA's `205` includes it. Mixing the two would make diaries inconsistent. So USDA carbs subtract fibre (table above). OFF values are used as-is (EU products already follow the convention). Custom foods are entered from EU labels (UX-08).
+
+## PROV-06 Basis and servings
+Output: `foods.basis_quantity/basis_unit` + `food_servings` rows (DATA-11), all written at upsert. For each serving, `quantity` = grams (or ml) in **one** unit, `unit` = `g` | `ml`, and `basis_multiplier = quantity ÷ basis_quantity`. Example: basis 100 g, egg 50 g → multiplier 0.5.
+
+**Basis**
+| Source | Basis |
+|---|---|
+| USDA Foundation, SR Legacy, Survey (FNDDS) | 100 g |
+| USDA Branded | 100 g if `servingSizeUnit` ∈ {g, GRM}; 100 ml if ∈ {ml, MLT}; anything else → 100 g and no household serving |
+| OFF | 100 ml if `serving_size` or `quantity` has a volume unit (ml, cl, dl, l, fl oz) and no mass unit; otherwise 100 g |
+
+**Always-present rows:** the basis pair. g basis → `g` (1 g) and `oz` (28.349523125 g). ml basis → `ml` (1 ml) and `fl oz` (29.5735295625 ml). This is where UX-05's g/oz and ml/fl oz tabs come from.
+
+**USDA portions** (`foodPortions[]`, detail call). There are three shapes, all checked live:
+| Shape (data type) | Label | Amount |
+|---|---|---|
+| `measureUnit.name` ≠ `undetermined` (Foundation) | `measureUnit.name`, plus `, <modifier>` if the modifier is non-numeric text | `amount` |
+| `portionDescription` present (FNDDS), e.g. `1 cup` | text after the leading number (`cup`) | leading number |
+| otherwise (SR Legacy), e.g. modifier `cracker` | `modifier` | `amount` |
+- Grams per one unit = `gramWeight ÷ amount` (missing amount → 1).
+- Skip a portion when: gramWeight ≤ 0; there's no usable label; the label is purely numeric; FNDDS `Quantity not specified` or `Guideline amount…`; or the label is a mass unit already covered (g, oz, lb, kg).
+- Volume labels (`cup`, `fl oz`, `tbsp`) stay on g-basis foods: they are real volume→mass conversions from USDA.
+- Dedupe by label (case-insensitive, first wins). Keep at most 6 portions.
+
+**USDA Branded:** add `serving` = `servingSize` g/ml, which is the **default**, with the hint `householdServingFullText` (e.g. `2 Tbsp`). If the household text parses as `<number> <label>`, also add that label per unit (`Tbsp` = 15 g).
+
+**OFF:**
+- If `serving_quantity` is numeric and > 0, add `serving` = `serving_quantity` g/ml as the **default**. `serving_quantity` is authoritative for the amount; `serving_size` text is only a label hint.
+- If `serving_size` parses as `<n> <label> (<x> g|ml)` (e.g. `2 biscuits (25 g)`), also add `<label>` = x ÷ n per unit.
+
+**Default serving** (`is_default = 1`, exactly one): Branded/OFF `serving` if present → otherwise the first USDA portion → otherwise `g`/`ml`.
+**Order** (`sort_order`): default, other portions in provider order, then the basis pair (UX-05 shows the preferred unit of the pair first).
+
+**Labels:** stored as given, singular where possible, lowercase unless it's an abbreviation (`Tbsp`). No automatic pluralization (labels may be English or Portuguese). Display: count labels as `<qty> × <label>` (`2 × egg`, `1,5 × fatia`), mass/volume units as `<qty> <unit>` (`150 g`, `2 oz`). Screen reader: `2, egg`.
+
+<!-- Steps 4–9 pending: drop rules · ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->

@@ -3,6 +3,7 @@
 Read when: building a specific screen, sheet or dialog. Only screen-specific behavior lives here. Components and styling: DS. Routes and returns: NAV. Data rules: DATA. Wireframes show order, not pixels.
 
 ## UX-00 Shared rules (apply to every screen unless a card says otherwise)
+- **Copy**: quoted UI text is the English source string; each one is an i18n key with a pt-PT translation (ARCH-22).
 - **App bar**: back on every non-root screen; title = screen name unless stated.
 - **Primary action**: one filled button pinned to the bottom of the screen, above the keyboard and safe area. Disabled until the form is valid; in edit mode also until something changed.
 - **Delete** (edit modes): a danger text action at the end of the content, never next to the primary. Always confirmed (UX-19).
@@ -40,7 +41,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [ Using default goals · Set goals           ]   ← UX-01 only
 [◦ Breakfast                    700 kcal  + ]
 [  Scrambled eggs                 199 kcal  ]
-[  2 eggs                                   ]
+[  2 × egg                                  ]
 [  + Add food                               ]
 [◦ Lunch …                                  ]
 ```
@@ -74,7 +75,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Opens with the field focused. `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
 - **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 400 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). Stale requests are cancelled.
-- Section order with sticky labels: `My foods` (custom) → `Saved` (cached external) → `USDA` → `Open Food Facts`. Each remote section shows the first page (20) + a `Show more` row for the next page.
+- Section order with sticky labels: `My foods` (custom) → `Saved` (cached external) → `Open Food Facts` → `USDA`. Each remote section shows the first page (20) + a `Show more` row for the next page.
 - Result row (DS-09): name · brand or basis (`per 100 g`) · kcal · source label.
 - Inline section status in place of that section's results:
 
@@ -110,7 +111,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Switching units converts the quantity so the amount of food stays the same where convertible; otherwise the new unit starts at 1.
 - **Ruler steps** (snap / major tick): count 0.25 / 1 · g 1 / 10 · oz 0.1 / 1 · ml 5 / 50 · fl oz 0.1 / 1. Minimum = one step (0 can't be saved).
 - Tapping the value chip → direct numeric entry (up to 2 decimals).
-- Ruler a11y: role `adjustable`, increment/decrement = one step, label `Serving, 2 eggs, 156 kilocalories`.
+- Ruler a11y: role `adjustable`, increment/decrement = one step, label `Serving, 2, egg, 156 kilocalories`.
 - Primary label: `Add to <meal>`. Returns per NAV-04.
 
 ## UX-06 Edit Food Entry
@@ -143,6 +144,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 ```
 - `Other…` takes a free-text count unit (e.g. `slice`, `bar`) and becomes the food's default serving (DATA-11).
 - Name uses word autocapitalization and is prefilled from `initialName`.
+- Carbs helper text: `As on EU labels (fibre not included)` (PROV-05).
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
 
 ## UX-09 Add Action Sheet
