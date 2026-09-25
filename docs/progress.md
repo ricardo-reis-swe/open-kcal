@@ -40,7 +40,7 @@ Status: **awaiting user acceptance** · Start commit: `553efac` (review range `5
   - [x] R1-12 minor: `scripts/qa/m0-android.sh` resets the emulator in an EXIT `trap`; `adoptSceneDelegate` test (rewrite, idempotent, throws on unknown template).
   - [x] R1-5 minor: release builds keep only allowlisted context keys (`RELEASE_CONTEXT_KEYS`); denylist widened (`q`, amount, serving, kg, title, response…; `fatal` no longer matches `fat`); credential-looking messages redacted; tests.
   - [x] R1-4 minor: `FocusablePressable` draws the DS-10 2px `focus` outline (no layout shift) on every pressable primitive, tab item, dialog action and sheet handle; component tests. Hardware-keyboard check on device is part of the M9 DS-13 pass.
-  - [ ] R1-9 minor: ARCH-05 append proposal. **Blocked on M0-Q3.**
+  - [x] R1-9 minor: ARCH-05 append approved (M0-Q3) and applied.
   - [x] Round 2 (`b5f9245`, `docs/qa/M0/review.md`): **clean**, 0 blockers · 0 majors · 6 minors. Minors left as follow-ups (not blocking):
     - R2-1: more light-mode pairs → M0-Q1 (InlineStatus action text; focus ring on the app bar).
     - R2-2: sheet handle target 44 dp on Android; derive `hitSlop` from `touchMin`.
@@ -90,7 +90,14 @@ All versions pinned exactly; installed via `npx expo install` where native.
 
 ### Open questions
 - ~~**M0-Q2**~~ Resolved 2026-09-25: the user ran `xcode-select`, so the simulator tool works.
-- **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins), `scripts/` (local tooling) and `.maestro/` (Maestro E2E flows, ARCH-18) to the ARCH-05 tree?
-- **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).
-  - Also failing (review R1-6, all `it.failing`): light `primary` on `primaryTint` 4.30 (pressed TextAction/tab label, success status) · light `primary` on `canvas` 4.41 · light `warning` on `warningTint` 4.32 · boundaries (DS-11 ≥3:1) `borderStrong` on `surfaceSubtle` 1.59 light / 2.47 dark (FormField border) and on `surface` 1.77 / 2.80 (sheet handle). Need new token values from the user.
-  - Round 2 adds (light only, not yet in the test): `primary` text on `surfaceSubtle` 4.21, on `warningTint` 4.25, on `dangerTint` 4.01 (InlineStatus recovery action); `focus` ring on `appBar` 1.15 (needs ≥3:1, or an `onAppBar` ring color inside the app bar).
+- ~~**M0-Q3**~~ Resolved 2026-09-25: yes. ARCH-05 now lists `.maestro/`, `plugins/`, `scripts/` and `shared/config`. Closes review R1-9.
+- **M0-Q1** Token contrast (DS-11). Partly resolved 2026-09-25: light `textTertiary` is now `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle).
+  - Proposal awaiting approval (smallest change that passes; each failing pair is an `it.failing` test until then):
+    | Token | Now | Proposed | Result |
+    |---|---|---|---|
+    | light `primary` | `#238447` | `#207941` | ≥4.62 on primaryTint, canvas, surfaceSubtle, warningTint, dangerTint; white on it 5.42 |
+    | light `primaryPressed` | `#1D713D` | `#185C34` (green800) | stays visibly darker than the new primary |
+    | light `warning` | `#A56300` | `#A06000` | 4.55 on warningTint · 5.04 on surface |
+    | light `borderStrong` | `#BBC5BE` | `#878E89` | 3.00 on surfaceSubtle · 3.35 on surface (inputs and sheet handle look noticeably darker) |
+    | dark `borderStrong` | `#59645C` | `#68726B` | 3.06 on surfaceSubtle · 3.46 on surface |
+    | focus ring inside the app bar | `focus` 1.15 on light appBar | `onAppBar` (white), 6.03 | code change in `FocusablePressable`/`AppBar`, no new token |

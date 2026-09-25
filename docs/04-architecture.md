@@ -48,7 +48,10 @@ src/app (routes) → features (screens, components, hooks, services) → domain 
 
 ## ARCH-05 Project structure
 ```text
+.maestro/            # Maestro E2E flows (ARCH-18)
 assets/
+plugins/             # local Expo config plugins
+scripts/             # local tooling: QA capture, device drivers, E2E runner
 src/
 ├── app/                 # Expo Router files only
 ├── features/{diary,food-search,meals,goals,profile,settings,weight}/{components,hooks,screens,services} + <feature>.queries.ts
@@ -56,7 +59,7 @@ src/
 ├── data/db/{migrations,repositories,schema}/ + database.ts
 ├── data/api/{usda,open-food-facts}/
 ├── data/secure-storage/
-├── shared/{components,hooks,validation,errors,logging,dates,testing,theme,navigation,i18n}/
+├── shared/{components,config,hooks,validation,errors,logging,dates,testing,theme,navigation,i18n}/  # config = ARCH-14
 └── bootstrap/{providers.tsx,initialize-app.ts}
 ```
 - Features may import domain + shared. Domain imports nothing above it. A feature must not reach into another feature's internals; move shared logic to domain/shared behind an interface.

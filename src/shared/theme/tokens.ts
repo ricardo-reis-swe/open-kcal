@@ -17,7 +17,7 @@ export const lightColors = {
   surfaceSubtle: '#F0F3F1', // inputs, grouped headers, quiet status
   textPrimary: '#151A17',
   textSecondary: '#606A63',
-  textTertiary: '#7A847D', // nonessential, still passes contrast
+  textTertiary: '#687169', // nonessential; 5.05 surface · 4.74 canvas · 4.52 surfaceSubtle (M0-Q1)
   divider: '#E0E5E1',
   borderStrong: '#BBC5BE', // inputs, focused structures
   primary: '#238447',

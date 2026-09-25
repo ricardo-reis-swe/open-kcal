@@ -79,9 +79,9 @@ describe('DS-11: token contrast', () => {
     expect(contrast(darkColors.textTertiary, darkColors.surface)).toBeGreaterThanOrEqual(4.5);
   });
 
-  // Open question M0-Q1 (docs/progress.md): light textTertiary is 3.87:1 on surface. `.failing` flips to red once fixed.
-  it.failing('light textTertiary on surface reaches 4.5:1', () => {
-    expect(contrast(lightColors.textTertiary, lightColors.surface)).toBeGreaterThanOrEqual(4.5);
+  // M0-Q1 resolved 2026-09-25: light textTertiary is #687169.
+  it.each(['surface', 'canvas', 'surfaceSubtle'] as const)('light textTertiary on %s reaches 4.5:1', (bg) => {
+    expect(contrast(lightColors.textTertiary, lightColors[bg])).toBeGreaterThanOrEqual(4.5);
   });
 
   it('dark onPrimary (canvas) on the dark primary reaches 4.5:1', () => {
