@@ -2,7 +2,7 @@
 // reset. Diagnostic info holds versions and the error category only (ARCH-15).
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, PrimaryButton, TextAction } from '@/shared/components';
@@ -35,12 +35,12 @@ export function RecoveryScreen({ error, diagnostics, onRetry, retrying = false, 
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View
+    // Scrolls so Retry stays reachable at the largest text sizes (DS-11: no clipping).
+    <ScrollView
       testID="recovery-screen"
-      style={[
-        styles.root,
+      style={[styles.root, { backgroundColor: theme.colors.canvas }]}
+      contentContainerStyle={[
         {
-          backgroundColor: theme.colors.canvas,
           paddingTop: insets.top + theme.spacing[8],
           paddingBottom: insets.bottom + theme.spacing[6],
           paddingHorizontal: theme.spacing[6],
@@ -64,7 +64,7 @@ export function RecoveryScreen({ error, diagnostics, onRetry, retrying = false, 
           />
         ) : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

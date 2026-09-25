@@ -87,7 +87,11 @@ describe('DATA-17: migrations', () => {
       category: 'migration',
       version: 2,
     });
-    expect(logger.error).toHaveBeenCalledWith('migration failed', { version: 2, durationMs: 0, outcome: 'failed' });
+    expect(logger.error).toHaveBeenCalledWith('migration failed', undefined, {
+      version: 2,
+      durationMs: 0,
+      outcome: 'failed',
+    });
     expect(await readSchemaVersion(db)).toBe(1);
     expect(await db.getAll('SELECT * FROM meals')).toEqual([
       { id: 'm1', name: 'Breakfast', sort_order: 0, created_at: 'x', updated_at: 'x' },

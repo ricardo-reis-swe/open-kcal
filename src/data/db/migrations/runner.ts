@@ -62,7 +62,11 @@ export async function migrate(
     try {
       await task();
     } catch (error) {
-      logger.error('migration failed', { version, durationMs: clock.now().getTime() - started, outcome: 'failed' });
+      logger.error('migration failed', undefined, {
+        version,
+        durationMs: clock.now().getTime() - started,
+        outcome: 'failed',
+      });
       throw error instanceof MigrationError ? error : new MigrationError('Migration failed', version, { cause: error });
     }
     logger.info('migration applied', { version, durationMs: clock.now().getTime() - started, outcome: 'ok' });

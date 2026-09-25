@@ -47,7 +47,7 @@ export async function startServices({ clock = systemClock, ids = appIds }: Start
   } catch (error) {
     const appError = toAppError(error);
     // ARCH-15: category (and migration version) only.
-    logger.error('startup failed', {
+    logger.error('startup failed', appError, {
       code: appError.category,
       version: 'version' in appError ? Number(appError.version) : undefined,
     });
