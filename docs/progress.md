@@ -125,7 +125,10 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
 - [x] T2 Typed errors (ARCH-13, `src/shared/errors`, `category` for branching); injectable `Clock` (`src/shared/dates/clock.ts`); `IdGenerator` interface + v4 formatter (`src/data/db/ids.ts`). The app's random-byte source waits on M1-Q1
 - [x] T3 `SqlDatabase` adapter (`src/data/db/sql.ts`): a serial queue plus `BEGIN IMMEDIATE` transactions on the one connection, so `foreign_keys` always applies (expo's exclusive transactions open a second connection). `database.ts` has the expo-sqlite driver + `openAppDatabase`. Migration runner (`migrations/runner.ts`): a fresh install runs schema + seed + version in one transaction; upgrades get one transaction per migration; a newer-than-app DB is refused, never reset. Migration 1 equals `schema.sql` (test). Jest runs real SQL through Node's built-in `node:sqlite` (`src/shared/testing/nodeSqlite.ts`, no extra dependency)
 - [x] T4 Idempotent seed (`src/data/db/seed.ts`): settings with locale unit defaults, meals in the app language (`seed.meals.*` keys, en + pt-PT), and the provisional goal effective from the first-launch date. Everything is keyed on inserting the settings singleton. Tests: init twice, pt-PT names never re-translated, US units, and a failed first seed rolls back the schema
-- [ ] T5 Repositories: settings, goals, meals (reorder, delete + reassign), foods + servings, diary entries (load day + aggregates), weight, recents, cache metadata (DATA-06/09–16)
+- [ ] T5 Repositories (`src/data/db/repositories`, tests on real SQLite via `openSeededTestDatabase`)
+  - [x] settings (Zod-validated row, unit changes rewrite nothing), goals (effective-dated upsert, UX-01 first save in place), meals (create/rename, two-phase reorder, delete + reassign entries and recents with full rollback, last meal protected)
+  - [ ] foods + servings, diary entries (load day + known-sum/unknown-count aggregates, snapshots), recents
+  - [ ] weight, cache metadata
 - [ ] T6 `CredentialsService` over `expo-secure-store` (ARCH-10, DATA-01)
 - [ ] T7 DB provider + startup sequence (ARCH-09/17), launch screen hold, recovery screen (UX-20, ARCH-13); TanStack Query client
 - [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
