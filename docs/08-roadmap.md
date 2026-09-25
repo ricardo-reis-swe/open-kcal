@@ -46,6 +46,7 @@ A milestone is done only when **all** of these hold. They are cumulative: earlie
 - Every new string exists in both `en` and `pt-PT` (CI key parity). pt-PT text may be a draft until M9.
 - The milestone's Maestro E2E flows (table below) pass on the iOS simulator and the Android emulator.
 - The exit demo was run on both platforms. Screenshots of new screens in light + dark, and at default + largest text on a small phone (DS-13 subset), are saved under `docs/qa/<milestone>/`.
+- Independent review is clean: no blockers or majors in `docs/qa/<milestone>/review.md` (ROAD-03).
 - No placeholder UI for in-scope behavior. Known gaps are listed in the progress log (step 3).
 - Nothing sensitive in logs (ARCH-15): no USDA key, diary content, weights or notes.
 
@@ -102,12 +103,23 @@ Update it in the same commit as the work it describes.
 
 **Spec changes:** only after user approval. Update the spec in place (never renumber IDs), mention it in the commit, and log it.
 
-**Milestone acceptance:** when ROAD-02 is met, set the status to "awaiting user acceptance" and report to the user:
+**Independent review** (before asking the user to accept)
+- Once the builder believes ROAD-02 is met, it spins up a **separate reviewer agent** with fresh context: a new session or subagent, never the builder's own context. It may use a different model.
+- The reviewer is **read-only** (no edits or commits) and is given the milestone ID, its spec IDs, the ROAD-02 checklist, and the commit range `<milestone start>..HEAD`.
+- The reviewer:
+  - traces every listed spec ID to its code and tests
+  - runs lint, `tsc`, the tests and the milestone's E2E flows itself (and the exit demo when a simulator is available)
+  - checks for spec deviations, SCOPE-10/POST leaks, sensitive logging (ARCH-15), missing pt-PT keys and correctness bugs
+- Output: `docs/qa/<milestone>/review.md`, with findings labeled **blocker / major / minor**, each citing a spec ID and `file:line`.
+- The builder fixes every blocker and major, then runs a **new** reviewer (fresh again). Repeat until none remain. Minors may be fixed or logged as known gaps.
+
+**Milestone acceptance:** when ROAD-02 is met and the review is clean, set the status to "awaiting user acceptance" and report to the user:
 - what was built
 - the exit demo steps
 - test counts
 - the path to the QA screenshots
 - known gaps
+- the review summary (rounds run, findings fixed, minors left)
 
 The milestone is done only after the user accepts it.
 
