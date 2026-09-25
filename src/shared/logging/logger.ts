@@ -1,6 +1,7 @@
 // App logger (ARCH-15). All logging goes through this interface; nothing else may call `console`.
 // Callers pass a static message plus a small context of primitive values. Context keys that can carry
-// secrets or health data are redacted in every build; release builds also drop `debug` and error details.
+// secrets or health data are redacted in every build; release builds keep only allowlisted context keys
+// and drop `debug` and error details.
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LogValue = string | number | boolean | null | undefined;
@@ -26,17 +27,41 @@ export const REDACTED = '[redacted]';
 
 // Matched case-insensitively against context keys. Covers the USDA key, search terms, diary contents,
 // body weights, Quick Calories notes, raw payloads and rows (ARCH-10, ARCH-15).
+// `fat(?!al)` so `fatal` stays readable.
 const SENSITIVE_KEY =
-  /(api[-_]?key|secret|token|password|authorization|credential|query|search|term|note|weight|name|brand|calorie|kcal|energy|protein|carb|fat|payload|body|row|url|email)/i;
+  /(^q$|api[-_]?key|secret|token|password|authorization|credential|header|query|search|term|note|comment|text|title|label|description|weight|kg|lbs|name|brand|calorie|kcal|energy|protein|carb|fat(?!al)|amount|quantity|serving|value|data|payload|response|body|row|url|email)/i;
+
+// Release builds keep only these operational keys; anything else is redacted, so a new call site can't leak
+// diary, weight or search data by picking an unlisted key name (review R1-5). Extend deliberately.
+const RELEASE_CONTEXT_KEYS: ReadonlySet<string> = new Set([
+  'appVersion',
+  'attempt',
+  'code',
+  'count',
+  'durationMs',
+  'outcome',
+  'platform',
+  'pluralRules',
+  'provider',
+  'retryAfterMs',
+  'status',
+  'version',
+]);
 
 // Strings that look like credentials in URLs or headers, regardless of the key they sit under.
 const SENSITIVE_VALUE = /(api[-_]?key=|x-api-key)/i;
 
-export function redactContext(context: LogContext | undefined): Record<string, LogValue> | undefined {
+export function redactContext(
+  context: LogContext | undefined,
+  { isDev = true }: { isDev?: boolean } = {},
+): Record<string, LogValue> | undefined {
   if (!context) return undefined;
   const out: Record<string, LogValue> = {};
   for (const [key, value] of Object.entries(context)) {
-    const sensitive = SENSITIVE_KEY.test(key) || (typeof value === 'string' && SENSITIVE_VALUE.test(value));
+    const sensitive =
+      (!isDev && !RELEASE_CONTEXT_KEYS.has(key)) ||
+      SENSITIVE_KEY.test(key) ||
+      (typeof value === 'string' && SENSITIVE_VALUE.test(value));
     out[key] = sensitive ? REDACTED : value;
   }
   return out;
@@ -66,8 +91,8 @@ export type LoggerOptions = {
 export function createLogger({ isDev, sink }: LoggerOptions): Logger {
   const emit = (level: LogLevel, message: string, context?: LogContext, error?: unknown) => {
     if (level === 'debug' && !isDev) return;
-    const record: LogRecord = { level, message };
-    const safeContext = redactContext(context);
+    const record: LogRecord = { level, message: redactString(message) };
+    const safeContext = redactContext(context, { isDev });
     if (safeContext) record.context = safeContext;
     const safeError = describeError(error, isDev);
     if (safeError) record.error = safeError;

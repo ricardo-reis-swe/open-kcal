@@ -47,6 +47,37 @@ describe('ARCH-15: logger', () => {
     expect(JSON.stringify(records)).not.toContain('SECRET');
   });
 
+  it('redacts common diary/weight/search key names too, but not look-alikes such as fatal', () => {
+    const { logger, records } = setup(true);
+    logger.warn('x', { q: 'eggs', amount: 2, servingSize: 30, kg: 80, mealTitle: 'Lunch', response: '{}', fatal: true });
+    expect(records[0]?.context).toEqual({
+      q: REDACTED,
+      amount: REDACTED,
+      servingSize: REDACTED,
+      kg: REDACTED,
+      mealTitle: REDACTED,
+      response: REDACTED,
+      fatal: true,
+    });
+  });
+
+  it('keeps only allowlisted context keys in release builds', () => {
+    const { logger, records } = setup(false);
+    logger.info('app initialized', { appVersion: '0.1.0', durationMs: 5, entryCount: 3, mealId: 'm1' });
+    expect(records[0]?.context).toEqual({
+      appVersion: '0.1.0',
+      durationMs: 5,
+      entryCount: REDACTED,
+      mealId: REDACTED,
+    });
+  });
+
+  it('redacts credential-looking messages', () => {
+    const { logger, records } = setup(true);
+    logger.warn('GET /foods?api_key=SECRET');
+    expect(records[0]?.message).toBe(REDACTED);
+  });
+
   it('drops debug records in release builds', () => {
     const { logger, records } = setup(false);
     logger.debug('verbose detail');
