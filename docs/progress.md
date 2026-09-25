@@ -37,7 +37,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
   - [x] R1-7 minor: FormField/ListRow join label + value/unit via `a11y.labelWithValue` (en + pt-PT); test.
   - [x] R1-8 minor: plural test removes Node's `Intl.PluralRules` and loads the app's polyfill module + locale data. An i18next `_one`/`_other` test comes with the first plural key.
   - [x] R1-11 minor: disabled + loading PrimaryButton spinner uses `textSecondary`; disabled ListRow label uses `textSecondary`; tests.
-  - [ ] R1-12 minor: `trap` reset in `scripts/qa/m0-android.sh`; test for `adoptSceneDelegate`.
+  - [x] R1-12 minor: `scripts/qa/m0-android.sh` resets the emulator in an EXIT `trap`; `adoptSceneDelegate` test (rewrite, idempotent, throws on unknown template).
   - [ ] R1-5 minor: release-build allowlist for logger context keys; tests.
   - [ ] R1-4 minor: focus ring on pressable primitives, or log it as an M9 a11y gap.
   - [ ] R1-9 minor: ARCH-05 append proposal. **Blocked on M0-Q3.**

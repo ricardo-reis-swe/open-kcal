@@ -20,6 +20,11 @@ launch() {
   $ADB shell am start -a android.intent.action.VIEW -d "$URL" $PKG >/dev/null
   wait_for "Add"; sleep 4; wait_for "Add"
 }
+reset_device() {
+  $ADB shell settings put system font_scale 1.0; $ADB shell cmd uimode night no >/dev/null
+  $ADB shell wm size reset; $ADB shell wm density reset
+}
+trap reset_device EXIT # an interrupted run must not leave the emulator altered
 $ADB reverse tcp:8081 tcp:8081 >/dev/null
 $ADB shell wm size 720x1520; $ADB shell wm density 320
 for scheme in light dark; do
@@ -35,5 +40,3 @@ for scheme in light dark; do
     $ADB exec-out screencap -p > "$OUT/android-profile-$scheme-$text.png"
   done
 done
-$ADB shell settings put system font_scale 1.0; $ADB shell cmd uimode night no >/dev/null
-$ADB shell wm size reset; $ADB shell wm density reset
