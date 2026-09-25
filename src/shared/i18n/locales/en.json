@@ -28,5 +28,12 @@
       "dinner": "Dinner",
       "snacks": "Snacks"
     }
+  },
+  "startup": {
+    "title": "Couldn't open your diary.",
+    "body": "Your data is still on this device. Try again, or copy the diagnostic info if it keeps happening.",
+    "retry": "Retry",
+    "copyDiagnostics": "Copy diagnostic info",
+    "loading": "Opening your diary"
   }
 }

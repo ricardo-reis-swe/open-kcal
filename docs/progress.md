@@ -106,6 +106,9 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
 
 ### Known gaps
 - Local food search queries (custom + recent + cache lookup, DATA-15/PROV-08) arrive with the M4/M5 Food Search screens. M1 has the tables and indexes only.
+- `Copy diagnostic info` (UX-20) is hidden until a clipboard module exists (M1-Q1). The Retry path is complete.
+- Record IDs come from `src/data/db/appIds.ts`: `crypto.getRandomValues` if present, otherwise `Math.random` bytes, as v4 UUIDs. Interim until M1-Q1; the swap stays inside that one file.
+- Launch-screen hold: the native splash hands over to a plain canvas view (`launch-screen`) while SQLite opens. There is no `expo-splash-screen` dependency.
 - Editing a food entry with only a quantity change scales the snapshot instead of re-reading the food. Nutrition is linear in quantity, so the result is the same, and it keeps entries editable after the food is gone (DATA-05).
 
 ### Open questions
@@ -134,6 +137,6 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
   - [x] foods + servings (custom create/soft delete; external upsert keyed on `(source, external_id)` with cache metadata in the same transaction, expiry flags refresh only), diary entries (load day with SQL known-sum/unknown-count aggregates, add/edit/move/delete food entries with unrounded snapshots, Quick Calories), recents (DATA-14; soft-deleted foods drop out)
   - [x] weight: `measured_at` derived from the date (now for today, local noon otherwise), date ≤ today, current = latest `measured_at` then `created_at`, physical delete
 - [x] T6 `CredentialsService` (`src/data/secure-storage`) over `expo-secure-store`: the four ARCH-10 methods plus a masked hint (UX-18), stored device-only (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`), Zod-validated reads, and `SecureStorageError` with no native cause attached (native messages could echo the key)
-- [ ] T7 DB provider + startup sequence (ARCH-09/17), launch screen hold, recovery screen (UX-20, ARCH-13); TanStack Query client
+- [x] T7 Startup (`src/bootstrap`): `startServices` opens SQLite, migrates + seeds (meal names from `seed.meals.*` in the app language, units from the device measurement system) and builds the repositories + `CredentialsService`. `StartupGate` keeps a launch-screen continuation until that succeeds, then mounts `ServicesProvider` + `QueryClientProvider` (local queries: `networkMode: 'always'`, never stale on their own, no retry, never persisted). On failure it shows the UX-20 `RecoveryScreen`, whose Retry reruns startup and never resets. Diagnostic info carries versions + error category only. In Jest, `expo-sqlite` is mocked with `node:sqlite`, so route tests go through the real startup
 - [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
 - [ ] T9 Independent review

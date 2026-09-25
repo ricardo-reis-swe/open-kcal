@@ -7,3 +7,6 @@ setUpTests();
 // The app logger writes info/debug to the console in dev; keep test output readable. warn/error stay visible.
 jest.spyOn(console, 'info').mockImplementation(() => undefined);
 jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+
+// ARCH-18: app code opens SQLite through expo-sqlite; in Jest that's real SQL on Node's built-in SQLite.
+jest.mock('expo-sqlite', () => require('./src/shared/testing/expoSqliteMock'));

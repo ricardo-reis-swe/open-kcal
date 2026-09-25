@@ -32,7 +32,7 @@ function NavigationTheme({ children }: { children: ReactNode }) {
   );
 }
 
-/** App-wide providers (ARCH-17 order: … → providers + Router). Services/DB/Query join in M1. */
+/** App-wide providers (ARCH-17 order: … → providers + Router). Services/DB/Query mount inside `StartupGate`. */
 export function AppProviders({ children }: { children: ReactNode }) {
   useSyncAppLocale();
   return (

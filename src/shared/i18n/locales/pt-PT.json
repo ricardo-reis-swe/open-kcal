@@ -28,5 +28,12 @@
       "dinner": "Jantar",
       "snacks": "Lanches"
     }
+  },
+  "startup": {
+    "title": "Não foi possível abrir o seu diário.",
+    "body": "Os seus dados continuam neste dispositivo. Tente novamente ou copie as informações de diagnóstico se o problema persistir.",
+    "retry": "Tentar novamente",
+    "copyDiagnostics": "Copiar informações de diagnóstico",
+    "loading": "A abrir o seu diário"
   }
 }

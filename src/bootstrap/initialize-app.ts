@@ -7,8 +7,8 @@ import { logger } from '@/shared/logging/logger';
 export type AppInit = { config: AppConfig };
 
 /**
- * Synchronous startup steps (ARCH-17): validate config → logger → i18n.
- * SQLite, migrations, seed and the recovery screen join this sequence in M1.
+ * Synchronous startup steps (ARCH-17): validate config → logger → i18n. The async steps (SQLite → migrate + seed
+ * → services → Query) run in `StartupGate` via `startServices`, behind the launch screen.
  */
 export function initializeApp(): AppInit {
   const config = getConfig();
