@@ -1,5 +1,6 @@
 import { forwardRef, useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/shared/theme';
 
@@ -22,9 +23,10 @@ export const FormField = forwardRef<TextInput, FormFieldProps>(function FormFiel
   ref,
 ) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [focused, setFocused] = useState(false);
   const borderColor = error ? theme.colors.danger : focused ? theme.colors.focus : theme.colors.borderStrong;
-  const accessibleLabel = unit ? `${label}, ${unit}` : label;
+  const accessibleLabel = unit ? t('a11y.labelWithValue', { label, value: unit }) : label;
 
   return (
     <View style={{ gap: theme.spacing[1] }}>

@@ -36,7 +36,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
     - [ ] Next: `npx expo prebuild` + rebuild both dev builds (one batch), then verify. Android: `adb shell cmd locale set-app-locales com.ricardoreis.calorietracker --locales pt-PT` switches the running app. iOS: Settings › Calorie Tracker › Language shows en/pt-PT (or `simctl spawn booted defaults write com.ricardoreis.calorietracker AppleLanguages -array pt-PT` + relaunch).
   - [x] R1-1 major: iOS exit demo run with the simulator tool (`+` opens the sheet; swipe-down and backdrop close it; Profile tab selects) and the 8 missing iOS screenshots captured. Found and fixed: live Dynamic Type changes left text clipped (`AppText` remounts on font scale).
   - [x] R1-6 minor: contrast test covers the pairs primitives render; the failing ones are `it.failing` and listed in M0-Q1.
-  - [ ] R1-7 minor: localized a11y label joining (`a11y.labelWithValue`) in FormField/ListRow.
+  - [x] R1-7 minor: FormField/ListRow join label + value/unit via `a11y.labelWithValue` (en + pt-PT); test.
   - [ ] R1-8 minor: plural test uses `polyfill-force` + locale data.
   - [ ] R1-11 minor: disabled PrimaryButton spinner color; disabled ListRow emphasis; tests.
   - [ ] R1-12 minor: `trap` reset in `scripts/qa/m0-android.sh`; test for `adoptSceneDelegate`.

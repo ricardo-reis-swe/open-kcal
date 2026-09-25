@@ -17,5 +17,8 @@
   },
   "addActions": {
     "sheetLabel": "Ações de adicionar"
+  },
+  "a11y": {
+    "labelWithValue": "{{label}}, {{value}}"
   }
 }

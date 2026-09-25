@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
+import { i18next } from '@/shared/i18n/i18n';
 import { renderWithProviders } from '@/shared/testing/render';
 import { darkColors, lightColors } from '@/shared/theme/tokens';
 
@@ -83,6 +84,17 @@ describe('DS-12: ListRow', () => {
     await renderWithProviders(<ListRow label="Units" value="kg" onPress={onPress} navigates />);
     await fireEvent.press(screen.getByRole('button', { name: 'Units, kg' }));
     expect(onPress).toHaveBeenCalled();
+  });
+
+  it('ARCH-22: joins label and value through the localized a11y.labelWithValue pattern', async () => {
+    const original = i18next.t('a11y.labelWithValue');
+    i18next.addResource('en', 'translation', 'a11y.labelWithValue', '{{value}} · {{label}}');
+    try {
+      await renderWithProviders(<ListRow label="Units" value="kg" onPress={jest.fn()} />);
+      expect(screen.getByRole('button', { name: 'kg · Units' })).toBeOnTheScreen();
+    } finally {
+      i18next.addResource('en', 'translation', 'a11y.labelWithValue', original);
+    }
   });
 
   it('renders a non-interactive row without a button role', async () => {

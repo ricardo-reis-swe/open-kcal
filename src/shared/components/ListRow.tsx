@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/shared/theme';
 
@@ -30,6 +31,7 @@ export function ListRow({
   testID,
 }: ListRowProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const content = (
     <>
       {icon ? <AppIcon name={icon} color="textSecondary" /> : null}
@@ -54,7 +56,7 @@ export function ListRow({
       backgroundColor: theme.colors.surface,
     },
   ];
-  const a11yLabel = value ? `${label}, ${value}` : label;
+  const a11yLabel = value ? t('a11y.labelWithValue', { label, value }) : label;
 
   if (!onPress) {
     return (
