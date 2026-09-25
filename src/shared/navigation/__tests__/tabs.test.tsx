@@ -1,7 +1,9 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { MockDeepScreen, renderApp } from '@/shared/testing/appRoutes';
 
+// Test-only route, so it isn't in the generated typed-route union.
+const DEEP = '/diary/deep' as Href;
 const render = (url: string) => renderApp(url, { '(tabs)/diary/deep': MockDeepScreen });
 
 async function flush() {
@@ -46,7 +48,7 @@ describe('NAV-01 / NAV-02: tabs', () => {
 
   it('NAV-02: each tab keeps its own stack when switching tabs', async () => {
     const app = await render('/diary');
-    await act(async () => router.push('/diary/deep'));
+    await act(async () => router.push(DEEP));
     await flush();
     expect(app.getPathname()).toBe('/diary/deep');
     await fireEvent.press(screen.getByRole('tab', { name: 'Profile' }));
@@ -57,7 +59,7 @@ describe('NAV-01 / NAV-02: tabs', () => {
 
   it('NAV-02: tapping the selected tab while deeper pops it to root', async () => {
     const app = await render('/diary');
-    await act(async () => router.push('/diary/deep'));
+    await act(async () => router.push(DEEP));
     await flush();
     expect(app.getPathname()).toBe('/diary/deep');
     await fireEvent.press(screen.getByRole('tab', { name: 'Diary' }));
