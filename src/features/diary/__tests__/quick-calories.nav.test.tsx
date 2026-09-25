@@ -24,7 +24,8 @@ afterEach(() => {
 
 /** `+` → Quick calories → Meal Picker → `meal`: the Quick Calories screen opens (NAV-03). */
 async function openQuickCalories(meal = 'Lunch') {
-  await fireEvent.press(screen.getByRole('button', { name: 'Add' }));
+  // By test ID: an open Quick Calories screen also has an `Add` button (its primary action).
+  await fireEvent.press(screen.getByTestId('tab-add'));
   await fireEvent.press(screen.getByRole('button', { name: 'Quick calories' }));
   await flush();
   const picker = await screen.findByTestId('meal-picker');
@@ -119,6 +120,23 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
     expect(await screen.findByLabelText('Showing Tomorrow')).toBeOnTheScreen();
     await screen.findByTestId('diary-day-list');
     expect(activeDay().getByRole('header', { name: 'Dinner, 300 kilocalories' })).toBeOnTheScreen();
+  });
+
+  it('NAV-03: + over an open Quick Calories screen starts a fresh form for the picked meal', async () => {
+    const app = await renderApp('/diary');
+    await openQuickCalories('Lunch');
+    await fireEvent.changeText(screen.getByLabelText('Calories, kcal'), '450');
+    await openQuickCalories('Snacks');
+    expect(screen.getByLabelText('Meal, Snacks')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Calories, kcal').props.value).toBe('');
+
+    await fireEvent.changeText(screen.getByLabelText('Calories, kcal'), '120');
+    await fireEvent.press(screen.getByTestId('quick-calories-submit'));
+    await flush();
+    expect(app.getPathname()).toBe('/diary');
+    await screen.findByTestId('diary-day-list');
+    expect(activeDay().getByRole('header', { name: 'Snacks, 120 kilocalories' })).toBeOnTheScreen();
+    expect(activeDay().getByRole('header', { name: 'Lunch, 0 kilocalories' })).toBeOnTheScreen();
   });
 
   it('NAV-04: back from Quick Calories saves nothing', async () => {

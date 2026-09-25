@@ -22,8 +22,9 @@ export function GlobalAddFlow({ open, onClose }: Props) {
   const next = useRef<'pickMeal' | null>(null);
   const pickedMeal = useRef<string | null>(null);
 
-  const openQuickCalories = (mealId: string) =>
-    router.navigate(routes.quickCalories({ mealId, date, origin: 'diary' }));
+  // Push, never navigate: `+` over an open Quick Calories screen must start a fresh form for the picked meal, not
+  // update the open screen's params in place and keep its old meal and input (NAV-03, review M3-R1).
+  const openQuickCalories = (mealId: string) => router.push(routes.quickCalories({ mealId, date, origin: 'diary' }));
 
   return (
     <>

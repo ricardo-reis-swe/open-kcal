@@ -233,13 +233,18 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T4 Tests: domain (range, parsing in kcal/kJ), `BottomSheet.onDismissed`, component tests (fields, validation, kJ storage, save failure, pt-PT smoke) and navigation tests on real SQLite (sheet rows, picker order + cancel, SCOPE-11 flow 2, start from Profile on another date, back saves nothing, edit + meal change, delete confirm/cancel, not found). 309 tests.
 - [x] T5 Maestro `m3-quick-calories` (add → edit → delete; a unique note per run). Passes on iOS and Android. It found and fixed: the Android keyboard covered the primary action (Android is edge-to-edge, so `KeyboardAvoidingView` pads on both platforms). `ConfirmationDialog` actions got test IDs.
 - [x] T6 QA screenshots on both platforms (light/dark × default/largest text, small Android phone): Add Action Sheet, Meal Picker, Quick Calories with a validation error and filled, Edit, delete dialog, in `docs/qa/M3/` (`scripts/qa/m3.sh`). The capture found that Lunch sits below the fold on the small phone and that `Delete entry` is off-screen with the keyboard open; both flows now scroll to them.
-- [ ] T7 Independent review
+- [ ] T7 Independent review. Round 1 (`docs/qa/M3/review-round1.md` once round 2 starts): 1 major, 4 minors.
+  - M3-R1 (major) fixed: `+` over an open Quick Calories screen kept the old meal and input, because `router.navigate` updated the open screen's params in place. `GlobalAddFlow` now pushes a fresh screen; nav test added.
+  - M3-R5 (minor) fixed: tests for the single-meal picker skip (`GlobalAddFlow.test.tsx`) and edit mode (populated, untouched kJ keeps the stored kcal, meal change from Meal Detail, delete failure, food entry ID → not found). 316 tests.
+  - M3-R2, M3-R3: open questions below. M3-R4: known gap below.
 
 ### Known gaps
 - `Add food` (Food Search, M4) and `Update weight` (Weight Entry Sheet, M8) show in the Add Action Sheet but are disabled until their flows land. Food rows on the Diary stay unpressable until Edit Food Entry (M4).
 - The iOS number pad has no Return key, so Calories → Note uses the iOS keyboard's Next accessory or a tap (UX-00 Return rule holds on Android).
 - With the keyboard open on a short screen, `Delete entry` sits below the fold; scrolling dismisses the keyboard and shows it.
+- M3-R4: a load failure on Quick Calories (settings, meals, or an entry read error other than not found) shows the not-found state, with `Back to Diary` but no Retry. Local reads failing is rare; left for the M9 error-state pass.
 - At the largest iOS text size the app bar truncates long titles (`Quick ca…`, `ios-*-largest-quick-calories.png`). `AppBar` is the shared M0 component, so this affects every long title; left for the M9 DS-11 large-text pass.
 
 ### Open questions
-- None.
+- **M3-R2** (NAV-09/NAV-03): Back from a Quick Calories screen started on Profile lands on the Diary tab, not Profile (the form lives in the Diary stack). The spec only pins where *save* ends. Keep it, or return to Profile on back/cancel?
+- **M3-R3** (ARCH-03): ARCH-03 names React Hook Form + Zod for forms, incl. Quick Calories; the form uses `useState` + domain parsing and `react-hook-form` isn't installed. Adding it needs approval (ARCH-20 note). Add it now (and refactor this form), add it from M4 (Create Custom Food), or amend ARCH-03 to allow plain state for small forms?
