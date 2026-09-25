@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Step 1 approved.
+Status: **DRAFT, written one step at a time.** Steps 1–2 approved.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -44,4 +44,37 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 - TanStack Query caches each `(provider, query, page)` for 10 min, so backspacing or retyping doesn't spend budget.
 - If a product read is throttled, the tapped row keeps its spinner until a slot frees (at most ~5 s), then shows the UX-04 row error.
 
-<!-- Steps 2–9 pending: nutrient mapping · servings · drop rules · ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
+## PROV-05 Nutrient mapping
+Output per food: `energy_kcal` (required) and `protein_g`, `carbohydrate_g`, `fat_g` (each nullable, DATA-06), all per the food's basis (PROV-06). A missing or invalid value → `null`, never 0. A present 0 stays 0.
+
+**USDA.** Nutrients are keyed by `number` (a string). The shape differs by call, so the adapter reads both:
+- Search: `foodNutrients[] = { nutrientNumber, unitName: "KCAL" | "G" | "kJ", value }`.
+- Detail (`format=full`): `foodNutrients[] = { nutrient: { number, unitName: "kcal" | "g" | "kJ" }, amount }`. Items without `amount` are group headers; skip them.
+- Compare units case-insensitively. A unit mismatch (e.g. mg where g is expected) → treat that nutrient as missing.
+
+| Field | Take the first present | Unit |
+|---|---|---|
+| `energy_kcal` | `208` → `958` (Atwater specific) → `957` (Atwater general) → `268` ÷ 4.184 | kcal (kJ for 268) |
+| `protein_g` | `203` | g |
+| `fat_g` | `204` (total lipid) | g |
+| `carbohydrate_g` | `205` (by difference) → `205.2` (by summation) | g |
+- Values are per 100 g for every data type (for Branded, per 100 g or 100 ml, see PROV-06). Checked: Branded `208 = 467` per 100 g matches label calories of 140 per 30 g serving.
+- Branded fallback: if `foodNutrients` has no energy but `labelNutrients.calories` and `servingSize` exist, then `per100 = label value ÷ servingSize × 100`. Macros use the same fallback from `labelNutrients.{protein, fat, carbohydrates}`.
+
+**OFF.** Read from `nutriments`, as-sold values only (ignore `*_prepared_*`).
+
+| Field | Take the first present |
+|---|---|
+| `energy_kcal` | `energy-kcal_100g` → `energy-kj_100g` ÷ 4.184 → `energy_100g` ÷ 4.184 (OFF's `energy_100g` is kJ) |
+| `protein_g` | `proteins_100g` |
+| `carbohydrate_g` | `carbohydrates_100g` |
+| `fat_g` | `fat_100g` |
+- If a `*_100g` value is missing but `*_serving` and a numeric `serving_quantity` exist: `per100 = serving ÷ serving_quantity × 100`.
+- Values arrive as numbers or numeric strings. Anything non-numeric → missing.
+
+**Sanity bounds (both providers, per 100 g/ml).**
+- Invalid → `null`: a negative value; a macro > 100 g.
+- Energy > 900 kcal or negative → energy invalid. That food fails the minimum-data check (drop rules step).
+- Keep full precision (DATA-04). No rounding and no Atwater "correction" of provider values.
+
+<!-- Steps 3–9 pending: servings · drop rules · ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
