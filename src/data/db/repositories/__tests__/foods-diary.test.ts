@@ -266,8 +266,29 @@ describe('DATA-05 / DATA-06 / DATA-16: diary repository', () => {
     expect(await deps.db.getFirst('SELECT COUNT(*) AS c FROM recent_foods')).toEqual({ c: 0 });
   });
 
-  it('DATA-12: moving an entry changes only meal_id + updated_at; a serving change recomputes', async () => {
+  it('DATA-12: moving an entry changes only meal_id + updated_at', async () => {
     const { deps, foods, diary, breakfast, lunch } = await setup();
+    const food = await foods.createCustom(eggs);
+    await diary.addQuickCalories({ diaryDate: DAY, mealId: lunch, energyKcal: 100 });
+    const entry = await diary.addFoodEntry({
+      diaryDate: DAY,
+      mealId: breakfast,
+      foodId: food.id,
+      servingId: food.servings[1]!.id,
+      quantity: 2,
+    });
+    const rowOf = () =>
+      deps.db.getFirst<Record<string, unknown>>('SELECT * FROM diary_entries WHERE id = ?', [entry.id]);
+    const before = await rowOf();
+    deps.clock.advance(60_000);
+    // The editor passes the unchanged serving along with the new meal.
+    await diary.editFoodEntry(entry.id, { mealId: lunch, quantity: 2, servingId: food.servings[1]!.id });
+    const after = await rowOf();
+    expect(after).toEqual({ ...before, meal_id: lunch, updated_at: '2026-09-25T10:01:00.000Z' });
+  });
+
+  it('DATA-16: a changed serving recomputes from the food', async () => {
+    const { foods, diary, breakfast } = await setup();
     const food = await foods.createCustom(eggs);
     const entry = await diary.addFoodEntry({
       diaryDate: DAY,
@@ -276,16 +297,37 @@ describe('DATA-05 / DATA-06 / DATA-16: diary repository', () => {
       servingId: food.servings[1]!.id,
       quantity: 2,
     });
-    deps.clock.advance(60_000);
-    const moved = await diary.editFoodEntry(entry.id, { mealId: lunch, quantity: 2 });
-    expect(moved).toMatchObject({ mealId: lunch, nutrients: entry.nutrients, servingUnit: 'egg', servingQuantity: 2 });
-    const row = await deps.db.getFirst<{ updated_at: string; created_at: string }>(
-      'SELECT created_at, updated_at FROM diary_entries WHERE id = ?',
-      [entry.id],
-    );
-    expect(row!.updated_at > row!.created_at).toBe(true);
-    const grams = await diary.editFoodEntry(entry.id, { mealId: lunch, quantity: 50, servingId: food.servings[0]!.id });
+    const grams = await diary.editFoodEntry(entry.id, {
+      mealId: breakfast,
+      quantity: 50,
+      servingId: food.servings[0]!.id,
+    });
     expect(grams).toMatchObject({ servingUnit: 'g', servingQuantity: 50, nutrients: { energyKcal: 75 } });
+  });
+
+  it('DATA-05: passing the same serving after a cache refresh never rewrites the snapshot', async () => {
+    const { foods, diary, breakfast } = await setup();
+    const food = await foods.upsertExternal('open_food_facts', '1', offBar(400), cache('2027-01-01T00:00:00.000Z'));
+    const entry = await diary.addFoodEntry({
+      diaryDate: DAY,
+      mealId: breakfast,
+      foodId: food.id,
+      servingId: food.servings[0]!.id,
+      quantity: 1,
+    });
+    const refreshed = await foods.upsertExternal(
+      'open_food_facts',
+      '1',
+      offBar(999),
+      cache('2027-02-01T00:00:00.000Z'),
+    );
+    const edited = await diary.editFoodEntry(entry.id, {
+      mealId: breakfast,
+      quantity: 2,
+      servingId: refreshed.servings[0]!.id,
+    });
+    // Scaled from the saved snapshot (100 kcal per bar), not recomputed from the refreshed 999 kcal/100 g.
+    expect(edited.nutrients).toEqual({ energyKcal: 200, carbohydrateG: 30, proteinG: null, fatG: null });
   });
 
   it('DATA-12: delete is physical and leaves recents use_count alone', async () => {
@@ -317,5 +359,37 @@ describe('DATA-05 / DATA-06 / DATA-16: diary repository', () => {
         quantity: 1,
       }),
     ).rejects.toMatchObject({ category: 'validation', fields: ['servingId'] });
+  });
+});
+
+describe('PROV-09: refresh merges servings by (label, unit)', () => {
+  it('keeps matched serving ids (and recents), inserts new ones, deletes missing ones', async () => {
+    const { foods, diary, recents, breakfast } = await setup();
+    const withServings = (servings: FoodInput['servings']): FoodInput => ({ ...offBar(400), servings });
+    const first = await foods.upsertExternal(
+      'open_food_facts',
+      '7',
+      withServings([
+        { label: 'bar', quantity: 1, unit: 'bar', basisMultiplier: 0.25 },
+        { label: 'pack', quantity: 1, unit: 'pack', basisMultiplier: 1 },
+      ]),
+      cache('2027-01-01T00:00:00.000Z'),
+    );
+    const bar = first.servings[0]!;
+    await diary.addFoodEntry({ diaryDate: DAY, mealId: breakfast, foodId: first.id, servingId: bar.id, quantity: 1 });
+    const refreshed = await foods.upsertExternal(
+      'open_food_facts',
+      '7',
+      withServings([
+        { label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 },
+        { label: 'Bar', quantity: 1, unit: 'BAR', basisMultiplier: 0.3, isDefault: true }, // case-insensitive match
+      ]),
+      cache('2027-02-01T00:00:00.000Z'),
+    );
+    const refreshedBar = refreshed.servings.find((s) => s.label === 'Bar')!;
+    expect(refreshedBar).toMatchObject({ id: bar.id, basisMultiplier: 0.3, isDefault: true, sortOrder: 1 });
+    expect(refreshed.servings.map((s) => s.label)).toEqual(['g', 'Bar']); // 'pack' deleted, 'g' inserted
+    expect(refreshed.servings.filter((s) => s.isDefault)).toHaveLength(1);
+    expect((await recents.list())[0]).toMatchObject({ lastServingId: bar.id });
   });
 });

@@ -113,11 +113,29 @@ export function createMealsRepository({ db, clock, ids }: RepositoryDeps) {
           if (targetMealId === null || targetMealId === id || !meals.some((m) => m.id === targetMealId)) {
             throw new ValidationError('Pick a different meal for the entries', ['targetMealId']);
           }
-          await tx.run('UPDATE diary_entries SET meal_id = ?, updated_at = ? WHERE meal_id = ?', [
-            targetMealId,
-            now,
-            id,
-          ]);
+          // Per date, append the moved entries after the target meal's entries, keeping their relative order.
+          const moved = await tx.getAll<{ id: string; diary_date: string }>(
+            'SELECT id, diary_date FROM diary_entries WHERE meal_id = ? ORDER BY diary_date, sort_order, created_at',
+            [id],
+          );
+          const next = new Map<string, number>();
+          for (const entry of moved) {
+            let sortOrder = next.get(entry.diary_date);
+            if (sortOrder === undefined) {
+              const top = await tx.getFirst<{ next: number }>(
+                'SELECT COALESCE(MAX(sort_order) + 1, 0) AS next FROM diary_entries WHERE meal_id = ? AND diary_date = ?',
+                [targetMealId, entry.diary_date],
+              );
+              sortOrder = top?.next ?? 0;
+            }
+            next.set(entry.diary_date, sortOrder + 1);
+            await tx.run('UPDATE diary_entries SET meal_id = ?, sort_order = ?, updated_at = ? WHERE id = ?', [
+              targetMealId,
+              sortOrder,
+              now,
+              entry.id,
+            ]);
+          }
           await tx.run('UPDATE recent_foods SET last_meal_id = ? WHERE last_meal_id = ?', [targetMealId, id]);
         }
         await tx.run('DELETE FROM meals WHERE id = ?', [id]);

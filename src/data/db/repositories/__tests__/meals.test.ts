@@ -111,4 +111,29 @@ describe('DATA-10: meals repository', () => {
     await expect(meals.delete(list[0]!.id, null)).rejects.toMatchObject({ category: 'conflict' });
     expect(await meals.list()).toHaveLength(1);
   });
+
+  it('DATA-10: reassigned entries append after the target meal, per date, in their original order', async () => {
+    const { deps, meals, byName } = await setup();
+    const add = (id: string, mealId: string, date: string, sortOrder: number) =>
+      deps.db.run(
+        `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_name_snapshot, energy_kcal, sort_order, created_at, updated_at)
+         VALUES (?, 'quick_calories', ?, ?, 'Quick Calories', 1, ?, 'x', 'x')`,
+        [id, date, mealId, sortOrder],
+      );
+    await add('d1', byName('Dinner'), '2026-09-25', 0);
+    await add('d2', byName('Dinner'), '2026-09-25', 1);
+    await add('l2', byName('Lunch'), '2026-09-25', 1);
+    await add('l1', byName('Lunch'), '2026-09-25', 0);
+    await add('l3', byName('Lunch'), '2026-09-26', 0);
+    await meals.delete(byName('Lunch'), byName('Dinner'));
+    expect(
+      await deps.db.getAll('SELECT id, diary_date, sort_order FROM diary_entries ORDER BY diary_date, sort_order'),
+    ).toEqual([
+      { id: 'd1', diary_date: '2026-09-25', sort_order: 0 },
+      { id: 'd2', diary_date: '2026-09-25', sort_order: 1 },
+      { id: 'l1', diary_date: '2026-09-25', sort_order: 2 },
+      { id: 'l2', diary_date: '2026-09-25', sort_order: 3 },
+      { id: 'l3', diary_date: '2026-09-26', sort_order: 0 },
+    ]);
+  });
 });

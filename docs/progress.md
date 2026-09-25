@@ -107,10 +107,35 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
 ### Known gaps
 - Local food search queries (custom + recent + cache lookup, DATA-15/PROV-08) arrive with the M4/M5 Food Search screens. M1 has the tables and indexes only.
 - Launch-screen hold: the native splash hands over to a plain canvas view (`launch-screen`) while SQLite opens. There is no `expo-splash-screen` dependency.
-- Editing a food entry with only a quantity change scales the snapshot instead of re-reading the food. Nutrition is linear in quantity, so the result is the same, and it keeps entries editable after the food is gone (DATA-05).
+- Editing a food entry scales the snapshot unless the serving really changed (decided by comparing the serving label with the snapshot). Nutrition is linear in quantity, so the result is the same, entries stay editable after the food is gone, and a cache refresh never rewrites history (DATA-05).
+- The Copy meal transaction (DATA-16) arrives with M7, per ROAD-01. Search queries arrive with M4/M5, and the add/edit write paths are exercised by screens from M3.
+- The M0 gap "a config error throws at startup" is closed: config validation runs inside the gated startup, and an invalid config shows the recovery screen (ARCH-17, UX-20).
 
 ### Open questions
 - ~~**M1-Q1**~~ Resolved 2026-09-25: the user said yes. `expo-crypto` (`randomUUID` for record IDs) and `expo-clipboard` (UX-20 Copy diagnostic info) were added, and both dev builds were rebuilt.
+
+### ROAD-02 checklist
+- [x] Every behavior in Main specs implemented (DATA-*, ARCH-04/07–10/13/17, UX-01 data, UX-20), except what ROAD-01 places later (see known gaps)
+- [x] `npm run check` green
+- [x] Tests at the right ARCH-18 layer (domain unit; repository/migration on real SQLite; component + navigation for startup/recovery); names cite spec IDs
+- [x] Every string in `en` + `pt-PT` (parity test; pt-PT smoke of the recovery screen)
+- [x] E2E flows: none added for M1; `m0-shell` passes on both platforms through the real startup (fresh install included)
+- [x] Exit demo on both platforms; recovery screenshots (light + dark, default + largest, small phone) in `docs/qa/M1/`
+- [ ] Independent review clean
+- [x] No placeholder UI for in-scope behavior
+- [x] Nothing sensitive in logs (migrations log version/duration/outcome only; startup logs category/version; the USDA key never reaches errors)
+- [x] M1 extras: seed idempotent (init twice) · migration 1 tested from an empty DB · startup failures (DB, migration, config) show the recovery screen · date tests cover DST, month/year ends, leap days
+
+### Dependency notes (ARCH-20)
+All pinned exactly and installed with `npx expo install`. The `expo-sqlite` and `expo-secure-store` config plugins are in `app.json`. Both dev builds were rebuilt with all five.
+| Package | Need |
+|---|---|
+| `expo-sqlite` 57.0.3 | ARCH-01 DB; repository-owned SQL, no ORM. It sits behind `SqlDatabase`, so moving to another driver means changing only `database.ts` |
+| `expo-secure-store` 57.0.4 | ARCH-01/10 USDA key storage (DATA-01) |
+| `@tanstack/react-query` 5.103.2 | ARCH-01/07 async data. JS only; the cache is never persisted |
+| `expo-crypto` 57.0.3 | DATA-03 record IDs (`randomUUID`). Hermes has no Web Crypto. Approved in M1-Q1 |
+| `expo-clipboard` 57.0.2 | UX-20 `Copy diagnostic info`; RN core has no clipboard. Approved in M1-Q1 |
+| (dev, transitive) `@types/node` | Referenced only by test files that use `node:sqlite`/`fs`/`crypto` (`/// <reference types="node" />`), so Node globals don't leak into app types |
 
 ### Tasks
 Order per ROAD-03: domain → data → services → startup/screens → tests → QA.
@@ -130,3 +155,13 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
   - [x] Android recovery screenshots on a small phone (light/dark × default/2.0 font); the DB was restored afterwards and the app reopens normally
   - [x] Rebuilt with `expo-crypto` + `expo-clipboard`. `m0-shell` passes on a fresh Android install, a warm Android launch and iOS. The recovery screenshots were recaptured with Copy. Copy (clipboard contents) and Retry (recovers in place) were checked end to end on iOS
 - [ ] T9 Independent review
+  - Round 1 (`2fa66f8`, `docs/qa/M1/review.md`): not clean, 0 blockers · 2 majors · 7 minors. All fixed:
+    - [x] R1-1 major: config validation runs inside the gated startup (i18n first); `ConfigError` is a `ValidationError`, so an invalid config shows the recovery screen; tests.
+    - [x] R1-2 major: `SqlDatabase` maps raw driver failures to `DatabaseError` with a static message; typed errors pass through transactions; tests.
+    - [x] R1-3 minor: an external refresh merges servings by `(label, unit)` case-insensitively (PROV-09), so serving IDs and recents' `last_serving_id` survive; test.
+    - [x] R1-4 minor: a meal delete + reassign appends the moved entries after the target meal's entries per date, in their original order; test.
+    - [x] R1-5 minor: a move changes only `meal_id` + `updated_at` (DATA-12, no `sort_order` rewrite), for food and Quick Calories entries; the test compares the full row.
+    - [x] R1-6 minor: `editFoodEntry` recomputes only when the chosen serving's label differs from the snapshot's; test that a refresh + the same serving keeps history.
+    - [x] R1-7 minor: `loadDay` reads goal, meals, entries and totals in one transaction.
+    - [x] R1-8 minor: known gaps list Copy meal (M7).
+    - [x] R1-9 minor: ROAD-02 checklist and dependency notes restored in the M1 section (an earlier edit had removed them).

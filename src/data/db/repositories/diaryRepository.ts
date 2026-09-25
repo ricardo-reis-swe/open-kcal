@@ -137,6 +137,11 @@ async function snapshotFor(tx: SqlExecutor, foodId: string, servingId: string, q
   return { food, serving, nutrients: servingNutrients(food.nutrients, serving, quantity) };
 }
 
+/** Serving identity for edits: entries keep the serving label snapshot, not its id. */
+function sameServingLabel(label: string, snapshotLabel: string | null): boolean {
+  return snapshotLabel !== null && label.trim().toLowerCase() === snapshotLabel.trim().toLowerCase();
+}
+
 /** DATA-14: recents are upserted only after a successful food entry save (add or edit). */
 async function upsertRecent(
   tx: SqlExecutor,
@@ -159,7 +164,7 @@ export type AddFoodEntryInput = {
   servingId: string;
   quantity: number;
 };
-/** `servingId` set = serving changed → recompute; omitted = only quantity/meal changed. */
+/** The serving currently chosen in the editor (optional); the repository decides whether it changed. */
 export type EditFoodEntryInput = { mealId: string; quantity: number; servingId?: string };
 export type QuickCaloriesInput = { diaryDate: LocalDate; mealId: string; energyKcal: number; note?: string | null };
 
@@ -170,23 +175,26 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
     /** DATA-16 Load day: effective goal → all meals by sort_order (even empty) → entries → totals. */
     async loadDay(date: LocalDate): Promise<DiaryDay> {
       assertDate(date);
-      const goal = await readGoalFor(db, date);
-      const meals = (
-        await db.getAll<{ id: string; name: string; sort_order: number }>(
-          'SELECT id, name, sort_order FROM meals ORDER BY sort_order',
-        )
-      ).map((m) => ({ id: m.id, name: m.name, sortOrder: m.sort_order }));
-      const rows = await db.getAll<EntryRow>(
-        'SELECT * FROM diary_entries WHERE diary_date = ? ORDER BY meal_id, sort_order, created_at',
-        [date],
-      );
-      const totals = new Map((await db.getAll<TotalsRow>(TOTALS_SQL, [date])).map((t) => [t.meal_id, toTotals(t)]));
-      const dayMeals = meals.map((meal) => ({
-        meal,
-        entries: rows.filter((r) => r.meal_id === meal.id).map(toEntry),
-        totals: totals.get(meal.id) ?? EMPTY_TOTALS,
-      }));
-      return { date, goal, meals: dayMeals, totals: combineTotals(dayMeals.map((m) => m.totals)) };
+      // One read transaction, so entries and SQL totals always describe the same state (DATA-16, ARCH-19).
+      return db.transaction(async (tx) => {
+        const goal = await readGoalFor(tx, date);
+        const meals = (
+          await tx.getAll<{ id: string; name: string; sort_order: number }>(
+            'SELECT id, name, sort_order FROM meals ORDER BY sort_order',
+          )
+        ).map((m) => ({ id: m.id, name: m.name, sortOrder: m.sort_order }));
+        const rows = await tx.getAll<EntryRow>(
+          'SELECT * FROM diary_entries WHERE diary_date = ? ORDER BY meal_id, sort_order, created_at',
+          [date],
+        );
+        const totals = new Map((await tx.getAll<TotalsRow>(TOTALS_SQL, [date])).map((t) => [t.meal_id, toTotals(t)]));
+        const dayMeals = meals.map((meal) => ({
+          meal,
+          entries: rows.filter((r) => r.meal_id === meal.id).map(toEntry),
+          totals: totals.get(meal.id) ?? EMPTY_TOTALS,
+        }));
+        return { date, goal, meals: dayMeals, totals: combineTotals(dayMeals.map((m) => m.totals)) };
+      });
     },
 
     /** DATA-16 Add food entry, one transaction: validate → compute → insert snapshot → upsert recent. */
@@ -232,9 +240,11 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
     },
 
     /**
-     * DATA-16 Edit food entry. A serving change recomputes from the food. A quantity-only change scales the snapshot
-     * (nutrition is linear in quantity), so it works even if the food was deleted (DATA-05). A meal-only move
-     * changes just `meal_id` + `updated_at` (DATA-12).
+     * DATA-16 Edit food entry. The snapshot is recomputed from the food only when the serving really changed; the
+     * repository decides that by comparing the chosen serving's label with the snapshot's, so passing the current
+     * serving after a cache refresh never rewrites history (DATA-05). A quantity-only change scales the snapshot
+     * (nutrition is linear in quantity), which also works after the food is gone. Moving to another meal changes only
+     * `meal_id` + `updated_at` (DATA-12).
      */
     async editFoodEntry(id: string, input: EditFoodEntryInput): Promise<DiaryEntry> {
       if (!(Number.isFinite(input.quantity) && input.quantity > 0)) {
@@ -245,11 +255,15 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
         if (entry.kind !== 'food') throw new ValidationError('Not a food entry', ['entryKind']);
         await assertMeal(tx, input.mealId);
         const now = nowUtcIso(clock);
-        let snapshot: { nutrients: Nutrients; unit: string; servingId: string | null } | null = null;
+        let chosen: Awaited<ReturnType<typeof snapshotFor>> | null = null;
         if (input.servingId !== undefined) {
           if (entry.foodId === null) throw new NotFoundError('Food not found');
-          const s = await snapshotFor(tx, entry.foodId, input.servingId, input.quantity);
-          snapshot = { nutrients: s.nutrients, unit: s.serving.label, servingId: s.serving.id };
+          chosen = await snapshotFor(tx, entry.foodId, input.servingId, input.quantity);
+        }
+        const servingChanged = chosen !== null && !sameServingLabel(chosen.serving.label, entry.servingUnit);
+        let snapshot: { nutrients: Nutrients; unit: string } | null = null;
+        if (servingChanged) {
+          snapshot = { nutrients: chosen!.nutrients, unit: chosen!.serving.label };
         } else if (input.quantity !== entry.servingQuantity) {
           const factor = input.quantity / entry.servingQuantity!;
           const scale = (v: number | null) => (v === null ? null : v * factor);
@@ -261,18 +275,14 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
               fatG: scale(entry.nutrients.fatG),
             },
             unit: entry.servingUnit!,
-            servingId: null,
           };
         }
-        const moved = input.mealId !== entry.mealId;
-        const sortOrder = moved ? await nextSortOrder(tx, entry.diaryDate, input.mealId) : entry.sortOrder;
         if (snapshot) {
           await tx.run(
-            `UPDATE diary_entries SET meal_id = ?, sort_order = ?, serving_quantity = ?, serving_unit_snapshot = ?,
-               energy_kcal = ?, protein_g = ?, carbohydrate_g = ?, fat_g = ?, updated_at = ? WHERE id = ?`,
+            `UPDATE diary_entries SET meal_id = ?, serving_quantity = ?, serving_unit_snapshot = ?, energy_kcal = ?,
+               protein_g = ?, carbohydrate_g = ?, fat_g = ?, updated_at = ? WHERE id = ?`,
             [
               input.mealId,
-              sortOrder,
               input.quantity,
               snapshot.unit,
               snapshot.nutrients.energyKcal,
@@ -283,19 +293,14 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
               id,
             ],
           );
-        } else if (moved) {
-          await tx.run('UPDATE diary_entries SET meal_id = ?, sort_order = ?, updated_at = ? WHERE id = ?', [
-            input.mealId,
-            sortOrder,
-            now,
-            id,
-          ]);
+        } else if (input.mealId !== entry.mealId) {
+          await tx.run('UPDATE diary_entries SET meal_id = ?, updated_at = ? WHERE id = ?', [input.mealId, now, id]);
         }
         if (entry.foodId !== null) {
           const food = await readFood(tx, entry.foodId);
           if (food && !food.isDeleted) {
             const servingId =
-              snapshot?.servingId ?? food.servings.find((s) => s.label === entry.servingUnit)?.id ?? null;
+              chosen?.serving.id ?? food.servings.find((s) => sameServingLabel(s.label, entry.servingUnit))?.id ?? null;
             await upsertRecent(tx, {
               foodId: food.id,
               servingId,
@@ -343,12 +348,14 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
         const entry = await readEntry(tx, id);
         if (entry.kind !== 'quick_calories') throw new ValidationError('Not a Quick Calories entry', ['entryKind']);
         await assertMeal(tx, input.mealId);
-        const sortOrder =
-          input.mealId !== entry.mealId ? await nextSortOrder(tx, entry.diaryDate, input.mealId) : entry.sortOrder;
-        await tx.run(
-          'UPDATE diary_entries SET meal_id = ?, sort_order = ?, energy_kcal = ?, note = ?, updated_at = ? WHERE id = ?',
-          [input.mealId, sortOrder, input.energyKcal, normalizeNote(input.note), nowUtcIso(clock), id],
-        );
+        // DATA-12: a move changes meal_id (+ the edited fields and updated_at), never sort_order.
+        await tx.run('UPDATE diary_entries SET meal_id = ?, energy_kcal = ?, note = ?, updated_at = ? WHERE id = ?', [
+          input.mealId,
+          input.energyKcal,
+          normalizeNote(input.note),
+          nowUtcIso(clock),
+          id,
+        ]);
         return readEntry(tx, id);
       });
     },

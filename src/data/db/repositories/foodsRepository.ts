@@ -130,6 +130,52 @@ async function insertServings(
   }
 }
 
+/**
+ * PROV-09 refresh: match existing servings by `(label, unit)` case-insensitively, update matches in place (their IDs,
+ * and so `recent_foods.last_serving_id`, survive), insert new ones, delete missing ones.
+ */
+async function mergeServings(
+  tx: SqlExecutor,
+  ids: RepositoryDeps['ids'],
+  foodId: string,
+  servings: readonly ServingInput[],
+) {
+  const existing = await tx.getAll<{ id: string; label: string; unit: string }>(
+    'SELECT id, label, unit FROM food_servings WHERE food_id = ?',
+    [foodId],
+  );
+  const key = (label: string, unit: string) => `${label.trim().toLowerCase()}\u0000${unit.trim().toLowerCase()}`;
+  const unmatched = new Map(existing.map((e) => [key(e.label, e.unit), e.id]));
+  const defaultIndex = Math.max(
+    0,
+    servings.findIndex((s) => s.isDefault),
+  );
+  // Clear the flag first: the partial UNIQUE index allows one default per food at any moment.
+  await tx.run('UPDATE food_servings SET is_default = 0 WHERE food_id = ?', [foodId]);
+  for (const [i, s] of servings.entries()) {
+    const k = key(s.label, s.unit);
+    const matchId = unmatched.get(k);
+    const values = [s.label.trim(), s.quantity, s.unit, s.basisMultiplier, i === defaultIndex ? 1 : 0, i];
+    if (matchId) {
+      unmatched.delete(k);
+      await tx.run(
+        `UPDATE food_servings SET label = ?, quantity = ?, unit = ?, basis_multiplier = ?, is_default = ?, sort_order = ?
+         WHERE id = ?`,
+        [...values, matchId],
+      );
+    } else {
+      await tx.run(
+        `INSERT INTO food_servings (id, food_id, label, quantity, unit, basis_multiplier, is_default, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [ids.newId(), foodId, ...values],
+      );
+    }
+  }
+  for (const id of unmatched.values()) {
+    await tx.run('DELETE FROM food_servings WHERE id = ?', [id]); // recents' last_serving_id → NULL (FK)
+  }
+}
+
 export async function readFood(db: SqlExecutor, id: string): Promise<Food | null> {
   const row = await db.getFirst<FoodRow>('SELECT * FROM foods WHERE id = ?', [id]);
   if (!row) return null;
@@ -203,7 +249,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
 
     /**
      * DATA-15: upsert a remote food + servings + cache metadata before logging, keyed on (source, external_id),
-     * so it gets a stable local id and offline reuse. Servings are replaced; entries never reference them.
+     * so it gets a stable local id and offline reuse. Servings are merged by `(label, unit)` (PROV-09).
      */
     async upsertExternal(
       source: ExternalSource,
@@ -226,7 +272,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
                carbohydrate_g = ?, fat_g = ?, updated_at = ? WHERE id = ?`,
             [...foodValues(input), now, id],
           );
-          await tx.run('DELETE FROM food_servings WHERE food_id = ?', [id]);
+          await mergeServings(tx, ids, id, input.servings);
         } else {
           await tx.run(
             `INSERT INTO foods (id, source, external_id, name, brand, basis_quantity, basis_unit, energy_kcal, protein_g,
@@ -234,8 +280,8 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
             [id, source, externalId, ...foodValues(input), now, now],
           );
+          await insertServings(tx, ids, id, input.servings);
         }
-        await insertServings(tx, ids, id, input.servings);
         await tx.run(
           `INSERT INTO food_cache_metadata (food_id, fetched_at, expires_at, raw_payload_json, schema_version)
            VALUES (?, ?, ?, ?, ?)
