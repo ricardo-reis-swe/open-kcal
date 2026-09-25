@@ -1,0 +1,34 @@
+# ARCH-18 / ROAD-02 M2: swipe to another date and back to Today (UX-02, NAV-05, DS-11 button alternative).
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: subflows/launch.yaml
+- assertVisible: Showing Today
+- swipe: # a full-width fling; the day list sits at 60% height
+    start: 90%, 60%
+    end: 10%, 60%
+    duration: 250
+- extendedWaitUntil:
+    visible: Showing Tomorrow
+    timeout: 5000
+- assertVisible: Go to today
+- swipe:
+    start: 10%, 60%
+    end: 90%, 60%
+    duration: 250
+- extendedWaitUntil:
+    visible: Showing Today
+    timeout: 5000
+- swipe:
+    start: 10%, 60%
+    end: 90%, 60%
+    duration: 250
+- extendedWaitUntil:
+    visible: Showing Yesterday
+    timeout: 5000
+- tapOn: Previous day, .*
+- assertNotVisible: Showing Yesterday
+- tapOn: Go to today
+- extendedWaitUntil:
+    visible: Showing Today
+    timeout: 5000
+- assertNotVisible: Go to today

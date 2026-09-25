@@ -1,0 +1,21 @@
+# Shared launch: the dev build on localhost Metro, past the dev-client menu, until the tab bar is up.
+appId: com.ricardoreis.calorietracker
+---
+- stopApp
+- openLink: exp+calorie-tracker://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- tapOn:
+    text: Continue # Android dev-menu onboarding, first launch only
+    optional: true
+- extendedWaitUntil:
+    visible: Diary
+    timeout: 90000
+- waitForAnimationToEnd
+- runFlow: # Android dev-client menu, shown on the first launch after install or data clear
+    when:
+      visible: 'Runtime version.*'
+    commands:
+      - pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: tab-add
+    timeout: 10000

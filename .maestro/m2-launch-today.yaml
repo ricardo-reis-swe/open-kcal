@@ -1,0 +1,15 @@
+# ARCH-18 / ROAD-02 M2: launch to today's diary. Every meal shows, with the overview on top (UX-02, NAV-05).
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: subflows/launch.yaml
+- assertVisible:
+    id: tab-diary
+    selected: true
+- assertVisible: Showing Today
+- assertNotVisible: Go to today
+- assertVisible:
+    id: calorie-ring
+- assertVisible:
+    id: macro-strip
+- assertVisible: 'Breakfast, .*'
+- assertVisible: 'Lunch, .*'

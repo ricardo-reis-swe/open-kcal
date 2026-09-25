@@ -180,7 +180,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T4 Diary screen (UX-02): 3-page native paging pager (adjacent days pre-rendered, re-centers after a swipe, inactive pages reset to top), overview, UX-01 default-goals row, every meal in saved order, full-screen load error with Retry. Found on the Android emulator and fixed: one swipe moved two days (Android reports the momentum end twice); only the first end after a drag counts
 - [x] T5 Dev-only seed data (`src/bootstrap/devSeed.ts`): `EXPO_PUBLIC_DEV_SEED_DIARY=1` in a dev build inserts sample foods/entries once (today typical + partial macros, tomorrow over goal, yesterday known macros, later days empty). Ignored outside `__DEV__`; `.env.example` documents it (default 0)
 - [ ] T6 Date Picker (UX-13) + app-bar calendar action "Choose date": **blocked on M2-Q1**
-- [ ] T7 Maestro flows: launch to today's diary · swipe to another date and back to Today (ARCH-18)
+- [x] T7 Maestro flows (ARCH-18): `m2-launch-today` and `m2-swipe-date` (full-width fling both ways, prev button, Today) with a shared `subflows/launch.yaml`. Both pass on Android and iOS. A Maestro swipe `from: id` with a direction only drags half the width and snaps back, so the flow uses explicit start/end points
 - [ ] T8 Exit demo on both platforms; QA screenshots (light/dark × default/largest text, small phone) + DS-02 density check in `docs/qa/M2/`
 - [ ] T9 Independent review
 
