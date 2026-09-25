@@ -1,4 +1,4 @@
-import { Text, type TextProps, type TextStyle } from 'react-native';
+import { Text, useWindowDimensions, type TextProps, type TextStyle } from 'react-native';
 
 import { useTheme, type Colors } from '@/shared/theme';
 import type { typography } from '@/shared/theme/tokens';
@@ -24,8 +24,12 @@ export function AppText({
 }: AppTextProps) {
   const theme = useTheme();
   const type = theme.typography[variant];
+  // A live OS text-size change doesn't re-measure text whose props didn't change (seen on iOS 27: the app bar
+  // title stayed clipped). Keying on the font scale remounts the node so it lays out at the new size (DS-11).
+  const { fontScale } = useWindowDimensions();
   return (
     <Text
+      key={fontScale}
       {...rest}
       allowFontScaling
       style={[

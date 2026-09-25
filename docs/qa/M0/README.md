@@ -10,10 +10,11 @@ Captured 2026-09-25 from dev builds (Expo SDK 57) with `scripts/qa/m0-android.sh
 | Screen | Android | iOS |
 |---|---|---|
 | Diary (tab root) | `android-diary-{light,dark}-{default,largest}.png` | `ios-diary-{light,dark}-{default,largest}.png` |
-| Add Action Sheet (`+`, empty in M0) | `android-add-sheet-{light,dark}-{default,largest}.png` | not captured (needs a tap, see below) |
-| Profile (tab root) | `android-profile-{light,dark}-{default,largest}.png` | not captured (needs a tap, see below) |
+| Add Action Sheet (`+`, empty in M0) | `android-add-sheet-{light,dark}-{default,largest}.png` | `ios-add-sheet-{light,dark}-{default,largest}.png` |
+| Profile (tab root) | `android-profile-{light,dark}-{default,largest}.png` | `ios-profile-{light,dark}-{default,largest}.png` |
 
 Notes
 - The round gear on Android is the dev client's floating Tools button (dev builds only). It's hidden on iOS via `EXDevMenuShowFloatingActionButton`.
-- iOS taps aren't available in this environment yet (the Claude simulator tool needs `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`; Maestro isn't installed). Deep links trigger a system "Open in…" prompt that can't be dismissed without a tap. The iOS sheet/Profile behavior is covered by the navigation tests and the Android run.
+- iOS sheet/Profile shots and the iOS exit demo (`+` opens the sheet; swipe-down, backdrop close it; Profile tab selects) were done with the Claude simulator tool after `xcode-select` was set (M0-Q2).
+- Found on iOS: a live Dynamic Type change left text measured at the old size (clipped app bar title). `AppText` now remounts on font-scale changes.
 - Findings fixed while capturing: Android threw on the iOS-only `tabbar` a11y role; unselected tab labels used `micro`; tab labels clipped ("Profi…") at iOS AX sizes (now scale up to 2×); iOS 27 aborted without the UIScene life cycle; Hermes lacked `Intl.PluralRules`.

@@ -32,7 +32,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
   - Round 1 (`4695aae`): not clean, 0 blockers · 3 majors · 9 minors. Fix list, in order:
   - [x] R1-2 major: BottomSheet swipe-down dismiss. The whole sheet is the drag surface, distance scales with sheet height, the handle is the a11y Close button, and the sheet name is announced on open (also R1-10). Gesture tests added; slow swipe verified on Android.
   - [ ] R1-3 major: per-app language (SCOPE-12). `expo-localization` `supportedLocales` (en, pt-PT), re-resolve the locale on change, test, rebuild native, verify on both platforms.
-  - [ ] R1-1 major: iOS exit-demo taps + 8 iOS screenshots. **Blocked on M0-Q2.**
+  - [x] R1-1 major: iOS exit demo run with the simulator tool (`+` opens the sheet; swipe-down and backdrop close it; Profile tab selects) and the 8 missing iOS screenshots captured. Found and fixed: live Dynamic Type changes left text clipped (`AppText` remounts on font scale).
   - [ ] R1-6 minor: add the contrast pairs primitives render; failing ones go to M0-Q1 as `it.failing`.
   - [ ] R1-7 minor: localized a11y label joining (`a11y.labelWithValue`) in FormField/ListRow.
   - [ ] R1-8 minor: plural test uses `polyfill-force` + locale data.
@@ -72,7 +72,6 @@ All versions pinned exactly; installed via `npx expo install` where native.
 | dev: `react-dom` | Pinned to `react`'s version only to satisfy optional peers during install; never imported (web is not a deliverable) |
 
 ### Known gaps
-- iOS: the exit-demo taps (`+` sheet, Profile tab) and their screenshots weren't run on the simulator: no tap tool here yet (needs `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` for the simulator tool, or Maestro). Covered by navigation tests + the Android run.
 - Tab labels scale up to 2× (Android's max font scale) so a third-width tab never clips at iOS AX sizes (DS-11 no-clip; iOS tab bars don't scale labels natively).
 - Local dev: CocoaPods refuses a world-readable `~/.netrc`; builds here used `NETRC=<empty 0600 dir>`. Metro is reached via `localhost` (`adb reverse` on Android).
 - Add Action Sheet is empty by design in M0 (exit demo); its rows arrive with their flows (NAV-03: M3 Quick Calories, M4/M5 Add Food, M8 Update Weight).
@@ -83,6 +82,6 @@ All versions pinned exactly; installed via `npx expo install` where native.
 - Icons use Ionicons (outline; filled only for selected states), DS-06.
 
 ### Open questions
-- **M0-Q2** iOS tap driver for the exit demo (review R1-1). Options: (a) you run `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` so the Claude simulator tool works; (b) approve installing Maestro (needed from M2 anyway, ARCH-18); (c) waive the iOS tap part for M0. Recommendation: (b), plus (a) if convenient.
+- ~~**M0-Q2**~~ Resolved 2026-09-25: the user ran `xcode-select`, so the simulator tool works.
 - **M0-Q3** ARCH-05 append (review R1-9): add `src/shared/config/` (ARCH-14 typed config), top-level `plugins/` (local config plugins) and `scripts/` (local tooling) to the ARCH-05 tree?
 - **M0-Q1** Light `textTertiary` `#7A847D` is 3.87:1 on `surface` and 3.63:1 on `canvas`, below DS-11's 4.5:1 (its `tokens.ts` comment says it passes). Proposal: change it to `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle), still visibly lighter than `textSecondary`. Until decided, primitives don't use `textTertiary` for text and the contrast test marks the pair as a known failure (`it.failing`).
