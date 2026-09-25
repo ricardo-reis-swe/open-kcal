@@ -124,7 +124,7 @@ Update it in the same commit as the work it describes.
 The milestone is done only after the user accepts it.
 
 ## ROAD-04 Builds and release
-**Accounts (the user creates these; agents never do):** Expo, Apple Developer Program, Google Play Console. Signing credentials are EAS-managed and never committed. The user keeps a download of the Android upload-key backup.
+**Accounts (the user creates these; agents never do):** Expo, Apple Developer Program, Google Play Console, all under **ricardo_reis@live.com**. Never use or mention any other account or email in code, config, docs or commits. Signing credentials are EAS-managed and never committed. The user keeps a download of the Android upload-key backup.
 
 **Build profiles** (`eas.json`)
 | Profile | Purpose | App ID / name | Distribution | From |
@@ -133,7 +133,7 @@ The milestone is done only after the user accepts it.
 | `preview` | Release-like build on real phones | `<bundle-prefix>.calorietracker.preview` · `Calorie Tracker (Preview)` | Internal | M3, optional |
 | `production` | Store builds | `<bundle-prefix>.calorietracker` · `Calorie Tracker` | TestFlight + Play internal testing | M9 |
 - Separate IDs let all three coexist on one phone without sharing data (ARCH-14).
-- Each profile sets its public `EXPO_PUBLIC_*` values in `eas.json` `env`: variant, OFF contact email, base URLs. No secrets anywhere; the USDA key is user-supplied at runtime.
+- Each profile sets its public `EXPO_PUBLIC_*` values in `eas.json` `env`: variant, OFF contact email (`ricardo_reis@live.com`, used in the PROV-01 `User-Agent`), base URLs. No secrets anywhere; the USDA key is user-supplied at runtime.
 
 **Versioning:** a semver `version` in app config (user-facing, bumped per release). `buildNumber`/`versionCode` come from EAS with `appVersionSource: remote` + `autoIncrement` on `production`.
 
