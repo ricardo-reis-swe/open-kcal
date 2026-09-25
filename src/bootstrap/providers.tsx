@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { i18next } from '@/shared/i18n/i18n';
+import { useSyncAppLocale } from '@/shared/i18n/useSyncAppLocale';
 import { ThemeProvider, useTheme } from '@/shared/theme';
 
 /** Keeps React Navigation's own colors (screen backgrounds, transitions) on our tokens. */
@@ -33,6 +34,7 @@ function NavigationTheme({ children }: { children: ReactNode }) {
 
 /** App-wide providers (ARCH-17 order: … → providers + Router). Services/DB/Query join in M1. */
 export function AppProviders({ children }: { children: ReactNode }) {
+  useSyncAppLocale();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

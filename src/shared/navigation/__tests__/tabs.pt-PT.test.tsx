@@ -3,9 +3,10 @@ import { renderRouter } from 'expo-router/testing-library';
 
 import { appRoutes } from '@/shared/testing/appRoutes';
 
-jest.mock('expo-localization', () => ({
-  getLocales: () => [{ languageTag: 'pt-PT', languageCode: 'pt', regionCode: 'PT' }],
-}));
+jest.mock('expo-localization', () => {
+  const locales = [{ languageTag: 'pt-PT', languageCode: 'pt', regionCode: 'PT' }];
+  return { getLocales: () => locales, useLocales: () => locales };
+});
 
 describe('ARCH-22: pt-PT smoke', () => {
   it('renders the tab shell in European Portuguese', async () => {

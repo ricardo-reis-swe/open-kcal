@@ -24,7 +24,15 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["en", "pt-PT"],
+            "android": ["en", "pt-PT"]
+          }
+        }
+      ],
       "expo-font",
       "expo-asset",
       "./plugins/withIosSceneLifecycle"
