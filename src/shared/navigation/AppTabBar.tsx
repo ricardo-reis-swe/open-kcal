@@ -8,6 +8,8 @@ import { useTheme } from '@/shared/theme';
 
 type TabRoute = 'diary' | 'profile';
 
+const TAB_LABEL_MAX_SCALE = 2;
+
 const TABS: Record<TabRoute, { labelKey: 'tabs.diary' | 'tabs.profile'; icon: IconName; iconSelected: IconName }> = {
   diary: { labelKey: 'tabs.diary', icon: 'book-outline', iconSelected: 'book' },
   profile: { labelKey: 'tabs.profile', icon: 'person-outline', iconSelected: 'person' },
@@ -51,10 +53,13 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
         ]}
       >
         <AppIcon name={focused ? spec.iconSelected : spec.icon} color={focused ? 'primary' : 'textSecondary'} />
+        {/* Same size in both states (no layout shift); selection = color + weight + filled icon (DS-07, DS-11).
+            Scales up to 2× (Android's max font scale) so a third-width tab never clips its label at iOS AX sizes. */}
         <AppText
-          variant={focused ? 'label' : 'micro'}
+          variant="label"
           color={focused ? 'primary' : 'textSecondary'}
           numberOfLines={1}
+          maxFontSizeMultiplier={TAB_LABEL_MAX_SCALE}
           style={{ fontWeight: focused ? '700' : '500' }}
         >
           {label}
