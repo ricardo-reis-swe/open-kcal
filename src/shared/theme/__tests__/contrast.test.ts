@@ -30,12 +30,12 @@ const textPairs: [keyof ThemeColors, keyof ThemeColors][] = [
   ['textSecondary', 'surfaceSubtle'],
   ['textPrimary', 'primaryTint'],
   ['textPrimary', 'dangerTint'],
-];
-
-// Pairs primitives render that currently fail in light mode (M0-Q1). Each is its own `.failing` case so a fix flips it red.
-const lightTextFailures: [keyof ThemeColors, keyof ThemeColors][] = [
+  // M0-Q1 resolved 2026-09-25 (new primary/warning values):
   ['primary', 'primaryTint'], // pressed TextAction / tab label, InlineStatus success
   ['primary', 'canvas'], // TextAction on the canvas
+  ['primary', 'surfaceSubtle'], // InlineStatus action on info/offline/loading
+  ['primary', 'warningTint'], // InlineStatus action on warning
+  ['primary', 'dangerTint'], // InlineStatus action on error
   ['warning', 'warningTint'], // InlineStatus warning
 ];
 
@@ -58,21 +58,23 @@ describe('DS-11: token contrast', () => {
     }
   });
 
-  it('dark primary/primaryTint, primary/canvas and warning/warningTint reach 4.5:1', () => {
-    for (const [fg, bg] of lightTextFailures) {
-      expect(contrast(darkColors[fg], darkColors[bg])).toBeGreaterThanOrEqual(4.5);
+  it.each((['light', 'dark'] as const).flatMap((mode) => boundaryPairs.map(([fg, bg]) => [mode, fg, bg] as const)))(
+    '%s boundary %s on %s reaches 3:1',
+    (mode, fg, bg) => {
+      const colors = mode === 'light' ? lightColors : darkColors;
+      expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(3);
+    },
+  );
+
+  it('focus rings reach 3:1 where they are drawn', () => {
+    for (const colors of [lightColors, darkColors]) {
+      for (const bg of ['surface', 'canvas', 'surfaceSubtle'] as const) {
+        expect(contrast(colors.focus, colors[bg])).toBeGreaterThanOrEqual(3);
+      }
     }
-  });
-
-  it.failing.each(lightTextFailures)('light %s on %s reaches 4.5:1 (M0-Q1)', (fg, bg) => {
-    expect(contrast(lightColors[fg], lightColors[bg])).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it.failing.each(
-    (['light', 'dark'] as const).flatMap((mode) => boundaryPairs.map(([fg, bg]) => [mode, fg, bg] as const)),
-  )('%s boundary %s on %s reaches 3:1 (M0-Q1)', (mode, fg, bg) => {
-    const colors = mode === 'light' ? lightColors : darkColors;
-    expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(3);
+    // Inside the app bar the ring uses onAppBar: white on light green, textPrimary on the dark surface bar.
+    expect(contrast('#FFFFFF', lightColors.appBar)).toBeGreaterThanOrEqual(3);
+    expect(contrast(darkColors.textPrimary, darkColors.appBar)).toBeGreaterThanOrEqual(3);
   });
 
   it('dark textTertiary on surface reaches 4.5:1', () => {

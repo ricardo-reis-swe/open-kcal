@@ -42,7 +42,7 @@ Status: **awaiting user acceptance** · Start commit: `553efac` (review range `5
   - [x] R1-4 minor: `FocusablePressable` draws the DS-10 2px `focus` outline (no layout shift) on every pressable primitive, tab item, dialog action and sheet handle; component tests. Hardware-keyboard check on device is part of the M9 DS-13 pass.
   - [x] R1-9 minor: ARCH-05 append approved (M0-Q3) and applied.
   - [x] Round 2 (`b5f9245`, `docs/qa/M0/review.md`): **clean**, 0 blockers · 0 majors · 6 minors. Minors left as follow-ups (not blocking):
-    - R2-1: more light-mode pairs → M0-Q1 (InlineStatus action text; focus ring on the app bar).
+    - [x] R2-1: fixed with the M0-Q1 token values; pairs tested.
     - R2-2: sheet handle target 44 dp on Android; derive `hitSlop` from `touchMin`.
     - R2-3: pt-PT smoke test should also render Profile and the Add sheet.
     - R2-4: `tabs.test.tsx` "backdrop closes it" presses the handle; press the backdrop testID.
@@ -91,13 +91,4 @@ All versions pinned exactly; installed via `npx expo install` where native.
 ### Open questions
 - ~~**M0-Q2**~~ Resolved 2026-09-25: the user ran `xcode-select`, so the simulator tool works.
 - ~~**M0-Q3**~~ Resolved 2026-09-25: yes. ARCH-05 now lists `.maestro/`, `plugins/`, `scripts/` and `shared/config`. Closes review R1-9.
-- **M0-Q1** Token contrast (DS-11). Partly resolved 2026-09-25: light `textTertiary` is now `#687169` (5.05 surface · 4.74 canvas · 4.52 surfaceSubtle).
-  - Proposal awaiting approval (smallest change that passes; each failing pair is an `it.failing` test until then):
-    | Token | Now | Proposed | Result |
-    |---|---|---|---|
-    | light `primary` | `#238447` | `#207941` | ≥4.62 on primaryTint, canvas, surfaceSubtle, warningTint, dangerTint; white on it 5.42 |
-    | light `primaryPressed` | `#1D713D` | `#185C34` (green800) | stays visibly darker than the new primary |
-    | light `warning` | `#A56300` | `#A06000` | 4.55 on warningTint · 5.04 on surface |
-    | light `borderStrong` | `#BBC5BE` | `#878E89` | 3.00 on surfaceSubtle · 3.35 on surface (inputs and sheet handle look noticeably darker) |
-    | dark `borderStrong` | `#59645C` | `#68726B` | 3.06 on surfaceSubtle · 3.46 on surface |
-    | focus ring inside the app bar | `focus` 1.15 on light appBar | `onAppBar` (white), 6.03 | code change in `FocusablePressable`/`AppBar`, no new token |
+- ~~**M0-Q1**~~ Resolved 2026-09-25 (user approved all): light `textTertiary` `#687169`, `primary` `#207941`, `primaryPressed` green800 `#185C34`, `warning` `#A06000`, `borderStrong` `#878E89`; dark `borderStrong` `#68726B`; focus ring inside the app bar uses `onAppBar`. All DS-11 contrast tests pass without expected failures (covers review R2-1).

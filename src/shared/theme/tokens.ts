@@ -6,9 +6,9 @@ export const palette = {
   green100: '#D3F1DD', // soft progress / focus background
   green300: '#70D68D', // decorative progress, charts
   green500: '#3DBD63', // brand accent, non-text progress
-  green600: '#238447', // primary controls, active icons
-  green700: '#1D713D', // light-mode app bar, pressed controls
-  green800: '#185C34', // high-contrast green text
+  green600: '#238447', // brand green; the light `primary` token is a slightly darker #207941 for text contrast
+  green700: '#1D713D', // light-mode app bar
+  green800: '#185C34', // light pressed controls, high-contrast green text
 } as const;
 
 export const lightColors = {
@@ -19,11 +19,11 @@ export const lightColors = {
   textSecondary: '#606A63',
   textTertiary: '#687169', // nonessential; 5.05 surface · 4.74 canvas · 4.52 surfaceSubtle (M0-Q1)
   divider: '#E0E5E1',
-  borderStrong: '#BBC5BE', // inputs, focused structures
-  primary: '#238447',
-  primaryPressed: '#1D713D',
+  borderStrong: '#878E89', // inputs, sheet handle; ≥3:1 on surface + surfaceSubtle (M0-Q1)
+  primary: '#207941', // ≥4.5:1 as text on canvas, subtle and tinted surfaces (M0-Q1)
+  primaryPressed: palette.green800,
   primaryTint: '#EAF8EF',
-  warning: '#A56300',
+  warning: '#A06000',
   warningTint: '#FFF2D9',
   danger: '#B83245',
   dangerTint: '#FCE8EB',
@@ -46,7 +46,7 @@ export const darkColors: ThemeColors = {
   textSecondary: '#B8C2BA',
   textTertiary: '#99A39B',
   divider: '#303832',
-  borderStrong: '#59645C',
+  borderStrong: '#68726B',
   primary: '#62D683',
   primaryPressed: '#82E29B',
   primaryTint: '#183D25',

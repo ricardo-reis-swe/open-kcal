@@ -5,7 +5,7 @@ import { i18next } from '@/shared/i18n/i18n';
 import { renderWithProviders } from '@/shared/testing/render';
 import { darkColors, lightColors } from '@/shared/theme/tokens';
 
-import { ListRow, PressableIcon, PrimaryButton, TextAction } from '..';
+import { AppBar, ListRow, PressableIcon, PrimaryButton, TextAction } from '..';
 
 describe('DS-12: PrimaryButton', () => {
   it('DS-09: is a labelled button that calls onPress', async () => {
@@ -145,5 +145,12 @@ describe('DS-10: focus ring on pressable primitives', () => {
     });
     await fireEvent(target(), 'blur');
     expect(StyleSheet.flatten(target().props.style).outlineWidth).toBeUndefined();
+  });
+
+  it('uses the app bar content color for the ring inside AppBar (M0-Q1)', async () => {
+    await renderWithProviders(<AppBar title="Meal" back={{ label: 'Back', onPress: jest.fn() }} />);
+    const back = screen.getByRole('button', { name: 'Back' });
+    await fireEvent(back, 'focus');
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Back' }).props.style).outlineColor).toBe('#FFFFFF');
   });
 });

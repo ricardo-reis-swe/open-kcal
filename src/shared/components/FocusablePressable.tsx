@@ -1,7 +1,10 @@
-import { forwardRef, useState } from 'react';
+import { createContext, forwardRef, useContext, useState } from 'react';
 import { Pressable, type PressableProps, type View } from 'react-native';
 
-import { useTheme } from '@/shared/theme';
+import { useTheme, type Colors } from '@/shared/theme';
+
+/** Ring color for pressables inside a colored container, e.g. `onAppBar` in the app bar (DS-11 ≥3:1). */
+export const FocusRingColorContext = createContext<keyof Colors>('focus');
 
 /**
  * Pressable that shows the DS-10 focus ring (2px `focus` outline) for hardware keyboard / switch access.
@@ -12,9 +15,10 @@ export const FocusablePressable = forwardRef<View, PressableProps>(function Focu
   ref,
 ) {
   const theme = useTheme();
+  const ringColor = useContext(FocusRingColorContext);
   const [focused, setFocused] = useState(false);
   const ring = focused
-    ? { outlineWidth: theme.sizes.focusRing, outlineColor: theme.colors.focus, outlineStyle: 'solid' as const }
+    ? { outlineWidth: theme.sizes.focusRing, outlineColor: theme.colors[ringColor], outlineStyle: 'solid' as const }
     : null;
   return (
     <Pressable

@@ -15,6 +15,7 @@ Captured 2026-09-25 from dev builds (Expo SDK 57) with `scripts/qa/m0-android.sh
 | Per-app language pt-PT (SCOPE-12) | `android-per-app-language-pt-PT.png` | `ios-per-app-language-pt-PT.png` · `ios-settings-app-language.png` (Settings › Apps › Calorie Tracker › Language) |
 
 Notes
+- The screenshots predate the M0-Q1 token update (darker `borderStrong`, `primary` #207941, `warning` #A06000). The only visible difference in M0 is a darker sheet handle; checked on iOS. The M9 DS-13 pass recaptures everything.
 - The exit demo is also scripted as a Maestro flow: `scripts/e2e.sh android|ios .maestro/m0-shell.yaml` (passes on both).
 - Per-app language (review R1-3): Android `cmd locale set-app-locales … --locales pt-PT` switched the running app to pt-PT and back to en without a restart (same PID). iOS: `AppleLanguages` = pt-PT + relaunch opens in pt-PT; Settings shows the app's Language row.
 - The round gear on Android is the dev client's floating Tools button (dev builds only). It's hidden on iOS via `EXDevMenuShowFloatingActionButton`.

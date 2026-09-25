@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/shared/theme';
 
 import { AppText } from './AppText';
+import { FocusRingColorContext } from './FocusablePressable';
 import { PressableIcon } from './PressableIcon';
 
 export type AppBarProps = {
@@ -36,29 +37,37 @@ export function AppBar({ title, back, actions, testID }: AppBarProps) {
         },
       ]}
     >
-      <View
-        style={[
-          styles.row,
-          {
-            minHeight: theme.sizes.appBar,
-            paddingLeft: back ? theme.spacing[1] : theme.spacing[4],
-            paddingRight: theme.spacing[1],
-          },
-        ]}
-      >
-        {back ? (
-          <PressableIcon icon="chevron-back" accessibilityLabel={back.label} onPress={back.onPress} color="onAppBar" />
-        ) : null}
-        <AppText
-          variant="screenTitle"
-          accessibilityRole="header"
-          numberOfLines={1}
-          style={[styles.title, { color: theme.colors.onAppBar }]}
+      {/* The blue focus ring is 1.15:1 on the light green bar; use the bar's content color (M0-Q1). */}
+      <FocusRingColorContext.Provider value="onAppBar">
+        <View
+          style={[
+            styles.row,
+            {
+              minHeight: theme.sizes.appBar,
+              paddingLeft: back ? theme.spacing[1] : theme.spacing[4],
+              paddingRight: theme.spacing[1],
+            },
+          ]}
         >
-          {title}
-        </AppText>
-        {actions ? <View style={styles.actions}>{actions}</View> : null}
-      </View>
+          {back ? (
+            <PressableIcon
+              icon="chevron-back"
+              accessibilityLabel={back.label}
+              onPress={back.onPress}
+              color="onAppBar"
+            />
+          ) : null}
+          <AppText
+            variant="screenTitle"
+            accessibilityRole="header"
+            numberOfLines={1}
+            style={[styles.title, { color: theme.colors.onAppBar }]}
+          >
+            {title}
+          </AppText>
+          {actions ? <View style={styles.actions}>{actions}</View> : null}
+        </View>
+      </FocusRingColorContext.Provider>
     </View>
   );
 }
