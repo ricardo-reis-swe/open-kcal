@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–5 approved. Step 6 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–6 approved. Step 7 ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -186,4 +186,29 @@ Rules for `food_cache_metadata` (DATA-15). Expiry controls refresh only. Expired
 
 **Stale indicator:** none per row. Membership in the `Saved` section is the cache indicator (ARCH-12).
 
-<!-- Steps 7–9 pending: timeouts/retries · USDA key validation · error mapping + fixtures -->
+## PROV-10 Timeouts, retries and cooldowns
+Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in the error-mapping step.
+
+**Timeouts** (whole request, via `AbortController`): search **8 s** · detail **10 s** · USDA key check **10 s**.
+
+**Retries**
+| Call | Max retries | Backoff |
+|---|---|---|
+| Search | 1 | full jitter, base 500 ms |
+| Detail on tap | 2 | full jitter, base 500 ms × 2ⁿ, cap 4 s |
+| Background refresh (PROV-09) | 0 | the next open retries |
+| USDA key check | 0 | the user retries |
+- Retry only transient failures: network error while online, timeout, and HTTP 500/502/504. Also USDA 503.
+- Never retry: 400, 401, 403, 404, schema/parse failures, offline, or anything rate-limited (below).
+- Each OFF retry spends a budget slot (PROV-04).
+
+**Rate-limited responses → provider cooldown**
+- OFF 429 or 503 (PROV-03), USDA 429.
+- Cooldown = `Retry-After` (seconds or HTTP date) if present, otherwise **60 s** for OFF and **10 min** for USDA.
+- During a cooldown, that provider sends nothing. Its section shows the busy status, and search and product-read budgets are both paused for OFF. Once the cooldown ends, the latest pending query runs (PROV-04).
+
+**Offline:** don't send remote requests while connectivity reports offline. They resume through `onlineManager` (ARCH-12).
+
+**Cancellation:** a new query aborts the previous one's requests (ARCH-11). Leaving Food Search aborts its in-flight searches. Leaving while a tapped row loads aborts that detail call; nothing is upserted.
+
+<!-- Steps 8–9 pending: USDA key validation · error mapping + fixtures -->
