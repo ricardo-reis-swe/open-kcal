@@ -10,7 +10,68 @@
     "add": "Adicionar"
   },
   "diary": {
-    "title": "Diário"
+    "title": "Diário",
+    "chooseDate": "Escolher data",
+    "yesterday": "Ontem",
+    "today": "Hoje",
+    "tomorrow": "Amanhã",
+    "goToToday": "Hoje",
+    "goToTodayLabel": "Ir para hoje",
+    "previousDay": "Dia anterior, {{label}}",
+    "nextDay": "Dia seguinte, {{label}}",
+    "selectedDay": "A mostrar {{label}}",
+    "units": {
+      "kcal": "kcal",
+      "kJ": "kJ",
+      "kcalSpoken": "quilocalorias",
+      "kJSpoken": "quilojoules",
+      "g": "g"
+    },
+    "ring": {
+      "left": "{{unit}} restantes",
+      "over": "{{unit}} a mais",
+      "eaten": "{{value}} consumidas",
+      "eatenNoGoal": "{{unit}} consumidas",
+      "noGoal": "Sem objetivo para esta data",
+      "a11yLeft": "Calorias restantes, {{remaining}} de {{goal}} {{unit}}. {{eaten}} consumidas.",
+      "a11yOver": "Acima do objetivo de calorias em {{over}} {{unit}}. Objetivo {{goal}}, {{eaten}} consumidas.",
+      "a11yNoGoal": "Calorias consumidas, {{eaten}} {{unit}}. Sem objetivo para esta data."
+    },
+    "macros": {
+      "carbs": "Hidratos",
+      "protein": "Proteína",
+      "fat": "Gordura",
+      "value": "{{consumed}}/{{target}} g",
+      "valueNoGoal": "{{consumed}} g",
+      "a11y": "{{macro}}, {{consumed}} de {{target}} gramas.",
+      "a11yNoGoal": "{{macro}}, {{consumed}} gramas.",
+      "a11yOver": "{{macro}}, {{consumed}} de {{target}} gramas, acima do objetivo.",
+      "unknownCarbs": "Algumas entradas têm hidratos desconhecidos.",
+      "unknownProtein": "Algumas entradas têm proteína desconhecida.",
+      "unknownFat": "Algumas entradas têm gordura desconhecida."
+    },
+    "meal": {
+      "energy": "{{value}} {{unit}}",
+      "a11y": "{{meal}}, {{value}} {{unit}}",
+      "addFood": "Adicionar alimento",
+      "addFoodTo": "Adicionar alimento a {{meal}}"
+    },
+    "entry": {
+      "serving": "{{quantity}} {{unit}}",
+      "servings": "{{quantity}} × {{unit}}",
+      "a11y": "{{name}}, {{serving}}, {{value}} {{unit}}",
+      "quickCalories": "Calorias rápidas",
+      "quickA11y": "{{name}}, {{value}} {{unit}}. Macronutrientes desconhecidos.",
+      "quickNoteA11y": "{{note}}, Calorias rápidas, {{value}} {{unit}}. Macronutrientes desconhecidos."
+    },
+    "defaultGoals": {
+      "message": "A usar objetivos predefinidos",
+      "action": "Definir objetivos"
+    },
+    "loadError": {
+      "title": "Não foi possível carregar este dia.",
+      "retry": "Tentar novamente"
+    }
   },
   "profile": {
     "title": "Perfil"

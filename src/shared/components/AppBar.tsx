@@ -14,6 +14,8 @@ export type AppBarProps = {
   back?: { label: string; onPress: () => void };
   /** At most two trailing actions (DS-07), e.g. `PressableIcon`s. */
   actions?: ReactNode;
+  /** Content in the same header family under the title row, e.g. the Diary date strip (DS-07). */
+  bottom?: ReactNode;
   testID?: string;
 };
 
@@ -21,7 +23,7 @@ export type AppBarProps = {
  * App bar (DS-07): 52 + top safe area, compact title, no large collapsing title.
  * Light = green bar with high-contrast content; dark = surface with a green accent line.
  */
-export function AppBar({ title, back, actions, testID }: AppBarProps) {
+export function AppBar({ title, back, actions, bottom, testID }: AppBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const dark = theme.scheme === 'dark';
@@ -67,6 +69,7 @@ export function AppBar({ title, back, actions, testID }: AppBarProps) {
           </AppText>
           {actions ? <View style={styles.actions}>{actions}</View> : null}
         </View>
+        {bottom}
       </FocusRingColorContext.Provider>
     </View>
   );

@@ -1,6 +1,12 @@
 import { Stack } from 'expo-router';
 
-// NAV-02: the Diary tab keeps its own stack.
+import { DiaryDateProvider } from '@/features/diary/hooks/DiaryDateContext';
+
+// NAV-02: the Diary tab keeps its own stack. NAV-05: the selected date is owned above the stack.
 export default function DiaryStackLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <DiaryDateProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </DiaryDateProvider>
+  );
 }

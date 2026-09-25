@@ -6,7 +6,7 @@ Single place for implementation status. Updated in the same commit as the work i
 |---|---|
 | M0 Skeleton | done |
 | M1 Data + domain | done |
-| M2 Diary (read) | not started |
+| M2 Diary (read) | in progress |
 | M3 Quick Calories | not started |
 | M4 Custom foods + ruler | not started |
 | M5 Search + Open Food Facts | not started |
@@ -167,3 +167,28 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
     - [x] R1-8 minor: known gaps list Copy meal (M7).
     - [x] R1-9 minor: ROAD-02 checklist and dependency notes restored in the M1 section (an earlier edit had removed them).
   - Round 2 (`ab660c6`, `docs/qa/M1/review.md`, delta, Sonnet): **clean**, 0 blockers · 0 majors · 0 minors. All 9 round-1 findings were confirmed fixed; `npm run check` 234/234; `m0-shell` passes on both platforms.
+
+## M2 Diary (read)
+
+Status: **in progress** · Start commit: `7ef1cf8` (review range `7ef1cf8..HEAD`)
+
+### Tasks
+Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
+- [x] T1 Locale display helpers (`src/shared/i18n/format.ts`): grouped integer energy in kcal/kJ, macros integer ≥10 g / 1 decimal <10 g (UX-00), Yesterday/Today/Tomorrow + locale short date with the year only outside the current year (UX-02); `useFormattingLocale`
+- [x] T2 Diary date context above the Diary stack (`DiaryDateProvider`, NAV-05/ARCH-06; fresh launch = today) + screen-model queries (`diary.queries.ts`: day, settings)
+- [x] T3 DS-08 components (`src/features/diary/components`): `DiaryDateStrip` (in the app bar via a new `AppBar.bottom` slot, DS-07), `CalorieRing` (two clipped half-rings + round caps; no SVG dependency; grows with text size), `MacroStrip` (partial totals marked by an info icon, explained in the label), `MealHeader`, `DiaryEntryRow`, `QuickCaloriesRow`, Add food row
+- [x] T4 Diary screen (UX-02): 3-page native paging pager (adjacent days pre-rendered, re-centers after a swipe, inactive pages reset to top), overview, UX-01 default-goals row, every meal in saved order, full-screen load error with Retry. Found on the Android emulator and fixed: one swipe moved two days (Android reports the momentum end twice); only the first end after a drag counts
+- [x] T5 Dev-only seed data (`src/bootstrap/devSeed.ts`): `EXPO_PUBLIC_DEV_SEED_DIARY=1` in a dev build inserts sample foods/entries once (today typical + partial macros, tomorrow over goal, yesterday known macros, later days empty). Ignored outside `__DEV__`; `.env.example` documents it (default 0)
+- [ ] T6 Date Picker (UX-13) + app-bar calendar action "Choose date": **blocked on M2-Q1**
+- [ ] T7 Maestro flows: launch to today's diary · swipe to another date and back to Today (ARCH-18)
+- [ ] T8 Exit demo on both platforms; QA screenshots (light/dark × default/largest text, small phone) + DS-02 density check in `docs/qa/M2/`
+- [ ] T9 Independent review
+
+### Known gaps
+- Diary actions whose target screens come later are shown but disabled: header `+` and `Add food` (Food Search, M4), row taps (Edit Quick Calories M3, Edit Food Entry M4), meal header tap (Meal Detail, M7). The default-goals row shows the message; its `Set goals` action arrives with Calories & Macros (M8).
+- A date before the first goal's `effective_from` (e.g. before the first launch) has no goal (DATA-09): the ring shows kcal eaten + "No goal for this date", and macros show consumed grams only.
+- "Today" is read from the clock on each render; a midnight rollover while the Diary stays open updates on the next render, not on a timer.
+- NAV-02 "Diary tab tapped while at root → scroll to top" is not wired yet (the day list has no tab-press hook).
+
+### Open questions
+- **M2-Q1** UX-13 asks for the *native* calendar. Expo has no calendar picker built in, so this needs `@react-native-community/datetimepicker` (the Expo-supported package, installed with `npx expo install`; a native module, so both dev builds are rebuilt). Recommended: yes. Alternative: a JS month grid inside our `BottomSheet`, which would be a spec deviation. Until then the calendar action is hidden.

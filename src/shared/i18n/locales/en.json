@@ -10,7 +10,68 @@
     "add": "Add"
   },
   "diary": {
-    "title": "Diary"
+    "title": "Diary",
+    "chooseDate": "Choose date",
+    "yesterday": "Yesterday",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "goToToday": "Today",
+    "goToTodayLabel": "Go to today",
+    "previousDay": "Previous day, {{label}}",
+    "nextDay": "Next day, {{label}}",
+    "selectedDay": "Showing {{label}}",
+    "units": {
+      "kcal": "kcal",
+      "kJ": "kJ",
+      "kcalSpoken": "kilocalories",
+      "kJSpoken": "kilojoules",
+      "g": "g"
+    },
+    "ring": {
+      "left": "{{unit}} left",
+      "over": "{{unit}} over",
+      "eaten": "{{value}} eaten",
+      "eatenNoGoal": "{{unit}} eaten",
+      "noGoal": "No goal for this date",
+      "a11yLeft": "Calories remaining, {{remaining}} of {{goal}} {{unit}}. {{eaten}} eaten.",
+      "a11yOver": "Over calorie goal by {{over}} {{unit}}. Goal {{goal}}, {{eaten}} eaten.",
+      "a11yNoGoal": "Calories eaten, {{eaten}} {{unit}}. No goal for this date."
+    },
+    "macros": {
+      "carbs": "Carbs",
+      "protein": "Protein",
+      "fat": "Fat",
+      "value": "{{consumed}}/{{target}} g",
+      "valueNoGoal": "{{consumed}} g",
+      "a11y": "{{macro}}, {{consumed}} of {{target}} grams.",
+      "a11yNoGoal": "{{macro}}, {{consumed}} grams.",
+      "a11yOver": "{{macro}}, {{consumed}} of {{target}} grams, over target.",
+      "unknownCarbs": "Some entries have unknown carbs.",
+      "unknownProtein": "Some entries have unknown protein.",
+      "unknownFat": "Some entries have unknown fat."
+    },
+    "meal": {
+      "energy": "{{value}} {{unit}}",
+      "a11y": "{{meal}}, {{value}} {{unit}}",
+      "addFood": "Add food",
+      "addFoodTo": "Add food to {{meal}}"
+    },
+    "entry": {
+      "serving": "{{quantity}} {{unit}}",
+      "servings": "{{quantity}} × {{unit}}",
+      "a11y": "{{name}}, {{serving}}, {{value}} {{unit}}",
+      "quickCalories": "Quick Calories",
+      "quickA11y": "{{name}}, {{value}} {{unit}}. Macros unknown.",
+      "quickNoteA11y": "{{note}}, Quick Calories, {{value}} {{unit}}. Macros unknown."
+    },
+    "defaultGoals": {
+      "message": "Using default goals",
+      "action": "Set goals"
+    },
+    "loadError": {
+      "title": "Couldn't load this day.",
+      "retry": "Retry"
+    }
   },
   "profile": {
     "title": "Profile"

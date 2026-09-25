@@ -1,0 +1,70 @@
+// ROAD-01 M2: dev-only sample diary data for display and QA. Runs only in `__DEV__` builds with
+// EXPO_PUBLIC_DEV_SEED_DIARY=1, and only once (keyed on its marker food). Never part of the DATA-17 seed.
+import { addDays, type LocalDate } from '@/shared/dates';
+
+import type { AppServices } from './services';
+
+const MARKER = 'Scrambled eggs (sample)';
+
+export async function seedDevDiary(services: AppServices, today: LocalDate): Promise<boolean> {
+  const exists = await services.db.getFirst<{ ok: number }>(
+    "SELECT 1 AS ok FROM foods WHERE source = 'custom' AND name = ?",
+    [MARKER],
+  );
+  if (exists) return false;
+  const [breakfast, lunch, dinner, snacks] = await services.meals.list();
+  if (!breakfast || !lunch || !dinner || !snacks) return false;
+
+  const eggs = await services.foods.createCustom({
+    name: MARKER,
+    basisQuantity: 100,
+    basisUnit: 'g',
+    nutrients: { energyKcal: 149, carbohydrateG: 1.6, proteinG: 10, fatG: 11 },
+    servings: [
+      { label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 },
+      { label: 'egg', quantity: 1, unit: 'egg', basisMultiplier: 0.67, isDefault: true },
+    ],
+  });
+  const toast = await services.foods.createCustom({
+    name: 'Wholegrain toast with butter and a long descriptive name (sample)',
+    basisQuantity: 100,
+    basisUnit: 'g',
+    nutrients: { energyKcal: 290, carbohydrateG: 41, proteinG: 11, fatG: 9 },
+    servings: [{ label: 'slice', quantity: 1, unit: 'slice', basisMultiplier: 0.35, isDefault: true }],
+  });
+  const yoghurt = await services.foods.createCustom({
+    name: 'Greek yoghurt (sample)',
+    basisQuantity: 100,
+    basisUnit: 'g',
+    nutrients: { energyKcal: 97, carbohydrateG: 3.9, proteinG: 9, fatG: 5 },
+    servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+  });
+  const serving = (food: typeof eggs, label: string) => food.servings.find((s) => s.label === label)!.id;
+  const addFood = (date: LocalDate, mealId: string, food: typeof eggs, label: string, quantity: number) =>
+    services.diary.addFoodEntry({
+      diaryDate: date,
+      mealId,
+      foodId: food.id,
+      servingId: serving(food, label),
+      quantity,
+    });
+
+  // Today: typical day with a partial (unknown) macro total from Quick Calories.
+  await addFood(today, breakfast.id, eggs, 'egg', 2);
+  await addFood(today, breakfast.id, toast, 'slice', 1);
+  await services.diary.addQuickCalories({ diaryDate: today, mealId: lunch.id, energyKcal: 650, note: 'Canteen lunch' });
+  await addFood(today, snacks.id, yoghurt, 'g', 150);
+  await services.diary.addQuickCalories({ diaryDate: today, mealId: snacks.id, energyKcal: 120 });
+  // Tomorrow: over goal. (A future day, because days before the first launch have no goal, DATA-09.)
+  const tomorrow = addDays(today, 1);
+  await addFood(tomorrow, breakfast.id, toast, 'slice', 3);
+  await services.diary.addQuickCalories({
+    diaryDate: tomorrow,
+    mealId: dinner.id,
+    energyKcal: 2100,
+    note: 'Birthday dinner',
+  });
+  // Yesterday: known macros only. Two or more days ahead stay empty (every meal still shows).
+  await addFood(addDays(today, -1), lunch.id, eggs, 'g', 200);
+  return true;
+}
