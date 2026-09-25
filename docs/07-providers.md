@@ -29,13 +29,12 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 ## PROV-03 OFF endpoints
 | Use | Call | Notes |
 |---|---|---|
-| Search | `GET /search?q=<terms> countries_tags:"en:<country>"&langs=<appLang>,en&page_size=20&page=&fields=code,product_name,brands,nutriments` (search host) | Search-a-licious. Response has `hits[]`, `count`, `page`, `page_count`, `is_count_exact`. `brands` is an array. `nutriments` holds only `*_100g` values. |
+| Search | `GET /search?q=<terms>&langs=<appLang>,en&page_size=20&page=&fields=code,product_name,brands,nutriments` (search host) | Search-a-licious. Response has `hits[]`, `count`, `page`, `page_count`, `is_count_exact`. `brands` is an array. `nutriments` holds only `*_100g` values. |
 | Select a result | `GET /api/v2/product/{code}?fields=code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments` (product host) | Called on tap before upsert. It's the only source of serving data. `status: 1` means found. `brands` is a comma-separated string here. |
 | Refresh cached | Same as select | Rules come in the cache step. |
 - Use Search-a-licious for full-text search, as the OFF docs recommend. They mark `/cgi/search.pl` as legacy, and `/api/v2/search` only filters (no full-text search).
 - Limits per IP: **10 searches/min**, **15 product reads/min**. Going over repeatedly can get the IP banned. OFF also has global rate limits that answer **HTTP 503**: treat 503 as rate-limited and back off, not as "service down".
-- **Region filter:** `<country>` is OFF's English country tag for the device region (PT → `en:portugal`; keep a small ISO → tag map, and use no filter for unmapped regions). **Why:** unfiltered Portuguese queries rank Brazilian products first. Checked live: `iogurte grego` gives 1,287 hits unfiltered (Brazil first) vs 528 with the filter (Portugal only).
-- If the filtered page 1 returns 0 hits, run the same query once without the filter (this counts against PROV-04's budget).
+- No region/country filter (product decision). Portuguese queries may also return Brazilian products; that's accepted.
 - `langs=<appLang>,en` (pt-PT → `pt,en`). OFF names come back in that language when available. USDA is English-only: Portuguese terms return 0 USDA hits (checked: `bacalhau`), so the USDA section usually shows `No results` for Portuguese queries.
 - Search-a-licious is at version 0.1.0 (young). Keep it fully behind the OFF adapter so a switch touches one module.
 

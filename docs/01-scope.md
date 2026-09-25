@@ -74,5 +74,5 @@ Other docs refer to this list instead of repeating it.
 
 ## SCOPE-12 Languages and region
 - UI in **English** (default and fallback) and **European Portuguese (pt-PT)**. The app follows the device/OS per-app language; there is no in-app switcher.
-- Primary market: Portugal. Food search favors the device region (PROV-03). Units, decimals and dates follow the device locale.
+- Primary market: Portugal. Units, decimals and dates follow the device locale.
 - User data (food and meal names, notes) is never translated.
