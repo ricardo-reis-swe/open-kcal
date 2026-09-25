@@ -51,7 +51,7 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
           <AppIcon name="chevron-back" color="onAppBar" />
         ) : (
           <AppText variant="compact" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
-            {`‹ ${label(prev, today)}`}
+            {t('diary.prevLabel', { label: label(prev, today) })}
           </AppText>
         )}
       </FocusablePressable>
@@ -86,7 +86,7 @@ export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
           <AppIcon name="chevron-forward" color="onAppBar" />
         ) : (
           <AppText variant="compact" numberOfLines={1} style={{ color: theme.colors.onAppBar }}>
-            {`${label(next, today)} ›`}
+            {t('diary.nextLabel', { label: label(next, today) })}
           </AppText>
         )}
       </FocusablePressable>

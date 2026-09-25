@@ -49,6 +49,7 @@ export function DiaryPager({ date, onChange, renderDay }: DiaryPagerProps) {
       {width > 0 ? (
         <ScrollView
           ref={ref}
+          testID="diary-pager-scroll"
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}

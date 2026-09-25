@@ -40,29 +40,37 @@ export function MacroStrip({ totals, targets }: MacroStripProps) {
       {MACROS.map((macro) => {
         const total = totals[macro.key];
         const target = targets?.[macro.key] ?? null;
-        const consumed = formatGrams(total.knownSum, locale);
         const partial = total.unknownCount > 0;
-        const over = target !== null && total.knownSum > target;
+        // UX-00 / DATA-06: when no entry knows this macro, the total is unknown (`—`), never 0.
+        const allUnknown = partial && total.unknownCount === totals.entryCount;
+        const consumed = allUnknown ? t('diary.macros.unknownValue') : formatGrams(total.knownSum, locale);
+        const over = !allUnknown && target !== null && total.knownSum > target;
         const name = t(macro.label);
+        const targetText = target === null ? null : formatGrams(target, locale);
         const value =
-          target === null
+          targetText === null
             ? t('diary.macros.valueNoGoal', { consumed })
-            : t('diary.macros.value', { consumed, target: formatGrams(target, locale) });
-        const base =
-          target === null
-            ? t('diary.macros.a11yNoGoal', { macro: name, consumed })
-            : t(over ? 'diary.macros.a11yOver' : 'diary.macros.a11y', {
-                macro: name,
-                consumed,
-                target: formatGrams(target, locale),
-              });
+            : t('diary.macros.value', { consumed, target: targetText });
+        let base: string;
+        if (allUnknown) {
+          base =
+            targetText === null
+              ? t('diary.macros.a11yUnknownNoGoal', { macro: name })
+              : t('diary.macros.a11yUnknown', { macro: name, target: targetText });
+        } else if (targetText === null) {
+          base = t('diary.macros.a11yNoGoal', { macro: name, consumed });
+        } else {
+          base = t(over ? 'diary.macros.a11yOver' : 'diary.macros.a11y', { macro: name, consumed, target: targetText });
+        }
+        const a11y =
+          partial && !allUnknown ? t('diary.macros.a11yPartial', { text: base, note: t(macro.unknown) }) : base;
         return (
           <View
             key={macro.key}
             testID={`macro-${macro.key}`}
             accessible
             accessibilityRole="text"
-            accessibilityLabel={partial ? `${base} ${t(macro.unknown)}` : base}
+            accessibilityLabel={a11y}
             style={[styles.column, { flexBasis: basis }]}
           >
             <View style={[styles.labelRow, { gap: theme.spacing[1] }]}>

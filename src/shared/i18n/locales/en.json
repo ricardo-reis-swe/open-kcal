@@ -48,7 +48,11 @@
       "a11yOver": "{{macro}}, {{consumed}} of {{target}} grams, over target.",
       "unknownCarbs": "Some entries have unknown carbs.",
       "unknownProtein": "Some entries have unknown protein.",
-      "unknownFat": "Some entries have unknown fat."
+      "unknownFat": "Some entries have unknown fat.",
+      "unknownValue": "—",
+      "a11yUnknown": "{{macro}}, unknown, target {{target}} grams.",
+      "a11yUnknownNoGoal": "{{macro}}, unknown.",
+      "a11yPartial": "{{text}} {{note}}"
     },
     "meal": {
       "energy": "{{value}} {{unit}}",
@@ -71,7 +75,9 @@
     "loadError": {
       "title": "Couldn't load this day.",
       "retry": "Retry"
-    }
+    },
+    "prevLabel": "‹ {{label}}",
+    "nextLabel": "{{label}} ›"
   },
   "profile": {
     "title": "Profile"

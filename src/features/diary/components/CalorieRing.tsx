@@ -14,9 +14,6 @@ export type CalorieRingProps = {
   unit: EnergyUnit;
 };
 
-const DIAMETER = 140; // sizes.calorieRing.diameter 136–148
-const STROKE = 9; // sizes.calorieRing.stroke 8–10
-
 /**
  * DS-08 calorie ring: remaining value, unit-aware `kcal left`, consumed below. Over goal → the amount over,
  * `kcal over` and the warning color, never an unexplained red ring (DS-03). One screen-reader element (UX-02).
@@ -29,7 +26,10 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
   // DS-11: text scales, so the ring grows with it (up to the screen width) instead of clipping its content.
   // Shrink-to-fit only at large sizes; at default text the content always fits the 140 ring.
   const large = fontScale >= 1.5;
-  const diameter = Math.round(Math.min(DIAMETER * Math.max(fontScale, 1), width - 2 * theme.spacing[4]));
+  // DS-08 ring: the smallest token diameter (136) protects Diary density (DS-02); the thicker token stroke.
+  const baseDiameter = theme.sizes.calorieRing.diameter[0];
+  const stroke = theme.sizes.calorieRing.stroke[1];
+  const diameter = Math.round(Math.min(baseDiameter * Math.max(fontScale, 1), width - 2 * theme.spacing[4]));
   const unitLabel = t(`diary.units.${unit}`);
   const unitSpoken = t(`diary.units.${unit}Spoken`);
   const fmt = (kcal: number) => formatEnergy(kcal, unit, locale);
@@ -75,12 +75,18 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
     >
       <RingArc
         diameter={diameter}
-        stroke={STROKE}
+        stroke={stroke}
         progress={progress}
         color={theme.colors[ringColor]}
         track={theme.colors.divider}
       />
-      <View style={[StyleSheet.absoluteFill, styles.center, { padding: STROKE + theme.spacing[large ? 3 : 1] }]}>
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          styles.center,
+          { padding: large ? diameter * 0.15 + stroke : stroke + theme.spacing[1] },
+        ]}
+      >
         <AppText variant="displayNumber" tabular color={tone} numberOfLines={1} adjustsFontSizeToFit>
           {value}
         </AppText>

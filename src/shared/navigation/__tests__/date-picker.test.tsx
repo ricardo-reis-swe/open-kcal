@@ -93,7 +93,7 @@ describe('UX-13 Date Picker (Android: platform calendar dialog)', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('does not open while hidden', async () => {
+  it('UX-13: the dialog does not open while the picker is hidden', async () => {
     await setup({ visible: false });
     expect(DateTimePickerAndroid.open).not.toHaveBeenCalled();
   });

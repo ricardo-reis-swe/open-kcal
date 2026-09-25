@@ -77,8 +77,20 @@ describe('UX-02 Diary', () => {
     expect(
       await active().findByLabelText('Canteen lunch, Quick Calories, 650 kilocalories. Macros unknown.'),
     ).toBeOnTheScreen();
-    // DATA-06: the macro totals are partial, which the strip states for each macro.
-    expect(active().getByLabelText('Protein, 0 of 100 grams. Some entries have unknown protein.')).toBeOnTheScreen();
+    // UX-00 / DATA-06: no entry knows its macros, so each total is unknown (`—`), never 0.
+    expect(active().getByLabelText('Protein, unknown, target 100 grams.')).toBeOnTheScreen();
+    expect(active().getByText('—/100 g')).toBeOnTheScreen();
+  });
+
+  it('DATA-06: a mix of known and unknown macros is a partial total, stated in the label', async () => {
+    await setup(async (s) => {
+      const meals = await addEggs(s, TODAY, 0, 2);
+      await s.diary.addQuickCalories({ diaryDate: TODAY, mealId: meals[1]!.id, energyKcal: 300 });
+    });
+    expect(
+      await active().findByLabelText('Protein, 13 of 100 grams. Some entries have unknown protein.'),
+    ).toBeOnTheScreen();
+    expect(active().getByText('13/100 g')).toBeOnTheScreen();
   });
 
   it('DS-08 / DS-03: over goal shows the amount over, not a bare red ring', async () => {

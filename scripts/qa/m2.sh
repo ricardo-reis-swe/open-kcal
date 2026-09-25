@@ -12,12 +12,21 @@ reset_device() {
     $ADB shell wm size reset; $ADB shell wm density reset
   else
     xcrun simctl ui booted appearance light; xcrun simctl ui booted content_size large
+    # Restore the dev-client floating button to what it was before the run.
+    if [ -n "$fab" ]; then
+      xcrun simctl spawn booted defaults write $PKG EXDevMenuShowFloatingActionButton -bool "$fab"
+    else
+      xcrun simctl spawn booted defaults delete $PKG EXDevMenuShowFloatingActionButton 2>/dev/null
+    fi
   fi
 }
+fab=
 trap reset_device EXIT
 if [ "$platform" = android ]; then
   $ADB shell wm size 720x1520; $ADB shell wm density 320
 else
+  fab=$(xcrun simctl spawn booted defaults read $PKG EXDevMenuShowFloatingActionButton 2>/dev/null)
+  [ "$fab" = 1 ] && fab=YES; [ "$fab" = 0 ] && fab=NO
   xcrun simctl spawn booted defaults write $PKG EXDevMenuShowFloatingActionButton -bool NO
 fi
 status=0
