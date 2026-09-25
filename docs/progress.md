@@ -185,6 +185,18 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T8 QA screenshots on both platforms (light/dark × default/largest text × today/over goal/empty, small Android phone) + DS-02 density check (pass) in `docs/qa/M2/` (`scripts/qa/m2.sh`). Found and fixed at the largest text: ring overflow, macro values splitting, date-strip truncation (see its README). The Date Picker is captured too (`*-date-picker.png`)
 - [ ] T9 Independent review
 
+### ROAD-02 checklist
+- [x] Every behavior in Main specs implemented (UX-02, UX-13, NAV-02/05, DS-07/08), except the actions whose target screens come later (see known gaps)
+- [x] `npm run check` green (265 tests)
+- [x] Tests at the right ARCH-18 layer (pure formatting; real-SQLite dev seed; component tests for populated/empty/over-goal/unknown/no-goal/error + a11y labels; navigation tests for date preservation and tab re-tap); names cite spec IDs
+- [x] Every string in `en` + `pt-PT` (parity test; pt-PT smoke render of the Diary)
+- [x] E2E flows `m2-launch-today` + `m2-swipe-date` (and `m0-shell`) pass on the iOS simulator and the Android emulator
+- [x] Exit demo on both platforms: browse past/today/future (swipe, prev/next, Today, Date Picker), empty days show every meal, over goal and unknown macros render. Screenshots (light + dark, default + largest text, small phone) and the DS-02 density check in `docs/qa/M2/`
+- [ ] Independent review clean
+- [x] No placeholder UI for in-scope behavior (later-milestone actions are disabled and listed as known gaps)
+- [x] Nothing sensitive in logs (no new logging; the dev seed logs nothing)
+- [x] M2 extra: DS-02 density check at default text on a small phone passes
+
 ### Known gaps
 - Diary actions whose target screens come later are shown but disabled: header `+` and `Add food` (Food Search, M4), row taps (Edit Quick Calories M3, Edit Food Entry M4), meal header tap (Meal Detail, M7). The default-goals row shows the message; its `Set goals` action arrives with Calories & Macros (M8).
 - A date before the first goal's `effective_from` (e.g. before the first launch) has no goal (DATA-09): the ring shows kcal eaten + "No goal for this date", and macros show consumed grams only.
