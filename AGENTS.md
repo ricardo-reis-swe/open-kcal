@@ -4,6 +4,8 @@ Local-first React Native (Expo) calorie and food diary. iOS + Android only. No b
 
 Agents may commit and push changes directly to the `main` branch.
 
+Commit identity: author and committer are always `ricardo_reis@live.com`. Never add `Co-Authored-By` or any other name, email or account to commits, code, config or docs.
+
 ## Specs — read only what the task needs
 Approved requirements. Don't reinterpret or redesign them unless the user explicitly asks. Rules have stable IDs (`NAV-04`); cite them in code comments, tests and commits when relevant.
 
