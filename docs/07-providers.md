@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–2 approved. Step 3 updated for Portugal, ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–3 approved. Step 4 ready for review.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -115,4 +115,25 @@ Output: `foods.basis_quantity/basis_unit` + `food_servings` rows (DATA-11), all 
 
 **Labels:** stored as given, singular where possible, lowercase unless it's an abbreviation (`Tbsp`). No automatic pluralization (labels may be English or Portuguese). Display: count labels as `<qty> × <label>` (`2 × egg`, `1,5 × fatia`), mass/volume units as `<qty> <unit>` (`150 g`, `2 oz`). Screen reader: `2, egg`.
 
-<!-- Steps 4–9 pending: drop rules · ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
+## PROV-07 Minimum data and normalization
+Applied in `mapToCandidate` (ARCH-11) to search hits and again to detail responses. A dropped item is silently left out; count drops in dev logs only.
+
+**Drop when any of these holds:**
+- No external ID (`fdcId` / `code` missing or empty).
+- No name after normalization (below).
+- Energy missing or invalid (PROV-05).
+- Energy is 0 while no macro is known. **Why:** that pattern means an unfilled record, not a zero-calorie food.
+- Energy is 0 while known macros add up to ≥ 20 kcal (4/4/9 per g). The energy value is clearly missing.
+
+**Keep:** foods with some or all macros unknown (they show `—`, DATA-06); true zero foods (energy 0 with macros known and ≈ 0, e.g. water).
+
+**Detail responses:** if the detail fails the rules above, don't upsert; show the UX-04 row error `Couldn't load this food.` Where search and detail disagree, the detail wins.
+
+**Normalization:**
+| Field | Rule |
+|---|---|
+| Name | USDA `description`; OFF `product_name`. Trim and collapse whitespace; cap at 200 chars. If the name has letters and they're all uppercase (common in USDA Branded, e.g. `GREEK YOGURT`), convert to sentence case (`Greek yogurt`) per DS-04. |
+| Brand | USDA `brandName` → `brandOwner`; OFF first entry of `brands` (array in search, comma-separated string in detail). Trim; all-caps → title case. Empty → `null`. |
+| External ID | USDA `fdcId` as a string; OFF `code` exactly as returned (no padding or trimming of leading zeros). |
+
+<!-- Steps 5–9 pending: ranking/paging/language · cache TTL + refresh · timeouts/retries · USDA key validation · error mapping + fixtures -->
