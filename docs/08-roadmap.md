@@ -1,6 +1,6 @@
 # 08 Implementation roadmap (ROAD)
 
-Status: **DRAFT, written one step at a time.** Step 1 approved. Step 2 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–2 approved. Step 3 ready for review.
 
 Read when: deciding what to build next. Milestones are vertical slices, done in order. Each ends with something runnable on both platforms. The specs define behavior; this doc only sequences it.
 
@@ -70,4 +70,45 @@ A milestone is done only when **all** of these hold. They are cumulative: earlie
 | M8 | The meal delete + reassign transaction rolls back fully on failure (test). |
 | M9 | The full DS-13 matrix passes. The user reviews the pt-PT copy. ARCH-19 performance checks run. Release builds are made (step 4). |
 
-<!-- Steps 3–4 pending: agent workflow · builds and release -->
+## ROAD-03 Agent workflow
+**Progress log.** `docs/progress.md` is created at the start of M0 and is the single place for status. Per milestone it holds:
+- status: not started / in progress / awaiting user acceptance / done
+- the ROAD-02 checklist, ticked
+- known gaps
+- open questions
+
+Update it in the same commit as the work it describes.
+
+**Picking work**
+- Work on the first milestone that isn't done (M7 and M8 may run in parallel).
+- Within a milestone, go in order: domain → data → services → screens → tests → E2E → QA screenshots.
+- Don't start the next milestone until the current one is accepted.
+- Blocked on a question? Log it and continue with unblocked tasks in the same milestone.
+
+**Commits** (direct to `main`, per AGENTS.md)
+- One coherent change per commit, and CI must stay green. If `main` is red, fixing it comes first.
+- Conventional commits, with spec IDs in the body: `feat(diary): date strip and swipe` + `Refs: UX-02, NAV-05`.
+- In code, cite a spec ID only where a rule is non-obvious (e.g. `// DATA-05: totals come from snapshots`).
+
+**Stop and ask the user before:**
+- Resolving a spec conflict or ambiguity that changes behavior.
+- Deviating from a spec, or changing the schema beyond `schema.sql`.
+- Adding a dependency (ARCH-20 note required).
+- Anything in SCOPE-10 or `post-mvp.md`. New ideas go to `post-mvp.md` as proposals and are never implemented.
+- Destructive operations on user data or shipped migrations.
+- Needing secrets, e.g. a USDA key to capture fixtures. The user provides it in the local env.
+
+**Don't ask about:** implementation details the specs leave open (internal naming, file layout within ARCH-05, choosing between equivalent approaches). Decide and move on.
+
+**Spec changes:** only after user approval. Update the spec in place (never renumber IDs), mention it in the commit, and log it.
+
+**Milestone acceptance:** when ROAD-02 is met, set the status to "awaiting user acceptance" and report to the user:
+- what was built
+- the exit demo steps
+- test counts
+- the path to the QA screenshots
+- known gaps
+
+The milestone is done only after the user accepts it.
+
+<!-- Step 4 pending: builds and release -->
