@@ -106,7 +106,7 @@ Status: **in progress** · Start commit: `888b774` (review range `888b774..HEAD`
 
 ### Tasks
 Order per ROAD-03: domain → data → services → startup/screens → tests → QA.
-- [ ] T1 Domain (pure, `src/domain`): units (DATA-04), local dates incl. DST/month/year/leap (DATA-08), nutrition + serving math and unknown-macro aggregation (DATA-05/06, DATA-11), goal resolution (DATA-09), current weight (DATA-13)
+- [x] T1 Domain (pure, `src/domain` + `src/shared/dates`): units (DATA-04), local dates incl. DST/month/year/leap (DATA-08), nutrition + serving math and unknown-macro aggregation (DATA-05/06, DATA-11), goal resolution (DATA-09), current weight (DATA-13). Jest pins `TZ=Europe/Lisbon` (`jest.config.js`) so DST cases are deterministic; Jest sandboxes `process.env`, so a test can't switch TZ at runtime.
 - [ ] T2 Typed errors (ARCH-13, `src/shared/errors`); clock + ID generator infra
 - [ ] T3 DB adapter interface over `expo-sqlite`, migration runner + migration 1 from `schema.sql` (DATA-17, ARCH-09); Jest runs repositories on real SQLite via Node's built-in `node:sqlite` (no extra dependency)
 - [ ] T4 Idempotent seed: settings (locale unit defaults), localized meals, provisional goal (DATA-10, DATA-17, UX-01); init-twice test

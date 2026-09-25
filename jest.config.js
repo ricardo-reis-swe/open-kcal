@@ -1,3 +1,6 @@
+// Deterministic local-date tests (DATA-08): Portugal is the main market and has DST. Workers inherit this.
+process.env.TZ = 'Europe/Lisbon';
+
 /** @type {import('jest').Config} */
 module.exports = {
   preset: 'jest-expo',
