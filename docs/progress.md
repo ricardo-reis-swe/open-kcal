@@ -141,5 +141,6 @@ Order per ROAD-03: domain → data → services → startup/screens → tests �
 - [ ] T8 Dev builds rebuilt (new native deps); exit demo on both platforms; recovery-screen screenshots in `docs/qa/M1/`
   - [x] Both dev builds rebuilt with `expo-sqlite` + `expo-secure-store`. The M0 Maestro flow passes on both through the real startup, and the seeded on-device DBs were checked (`docs/qa/M1/README.md`)
   - [x] iOS recovery screenshots (light/dark × default/largest). They found and fixed two bugs: the screen didn't scroll at the largest text (Retry clipped), and `logger.error` got its context in the `error` slot, so the category/version were lost
-  - [ ] Android recovery screenshots; small-phone shot; rerun if M1-Q1 adds native deps (another rebuild)
+  - [x] Android recovery screenshots on a small phone (light/dark × default/2.0 font); the DB was restored afterwards and the app reopens normally
+  - [ ] Rebuild + rerun if M1-Q1 adds native deps; exit demo recorded for the review
 - [ ] T9 Independent review
