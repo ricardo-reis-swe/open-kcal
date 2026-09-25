@@ -79,7 +79,7 @@ FROM diary_entries WHERE diary_date = ?;
 
 ## DATA-15 Search and cache
 - Sources: (1) active custom foods, (2) recent and valid cached external foods, (3) remote USDA/OFF when available.
-- Index normalized name and brand for lookup. FTS5 is optional if the runtime has it; relational tables stay the source of truth.
+- Index name and brand for lookup (no normalized search column, PROV-08). FTS5 is optional if the runtime has it; relational tables stay the source of truth.
 - Remote results are upserted into `foods` + `food_servings` + `food_cache_metadata` **before** logging, which gives a stable local `food_id` and offline reuse.
 - Dedupe only by `(source, external_id)`. Same-looking foods from different sources are not merged.
 - Expired cache stays loggable offline; refresh when online (before or after selection, per `06-screens.md`).

@@ -1,6 +1,6 @@
 # 07 Food providers (PROV)
 
-Status: **DRAFT, written one step at a time.** Steps 1–4 approved. Step 5 ready for review.
+Status: **DRAFT, written one step at a time.** Steps 1–5 approved.
 
 Read when: working in `src/data/api/**`, the food search flow, or cache refresh. Provider-agnostic rules live in ARCH-11 (interface, HTTP wrapper), DATA-15 (upsert, dedupe) and UX-04 (search screen). This doc covers what is specific to each provider.
 
@@ -140,9 +140,8 @@ Applied in `mapToCandidate` (ARCH-11) to search hits and again to detail respons
 Section order and debounce: UX-04, PROV-04. Language: PROV-03.
 
 **Local sections (`My foods` = active custom foods, `Saved` = cached external foods)**
-- Match against `foods.search_text`: name + brand, lowercased, **diacritics stripped** (`pao` finds `Pão`), whitespace collapsed. It's written at every upsert or custom-food save.
-- **Why a column:** expo-sqlite can't register JS functions, so normalization can't happen inside SQL.
-- A food matches if every query token (normalized the same way) is a substring of `search_text`.
+- Match with SQLite `LIKE '%token%'` on `name` and `brand`. A food matches if every query token (trimmed, whitespace-split) is in its name or brand.
+- No normalized search column (product decision). Accepted limits: case-insensitivity is ASCII-only, and accents must match as typed (`pao` doesn't find `Pão`).
 - Rank: name equals the query → name starts with the query → every token starts a word → any other match. Ties: `recent_foods.use_count` desc → `last_used_at` desc → shorter name.
 - 20 per section, plus `Show more` for the next 20.
 
