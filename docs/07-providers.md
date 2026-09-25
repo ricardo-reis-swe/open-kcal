@@ -227,6 +227,14 @@ Implements UX-18 (Food Databases). Only `CredentialsService` touches the key (AR
 | Offline, timeout, network or 5xx | Yes | `Saved · will check when online` |
 
 **Status is session-only (no DB column).** On launch, a stored key shows `Saved · will check when online`. It becomes `Active` after any successful USDA request, or `Key rejected` after any 401/403.
+**`Test key` button** (Food Databases, shown when a key is stored): runs the same test request on demand and updates the session status.
+| Result | Status / inline message |
+|---|---|
+| 200 | `Active` · `Key works.` |
+| 401 / 403 | `Key rejected` · `USDA rejected this key.` (the key is kept) |
+| 429 | `Active` · `Key works, but it's over its hourly limit right now.` |
+| Timeout, network or 5xx | status unchanged · `Couldn't reach USDA. Try again.` |
+- Disabled while offline (helper `Connect to the internet to test.`) and while a test is running (inline spinner).
 - On a 401/403 during search, the USDA section shows `USDA rejected your key.` + a link to Food Databases. The key is **never** deleted automatically.
 - Replace: the old key stays until the new one passes the flow above. Remove: UX-19 dialog → delete from secure storage. Cached USDA foods and history stay (DATA-15).
 - Signup link: `https://api.data.gov/signup/`, opened in the system browser.

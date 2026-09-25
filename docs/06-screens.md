@@ -206,7 +206,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - **Units**: 4 segmented controls (kg|lb, g|oz, kcal|kJ, ml|fl oz). Each change saves immediately; no Save button.
 - **Weight Goal**: one weight field + `Clear goal` text action (sets NULL). Save → Profile.
 - **Weight History**: newest first, virtualized. Row = date (+ time when several on one day) · weight · change vs previous entry (`−0.4 kg`, neutral color, no judgment). App bar `+` (label "Update weight"). Empty: `No weight entries yet.` + Update weight.
-- **Food Databases**: `Open Food Facts · Always on`. USDA status is one of `Not set up`, `Active`, `Saved · will check when online`, `Key rejected`. The saved key shows masked with its last 4 characters (`••••3f9a`). Actions: `Add key` / `Replace key` / `Remove key` (UX-19).
+- **Food Databases**: `Open Food Facts · Always on`. USDA status is one of `Not set up`, `Active`, `Saved · will check when online`, `Key rejected`. The saved key shows masked with its last 4 characters (`••••3f9a`). Actions: `Add key` / `Replace key` / `Test key` / `Remove key` (UX-19). Test behavior: PROV-11.
   - Key input: secure entry, no autocorrect/autocap, paste allowed, with a link to the USDA key signup page.
   - On save when online: a test request runs. On 401/403 the key is not saved and shows an inline error. When offline the key is saved as `will check`.
 
