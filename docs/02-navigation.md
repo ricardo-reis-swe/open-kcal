@@ -40,7 +40,7 @@ App Root
 |---|---|---|
 | Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, Add Food per meal. Swipe → adjacent day. Past/today/future identical. | Meal header → Meal Detail(mealId, date). Food row → Edit Food Entry. Quick row → Edit Quick Calories. Add Food → Food Search(meal, date). |
 | Meal Detail | Meal name, date, kcal total, food + quick entries, Add Food, Copy Meal. Identity by `mealId`, never by name. | Entry → matching edit screen. Add Food → Food Search. Copy Meal → Copy Meal Sheet. Back → Diary, same date. |
-| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. No barcode. | Result → Food Detail. Create Custom Food → keeps date + meal. Back → origin, nothing created. |
+| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. No barcode. Swipe a custom food → soft delete (UX-04). | Result → Food Detail. Create Custom Food → keeps date + meal. Back → origin, nothing created. |
 | Food Detail / Add Entry | Food identity, units, ruler, live kcal/macros, target meal (changeable via Meal Picker), target date. | Save → writes, returns to origin (Diary or Meal Detail), refreshed, target date visible. Cancel/back → nothing saved. |
 | Edit Food Entry | Loads date, meal, food, serving and nutrition from `entryId`. Ruler, unit, reassign meal, Save, Delete. | Save → exact origin. **Exception:** opened from Meal Detail and meal changed → Diary. Delete → confirm → origin, totals refreshed. |
 | Quick Calories | Meal (changeable via Meal Picker), calories, optional note, Add. Macros unknown. | Add → origin, totals refreshed. |
@@ -68,12 +68,14 @@ App Root
 - **Meal Picker**: current meals in user order. Used for global add and for changing an entry's meal. Never assumes fixed names.
 - **Serving Unit Picker**: only units valid for the food. Pick → close + recalc ruler value, kcal, macros.
 - **Copy Meal Sheet** (from Meal Detail): Copy to today / Copy to tomorrow / Choose another date. The shortcuts mean absolute today/tomorrow even when the source is one of them. Choose date → Date Picker in destination mode. Copies into the same `mealId` on the destination date → back to source Meal Detail + success confirmation.
-- **Weight Entry Sheet** (from `+`, Profile, Weight History): date, weight, configured unit, Save, Delete (edit only). Create mode defaults to today and the configured unit; edit mode loads the record. Save → close, refresh Profile/History.
+- **Weight Entry Sheet** (from `+`, Profile, Weight History): date, weight, configured unit, Save, Delete (edit only). Date ≤ today. Create mode defaults to today and the configured unit; edit mode loads the record. Save → close, refresh Profile/History.
 
 ## NAV-08 Confirmation required before
 Deleting a food entry · deleting a Quick Calories entry · deleting a weight entry · deleting a meal · removing the USDA key.
 - The dialog names the object; the destructive action is visually distinct.
 - Deleting a meal that has entries MUST require picking another existing meal to reassign them to. Never silently delete diary history.
+- Not in this list, so no dialog: swipe-deleting a custom food (the revealed button is the confirmation, UX-04).
+- Also confirmed: leaving a dirty Create Custom Food or Calories & Macros form (`Discard changes?`, UX-00).
 
 ## NAV-09 Route rules
 - Routes pass IDs and lightweight context only, never DB objects.

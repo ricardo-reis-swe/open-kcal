@@ -16,6 +16,7 @@ CREATE TABLE app_settings (
   energy_unit        TEXT NOT NULL CHECK (energy_unit IN ('kcal', 'kJ')),
   volume_unit        TEXT NOT NULL CHECK (volume_unit IN ('ml', 'fl_oz')),
   goal_weight_kg     REAL CHECK (goal_weight_kg IS NULL OR goal_weight_kg > 0),
+  goals_confirmed_at TEXT, -- NULL while goals are the provisional first-launch default (UX-01)
   created_at         TEXT NOT NULL,
   updated_at         TEXT NOT NULL
 );

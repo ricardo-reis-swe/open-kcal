@@ -13,6 +13,6 @@ Written for coding agents: terse rules with stable IDs. Start at [AGENTS.md](AGE
 | [03 Data](docs/03-data.md) + [schema.sql](src/data/db/schema/schema.sql) | Approved |
 | [04 Architecture](docs/04-architecture.md) | Approved |
 | [05 Design system](docs/05-design.md) + [tokens.ts](src/shared/theme/tokens.ts) | Approved |
-| [06 Screens](docs/06-screens.md) | Draft, awaiting approval |
+| [06 Screens](docs/06-screens.md) | Approved |
 
 Each new section is approved before work starts on the next one.

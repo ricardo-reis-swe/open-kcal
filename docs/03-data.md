@@ -48,6 +48,7 @@ FROM diary_entries WHERE diary_date = ?;
 ## DATA-09 Goals
 - Goal for date D = the row with the greatest `effective_from ≤ D`.
 - Saving goals upserts the row effective **today** (updates it if it already exists). Older rows are never changed, so past days keep their targets.
+- **Exception (UX-01):** while `app_settings.goals_confirmed_at` is NULL, the first save updates the provisional row in place (keeping its `effective_from`) and sets `goals_confirmed_at`.
 - The schema supports other effective dates. A later section may add a UI for choosing one; it is not required in the first release.
 
 ## DATA-10 Meals
@@ -71,7 +72,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Multiple measurements per day. Current weight = latest `measured_at`, tie-break `created_at`.
 - A sheet that only collects a date: use the current local time if the date is today, otherwise a fixed local time (noon). `measured_at` and `local_date` MUST agree.
 - Delete is physical; current weight recomputes.
-- Input: convert from the display unit to kg, validate, then insert or update.
+- Input: convert from the display unit to kg, validate, then insert or update. `local_date` ≤ today.
 
 ## DATA-14 Recents
 - Upserted only after a successful **food** entry save (add or edit). Ordered by `last_used_at` DESC. Quick Calories excluded.
@@ -90,13 +91,14 @@ FROM diary_entries WHERE diary_date = ?;
 | Load day | Effective goal → meals by `sort_order` (all shown, even empty) → entries by meal + `sort_order` → per-meal and per-day totals with unknown flags. |
 | Add food entry | Tx: validate meal/date/food/serving/qty → compute unrounded nutrition → insert snapshot → upsert recent. UI reloads after commit. |
 | Edit food entry | Load by ID → validate serving/meal → recompute snapshot only if serving changed → upsert recent after save. |
-| Add/edit Quick Calories | Validate meal, date, kcal ≥ 0. Macros + serving NULL. Trim note. |
+| Add/edit Quick Calories | Validate meal, date, kcal ≥ 0 (the UI requires ≥ 1, UX-07). Macros + serving NULL. Trim note. |
 | Copy meal | Tx: read source meal + date entries in order → new UUIDs → copy snapshots exactly → destination date, same `meal_id` → append after existing `sort_order`. Copies are independent of the originals. |
+| Delete custom food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
 | Update goals | DATA-09. |
 
 ## DATA-17 Initialization and migrations
-- First launch, one idempotent transaction: schema + indexes → settings row (locale-informed unit defaults, predictable fallback) → 4 default meals in display order → initial goal row (the user's goals, or a documented provisional default; see `06-screens.md`) → schema version. Repeated or interrupted launches MUST NOT duplicate anything.
+- First launch, one idempotent transaction: schema + indexes → settings row (locale-informed unit defaults, predictable fallback) → 4 default meals in display order → provisional goal row (UX-01; `goals_confirmed_at` NULL) → schema version. Repeated or interrupted launches MUST NOT duplicate anything.
 - Migrations: numbered, forward-only, stored with the code. Each has an increasing integer version, runs in a transaction where possible, records its version only after all steps succeed, detects whether it already ran, and preserves user data.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.

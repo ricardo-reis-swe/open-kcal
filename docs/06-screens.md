@@ -1,7 +1,5 @@
 # 06 Screens (UX)
 
-Status: **DRAFT, awaiting approval.**
-
 Read when: building a specific screen, sheet or dialog. Only screen-specific behavior lives here. Components and styling: DS. Routes and returns: NAV. Data rules: DATA. Wireframes show order, not pixels.
 
 ## UX-00 Shared rules (apply to every screen unless a card says otherwise)
@@ -224,10 +222,3 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 ## UX-20 System screens
 - Launch screen until config + migrations finish (ARCH-17).
 - Startup/migration failure: `Couldn't open your diary.` + `Retry` + `Copy diagnostic info` (versions and error category only, ARCH-15). Never a reset.
-
-## Pending approval: changes to earlier docs
-1. UX-01: add `app_settings.goals_confirmed_at` to schema.sql + DATA-17. The first goal save updates the provisional row (narrow exception to DATA-09).
-2. UX-00: `Discard changes?` confirmation added (beyond the NAV-08 list) for two forms.
-3. UX-07: Quick Calories requires ≥1 kcal in the UI (DATA allows ≥0).
-4. UX-14: weight date max = today.
-5. UX-04: swipe-to-delete for custom foods in Food Search (adds an action to the NAV-04 Food Search row; no new route). Not in the NAV-08 confirmation list.
