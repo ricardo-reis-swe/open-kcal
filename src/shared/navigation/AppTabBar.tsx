@@ -1,6 +1,6 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, AppText, type IconName } from '@/shared/components';
@@ -66,7 +66,8 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
   const addSize = theme.sizes.centerAction;
   return (
     <View
-      accessibilityRole="tabbar"
+      // `tabbar` is iOS-only; Android throws on unknown roles.
+      accessibilityRole={Platform.OS === 'ios' ? 'tabbar' : undefined}
       testID="tab-bar"
       style={[
         styles.bar,
