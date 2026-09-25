@@ -39,7 +39,7 @@ Status: **in progress** · Start commit: `553efac` (review range `553efac..HEAD`
   - [x] R1-11 minor: disabled + loading PrimaryButton spinner uses `textSecondary`; disabled ListRow label uses `textSecondary`; tests.
   - [x] R1-12 minor: `scripts/qa/m0-android.sh` resets the emulator in an EXIT `trap`; `adoptSceneDelegate` test (rewrite, idempotent, throws on unknown template).
   - [x] R1-5 minor: release builds keep only allowlisted context keys (`RELEASE_CONTEXT_KEYS`); denylist widened (`q`, amount, serving, kg, title, response…; `fatal` no longer matches `fat`); credential-looking messages redacted; tests.
-  - [ ] R1-4 minor: focus ring on pressable primitives, or log it as an M9 a11y gap.
+  - [x] R1-4 minor: `FocusablePressable` draws the DS-10 2px `focus` outline (no layout shift) on every pressable primitive, tab item, dialog action and sheet handle; component tests. Hardware-keyboard check on device is part of the M9 DS-13 pass.
   - [ ] R1-9 minor: ARCH-05 append proposal. **Blocked on M0-Q3.**
   - [ ] Round 2: new fresh reviewer after the majors are fixed.
 

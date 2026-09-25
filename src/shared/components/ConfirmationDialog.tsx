@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '@/shared/theme';
 
 import { AppText } from './AppText';
+import { FocusablePressable } from './FocusablePressable';
 
 export type ConfirmationDialogProps = {
   visible: boolean;
@@ -77,7 +78,7 @@ export function ConfirmationDialog({
             </AppText>
           ) : null}
           <View style={[styles.actions, { gap: theme.spacing[2], marginTop: theme.spacing[2] }]}>
-            <Pressable
+            <FocusablePressable
               onPress={onCancel}
               accessibilityRole="button"
               accessibilityLabel={cancelLabel}
@@ -86,8 +87,8 @@ export function ConfirmationDialog({
               <AppText variant="compactStrong" color="textPrimary">
                 {cancelLabel}
               </AppText>
-            </Pressable>
-            <Pressable
+            </FocusablePressable>
+            <FocusablePressable
               onPress={onConfirm}
               accessibilityRole="button"
               accessibilityLabel={confirmLabel}
@@ -96,7 +97,7 @@ export function ConfirmationDialog({
               <AppText variant="compactStrong" color={destructive ? 'danger' : 'primary'}>
                 {confirmLabel}
               </AppText>
-            </Pressable>
+            </FocusablePressable>
           </View>
         </View>
       </View>

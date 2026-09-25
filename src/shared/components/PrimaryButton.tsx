@@ -1,8 +1,9 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/shared/theme';
 
 import { AppText } from './AppText';
+import { FocusablePressable } from './FocusablePressable';
 
 export type PrimaryButtonProps = {
   label: string;
@@ -29,7 +30,7 @@ export function PrimaryButton({
   const theme = useTheme();
   const inactive = disabled || loading;
   return (
-    <Pressable
+    <FocusablePressable
       onPress={onPress}
       disabled={inactive}
       testID={testID}
@@ -71,7 +72,7 @@ export function PrimaryButton({
           {label}
         </AppText>
       </View>
-    </Pressable>
+    </FocusablePressable>
   );
 }
 

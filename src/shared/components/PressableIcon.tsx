@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { useTheme, type Colors } from '@/shared/theme';
 
 import { AppIcon, type IconName } from './AppIcon';
+import { FocusablePressable } from './FocusablePressable';
 
 export type PressableIconProps = {
   icon: IconName;
@@ -27,7 +28,7 @@ export function PressableIcon({
 }: PressableIconProps) {
   const theme = useTheme();
   return (
-    <Pressable
+    <FocusablePressable
       onPress={onPress}
       disabled={disabled}
       testID={testID}
@@ -42,7 +43,7 @@ export function PressableIcon({
       ]}
     >
       <AppIcon name={icon} color={disabled ? 'textSecondary' : color} />
-    </Pressable>
+    </FocusablePressable>
   );
 }
 

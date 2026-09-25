@@ -1,9 +1,9 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppIcon, AppText, type IconName } from '@/shared/components';
+import { AppIcon, AppText, FocusablePressable, type IconName } from '@/shared/components';
 import { useTheme } from '@/shared/theme';
 
 type TabRoute = 'diary' | 'profile';
@@ -38,7 +38,7 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
       if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
     };
     return (
-      <Pressable
+      <FocusablePressable
         key={route.key}
         onPress={onPress}
         onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
@@ -64,7 +64,7 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
         >
           {label}
         </AppText>
-      </Pressable>
+      </FocusablePressable>
     );
   };
 
@@ -88,7 +88,7 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
     >
       {renderTab('diary')}
       <View style={styles.addSlot}>
-        <Pressable
+        <FocusablePressable
           onPress={onAddPress}
           accessibilityRole="button"
           accessibilityLabel={t('tabs.add')}
@@ -107,7 +107,7 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
           ]}
         >
           <AppIcon name="add" size="centerAction" color="onPrimary" />
-        </Pressable>
+        </FocusablePressable>
       </View>
       {renderTab('profile')}
     </View>

@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { useTheme } from '@/shared/theme';
 
 import { AppIcon, type IconName } from './AppIcon';
 import { AppText } from './AppText';
+import { FocusablePressable } from './FocusablePressable';
 
 export type TextActionProps = {
   label: string;
@@ -29,7 +30,7 @@ export function TextAction({
   const theme = useTheme();
   const color = disabled ? 'textSecondary' : tone;
   return (
-    <Pressable
+    <FocusablePressable
       onPress={onPress}
       disabled={disabled}
       testID={testID}
@@ -52,7 +53,7 @@ export function TextAction({
       <AppText variant="compactStrong" color={color}>
         {label}
       </AppText>
-    </Pressable>
+    </FocusablePressable>
   );
 }
 

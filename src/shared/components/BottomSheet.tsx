@@ -8,6 +8,8 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 import { useTheme } from '@/shared/theme';
 
+import { FocusablePressable } from './FocusablePressable';
+
 export type BottomSheetProps = {
   visible: boolean;
   /** The single cancel path: backdrop tap, swipe down, system back and the a11y escape all call it (ARCH-06). */
@@ -138,7 +140,7 @@ export function BottomSheet({ visible, onClose, accessibilityLabel, closeLabel, 
             >
               {/* The handle is also the in-sheet close control for screen readers (the backdrop sits outside the
                   modal a11y container). hitSlop reaches the touch minimum without adding empty space (DS-02, DS-09). */}
-              <Pressable
+              <FocusablePressable
                 onPress={onClose}
                 accessibilityRole="button"
                 accessibilityLabel={closeLabel}
@@ -154,7 +156,7 @@ export function BottomSheet({ visible, onClose, accessibilityLabel, closeLabel, 
                     backgroundColor: theme.colors.borderStrong,
                   }}
                 />
-              </Pressable>
+              </FocusablePressable>
               {children}
             </Animated.View>
           </GestureDetector>

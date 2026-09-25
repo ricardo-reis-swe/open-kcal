@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/shared/theme';
 
 import { AppIcon, type IconName } from './AppIcon';
 import { AppText } from './AppText';
+import { FocusablePressable } from './FocusablePressable';
 
 export type ListRowProps = {
   label: string;
@@ -67,7 +68,7 @@ export function ListRow({
     );
   }
   return (
-    <Pressable
+    <FocusablePressable
       onPress={onPress}
       disabled={disabled}
       testID={testID}
@@ -78,7 +79,7 @@ export function ListRow({
       style={({ pressed }) => [rowStyle, pressed && { backgroundColor: theme.colors.primaryTint }]}
     >
       {content}
-    </Pressable>
+    </FocusablePressable>
   );
 }
 

@@ -127,3 +127,23 @@ describe('DS-12: ListRow', () => {
     ).toBeGreaterThanOrEqual(48);
   });
 });
+
+describe('DS-10: focus ring on pressable primitives', () => {
+  it.each([
+    ['PrimaryButton', <PrimaryButton key="p" label="Target" onPress={jest.fn()} />],
+    ['TextAction', <TextAction key="t" label="Target" onPress={jest.fn()} />],
+    ['PressableIcon', <PressableIcon key="i" icon="add" accessibilityLabel="Target" onPress={jest.fn()} />],
+    ['ListRow', <ListRow key="l" label="Target" onPress={jest.fn()} />],
+  ])('%s shows a 2px focus outline only while focused', async (_name, ui) => {
+    await renderWithProviders(ui);
+    const target = () => screen.getByRole('button', { name: 'Target' });
+    expect(StyleSheet.flatten(target().props.style).outlineWidth).toBeUndefined();
+    await fireEvent(target(), 'focus');
+    expect(StyleSheet.flatten(target().props.style)).toMatchObject({
+      outlineWidth: 2,
+      outlineColor: lightColors.focus,
+    });
+    await fireEvent(target(), 'blur');
+    expect(StyleSheet.flatten(target().props.style).outlineWidth).toBeUndefined();
+  });
+});
