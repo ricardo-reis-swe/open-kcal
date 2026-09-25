@@ -1,0 +1,10 @@
+node_modules/
+ios/
+android/
+.expo/
+coverage/
+package-lock.json
+*.md
+src/shared/theme/tokens.ts
+src/shared/navigation/routes.ts
+src/data/db/schema/schema.sql
