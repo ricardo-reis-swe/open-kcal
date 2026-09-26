@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
 
-import { FoodSearchScreen } from '../screens/FoodSearchScreen';
+import { FoodSearchScreen, shouldRevealFoodDelete } from '../screens/FoodSearchScreen';
 
 const almonds: CustomFoodInput = {
   name: 'Almond oats',
@@ -43,7 +43,7 @@ async function setup(options: { withRecent?: boolean; initialQuery?: string; lan
     services,
     { language: options.language },
   );
-  return { food, onSelectFood, onCreateCustom };
+  return { services, food, onSelectFood, onCreateCustom };
 }
 
 describe('UX-04: local Food Search screen', () => {
@@ -67,6 +67,14 @@ describe('UX-04: local Food Search screen', () => {
     await waitFor(() => expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy());
     fireEvent.press(screen.getByTestId(`food-result-${food.id}`));
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
+  });
+
+  it('UX-04: custom foods expose the swipe threshold and non-gesture Delete food action', async () => {
+    const { food } = await setup({ initialQuery: 'almond' });
+    const row = await screen.findByTestId(`food-result-${food.id}`);
+    expect(shouldRevealFoodDelete(-39)).toBe(false);
+    expect(shouldRevealFoodDelete(-40)).toBe(true);
+    expect(row.props.accessibilityActions).toEqual([{ name: 'delete', label: 'Delete food' }]);
   });
 
   it('forwards the current no-results query when creating a custom food', async () => {

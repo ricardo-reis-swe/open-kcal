@@ -149,7 +149,10 @@
     "noResults": "Nenhum alimento encontrado para «{{query}}».",
     "perBasis": "por {{quantity}} {{unit}}",
     "energy": "{{value}} {{unit}}",
-    "customSource": "Personalizado"
+    "customSource": "Personalizado",
+    "delete": "Eliminar",
+    "deleteFood": "Eliminar alimento",
+    "deleteError": "Não foi possível eliminar este alimento. Tente novamente."
   },
   "customFood": {
     "title": "Novo alimento",

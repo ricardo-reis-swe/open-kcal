@@ -149,7 +149,10 @@
     "noResults": "No foods found for “{{query}}”.",
     "perBasis": "per {{quantity}} {{unit}}",
     "energy": "{{value}} {{unit}}",
-    "customSource": "Custom"
+    "customSource": "Custom",
+    "delete": "Delete",
+    "deleteFood": "Delete food",
+    "deleteError": "Couldn't delete this food. Try again."
   },
   "customFood": {
     "title": "New food",

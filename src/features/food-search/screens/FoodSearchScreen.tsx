@@ -1,19 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, TextInput, View } from 'react-native';
+import { PanResponder, ScrollView, TextInput, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
-import { AppBar, AppText, PressableIcon, SectionHeader, TextAction } from '@/shared/components';
+import { AppBar, AppText, InlineStatus, PressableIcon, SectionHeader, TextAction } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
 import { formatEnergy, formatShortDate, relativeDay } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { useTheme } from '@/shared/theme';
 
-import { useCustomFoodSearch, useRecentFoods } from '../food-search.queries';
+import { useCustomFoodSearch, useLocalFoodWrites, useRecentFoods } from '../food-search.queries';
 
 const LOCAL_DEBOUNCE_MS = 150;
+const DELETE_REVEAL_WIDTH = 88;
+
+export const shouldRevealFoodDelete = (dx: number) => dx <= -40;
 
 type Props = {
   mealId: string;
@@ -43,6 +46,8 @@ export function FoodSearchScreen({
   const meals = useMeals();
   const settings = useAppSettings();
   const recents = useRecentFoods();
+  const writes = useLocalFoodWrites();
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   useEffect(() => {
@@ -58,6 +63,14 @@ export function FoodSearchScreen({
   const hasQuery = query.trim().length > 0;
   const searching = hasQuery && query.trim() !== debouncedQuery;
   const customFoods = custom.data ?? [];
+  const deleteFood = async (foodId: string) => {
+    setDeleteFailed(false);
+    try {
+      await writes.deleteCustom.mutateAsync(foodId);
+    } catch {
+      setDeleteFailed(true);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
@@ -130,6 +143,11 @@ export function FoodSearchScreen({
           <TextAction icon="flash-outline" label={t('foodSearch.quickCalories')} onPress={onQuickCalories} />
           <TextAction icon="add" label={t('foodSearch.createCustom')} onPress={() => onCreateCustom(query.trim())} />
         </View>
+        {deleteFailed ? (
+          <View style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3] }}>
+            <InlineStatus tone="error" message={t('foodSearch.deleteError')} />
+          </View>
+        ) : null}
         {hasQuery ? (
           <>
             <SectionHeader label={t('foodSearch.myFoods')} uppercase />
@@ -145,6 +163,7 @@ export function FoodSearchScreen({
                   locale={locale}
                   energyUnit={settings.data.energyUnit}
                   onPress={() => onSelectFood(food)}
+                  onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
                 />
               ))
             ) : (
@@ -169,6 +188,7 @@ export function FoodSearchScreen({
                   locale={locale}
                   energyUnit={settings.data.energyUnit}
                   onPress={() => onSelectFood(food)}
+                  onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
                 />
               ))
             ) : (
@@ -188,11 +208,13 @@ function FoodResultRow({
   locale,
   energyUnit,
   onPress,
+  onDelete,
 }: {
   food: Food;
   locale: string;
   energyUnit: 'kcal' | 'kJ';
   onPress: () => void;
+  onDelete?: () => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -201,31 +223,80 @@ function FoodResultRow({
     value: formatEnergy(food.nutrients.energyKcal, energyUnit, locale),
     unit: t(`diary.units.${energyUnit}`),
   });
+  const [revealed, setRevealed] = useState(false);
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gesture) => Boolean(onDelete) && gesture.dx < -10,
+        onPanResponderRelease: (_event, gesture) => setRevealed(shouldRevealFoodDelete(gesture.dx)),
+        onPanResponderTerminate: () => setRevealed(false),
+      }),
+    [onDelete],
+  );
   return (
-    <FocusablePressable
-      accessibilityRole="button"
-      accessibilityLabel={`${food.name}, ${basis}, ${energy}`}
-      onPress={onPress}
-      testID={`food-result-${food.id}`}
-      style={({ pressed }) => ({
-        minHeight: 60,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: theme.spacing[3],
-        paddingHorizontal: theme.spacing[4],
-        paddingVertical: theme.spacing[2],
-        backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
-      })}
-    >
-      <View style={{ flex: 1 }}>
-        <AppText numberOfLines={1}>{food.name}</AppText>
-        <AppText variant="compact" color="textSecondary" numberOfLines={1}>
-          {basis} · {t('foodSearch.customSource')}
-        </AppText>
+    <View style={{ overflow: 'hidden', backgroundColor: theme.colors.danger }}>
+      {onDelete ? (
+        <FocusablePressable
+          accessibilityRole="button"
+          accessibilityLabel={t('foodSearch.delete')}
+          accessible={revealed}
+          accessibilityElementsHidden={!revealed}
+          importantForAccessibility={revealed ? 'auto' : 'no-hide-descendants'}
+          onPress={onDelete}
+          testID={`food-delete-${food.id}`}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: DELETE_REVEAL_WIDTH,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <AppText variant="compactStrong" color="onPrimary">
+            {t('foodSearch.delete')}
+          </AppText>
+        </FocusablePressable>
+      ) : null}
+      <View
+        {...pan.panHandlers}
+        testID={`food-swipe-${food.id}`}
+        style={{ transform: [{ translateX: revealed ? -DELETE_REVEAL_WIDTH : 0 }] }}
+      >
+        <FocusablePressable
+          accessibilityRole="button"
+          accessibilityLabel={`${food.name}, ${basis}, ${energy}`}
+          accessibilityActions={onDelete ? [{ name: 'delete', label: t('foodSearch.deleteFood') }] : undefined}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === 'delete') onDelete?.();
+          }}
+          onPress={() => {
+            if (revealed) setRevealed(false);
+            else onPress();
+          }}
+          testID={`food-result-${food.id}`}
+          style={({ pressed }) => ({
+            minHeight: 60,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing[3],
+            paddingHorizontal: theme.spacing[4],
+            paddingVertical: theme.spacing[2],
+            backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
+          })}
+        >
+          <View style={{ flex: 1 }}>
+            <AppText numberOfLines={1}>{food.name}</AppText>
+            <AppText variant="compact" color="textSecondary" numberOfLines={1}>
+              {basis} · {t('foodSearch.customSource')}
+            </AppText>
+          </View>
+          <AppText variant="compact" tabular>
+            {energy}
+          </AppText>
+        </FocusablePressable>
       </View>
-      <AppText variant="compact" tabular>
-        {energy}
-      </AppText>
-    </FocusablePressable>
+    </View>
   );
 }

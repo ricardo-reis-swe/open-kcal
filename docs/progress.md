@@ -276,21 +276,21 @@ Status: **in progress** · Start commit: `2fe1dd5`
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
 - [x] T1 Food domain: serving/ruler initialization, conversion, steps and adjustable behavior; localized Create Custom Food form validation and canonical command mapping (UX-05/08, DATA-04/11, DS-09/11, ARCH-03/22)
 - [x] T2 Local food-search data + query services (`searchCustom`, hydrated ≤20 recents, food-detail reads, create/delete mutations and cache invalidation)
-- [ ] T3 Food Search local sections and navigation entry points
+- [x] T3 Food Search local sections and navigation entry points
   - [x] Local screen, validated route contracts, per-meal and global `+` entry points, Quick Calories continuation, and result → Food Detail wiring.
-  - [ ] Custom-food swipe delete + accessibility action.
+  - [x] Custom-food swipe delete (revealed danger action, no dialog) + non-gesture `Delete food` accessibility action; failed deletes stay visible with an inline error.
 - [x] T4 Create Custom Food form and create-then-select flow
   - [x] Form: initial-name prefill, localized/locale-aware validation, mass/volume/count serving selection, EU-carbs helper, pinned save error, and UX-19 dirty-discard confirmation. The create callback persists the DATA-11 command and invalidates local search.
   - [x] Route and continuation: preserves the search meal/date context and replaces Create Custom Food with Food Detail after save (NAV-04).
 - [x] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker: recent/default initialization, preferred unit ordering, conversion, direct numeric entry, live nutrition, Meal Picker, add-entry snapshot + refreshed Diary return; snapped pan, fixed pointer/ticks, a11y adjustable, and test-safe throttled haptics.
 - [ ] T6 Edit Food Entry, including snapshot-only fallback and delete
-- [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search, Create Custom Food, Food Detail, pt-PT smoke, route-contract, and Diary entry-point tests complete; Edit Food Entry and end-to-end flow pending). `npm run check`: 356/356.
+- [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail, pt-PT smoke, route-contract, and Diary entry-point tests complete; Edit Food Entry and end-to-end flow pending). `npm run check`: 357/357.
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
 ### ROAD-02 checklist
 - [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09)
-- [x] `npm run check` green (356 tests)
+- [x] `npm run check` green (357 tests)
 - [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
 - [ ] Maestro M4 flow and cumulative flows pass on iOS and Android
@@ -301,7 +301,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [ ] M4 extra: ruler is an a11y `adjustable`; haptics are off in tests
 
 ### Known gaps
-- M4 is in progress: custom-food swipe delete/accessibility action, Edit Food Entry, the Maestro M4 flow, device exit demo/QA matrix, and independent review remain.
+- M4 is in progress: Edit Food Entry, the Maestro M4 flow, device exit demo/QA matrix, and independent review remain.
 
 ### Open questions
 - ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.
