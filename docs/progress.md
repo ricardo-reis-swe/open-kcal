@@ -285,6 +285,8 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker: recent/default initialization, preferred unit ordering, conversion, direct numeric entry, live nutrition, Meal Picker, add-entry snapshot + refreshed Diary return; snapped pan, fixed pointer/ticks, a11y adjustable, and test-safe throttled haptics.
 - [x] T6 Edit Food Entry: Diary row route, quantity/unit/meal edits, snapshot-preserving display and snapshot-only fallback when food/serving is unavailable, origin-aware save, confirmed delete, and inline mutation failures.
 - [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, and Diary entry-point tests complete; end-to-end flow pending). `npm run check`: 360/360.
+  - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
+  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Blocked on this host: no Android SDK/ADB and no iOS tooling/device (2026-09-26).
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
@@ -302,6 +304,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ### Known gaps
 - M4 is in progress: the Maestro M4 flow, device exit demo/QA matrix, and independent review remain.
+- Device QA is currently unavailable on this host (no Android SDK/ADB or iOS tooling); the M4 flow is committed but unexecuted.
 
 ### Open questions
 - ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.

@@ -1,0 +1,102 @@
+# ARCH-18 / ROAD-02 M4: create a custom food, add it with the ruler, edit/delete the entry, then delete the food.
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: subflows/launch.yaml
+- evalScript: ${output.food = 'E2E oats ' + Date.now()}
+- tapOn:
+    id: tab-add
+- tapOn: Add food
+- extendedWaitUntil:
+    visible: Choose meal
+    timeout: 5000
+- tapOn: Lunch
+- extendedWaitUntil:
+    visible: Food search
+    timeout: 5000
+- tapOn:
+    id: food-search-input
+- inputText: ${output.food}
+- tapOn: Create custom food
+- extendedWaitUntil:
+    visible: New food
+    timeout: 5000
+- tapOn:
+    id: custom-food-serving
+- inputText: '100'
+- tapOn:
+    id: custom-food-energy
+- inputText: '200'
+- tapOn:
+    id: custom-food-protein
+- inputText: '10'
+- tapOn:
+    id: custom-food-carbohydrate
+- inputText: '20'
+- tapOn:
+    id: custom-food-fat
+- inputText: '5'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: custom-food-save
+    direction: DOWN
+- tapOn:
+    id: custom-food-save
+- extendedWaitUntil:
+    visible: Add food
+    timeout: 5000
+- tapOn:
+    id: food-detail-add
+- scrollUntilVisible:
+    element: '${output.food}, 100 g, 200 .*'
+    direction: DOWN
+    timeout: 15000
+- tapOn: '${output.food}, 100 g, 200 .*'
+- extendedWaitUntil:
+    visible: Edit entry
+    timeout: 5000
+- tapOn:
+    id: serving-ruler-value
+- tapOn:
+    id: serving-value-input
+- eraseText: 5
+- inputText: '150'
+- tapOn: Done
+- tapOn:
+    id: food-entry-save
+- scrollUntilVisible:
+    element: '${output.food}, 150 g, 300 .*'
+    direction: DOWN
+    timeout: 15000
+- tapOn: '${output.food}, 150 g, 300 .*'
+- scrollUntilVisible:
+    element:
+      id: food-entry-delete
+    direction: DOWN
+- tapOn:
+    id: food-entry-delete
+- assertVisible: 'Delete food entry\?'
+- tapOn:
+    id: food-entry-delete-dialog-confirm
+- extendedWaitUntil:
+    notVisible: '${output.food}.*'
+    timeout: 5000
+# Clean up the custom food itself and exercise the UX-04 swipe confirmation.
+- tapOn:
+    text: Add food
+    index: 1
+- tapOn:
+    id: food-search-input
+- inputText: ${output.food}
+- extendedWaitUntil:
+    visible:
+      id: 'food-result-.*'
+    timeout: 5000
+- swipe:
+    from:
+      id: 'food-swipe-.*'
+    direction: LEFT
+- tapOn: Delete
+- extendedWaitUntil:
+    notVisible: '${output.food}.*'
+    timeout: 5000

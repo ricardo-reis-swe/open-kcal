@@ -319,7 +319,12 @@ function FoodDetailForm({
           </View>
           {mode.kind === 'edit' ? (
             <View style={{ paddingHorizontal: theme.spacing[4] }}>
-              <TextAction label={t('foodDetail.delete')} onPress={() => setConfirmingDelete(true)} tone="danger" />
+              <TextAction
+                label={t('foodDetail.delete')}
+                onPress={() => setConfirmingDelete(true)}
+                tone="danger"
+                testID="food-entry-delete"
+              />
             </View>
           ) : null}
         </ScrollView>
