@@ -5,5 +5,5 @@ import { parseRouteParams } from '@/shared/navigation/routes';
 
 export default function FoodDetailRoute() {
   const params = parseRouteParams('foodDetail', useLocalSearchParams());
-  return <FoodDetailScreen mode={params} />;
+  return <FoodDetailScreen mode={params ? { kind: 'add', ...params } : null} />;
 }

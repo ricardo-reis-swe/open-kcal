@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/bootstrap/services';
-import type { AddFoodEntryInput, QuickCaloriesInput } from '@/data/db/repositories/diaryRepository';
+import type { AddFoodEntryInput, EditFoodEntryInput, QuickCaloriesInput } from '@/data/db/repositories/diaryRepository';
 import type { LocalDate } from '@/shared/dates';
 
 export const diaryKeys = {
@@ -52,6 +52,10 @@ export function useDiaryWrites() {
     mutationFn: (input: AddFoodEntryInput) => diary.addFoodEntry(input),
     onSuccess: refresh,
   });
+  const editFoodEntry = useMutation({
+    mutationFn: ({ id, ...input }: EditFoodEntryInput & { id: string }) => diary.editFoodEntry(id, input),
+    onSuccess: refresh,
+  });
   const editQuickCalories = useMutation({
     mutationFn: ({ id, ...input }: Omit<QuickCaloriesInput, 'diaryDate'> & { id: string }) =>
       diary.editQuickCalories(id, input),
@@ -65,5 +69,5 @@ export function useDiaryWrites() {
       return refresh();
     },
   });
-  return { addFoodEntry, addQuickCalories, editQuickCalories, deleteEntry };
+  return { addFoodEntry, editFoodEntry, addQuickCalories, editQuickCalories, deleteEntry };
 }

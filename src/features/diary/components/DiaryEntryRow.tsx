@@ -11,7 +11,7 @@ import { useTheme } from '@/shared/theme';
 export type EntryRowProps = {
   entry: DiaryEntry;
   unit: EnergyUnit;
-  /** Row tap → the matching edit screen (UX-02). Food rows stay unpressable until Edit Food Entry lands (M4). */
+  /** Row tap → the matching edit screen (UX-02). */
   onPress?: () => void;
 };
 

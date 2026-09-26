@@ -121,7 +121,14 @@ function MealSection({ meal, unit, date }: { meal: DiaryMeal; unit: EnergyUnit; 
       {meal.entries.map((entry) => {
         switch (entry.kind) {
           case 'food':
-            return <DiaryEntryRow key={entry.id} entry={entry} unit={unit} />;
+            return (
+              <DiaryEntryRow
+                key={entry.id}
+                entry={entry}
+                unit={unit}
+                onPress={() => router.push(routes.editFoodEntry({ entryId: entry.id, origin: 'diary' }))}
+              />
+            );
           case 'quick_calories':
             return (
               <QuickCaloriesRow

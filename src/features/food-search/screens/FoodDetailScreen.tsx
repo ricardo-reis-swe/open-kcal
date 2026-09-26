@@ -3,15 +3,17 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
+import type { DiaryEntry } from '@/data/db/repositories/diaryRepository';
 import type { Food, FoodServing } from '@/data/db/repositories/foodsRepository';
 import { convertServingQuantity, initialServing } from '@/domain/food/servings';
 import { servingNutrients } from '@/domain/nutrition/nutrients';
-import { useAppSettings, useDiaryWrites, useMeals } from '@/features/diary/diary.queries';
+import { useAppSettings, useDiaryEntry, useDiaryWrites, useMeals } from '@/features/diary/diary.queries';
 import { useDiaryDate } from '@/features/diary/hooks/DiaryDateContext';
 import {
   AppBar,
   AppText,
   BottomSheet,
+  ConfirmationDialog,
   FormField,
   InlineStatus,
   ListRow,
@@ -28,19 +30,19 @@ import { useTheme } from '@/shared/theme';
 import { ServingRuler } from '../components/ServingRuler';
 import { useFood, useRecentFoods } from '../food-search.queries';
 
-export type FoodDetailMode = {
-  foodId: string;
-  foodSource: FoodSource;
-  mealId: string;
-  date: string;
-  origin: Origin;
-} | null;
+export type FoodDetailMode =
+  | { kind: 'add'; foodId: string; foodSource: FoodSource; mealId: string; date: string; origin: Origin }
+  | { kind: 'edit'; entryId: string; origin: Origin }
+  | null;
 
-/** UX-05 Food Detail / Add Entry. The route reloads the food by ID and writes a full entry snapshot (NAV-09). */
+/** UX-05/06 add and edit. Edit falls back to the entry snapshot when its source food/serving cannot resolve. */
 export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const food = useFood(mode?.foodId ?? '', Boolean(mode));
+  const editing = mode?.kind === 'edit';
+  const entry = useDiaryEntry(editing ? mode.entryId : '', editing);
+  const foodId = mode?.kind === 'add' ? mode.foodId : (entry.data?.foodId ?? '');
+  const food = useFood(foodId, Boolean(foodId));
   const recents = useRecentFoods();
   const meals = useMeals();
   const settings = useAppSettings();
@@ -49,9 +51,10 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   );
   let body: React.ReactNode = null;
 
-  if (!mode) body = notFound;
-  else if (food.data && (food.data.isDeleted || food.data.source !== mode.foodSource)) body = notFound;
-  else if (food.data && recents.data && meals.data && settings.data) {
+  if (!mode || (editing && entry.data && entry.data.kind !== 'food')) body = notFound;
+  else if (mode.kind === 'add' && food.data && (food.data.isDeleted || food.data.source !== mode.foodSource)) {
+    body = notFound;
+  } else if (mode.kind === 'add' && food.data && recents.data && meals.data && settings.data) {
     const recent = recents.data.find((item) => item.foodId === food.data!.id);
     const selected = initialServing(
       food.data.servings,
@@ -71,18 +74,87 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
           meals={meals.data}
           energyUnit={settings.data.energyUnit}
           preferredUnits={[settings.data.foodWeightUnit, settings.data.volumeUnit]}
+          allowServingChange
+          entry={null}
         />
       );
     }
+  } else if (
+    mode.kind === 'edit' &&
+    entry.data &&
+    meals.data &&
+    settings.data &&
+    (food.data || food.isError || !foodId)
+  ) {
+    const resolvedServing =
+      food.data && !food.data.isDeleted
+        ? food.data.servings.find(
+            (item) => item.label.trim().toLowerCase() === entry.data!.servingUnit?.trim().toLowerCase(),
+          )
+        : undefined;
+    const resolvedFood = resolvedServing ? food.data! : snapshotFood(entry.data);
+    body = (
+      <FoodDetailForm
+        key={entry.data.id}
+        mode={{
+          kind: 'edit',
+          entryId: entry.data.id,
+          origin: mode.origin,
+          mealId: entry.data.mealId,
+          date: entry.data.diaryDate,
+        }}
+        food={resolvedFood}
+        initial={{ serving: resolvedServing ?? resolvedFood.servings[0]!, quantity: entry.data.servingQuantity! }}
+        meals={meals.data}
+        energyUnit={settings.data.energyUnit}
+        preferredUnits={[settings.data.foodWeightUnit, settings.data.volumeUnit]}
+        allowServingChange={Boolean(resolvedServing)}
+        entry={entry.data}
+      />
+    );
   }
-  if (!body && (food.isError || recents.isError || meals.isError || settings.isError)) body = notFound;
+  if (
+    !body &&
+    (entry.isError || meals.isError || settings.isError || (mode?.kind === 'add' && (food.isError || recents.isError)))
+  )
+    body = notFound;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
-      <AppBar title={t('foodDetail.title')} back={{ label: t('common.back'), onPress: () => router.back() }} />
+      <AppBar
+        title={t(editing ? 'foodDetail.editTitle' : 'foodDetail.title')}
+        back={{ label: t('common.back'), onPress: () => router.back() }}
+      />
       {body}
     </View>
   );
+}
+
+function snapshotFood(entry: DiaryEntry): Food {
+  const quantity = entry.servingQuantity!;
+  const unit = entry.servingUnit!;
+  return {
+    id: entry.foodId ?? `snapshot-${entry.id}`,
+    source: 'custom',
+    externalId: null,
+    name: entry.name,
+    brand: entry.brand,
+    basisQuantity: quantity,
+    basisUnit: unit,
+    nutrients: entry.nutrients,
+    isDeleted: false,
+    servings: [
+      {
+        id: `snapshot-${entry.id}`,
+        label: unit,
+        quantity: 1,
+        unit,
+        basisMultiplier: 1 / quantity,
+        isDefault: true,
+        sortOrder: 0,
+      },
+    ],
+  };
 }
 
 function FoodDetailForm({
@@ -92,13 +164,19 @@ function FoodDetailForm({
   meals,
   energyUnit,
   preferredUnits,
+  allowServingChange,
+  entry,
 }: {
-  mode: NonNullable<FoodDetailMode>;
+  mode:
+    | Extract<NonNullable<FoodDetailMode>, { kind: 'add' }>
+    | { kind: 'edit'; entryId: string; origin: Origin; mealId: string; date: string };
   food: Food;
   initial: { serving: FoodServing; quantity: number };
   meals: readonly { id: string; name: string }[];
   energyUnit: 'kcal' | 'kJ';
   preferredUnits: readonly string[];
+  allowServingChange: boolean;
+  entry: DiaryEntry | null;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -113,10 +191,21 @@ function FoodDetailForm({
   const [editingValue, setEditingValue] = useState(false);
   const [valueText, setValueText] = useState(String(initial.quantity));
   const [saveFailed, setSaveFailed] = useState(false);
-  const nutrients = useMemo(
-    () => servingNutrients(food.nutrients, serving, quantity),
-    [food.nutrients, quantity, serving],
-  );
+  const [deleteFailed, setDeleteFailed] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const nutrients = useMemo(() => {
+    if (entry && serving.label.trim().toLowerCase() === entry.servingUnit?.trim().toLowerCase()) {
+      const factor = quantity / entry.servingQuantity!;
+      const scale = (value: number | null) => (value === null ? null : value * factor);
+      return {
+        energyKcal: entry.nutrients.energyKcal * factor,
+        carbohydrateG: scale(entry.nutrients.carbohydrateG),
+        proteinG: scale(entry.nutrients.proteinG),
+        fatG: scale(entry.nutrients.fatG),
+      };
+    }
+    return servingNutrients(food.nutrients, serving, quantity);
+  }, [entry, food.nutrients, quantity, serving]);
   const mealName = meals.find((meal) => meal.id === mealId)?.name ?? '';
   const relative = relativeDay(mode.date, today);
   const dateLabel = relative ? t(`diary.${relative}`) : formatShortDate(mode.date, today, locale);
@@ -138,17 +227,38 @@ function FoodDetailForm({
   const save = async () => {
     setSaveFailed(false);
     try {
-      await writes.addFoodEntry.mutateAsync({
-        diaryDate: mode.date,
-        mealId,
-        foodId: food.id,
-        servingId: serving.id,
-        quantity,
-      });
-      setDate(mode.date);
-      router.dismissTo(routes.diary());
+      if (mode.kind === 'add') {
+        await writes.addFoodEntry.mutateAsync({
+          diaryDate: mode.date,
+          mealId,
+          foodId: food.id,
+          servingId: serving.id,
+          quantity,
+        });
+        setDate(mode.date);
+        router.dismissTo(routes.diary());
+      } else {
+        await writes.editFoodEntry.mutateAsync({
+          id: mode.entryId,
+          mealId,
+          quantity,
+          ...(allowServingChange ? { servingId: serving.id } : {}),
+        });
+        if (mode.origin === 'mealDetail' && mealId !== mode.mealId) router.dismissTo(routes.diary());
+        else router.back();
+      }
     } catch {
       setSaveFailed(true);
+    }
+  };
+  const remove = async () => {
+    setConfirmingDelete(false);
+    setDeleteFailed(false);
+    try {
+      await writes.deleteEntry.mutateAsync(entry!.id);
+      router.back();
+    } catch {
+      setDeleteFailed(true);
     }
   };
   const applyNumeric = () => {
@@ -188,14 +298,16 @@ function FoodDetailForm({
               }}
             />
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.spacing[3] }}>
-            {visibleUnits.map((unit) => (
-              <TextAction key={unit.id} label={unit.label} onPress={() => chooseServing(unit)} />
-            ))}
-            {orderedServings.length > 3 ? (
-              <TextAction label={t('foodDetail.moreUnits')} onPress={() => setPickingUnit(true)} />
-            ) : null}
-          </View>
+          {allowServingChange ? (
+            <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.spacing[3] }}>
+              {visibleUnits.map((unit) => (
+                <TextAction key={unit.id} label={unit.label} onPress={() => chooseServing(unit)} />
+              ))}
+              {orderedServings.length > 3 ? (
+                <TextAction label={t('foodDetail.moreUnits')} onPress={() => setPickingUnit(true)} />
+              ) : null}
+            </View>
+          ) : null}
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: theme.spacing[4] }}>
             <Macro label={t('foodDetail.carbs')} value={nutrients.carbohydrateG} locale={locale} />
             <Macro label={t('foodDetail.protein')} value={nutrients.proteinG} locale={locale} />
@@ -205,16 +317,22 @@ function FoodDetailForm({
             <ListRow label={t('foodDetail.meal')} value={mealName} onPress={() => setPickingMeal(true)} navigates />
             <ListRow label={t('foodDetail.date')} value={dateLabel} />
           </View>
+          {mode.kind === 'edit' ? (
+            <View style={{ paddingHorizontal: theme.spacing[4] }}>
+              <TextAction label={t('foodDetail.delete')} onPress={() => setConfirmingDelete(true)} tone="danger" />
+            </View>
+          ) : null}
         </ScrollView>
         <View style={{ padding: theme.spacing[4], gap: theme.spacing[2], backgroundColor: theme.colors.canvas }}>
           {saveFailed ? <InlineStatus tone="error" message={t('foodDetail.saveError')} /> : null}
+          {deleteFailed ? <InlineStatus tone="error" message={t('foodDetail.deleteError')} /> : null}
           <PrimaryButton
-            label={t('foodDetail.addTo', { meal: mealName })}
+            label={mode.kind === 'add' ? t('foodDetail.addTo', { meal: mealName }) : t('foodDetail.save')}
             onPress={() => void save()}
-            loading={writes.addFoodEntry.isPending}
-            disabled={writes.addFoodEntry.isPending}
+            loading={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
+            disabled={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
             fullWidth
-            testID="food-detail-add"
+            testID={mode.kind === 'add' ? 'food-detail-add' : 'food-entry-save'}
           />
         </View>
       </View>
@@ -264,6 +382,25 @@ function FoodDetailForm({
           <PrimaryButton label={t('foodDetail.done')} onPress={applyNumeric} fullWidth />
         </View>
       </BottomSheet>
+      {mode.kind === 'edit' ? (
+        <ConfirmationDialog
+          visible={confirmingDelete}
+          title={t('foodDetail.deleteTitle')}
+          body={t('foodDetail.deleteBody', {
+            name: entry!.name,
+            quantity: entry!.servingQuantity,
+            unit: entry!.servingUnit,
+            meal: meals.find((item) => item.id === entry!.mealId)?.name ?? '',
+            date: formatShortDate(entry!.diaryDate, today, locale),
+          })}
+          confirmLabel={t('foodDetail.delete')}
+          cancelLabel={t('common.cancel')}
+          destructive
+          onConfirm={() => void remove()}
+          onCancel={() => setConfirmingDelete(false)}
+          testID="food-entry-delete-dialog"
+        />
+      ) : null}
     </>
   );
 }

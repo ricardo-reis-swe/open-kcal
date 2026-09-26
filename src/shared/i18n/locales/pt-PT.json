@@ -193,6 +193,7 @@
   },
   "foodDetail": {
     "title": "Adicionar alimento",
+    "editTitle": "Editar registo",
     "moreUnits": "Mais…",
     "carbs": "Hidratos",
     "protein": "Proteína",
@@ -205,6 +206,11 @@
     "conversionHint": "{{quantity}} {{unit}}",
     "enterServing": "Introduzir valor da porção",
     "serving": "Porção",
-    "done": "Concluir"
+    "done": "Concluir",
+    "save": "Guardar",
+    "delete": "Eliminar registo",
+    "deleteTitle": "Eliminar registo de alimento?",
+    "deleteBody": "{{name}}, {{quantity}} {{unit}}, de {{meal}} em {{date}}.",
+    "deleteError": "Não foi possível eliminar. Tente novamente."
   }
 }

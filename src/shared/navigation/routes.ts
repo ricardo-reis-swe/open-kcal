@@ -61,6 +61,7 @@ const paramSchemas = {
   }),
   quickCalories: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
+  editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
 };
 
 type ParsedParams = { [K in keyof typeof paramSchemas]: z.output<(typeof paramSchemas)[K]> };
@@ -110,4 +111,9 @@ export const routes = {
     pathname: '/diary/quick-calories/[entryId]',
     params: { entryId: p.entryId, origin: p.origin ?? 'diary' },
   }),
+  editFoodEntry: (p: RouteParams['editFoodEntry']): Href =>
+    ({
+      pathname: '/diary/food-entry/[entryId]',
+      params: { entryId: p.entryId, origin: p.origin ?? 'diary' },
+    }) as unknown as Href,
 };

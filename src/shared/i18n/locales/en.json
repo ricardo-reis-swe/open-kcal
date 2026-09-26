@@ -193,6 +193,7 @@
   },
   "foodDetail": {
     "title": "Add food",
+    "editTitle": "Edit entry",
     "moreUnits": "More…",
     "carbs": "Carbs",
     "protein": "Protein",
@@ -205,6 +206,11 @@
     "conversionHint": "{{quantity}} {{unit}}",
     "enterServing": "Enter serving value",
     "serving": "Serving",
-    "done": "Done"
+    "done": "Done",
+    "save": "Save",
+    "delete": "Delete entry",
+    "deleteTitle": "Delete food entry?",
+    "deleteBody": "{{name}}, {{quantity}} {{unit}}, from {{meal}} on {{date}}.",
+    "deleteError": "Couldn't delete. Try again."
   }
 }
