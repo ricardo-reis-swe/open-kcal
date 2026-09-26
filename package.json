@@ -34,6 +34,7 @@
     "expo-system-ui": "57.0.4",
     "i18next": "26.4.2",
     "react": "19.2.3",
+    "react-hook-form": "7.89.0",
     "react-i18next": "17.0.15",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "2.32.0",

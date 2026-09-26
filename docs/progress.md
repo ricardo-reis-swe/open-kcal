@@ -236,7 +236,8 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [ ] T7 Independent review. Round 1 (`docs/qa/M3/review-round1.md`): 1 major, 4 minors.
   - M3-R1 (major) fixed: `+` over an open Quick Calories screen kept the old meal and input, because `router.navigate` updated the open screen's params in place. `GlobalAddFlow` now pushes a fresh screen; nav test added.
   - M3-R5 (minor) fixed: tests for the single-meal picker skip (`GlobalAddFlow.test.tsx`) and edit mode (populated, untouched kJ keeps the stored kcal, meal change from Meal Detail, delete failure, food entry ID → not found). 316 tests.
-  - M3-R2, M3-R3: open questions below. M3-R4: known gap below.
+  - M3-R2 fixed: cancel/back from a Profile-started flow now returns to Profile per NAV-09; navigation test added.
+  - M3-R3 fixed: Quick Calories now uses React Hook Form with its Zod form schema per ARCH-03; domain schema test added. M3-R4: known gap below.
 
 ### Known gaps
 - `Add food` (Food Search, M4) and `Update weight` (Weight Entry Sheet, M8) show in the Add Action Sheet but are disabled until their flows land. Food rows on the Diary stay unpressable until Edit Food Entry (M4).
@@ -247,4 +248,9 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ### Open questions
 - ~~**M3-R2**~~ Resolved 2026-09-26: NAV-09 already requires cancel to return to the recorded origin. Back from a Quick Calories flow started on Profile now returns to Profile; saving still ends on the Diary per NAV-03.
-- **M3-R3** (ARCH-03): ARCH-03 names React Hook Form + Zod for forms, incl. Quick Calories; the form uses `useState` + domain parsing and `react-hook-form` isn't installed. Adding it needs approval (ARCH-20 note). Add it now (and refactor this form), add it from M4 (Create Custom Food), or amend ARCH-03 to allow plain state for small forms?
+- ~~**M3-R3**~~ Resolved 2026-09-26: the user approved adding React Hook Form now. Quick Calories uses it with the Zod form boundary required by ARCH-03.
+
+### Dependency notes (ARCH-20)
+| Package | Need |
+|---|---|
+| `react-hook-form` 7.89.0 | ARCH-03 form state for Quick Calories and later validated forms. Uses a small local Zod resolver, so `@hookform/resolvers` is not needed. User-approved in M3-R3 |

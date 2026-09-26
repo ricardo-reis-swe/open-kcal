@@ -1,4 +1,6 @@
 // Diary entry rules that don't need the DB (DATA-06, DATA-12, DATA-16).
+import { z } from 'zod';
+
 import { energyFromKcal, energyToKcal, type EnergyUnit } from '../units/units';
 
 export type EntryKind = 'food' | 'quick_calories';
@@ -46,3 +48,14 @@ export function parseQuickCaloriesInput(text: string, unit: EnergyUnit): number 
   if (value < min || value > max) return null;
   return energyToKcal(value, unit);
 }
+
+/** ARCH-03 / UX-07: validates the complete Quick Calories form at its UI boundary. */
+export function quickCaloriesFormSchema(unit: EnergyUnit) {
+  return z.object({
+    mealId: z.string().min(1),
+    calories: z.string().refine((value) => parseQuickCaloriesInput(value, unit) !== null),
+    note: z.string().max(QUICK_CALORIES_NOTE_MAX),
+  });
+}
+
+export type QuickCaloriesFormValues = z.infer<ReturnType<typeof quickCaloriesFormSchema>>;

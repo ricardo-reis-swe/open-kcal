@@ -3,6 +3,7 @@ import {
   nextSortOrder,
   normalizeNote,
   parseQuickCaloriesInput,
+  quickCaloriesFormSchema,
   quickCaloriesRange,
 } from '../entries';
 
@@ -56,5 +57,11 @@ describe('UX-00 / UX-07: Quick Calories input', () => {
     ['41841', 'kJ'],
   ] as const)('UX-07: %s %s is rejected', (text, unit) => {
     expect(parseQuickCaloriesInput(text, unit)).toBeNull();
+  });
+
+  it('ARCH-03: the Zod form boundary validates every Quick Calories field', () => {
+    const schema = quickCaloriesFormSchema('kcal');
+    expect(schema.safeParse({ mealId: 'lunch', calories: '450', note: 'Coffee' }).success).toBe(true);
+    expect(schema.safeParse({ mealId: '', calories: '0', note: 'x'.repeat(81) }).success).toBe(false);
   });
 });

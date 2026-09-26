@@ -1,10 +1,17 @@
 import { router } from 'expo-router';
+import { Controller, useForm, useWatch, type FieldErrors, type Resolver } from 'react-hook-form';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View, type TextInput } from 'react-native';
 
 import type { DiaryEntry } from '@/data/db/repositories/diaryRepository';
-import { QUICK_CALORIES_NOTE_MAX, parseQuickCaloriesInput, quickCaloriesRange } from '@/domain/diary/entries';
+import {
+  QUICK_CALORIES_NOTE_MAX,
+  parseQuickCaloriesInput,
+  quickCaloriesFormSchema,
+  quickCaloriesRange,
+  type QuickCaloriesFormValues,
+} from '@/domain/diary/entries';
 import { energyFromKcal, type EnergyUnit } from '@/domain/units/units';
 import {
   AppBar,
@@ -110,23 +117,40 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
   const initialNote = entry?.note ?? '';
   const date = mode.kind === 'add' ? mode.date : entry!.diaryDate;
 
-  const [mealId, setMealId] = useState(initialMealId);
-  const [calories, setCalories] = useState(initialCalories);
-  const [note, setNote] = useState(initialNote);
-  const [showCaloriesError, setShowCaloriesError] = useState(false);
+  const schema = quickCaloriesFormSchema(unit);
+  const resolver: Resolver<QuickCaloriesFormValues> = async (values) => {
+    const result = schema.safeParse(values);
+    if (result.success) return { values: result.data, errors: {} };
+    const errors: FieldErrors<QuickCaloriesFormValues> = {};
+    for (const issue of result.error.issues) {
+      const field = issue.path[0];
+      if (field === 'mealId' || field === 'calories' || field === 'note') {
+        errors[field] ??= { type: 'validate', message: issue.message };
+      }
+    }
+    return { values: {}, errors };
+  };
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors, isDirty, isSubmitting, isValid, submitCount, touchedFields },
+  } = useForm<QuickCaloriesFormValues>({
+    defaultValues: { mealId: initialMealId, calories: initialCalories, note: initialNote },
+    mode: 'onChange',
+    resolver,
+  });
+  const mealId = useWatch({ control, name: 'mealId' });
   const [failure, setFailure] = useState<'save' | 'delete' | null>(null);
   const [pickingMeal, setPickingMeal] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const unitLabel = t(`diary.units.${unit}`);
-  const kcal = parseQuickCaloriesInput(calories, unit);
-  const valid = kcal !== null;
-  const dirty = mealId !== initialMealId || calories.trim() !== initialCalories || note.trim() !== initialNote.trim();
-  const canSubmit = valid && (mode.kind === 'add' || dirty) && !busy;
+  const canSubmit = isValid && (mode.kind === 'add' || isDirty) && !isSubmitting && !busy;
   const range = quickCaloriesRange(unit);
   const caloriesError =
-    showCaloriesError && !valid
+    errors.calories && (touchedFields.calories || submitCount > 0)
       ? t('quickCalories.caloriesError', {
           min: formatInteger(range.min, locale),
           max: formatInteger(range.max, locale),
@@ -135,29 +159,38 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
       : undefined;
   const mealName = (id: string) => meals.find((m) => m.id === id)?.name ?? '';
 
-  const submit = async () => {
-    setShowCaloriesError(true);
-    if (!canSubmit || kcal === null) return;
-    setBusy(true);
+  const submit = async (values: QuickCaloriesFormValues) => {
+    const parsed = schema.safeParse(values);
+    const kcal = parsed.success ? parseQuickCaloriesInput(parsed.data.calories, unit) : null;
+    if (kcal === null) return;
     setFailure(null);
     try {
       if (mode.kind === 'add') {
-        await writes.addQuickCalories.mutateAsync({ diaryDate: mode.date, mealId, energyKcal: kcal, note });
+        await writes.addQuickCalories.mutateAsync({
+          diaryDate: mode.date,
+          mealId: values.mealId,
+          energyKcal: kcal,
+          note: values.note,
+        });
         // NAV-03: global Quick Calories ends on the Diary on the target date.
         setDate(mode.date);
         toDiaryRoot();
       } else {
         // An untouched Calories field keeps the stored (unrounded) kcal, so a kJ round trip never drifts.
-        const energyKcal = calories.trim() === initialCalories ? entry!.nutrients.energyKcal : kcal;
-        await writes.editQuickCalories.mutateAsync({ id: entry!.id, mealId, energyKcal, note });
+        const energyKcal = values.calories.trim() === initialCalories ? entry!.nutrients.energyKcal : kcal;
+        await writes.editQuickCalories.mutateAsync({
+          id: entry!.id,
+          mealId: values.mealId,
+          energyKcal,
+          note: values.note,
+        });
         // NAV-04: exact origin, except a meal change from Meal Detail lands on the Diary.
-        if (mode.origin === 'mealDetail' && mealId !== initialMealId) toDiaryRoot();
+        if (mode.origin === 'mealDetail' && values.mealId !== initialMealId) toDiaryRoot();
         else router.back();
       }
     } catch {
       // UX-00: stay, keep the input, inline error above the primary action.
       setFailure('save');
-      setBusy(false);
     }
   };
 
@@ -194,30 +227,43 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
             testID="quick-calories-meal"
           />
           <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[4] }}>
-            <FormField
-              label={t('quickCalories.calories')}
-              unit={unitLabel}
-              value={calories}
-              onChangeText={setCalories}
-              onBlur={() => setShowCaloriesError(true)}
-              error={caloriesError}
-              keyboardType="number-pad"
-              returnKeyType="next"
-              onSubmitEditing={() => noteRef.current?.focus()}
-              submitBehavior="submit"
-              autoFocus
-              maxLength={6}
-              testID="quick-calories-kcal"
+            <Controller
+              control={control}
+              name="calories"
+              render={({ field }) => (
+                <FormField
+                  label={t('quickCalories.calories')}
+                  unit={unitLabel}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={caloriesError}
+                  keyboardType="number-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => noteRef.current?.focus()}
+                  submitBehavior="submit"
+                  autoFocus
+                  maxLength={6}
+                  testID="quick-calories-kcal"
+                />
+              )}
             />
-            <FormField
-              ref={noteRef}
-              label={t('quickCalories.note')}
-              value={note}
-              onChangeText={setNote}
-              maxLength={QUICK_CALORIES_NOTE_MAX}
-              returnKeyType="done"
-              onSubmitEditing={() => void submit()}
-              testID="quick-calories-note"
+            <Controller
+              control={control}
+              name="note"
+              render={({ field }) => (
+                <FormField
+                  ref={noteRef}
+                  label={t('quickCalories.note')}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  maxLength={QUICK_CALORIES_NOTE_MAX}
+                  returnKeyType="done"
+                  onSubmitEditing={() => void handleSubmit(submit)()}
+                  testID="quick-calories-note"
+                />
+              )}
             />
           </View>
           {/* Date is display-only (moving between dates is not in scope). */}
@@ -257,9 +303,9 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
           ) : null}
           <PrimaryButton
             label={mode.kind === 'add' ? t('quickCalories.add') : t('quickCalories.save')}
-            onPress={() => void submit()}
+            onPress={() => void handleSubmit(submit)()}
             disabled={!canSubmit}
-            loading={busy}
+            loading={isSubmitting || busy}
             fullWidth
             testID="quick-calories-submit"
           />
@@ -270,7 +316,7 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
         meals={meals}
         selectedId={mealId}
         onSelect={(id) => {
-          setMealId(id);
+          setValue('mealId', id, { shouldDirty: true, shouldValidate: true });
           setPickingMeal(false);
         }}
         onClose={() => setPickingMeal(false)}
