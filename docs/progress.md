@@ -270,11 +270,11 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ## M4 Custom foods + ruler
 
-Status: **in progress** · Start commit: pending
+Status: **in progress** · Start commit: `2fe1dd5`
 
 ### Tasks
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
-- [x] T1 Serving/ruler domain (`src/domain/food/servings.ts`): recent/default initialization, quantity-preserving unit conversion, required ruler steps and snapping, and one-step adjustable behavior (UX-05, DATA-11, DS-09/11)
+- [x] T1 Food domain: serving/ruler initialization, conversion, steps and adjustable behavior; localized Create Custom Food form validation and canonical command mapping (UX-05/08, DATA-04/11, DS-09/11, ARCH-03/22)
 - [x] T2 Local food-search data + query services (`searchCustom`, hydrated ≤20 recents, food-detail reads, create/delete mutations and cache invalidation)
 - [ ] T3 Food Search local sections and navigation entry points
 - [ ] T4 Create Custom Food form and create-then-select flow
