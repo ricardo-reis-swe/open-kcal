@@ -278,7 +278,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T2 Local food-search data + query services (`searchCustom`, hydrated ≤20 recents, food-detail reads, create/delete mutations and cache invalidation)
 - [ ] T3 Food Search local sections and navigation entry points (local screen + validated route contracts complete; route wiring waits for Food Detail/Create Custom targets)
 - [ ] T4 Create Custom Food form and create-then-select flow
-- [ ] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker
+- [ ] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker (`ServingRuler` core complete: snapped pan, direct-entry chip, fixed pointer/ticks, a11y adjustable, test-safe throttled haptic callback)
 - [ ] T6 Edit Food Entry, including snapshot-only fallback and delete
 - [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search screen, pt-PT smoke, and route-contract tests complete)
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
@@ -300,4 +300,4 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - M4 is in progress; screens, navigation, local food search, and device evidence remain.
 
 ### Open questions
-- None.
+- **M4-Q1:** Approve adding Expo Haptics when the Food Detail screen connects the ruler's test-safe haptic callback? ARCH-01 names haptics, but `expo-haptics` is not currently installed.

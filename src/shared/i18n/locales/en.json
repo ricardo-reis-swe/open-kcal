@@ -150,5 +150,9 @@
     "perBasis": "per {{quantity}} {{unit}}",
     "energy": "{{value}} {{unit}}",
     "customSource": "Custom"
+  },
+  "servingRuler": {
+    "a11y": "Serving, {{quantity}}, {{serving}}, {{energy}} {{unit}}",
+    "editValue": "Enter serving value, current value {{value}}"
   }
 }
