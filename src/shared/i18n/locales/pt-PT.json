@@ -133,5 +133,22 @@
     "deleteError": "Não foi possível eliminar. Tente novamente.",
     "deleteTitle": "Eliminar calorias rápidas?",
     "deleteBody": "{{energy}} de {{meal}} em {{date}}."
+  },
+  "foodSearch": {
+    "title": "Pesquisa de alimentos",
+    "placeholder": "Pesquisar alimentos",
+    "searchLabel": "Pesquisar alimentos",
+    "clear": "Limpar pesquisa",
+    "context": "A adicionar a {{meal}} · {{date}}",
+    "quickCalories": "Calorias rápidas",
+    "createCustom": "Criar alimento personalizado",
+    "recent": "Recentes",
+    "myFoods": "Os meus alimentos",
+    "emptyRecent": "Pesquise um alimento para o adicionar.",
+    "searching": "A pesquisar…",
+    "noResults": "Nenhum alimento encontrado para «{{query}}».",
+    "perBasis": "por {{quantity}} {{unit}}",
+    "energy": "{{value}} {{unit}}",
+    "customSource": "Personalizado"
   }
 }

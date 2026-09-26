@@ -133,5 +133,22 @@
     "deleteError": "Couldn't delete. Try again.",
     "deleteTitle": "Delete quick calories?",
     "deleteBody": "{{energy}} from {{meal}} on {{date}}."
+  },
+  "foodSearch": {
+    "title": "Food search",
+    "placeholder": "Search foods",
+    "searchLabel": "Search foods",
+    "clear": "Clear search",
+    "context": "Adding to {{meal}} · {{date}}",
+    "quickCalories": "Quick calories",
+    "createCustom": "Create custom food",
+    "recent": "Recent",
+    "myFoods": "My foods",
+    "emptyRecent": "Search for a food to add it.",
+    "searching": "Searching…",
+    "noResults": "No foods found for “{{query}}”.",
+    "perBasis": "per {{quantity}} {{unit}}",
+    "energy": "{{value}} {{unit}}",
+    "customSource": "Custom"
   }
 }
