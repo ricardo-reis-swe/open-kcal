@@ -62,6 +62,7 @@ describe('UX-00 / UX-07: Quick Calories input', () => {
   it('ARCH-03: the Zod form boundary validates every Quick Calories field', () => {
     const schema = quickCaloriesFormSchema('kcal');
     expect(schema.safeParse({ mealId: 'lunch', calories: '450', note: 'Coffee' }).success).toBe(true);
+    expect(schema.safeParse({ mealId: 'lunch', calories: '450', note: '' }).success).toBe(true);
     expect(schema.safeParse({ mealId: '', calories: '0', note: 'x'.repeat(81) }).success).toBe(false);
   });
 });
