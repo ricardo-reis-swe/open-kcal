@@ -263,6 +263,7 @@ function FoodResultRow({
       <View
         {...pan.panHandlers}
         testID={`food-swipe-${food.id}`}
+        pointerEvents={revealed ? 'none' : 'auto'}
         style={{ transform: [{ translateX: revealed ? -DELETE_REVEAL_WIDTH : 0 }] }}
       >
         <FocusablePressable

@@ -79,9 +79,7 @@ appId: com.ricardoreis.calorietracker
     id: serving-value-input
 - eraseText: 5
 - inputText: '150'
-- hideKeyboard
-- tapOn:
-    id: serving-value-confirm
+- tapOn: Done
 - scrollUntilVisible:
     element:
       id: food-entry-save
@@ -120,7 +118,9 @@ appId: com.ricardoreis.calorietracker
     from:
       id: 'food-swipe-.*'
     direction: LEFT
-- tapOn: Delete
+# The translated row still overlaps the left edge of its revealed action.
+- tapOn:
+    point: 98%,35%
 - extendedWaitUntil:
     notVisible: '${output.food}.*'
     timeout: 5000

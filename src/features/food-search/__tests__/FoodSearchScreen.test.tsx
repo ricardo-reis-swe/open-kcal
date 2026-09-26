@@ -69,12 +69,14 @@ describe('UX-04: local Food Search screen', () => {
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
   });
 
-  it('UX-04: custom foods expose the swipe threshold and non-gesture Delete food action', async () => {
-    const { food } = await setup({ initialQuery: 'almond' });
+  it('UX-04: custom foods expose the swipe threshold and Delete food accessibility action', async () => {
+    const { food, services } = await setup({ initialQuery: 'almond' });
     const row = await screen.findByTestId(`food-result-${food.id}`);
     expect(shouldRevealFoodDelete(-39)).toBe(false);
     expect(shouldRevealFoodDelete(-40)).toBe(true);
     expect(row.props.accessibilityActions).toEqual([{ name: 'delete', label: 'Delete food' }]);
+    fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    await waitFor(async () => expect(await services.foods.searchCustom('almond')).toEqual([]));
   });
 
   it('forwards the current no-results query when creating a custom food', async () => {
