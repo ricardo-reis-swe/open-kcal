@@ -278,6 +278,8 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T2 Local food-search data + query services (`searchCustom`, hydrated ≤20 recents, food-detail reads, create/delete mutations and cache invalidation)
 - [ ] T3 Food Search local sections and navigation entry points (local screen + validated route contracts complete; route wiring waits for Food Detail/Create Custom targets)
 - [ ] T4 Create Custom Food form and create-then-select flow
+  - [x] Form: initial-name prefill, localized/locale-aware validation, mass/volume/count serving selection, EU-carbs helper, pinned save error, and UX-19 dirty-discard confirmation. The create callback persists the DATA-11 command and invalidates local search.
+  - [ ] Route and continuation: stays unexposed until Food Detail can receive the new food and preserve the meal/date context (NAV-04).
 - [ ] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker (`ServingRuler` core complete: snapped pan, direct-entry chip, fixed pointer/ticks, a11y adjustable, test-safe throttled haptic callback)
 - [ ] T6 Edit Food Entry, including snapshot-only fallback and delete
 - [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search screen, pt-PT smoke, and route-contract tests complete)
@@ -287,7 +289,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 ### ROAD-02 checklist
 - [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09)
 - [ ] `npm run check` green
-- [ ] Tests at the right ARCH-18 layer; names cite spec IDs
+- [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
 - [ ] Maestro M4 flow and cumulative flows pass on iOS and Android
 - [ ] Exit demo and light/dark × default/largest screenshots captured on both platforms

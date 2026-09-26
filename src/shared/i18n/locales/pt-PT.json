@@ -151,6 +151,39 @@
     "energy": "{{value}} {{unit}}",
     "customSource": "Personalizado"
   },
+  "customFood": {
+    "title": "Novo alimento",
+    "name": "Nome*",
+    "brand": "Marca",
+    "serving": "Porção*",
+    "otherUnit": "Unidade da porção",
+    "nutrition": "Nutrição",
+    "nutritionPer": "Nutrição por {{amount}} {{unit}}",
+    "calories": "Calorias*",
+    "protein": "Proteína*",
+    "carbohydrate": "Hidratos*",
+    "fat": "Gordura*",
+    "carbsHelper": "Como nos rótulos da UE (fibra não incluída)",
+    "save": "Guardar",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "discardTitle": "Descartar alterações?",
+    "discard": "Descartar",
+    "keepEditing": "Continuar a editar",
+    "units": {
+      "g": "g",
+      "oz": "oz",
+      "ml": "ml",
+      "fl_oz": "fl oz",
+      "other": "Outro…"
+    },
+    "errors": {
+      "name": "Introduza um nome até 80 caracteres.",
+      "amount": "Introduza uma quantidade superior a 0 e até {{max}}.",
+      "otherUnit": "Introduza uma unidade de porção.",
+      "energy": "Introduza calorias de 1 a {{max}} {{unit}}.",
+      "macro": "Introduza uma quantidade de 0 a {{max}} g."
+    }
+  },
   "servingRuler": {
     "a11y": "Porção, {{quantity}}, {{serving}}, {{energy}} {{unit}}",
     "editValue": "Introduzir valor da porção, valor atual {{value}}"
