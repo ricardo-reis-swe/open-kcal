@@ -14,7 +14,7 @@ const almonds: CustomFoodInput = {
   servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
 };
 
-async function setup(options: { withRecent?: boolean } = {}) {
+async function setup(options: { withRecent?: boolean; initialQuery?: string; language?: 'en' | 'pt-PT' } = {}) {
   const { services } = await createTestServices();
   const [meal] = await services.meals.list();
   const food = await services.foods.createCustom(almonds);
@@ -34,12 +34,14 @@ async function setup(options: { withRecent?: boolean } = {}) {
       mealId={meal!.id}
       date="2026-09-25"
       today="2026-09-25"
+      initialQuery={options.initialQuery}
       onBack={jest.fn()}
       onQuickCalories={jest.fn()}
       onCreateCustom={onCreateCustom}
       onSelectFood={onSelectFood}
     />,
     services,
+    { language: options.language },
   );
   return { food, onSelectFood, onCreateCustom };
 }
@@ -60,17 +62,24 @@ describe('UX-04: local Food Search screen', () => {
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id, name: 'Almond oats' }));
   });
 
-  it('debounces local custom-food search and forwards the query to create', async () => {
-    const { food, onSelectFood, onCreateCustom } = await setup();
-    const input = await screen.findByTestId('food-search-input');
-    fireEvent.changeText(input, 'almond');
+  it('shows custom-food matches for the initial query and selects one', async () => {
+    const { food, onSelectFood } = await setup({ initialQuery: 'almond' });
     await waitFor(() => expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy());
     fireEvent.press(screen.getByTestId(`food-result-${food.id}`));
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
+  });
 
-    fireEvent.changeText(screen.getByTestId('food-search-input'), 'new food');
-    await waitFor(() => expect(screen.getByText('No foods found for “new food”.')).toBeTruthy());
+  it('forwards the current no-results query when creating a custom food', async () => {
+    const { onCreateCustom } = await setup({ initialQuery: 'new food' });
+    expect(await screen.findByText('No foods found for “new food”.')).toBeTruthy();
     fireEvent.press(screen.getAllByText('Create custom food').at(-1)!);
     expect(onCreateCustom).toHaveBeenCalledWith('new food');
+  });
+
+  it('ARCH-22: renders the local search shell in pt-PT', async () => {
+    await setup({ language: 'pt-PT' });
+    expect(await screen.findByRole('header', { name: 'Pesquisa de alimentos' })).toBeTruthy();
+    expect(screen.getByText('A adicionar a Breakfast · Hoje')).toBeTruthy();
+    expect(screen.getByText('Pesquise um alimento para o adicionar.')).toBeTruthy();
   });
 });

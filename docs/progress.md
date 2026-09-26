@@ -280,7 +280,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [ ] T4 Create Custom Food form and create-then-select flow
 - [ ] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker
 - [ ] T6 Edit Food Entry, including snapshot-only fallback and delete
-- [ ] T7 Component/navigation tests and Maestro M4 flow
+- [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search screen, pt-PT smoke, and route-contract tests complete)
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
