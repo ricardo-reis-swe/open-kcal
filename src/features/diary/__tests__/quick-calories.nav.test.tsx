@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import { renderApp } from '@/shared/testing/appRoutes';
@@ -82,6 +82,34 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
     expect(app.getPathname()).toBe('/diary/food-search');
     expect(await screen.findByRole('header', { name: 'Food search' })).toBeOnTheScreen();
     expect(screen.getByText('Adding to Breakfast · Today')).toBeOnTheScreen();
+  });
+
+  it('UX-05/08 / NAV-04: creates a custom food, continues to Food Detail, and adds it to the Diary', async () => {
+    const app = await renderApp('/diary');
+    await screen.findByTestId('diary-day-list');
+    await fireEvent.press(activeDay().getAllByRole('button', { name: 'Add food' })[0]!);
+    await flush();
+    await fireEvent.changeText(screen.getByTestId('food-search-input'), 'Navigation oats');
+    await fireEvent.press(screen.getByRole('button', { name: 'Create custom food' }));
+    await flush();
+    expect(app.getPathname()).toBe('/diary/create-custom-food');
+    expect(screen.getByTestId('custom-food-name').props.value).toBe('Navigation oats');
+
+    await fireEvent.changeText(screen.getByTestId('custom-food-serving'), '100');
+    await fireEvent.changeText(screen.getByTestId('custom-food-energy'), '200');
+    await fireEvent.changeText(screen.getByTestId('custom-food-protein'), '10');
+    await fireEvent.changeText(screen.getByTestId('custom-food-carbohydrate'), '20');
+    await fireEvent.changeText(screen.getByTestId('custom-food-fat'), '5');
+    await waitFor(() => expect(screen.getByTestId('custom-food-save')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('custom-food-save'));
+    await flush();
+
+    expect(app.getPathname()).toMatch(/^\/diary\/food-detail\/.+/);
+    expect(await screen.findByText('Navigation oats')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('food-detail-add'));
+    await flush();
+    expect(app.getPathname()).toBe('/diary');
+    expect(await activeDay().findByRole('header', { name: 'Breakfast, 200 kilocalories' })).toBeOnTheScreen();
   });
 
   it('NAV-03: cancelling the Meal Picker opens nothing', async () => {

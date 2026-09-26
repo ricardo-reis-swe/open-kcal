@@ -284,7 +284,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
   - [x] Route and continuation: preserves the search meal/date context and replaces Create Custom Food with Food Detail after save (NAV-04).
 - [x] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker: recent/default initialization, preferred unit ordering, conversion, direct numeric entry, live nutrition, Meal Picker, add-entry snapshot + refreshed Diary return; snapped pan, fixed pointer/ticks, a11y adjustable, and test-safe throttled haptics.
 - [x] T6 Edit Food Entry: Diary row route, quantity/unit/meal edits, snapshot-preserving display and snapshot-only fallback when food/serving is unavailable, origin-aware save, confirmed delete, and inline mutation failures.
-- [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, and Diary entry-point tests complete; end-to-end flow pending). `npm run check`: 360/360.
+- [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete; device E2E pending). `npm run check`: 361/361.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
   - [ ] Run the M4 flow and cumulative flows on Android + iOS. Blocked on this host: no Android SDK/ADB and no iOS tooling/device (2026-09-26).
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
@@ -292,7 +292,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ### ROAD-02 checklist
 - [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09)
-- [x] `npm run check` green (360 tests)
+- [x] `npm run check` green (361 tests)
 - [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
 - [ ] Maestro M4 flow and cumulative flows pass on iOS and Android
