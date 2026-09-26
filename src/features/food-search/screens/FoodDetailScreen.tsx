@@ -380,11 +380,13 @@ function FoodDetailForm({
             value={valueText}
             onChangeText={setValueText}
             keyboardType="decimal-pad"
+            returnKeyType="done"
+            onSubmitEditing={applyNumeric}
             unit={serving.label}
             autoFocus
             testID="serving-value-input"
           />
-          <PrimaryButton label={t('foodDetail.done')} onPress={applyNumeric} fullWidth />
+          <PrimaryButton label={t('foodDetail.done')} onPress={applyNumeric} fullWidth testID="serving-value-confirm" />
         </View>
       </BottomSheet>
       {mode.kind === 'edit' ? (

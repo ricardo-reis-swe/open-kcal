@@ -109,6 +109,28 @@ describe('UX-05: Food Detail / Add Entry', () => {
     expect(screen.getByRole('button', { name: 'Adicionar a Breakfast' })).toBeTruthy();
   });
 
+  it('UX-00 / UX-05: submits a direct numeric serving from the keyboard', async () => {
+    await renderWithProviders(
+      <FoodDetailScreen
+        mode={{
+          kind: 'add',
+          foodId: mockFood.id,
+          foodSource: 'custom',
+          mealId: 'meal-1',
+          date: '2026-09-25',
+          origin: 'diary',
+        }}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('serving-ruler-value'));
+    const input = await screen.findByTestId('serving-value-input');
+    fireEvent.changeText(input, '75');
+    await waitFor(() => expect(input.props.value).toBe('75'));
+    fireEvent(input, 'submitEditing');
+    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 75')).toBeTruthy());
+  });
+
   it('UX-06: snapshot-only edit scales quantity, hides unit choices, saves, and confirms delete', async () => {
     mockEntry = {
       id: 'entry-1',

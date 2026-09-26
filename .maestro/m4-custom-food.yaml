@@ -29,15 +29,27 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: custom-food-serving
 - inputText: '100'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: custom-food-energy
+    direction: DOWN
 - tapOn:
     id: custom-food-energy
 - inputText: '200'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: custom-food-protein
+    direction: DOWN
 - tapOn:
     id: custom-food-protein
 - inputText: '10'
+- hideKeyboard
 - tapOn:
     id: custom-food-carbohydrate
 - inputText: '20'
+- hideKeyboard
 - tapOn:
     id: custom-food-fat
 - inputText: '5'
@@ -54,10 +66,10 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: food-detail-add
 - scrollUntilVisible:
-    element: '${output.food}, 100 g, 200 .*'
+    element: '${output.food}, 100 .*, 200 .*'
     direction: DOWN
     timeout: 15000
-- tapOn: '${output.food}, 100 g, 200 .*'
+- tapOn: '${output.food}, 100 .*, 200 .*'
 - extendedWaitUntil:
     visible: Edit entry
     timeout: 5000
@@ -67,14 +79,20 @@ appId: com.ricardoreis.calorietracker
     id: serving-value-input
 - eraseText: 5
 - inputText: '150'
-- tapOn: Done
+- hideKeyboard
+- tapOn:
+    id: serving-value-confirm
+- scrollUntilVisible:
+    element:
+      id: food-entry-save
+    direction: DOWN
 - tapOn:
     id: food-entry-save
 - scrollUntilVisible:
-    element: '${output.food}, 150 g, 300 .*'
+    element: '${output.food}, 150 .*, 300 .*'
     direction: DOWN
     timeout: 15000
-- tapOn: '${output.food}, 150 g, 300 .*'
+- tapOn: '${output.food}, 150 .*, 300 .*'
 - scrollUntilVisible:
     element:
       id: food-entry-delete

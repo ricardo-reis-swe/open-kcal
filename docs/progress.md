@@ -286,7 +286,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T6 Edit Food Entry: Diary row route, quantity/unit/meal edits, snapshot-preserving display and snapshot-only fallback when food/serving is unavailable, origin-aware save, confirmed delete, and inline mutation failures.
 - [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete; device E2E pending). `npm run check`: 361/361.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
-  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Android `Pixel_10` emulator and Maestro 2.10.0 became available on 2026-09-26. `scripts/e2e.sh` now discovers its compatible Java 17/21 runtime and Android SDK location, and the M4 flow dismisses the one-time Gboard handwriting prompt before continuing. A fresh Android run remains pending; iOS tooling/device is unavailable.
+  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Android `Pixel_10` emulator and Maestro 2.10.0 became available on 2026-09-26. `scripts/e2e.sh` now discovers its compatible Java 17/21 runtime and Android SDK location, and the M4 flow dismisses the one-time Gboard handwriting prompt before continuing. The Android run exposed a direct-serving return-key regression (the Gboard Done key dismissed the sheet without applying the value); fixed with a UX-00 component test. Re-run pending; iOS tooling/device is unavailable.
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
