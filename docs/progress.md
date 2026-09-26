@@ -233,11 +233,13 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T4 Tests: domain (range, parsing in kcal/kJ), `BottomSheet.onDismissed`, component tests (fields, validation, kJ storage, save failure, pt-PT smoke) and navigation tests on real SQLite (sheet rows, picker order + cancel, SCOPE-11 flow 2, start from Profile on another date, back saves nothing, edit + meal change, delete confirm/cancel, not found). 309 tests.
 - [x] T5 Maestro `m3-quick-calories` (add → edit → delete; a unique note per run). Passes on iOS and Android. It found and fixed: the Android keyboard covered the primary action (Android is edge-to-edge, so `KeyboardAvoidingView` pads on both platforms). `ConfirmationDialog` actions got test IDs.
 - [x] T6 QA screenshots on both platforms (light/dark × default/largest text, small Android phone): Add Action Sheet, Meal Picker, Quick Calories with a validation error and filled, Edit, delete dialog, in `docs/qa/M3/` (`scripts/qa/m3.sh`). The capture found that Lunch sits below the fold on the small phone and that `Delete entry` is off-screen with the keyboard open; both flows now scroll to them.
-- [ ] T7 Independent review. Round 1 (`docs/qa/M3/review-round1.md`): 1 major, 4 minors.
+- [x] T7 Independent review. Round 1 (`docs/qa/M3/review-round1.md`): 1 major, 4 minors.
   - M3-R1 (major) fixed: `+` over an open Quick Calories screen kept the old meal and input, because `router.navigate` updated the open screen's params in place. `GlobalAddFlow` now pushes a fresh screen; nav test added.
   - M3-R5 (minor) fixed: tests for the single-meal picker skip (`GlobalAddFlow.test.tsx`) and edit mode (populated, untouched kJ keeps the stored kcal, meal change from Meal Detail, delete failure, food entry ID → not found). 316 tests.
   - M3-R2 fixed: cancel/back from a Profile-started flow now returns to Profile per NAV-09; navigation test added.
   - M3-R3 fixed: Quick Calories now uses React Hook Form with its Zod form schema per ARCH-03; domain schema test added. M3-R4: known gap below.
+  - Round 2 (`5e7e707`, `docs/qa/M3/review.md`, delta, Terra): **clean**, 0 blockers · 0 majors · 1 intentionally deferred minor (M3-R4). `npm run check` 318/318. The reviewer could not rerun device QA: no Android device was connected and this host has no iOS tooling.
+- [ ] T8 Rerun the current-HEAD Maestro flows and exit demo after the review fixes. Android: the emulator boots, but Maestro is not installed on this host. iOS: this Linux host has no Xcode/`xcrun`. Round-1 evidence remains green on both platforms but predates the UI/navigation fixes.
 
 ### Known gaps
 - `Add food` (Food Search, M4) and `Update weight` (Weight Entry Sheet, M8) show in the Add Action Sheet but are disabled until their flows land. Food rows on the Diary stay unpressable until Edit Food Entry (M4).
