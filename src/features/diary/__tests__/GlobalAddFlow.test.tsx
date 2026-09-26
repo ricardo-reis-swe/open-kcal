@@ -10,7 +10,8 @@ import { DiaryDateProvider } from '../hooks/DiaryDateContext';
 // The multi-meal picker path and the routes it ends on are covered by quick-calories.nav.test.tsx.
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
-  router: { back: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), navigate: jest.fn() },
+  usePathname: () => '/diary',
+  router: { back: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), navigate: jest.fn(), replace: jest.fn() },
 }));
 
 const TODAY = '2026-09-25';

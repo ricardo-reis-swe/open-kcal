@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useRef, useState } from 'react';
 
 import { AddActionSheet } from '@/shared/navigation/AddActionSheet';
@@ -16,6 +16,7 @@ type Props = { open: boolean; onClose: () => void };
  */
 export function GlobalAddFlow({ open, onClose }: Props) {
   const { date } = useDiaryDate();
+  const pathname = usePathname();
   const meals = useMeals();
   const [picking, setPicking] = useState(false);
   // What to do once the current sheet has finished closing.
@@ -24,7 +25,8 @@ export function GlobalAddFlow({ open, onClose }: Props) {
 
   // Push, never navigate: `+` over an open Quick Calories screen must start a fresh form for the picked meal, not
   // update the open screen's params in place and keep its old meal and input (NAV-03, review M3-R1).
-  const openQuickCalories = (mealId: string) => router.push(routes.quickCalories({ mealId, date, origin: 'diary' }));
+  const openQuickCalories = (mealId: string) =>
+    router.push(routes.quickCalories({ mealId, date, origin: pathname.startsWith('/profile') ? 'profile' : 'diary' }));
 
   return (
     <>

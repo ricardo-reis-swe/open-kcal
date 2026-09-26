@@ -246,5 +246,5 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - At the largest iOS text size the app bar truncates long titles (`Quick ca…`, `ios-*-largest-quick-calories.png`). `AppBar` is the shared M0 component, so this affects every long title; left for the M9 DS-11 large-text pass.
 
 ### Open questions
-- **M3-R2** (NAV-09/NAV-03): Back from a Quick Calories screen started on Profile lands on the Diary tab, not Profile (the form lives in the Diary stack). The spec only pins where *save* ends. Keep it, or return to Profile on back/cancel?
+- ~~**M3-R2**~~ Resolved 2026-09-26: NAV-09 already requires cancel to return to the recorded origin. Back from a Quick Calories flow started on Profile now returns to Profile; saving still ends on the Diary per NAV-03.
 - **M3-R3** (ARCH-03): ARCH-03 names React Hook Form + Zod for forms, incl. Quick Calories; the form uses `useState` + domain parsing and `react-hook-form` isn't installed. Adding it needs approval (ARCH-20 note). Add it now (and refactor this form), add it from M4 (Create Custom Food), or amend ARCH-03 to allow plain state for small forms?

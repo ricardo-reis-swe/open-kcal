@@ -122,6 +122,19 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
     expect(activeDay().getByRole('header', { name: 'Dinner, 300 kilocalories' })).toBeOnTheScreen();
   });
 
+  it('NAV-09: cancelling Quick Calories started from Profile returns to Profile', async () => {
+    const app = await renderApp('/profile');
+
+    await openQuickCalories('Dinner');
+    expect(app.getPathname()).toBe('/diary/quick-calories');
+    await fireEvent.changeText(screen.getByLabelText('Calories, kcal'), '300');
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await flush();
+
+    expect(app.getPathname()).toBe('/profile');
+    expect(screen.getByRole('tab', { name: 'Profile' })).toBeSelected();
+  });
+
   it('NAV-03: + over an open Quick Calories screen starts a fresh form for the picked meal', async () => {
     const app = await renderApp('/diary');
     await openQuickCalories('Lunch');

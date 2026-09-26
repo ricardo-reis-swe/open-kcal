@@ -46,6 +46,11 @@ export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }
   const entry = useDiaryEntry(mode?.kind === 'edit' ? mode.entryId : '', mode?.kind === 'edit');
   const editing = mode?.kind === 'edit';
   const title = editing ? t('quickCalories.editTitle') : t('quickCalories.title');
+  const goBack = () => {
+    // NAV-09: a cancelled global flow returns to the tab where it began.
+    if (mode?.kind === 'add' && mode.origin === 'profile') router.replace(routes.profile());
+    else router.back();
+  };
 
   let body: React.ReactNode = null;
   const notFound = <NotFoundState actionLabel={t('common.backToDiary')} onAction={toDiaryRoot} />;
@@ -79,7 +84,7 @@ export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
-      <AppBar title={title} back={{ label: t('common.back'), onPress: () => router.back() }} />
+      <AppBar title={title} back={{ label: t('common.back'), onPress: goBack }} />
       {body}
     </View>
   );

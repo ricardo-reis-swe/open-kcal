@@ -54,6 +54,7 @@ export function parseRouteParams<K extends keyof typeof paramSchemas>(route: K, 
 
 export const routes = {
   diary: (): Href => '/diary',
+  profile: (): Href => '/profile',
   quickCalories: (p: RouteParams['quickCalories']): Href => ({
     pathname: '/diary/quick-calories',
     params: { mealId: p.mealId, date: p.date, origin: p.origin ?? 'diary' },
