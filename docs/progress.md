@@ -8,7 +8,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M1 Data + domain | done |
 | M2 Diary (read) | done |
 | M3 Quick Calories | done |
-| M4 Custom foods + ruler | not started |
+| M4 Custom foods + ruler | in progress |
 | M5 Search + Open Food Facts | not started |
 | M6 USDA | not started |
 | M7 Meal Detail + copy | not started |
@@ -267,3 +267,37 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 | Package | Need |
 |---|---|
 | `react-hook-form` 7.89.0 | ARCH-03 form state for Quick Calories and later validated forms. Uses a small local Zod resolver, so `@hookform/resolvers` is not needed. User-approved in M3-R3 |
+
+## M4 Custom foods + ruler
+
+Status: **in progress** · Start commit: pending
+
+### Tasks
+Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
+- [x] T1 Serving/ruler domain (`src/domain/food/servings.ts`): recent/default initialization, quantity-preserving unit conversion, required ruler steps and snapping, and one-step adjustable behavior (UX-05, DATA-11, DS-09/11)
+- [x] T2 Local food-search data + query services (`searchCustom`, hydrated ≤20 recents, food-detail reads, create/delete mutations and cache invalidation)
+- [ ] T3 Food Search local sections and navigation entry points
+- [ ] T4 Create Custom Food form and create-then-select flow
+- [ ] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker
+- [ ] T6 Edit Food Entry, including snapshot-only fallback and delete
+- [ ] T7 Component/navigation tests and Maestro M4 flow
+- [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
+- [ ] T9 Independent review
+
+### ROAD-02 checklist
+- [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09)
+- [ ] `npm run check` green
+- [ ] Tests at the right ARCH-18 layer; names cite spec IDs
+- [ ] Every new string in `en` + `pt-PT`
+- [ ] Maestro M4 flow and cumulative flows pass on iOS and Android
+- [ ] Exit demo and light/dark × default/largest screenshots captured on both platforms
+- [ ] Independent review clean
+- [ ] No in-scope placeholder UI or unlogged gaps
+- [ ] Nothing sensitive added to logs
+- [ ] M4 extra: ruler is an a11y `adjustable`; haptics are off in tests
+
+### Known gaps
+- M4 is in progress; screens, navigation, local food search, and device evidence remain.
+
+### Open questions
+- None.

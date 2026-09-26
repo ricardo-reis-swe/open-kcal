@@ -59,6 +59,20 @@ describe('DATA-11 / DATA-16: foods repository', () => {
     expect(noDefault.servings[0]!.isDefault).toBe(true);
   });
 
+  it('UX-04 / DATA-15: searches active custom foods by name or brand, with prefix matches first', async () => {
+    const { foods } = await setup();
+    const almond = await foods.createCustom({ ...eggs, name: 'Almond oats', brand: 'Morning Foods' });
+    const oats = await foods.createCustom({ ...eggs, name: 'Oats with almond', brand: null });
+    const branded = await foods.createCustom({ ...eggs, name: 'Porridge', brand: 'Almond Kitchen' });
+    await foods.createCustom({ ...eggs, name: 'Toast', brand: null });
+
+    expect((await foods.searchCustom(' almond ')).map((food) => food.id)).toEqual([almond.id, oats.id, branded.id]);
+    await foods.deleteCustom(almond.id);
+    expect((await foods.searchCustom('almond')).map((food) => food.id)).toEqual([oats.id, branded.id]);
+    expect(await foods.searchCustom('')).toEqual([]);
+    expect(await foods.searchCustom('almond', 1)).toHaveLength(1);
+  });
+
   it('custom foods require every macro and a complete serving', async () => {
     const { foods } = await setup();
     const missingMacro = { ...eggs, nutrients: { ...eggs.nutrients, fatG: null } } as unknown as CustomFoodInput;

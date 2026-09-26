@@ -221,6 +221,21 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       return food;
     },
 
+    /** UX-04 / DATA-15: active custom-food matches for the local `My foods` section. */
+    async searchCustom(query: string, limit = 20): Promise<Food[]> {
+      const normalized = query.trim();
+      if (normalized.length === 0 || !Number.isInteger(limit) || limit <= 0) return [];
+      const rows = await db.getAll<{ id: string }>(
+        `SELECT id FROM foods
+         WHERE source = 'custom' AND is_deleted = 0
+           AND (instr(lower(name), lower(?)) > 0 OR instr(lower(COALESCE(brand, '')), lower(?)) > 0)
+         ORDER BY CASE WHEN lower(name) LIKE lower(?) THEN 0 ELSE 1 END, name COLLATE NOCASE, id
+         LIMIT ?`,
+        [normalized, normalized, `${normalized}%`, limit],
+      );
+      return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
+    },
+
     /** DATA-16: validate → insert `custom` food → insert ≥1 servings (one default). Does not create an entry. */
     async createCustom(input: CustomFoodInput): Promise<Food> {
       validateFood(input, true);
