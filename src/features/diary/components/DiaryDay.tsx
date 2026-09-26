@@ -71,7 +71,7 @@ export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
       data={day.data.meals}
       keyExtractor={(meal) => meal.meal.id}
       ListHeaderComponent={<Overview day={day.data} unit={unit} provisional={provisional} />}
-      renderItem={({ item }) => <MealSection meal={item} unit={unit} />}
+      renderItem={({ item }) => <MealSection meal={item} unit={unit} date={date} />}
       contentContainerStyle={{ paddingBottom: theme.spacing[6], backgroundColor: theme.colors.surface }}
       style={{ backgroundColor: theme.colors.canvas }}
       keyboardDismissMode="on-drag"
@@ -112,7 +112,7 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
   );
 }
 
-function MealSection({ meal, unit }: { meal: DiaryMeal; unit: EnergyUnit }) {
+function MealSection({ meal, unit, date }: { meal: DiaryMeal; unit: EnergyUnit; date: LocalDate }) {
   const { t } = useTranslation();
   const theme = useTheme();
   return (
@@ -134,7 +134,7 @@ function MealSection({ meal, unit }: { meal: DiaryMeal; unit: EnergyUnit }) {
             );
         }
       })}
-      {/* DS-08 Add Food row (42–44): the last row per meal. Food Search arrives with M4. */}
+      {/* DS-08 Add Food row (42–44): the last row per meal. */}
       <View
         style={{
           minHeight: theme.sizes.addFoodRow[1],
@@ -146,15 +146,12 @@ function MealSection({ meal, unit }: { meal: DiaryMeal; unit: EnergyUnit }) {
           icon="add"
           label={t('diary.meal.addFood')}
           accessibilityHint={t('diary.meal.addFoodTo', { meal: meal.meal.name })}
-          onPress={noop}
-          disabled
+          onPress={() => router.push(routes.foodSearch({ mealId: meal.meal.id, date }))}
         />
       </View>
     </View>
   );
 }
-
-const noop = () => undefined;
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

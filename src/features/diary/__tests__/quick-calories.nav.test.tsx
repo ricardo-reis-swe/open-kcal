@@ -43,7 +43,7 @@ async function addQuickCalories(kcal: string, note?: string) {
 }
 
 describe('NAV-03 / UX-09: + Add Action Sheet', () => {
-  it('UX-09: rows are Add food, Quick calories and Update weight; only Quick calories is live in M3', async () => {
+  it('UX-09: rows are Add food, Quick calories and Update weight; M4 enables Add food', async () => {
     await renderApp('/diary');
     await fireEvent.press(screen.getByRole('button', { name: 'Add' }));
     const sheet = screen.getByTestId('add-action-sheet');
@@ -52,7 +52,7 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
       .map((b) => b.props.accessibilityLabel)
       .filter((label) => label !== 'Close');
     expect(rows).toEqual(['Add food', 'Quick calories', 'Update weight']);
-    expect(within(sheet).getByRole('button', { name: 'Add food' })).toBeDisabled();
+    expect(within(sheet).getByRole('button', { name: 'Add food' })).toBeEnabled();
     expect(within(sheet).getByRole('button', { name: 'Update weight' })).toBeDisabled();
     expect(within(sheet).getByRole('button', { name: 'Quick calories' })).toBeEnabled();
     expect(within(sheet).queryByText(/barcode/i)).toBeNull();
@@ -72,6 +72,16 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
         .map((b) => b.props.accessibilityLabel)
         .filter((label) => label !== 'Close'),
     ).toEqual(['Breakfast', 'Lunch', 'Dinner', 'Snacks']);
+  });
+
+  it('NAV-04 / UX-04: a meal Add food row opens Food Search with its meal and date context', async () => {
+    const app = await renderApp('/diary');
+    await screen.findByTestId('diary-day-list');
+    await fireEvent.press(activeDay().getAllByRole('button', { name: 'Add food' })[0]!);
+    await flush();
+    expect(app.getPathname()).toBe('/diary/food-search');
+    expect(await screen.findByRole('header', { name: 'Food search' })).toBeOnTheScreen();
+    expect(screen.getByText('Adding to Breakfast · Today')).toBeOnTheScreen();
   });
 
   it('NAV-03: cancelling the Meal Picker opens nothing', async () => {

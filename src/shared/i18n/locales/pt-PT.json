@@ -187,5 +187,21 @@
   "servingRuler": {
     "a11y": "Porção, {{quantity}}, {{serving}}, {{energy}} {{unit}}",
     "editValue": "Introduzir valor da porção, valor atual {{value}}"
+  },
+  "foodDetail": {
+    "title": "Adicionar alimento",
+    "moreUnits": "Mais…",
+    "carbs": "Hidratos",
+    "protein": "Proteína",
+    "fat": "Gordura",
+    "meal": "Refeição",
+    "date": "Data",
+    "addTo": "Adicionar a {{meal}}",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "chooseUnit": "Escolher unidade da porção",
+    "conversionHint": "{{quantity}} {{unit}}",
+    "enterServing": "Introduzir valor da porção",
+    "serving": "Porção",
+    "done": "Concluir"
   }
 }

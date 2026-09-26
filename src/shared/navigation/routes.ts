@@ -74,6 +74,34 @@ export function parseRouteParams<K extends keyof typeof paramSchemas>(route: K, 
 export const routes = {
   diary: (): Href => '/diary',
   profile: (): Href => '/profile',
+  foodSearch: (p: RouteParams['foodSearch']): Href => ({
+    pathname: '/diary/food-search',
+    params: {
+      mealId: p.mealId,
+      date: p.date,
+      ...(p.initialQuery ? { initialQuery: p.initialQuery } : {}),
+      origin: p.origin ?? 'diary',
+    },
+  }) as unknown as Href,
+  foodDetail: (p: RouteParams['foodDetail']): Href => ({
+    pathname: '/diary/food-detail/[foodId]',
+    params: {
+      foodId: p.foodId,
+      foodSource: p.foodSource,
+      mealId: p.mealId,
+      date: p.date,
+      origin: p.origin ?? 'diary',
+    },
+  }) as unknown as Href,
+  createCustomFood: (p: RouteParams['createCustomFood']): Href => ({
+    pathname: '/diary/create-custom-food',
+    params: {
+      mealId: p.mealId,
+      date: p.date,
+      ...(p.initialName ? { initialName: p.initialName } : {}),
+      origin: p.origin ?? 'diary',
+    },
+  }) as unknown as Href,
   quickCalories: (p: RouteParams['quickCalories']): Href => ({
     pathname: '/diary/quick-calories',
     params: { mealId: p.mealId, date: p.date, origin: p.origin ?? 'diary' },

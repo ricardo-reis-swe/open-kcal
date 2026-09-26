@@ -187,5 +187,21 @@
   "servingRuler": {
     "a11y": "Serving, {{quantity}}, {{serving}}, {{energy}} {{unit}}",
     "editValue": "Enter serving value, current value {{value}}"
+  },
+  "foodDetail": {
+    "title": "Add food",
+    "moreUnits": "More…",
+    "carbs": "Carbs",
+    "protein": "Protein",
+    "fat": "Fat",
+    "meal": "Meal",
+    "date": "Date",
+    "addTo": "Add to {{meal}}",
+    "saveError": "Couldn't save. Try again.",
+    "chooseUnit": "Choose serving unit",
+    "conversionHint": "{{quantity}} {{unit}}",
+    "enterServing": "Enter serving value",
+    "serving": "Serving",
+    "done": "Done"
   }
 }
