@@ -40,6 +40,25 @@ const dateSchema = z.string().refine(isLocalDate);
 type RawParams = Record<string, string | string[] | undefined>;
 
 const paramSchemas = {
+  foodSearch: z.object({
+    mealId: idSchema,
+    date: dateSchema,
+    initialQuery: z.string().optional(),
+    origin: originSchema.default('diary'),
+  }),
+  foodDetail: z.object({
+    foodId: idSchema,
+    foodSource: z.enum(['custom', 'usda', 'open_food_facts']),
+    mealId: idSchema,
+    date: dateSchema,
+    origin: originSchema.default('diary'),
+  }),
+  createCustomFood: z.object({
+    mealId: idSchema,
+    date: dateSchema,
+    initialName: z.string().optional(),
+    origin: originSchema.default('diary'),
+  }),
   quickCalories: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
 };

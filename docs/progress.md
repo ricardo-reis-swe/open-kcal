@@ -276,7 +276,7 @@ Status: **in progress** · Start commit: `2fe1dd5`
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
 - [x] T1 Food domain: serving/ruler initialization, conversion, steps and adjustable behavior; localized Create Custom Food form validation and canonical command mapping (UX-05/08, DATA-04/11, DS-09/11, ARCH-03/22)
 - [x] T2 Local food-search data + query services (`searchCustom`, hydrated ≤20 recents, food-detail reads, create/delete mutations and cache invalidation)
-- [ ] T3 Food Search local sections and navigation entry points (local screen complete; route wiring waits for Food Detail/Create Custom targets)
+- [ ] T3 Food Search local sections and navigation entry points (local screen + validated route contracts complete; route wiring waits for Food Detail/Create Custom targets)
 - [ ] T4 Create Custom Food form and create-then-select flow
 - [ ] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker
 - [ ] T6 Edit Food Entry, including snapshot-only fallback and delete
