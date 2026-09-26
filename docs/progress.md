@@ -7,7 +7,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M0 Skeleton | done |
 | M1 Data + domain | done |
 | M2 Diary (read) | done |
-| M3 Quick Calories | in progress |
+| M3 Quick Calories | done |
 | M4 Custom foods + ruler | not started |
 | M5 Search + Open Food Facts | not started |
 | M6 USDA | not started |
@@ -223,7 +223,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ## M3 Quick Calories
 
-Status: **in progress** · Start commit: `9297f1f` (review range `9297f1f..HEAD`)
+Status: **done** (accepted by the user 2026-09-26) · Start commit: `9297f1f` (review range `9297f1f..HEAD`)
 
 ### Tasks
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
@@ -239,7 +239,18 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
   - M3-R2 fixed: cancel/back from a Profile-started flow now returns to Profile per NAV-09; navigation test added.
   - M3-R3 fixed: Quick Calories now uses React Hook Form with its Zod form schema per ARCH-03; domain schema test added. M3-R4: known gap below.
   - Round 2 (`5e7e707`, `docs/qa/M3/review.md`, delta, Terra): **clean**, 0 blockers · 0 majors · 1 intentionally deferred minor (M3-R4). `npm run check` 318/318. The reviewer could not rerun device QA: no Android device was connected and this host has no iOS tooling.
-- [ ] T8 Rerun the current-HEAD Maestro flows and exit demo after the review fixes. Android: the emulator boots, but Maestro is not installed on this host. iOS: this Linux host has no Xcode/`xcrun`. Round-1 evidence remains green on both platforms but predates the UI/navigation fixes.
+- [x] T8 Device verification exception approved by the user 2026-09-26: rely on the green round-1 Android evidence for now and defer iOS/current-HEAD reruns. The review fixes are covered by the 318-test suite and clean round-2 review.
+
+### ROAD-02 checklist
+- [x] Every Main-spec behavior implemented (UX-07/09/10/19, NAV-03/04/08)
+- [x] `npm run check` green (318 tests)
+- [x] Tests at the right ARCH-18 layer; names cite spec IDs
+- [x] Every new string in `en` + `pt-PT` (parity and pt-PT smoke tests)
+- [x] Maestro `m3-quick-calories` and cumulative flows passed on Android and iOS before the review fixes; user approved relying on the Android evidence and deferring iOS/current-HEAD reruns on 2026-09-26
+- [x] Exit demo and light/dark × default/largest screenshots captured on both platforms under `docs/qa/M3/`
+- [x] Independent review clean after 2 rounds: 0 blockers · 0 majors · 1 deferred minor
+- [x] No in-scope placeholder UI; later-milestone actions are disabled and listed below
+- [x] Nothing sensitive added to logs
 
 ### Known gaps
 - `Add food` (Food Search, M4) and `Update weight` (Weight Entry Sheet, M8) show in the Add Action Sheet but are disabled until their flows land. Food rows on the Diary stay unpressable until Edit Food Entry (M4).
