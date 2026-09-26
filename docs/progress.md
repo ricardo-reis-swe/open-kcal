@@ -286,7 +286,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T6 Edit Food Entry: Diary row route, quantity/unit/meal edits, snapshot-preserving display and snapshot-only fallback when food/serving is unavailable, origin-aware save, confirmed delete, and inline mutation failures.
 - [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete; device E2E pending). `npm run check`: 361/361.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
-  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Blocked on this host: no Android SDK/ADB and no iOS tooling/device (2026-09-26).
+  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Android `Pixel_10` emulator and Maestro 2.10.0 became available on 2026-09-26; `m4-custom-food` reaches the emulator but fails before its first command when Maestro's Android driver closes its forwarded gRPC connection (`DeviceServerDiedException`, `UNAVAILABLE`). iOS tooling/device remains unavailable.
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
@@ -304,7 +304,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ### Known gaps
 - M4 is in progress: the Maestro M4 flow, device exit demo/QA matrix, and independent review remain.
-- Device QA is currently unavailable on this host (no Android SDK/ADB or iOS tooling); the M4 flow is committed but unexecuted.
+- Android device QA is blocked by a Maestro 2.10.0 Android-driver disconnect before flow execution; the M4 flow is committed but not yet runnable. iOS tooling/device is unavailable.
 
 ### Open questions
 - ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.
