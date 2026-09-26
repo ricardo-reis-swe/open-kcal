@@ -80,7 +80,7 @@ describe('UX-04: local Food Search screen', () => {
   it('forwards the current no-results query when creating a custom food', async () => {
     const { onCreateCustom } = await setup({ initialQuery: 'new food' });
     expect(await screen.findByText('No foods found for “new food”.')).toBeTruthy();
-    fireEvent.press(screen.getAllByText('Create custom food').at(-1)!);
+    fireEvent.press(screen.getByTestId('food-create-custom'));
     expect(onCreateCustom).toHaveBeenCalledWith('new food');
   });
 

@@ -173,6 +173,7 @@ export function FoodSearchScreen({
                   icon="add"
                   label={t('foodSearch.createCustom')}
                   onPress={() => onCreateCustom(query.trim())}
+                  testID="food-create-custom"
                 />
               </View>
             )}

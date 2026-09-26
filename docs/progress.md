@@ -286,7 +286,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T6 Edit Food Entry: Diary row route, quantity/unit/meal edits, snapshot-preserving display and snapshot-only fallback when food/serving is unavailable, origin-aware save, confirmed delete, and inline mutation failures.
 - [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete; device E2E pending). `npm run check`: 361/361.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
-  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Android `Pixel_10` emulator and Maestro 2.10.0 became available on 2026-09-26; `m4-custom-food` reaches the emulator but fails before its first command when Maestro's Android driver closes its forwarded gRPC connection (`DeviceServerDiedException`, `UNAVAILABLE`). iOS tooling/device remains unavailable.
+  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Android `Pixel_10` emulator and Maestro 2.10.0 became available on 2026-09-26. `scripts/e2e.sh` now discovers its compatible Java 17/21 runtime and Android SDK location, and the M4 flow dismisses the one-time Gboard handwriting prompt before continuing. A fresh Android run remains pending; iOS tooling/device is unavailable.
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
@@ -304,7 +304,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ### Known gaps
 - M4 is in progress: the Maestro M4 flow, device exit demo/QA matrix, and independent review remain.
-- Android device QA is blocked by a Maestro 2.10.0 Android-driver disconnect before flow execution; the M4 flow is committed but not yet runnable. iOS tooling/device is unavailable.
+- Android device QA is pending a fresh retry after the local Maestro/runtime and Gboard-prompt fixes. iOS tooling/device is unavailable.
 
 ### Open questions
 - ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.

@@ -16,7 +16,13 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: food-search-input
 - inputText: ${output.food}
-- tapOn: Create custom food
+# Fresh Android images can show a one-time Gboard handwriting tutorial here.
+- tapOn:
+    id: android:id/closeButton
+    optional: true
+- hideKeyboard
+- tapOn:
+    id: food-create-custom
 - extendedWaitUntil:
     visible: New food
     timeout: 5000
