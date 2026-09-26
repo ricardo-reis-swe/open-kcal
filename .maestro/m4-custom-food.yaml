@@ -50,6 +50,10 @@ appId: com.ricardoreis.calorietracker
     id: custom-food-carbohydrate
 - inputText: '20'
 - hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: custom-food-fat
+    direction: DOWN
 - tapOn:
     id: custom-food-fat
 - inputText: '5'
