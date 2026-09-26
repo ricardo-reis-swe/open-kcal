@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanResponder, View } from 'react-native';
@@ -25,12 +26,24 @@ type Props = {
   onHaptic?: () => void;
 };
 
+const nativeSelectionHaptic = () => {
+  void Haptics.selectionAsync();
+};
+
 function displayQuantity(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 2, useGrouping: false }).format(value);
 }
 
 /** DS-09 / UX-05: fixed-pointer serving ruler with snapped pan and adjustable accessibility actions. */
-export function ServingRuler({ quantity, serving, energyKcal, energyUnit, onChange, onOpenNumeric, onHaptic }: Props) {
+export function ServingRuler({
+  quantity,
+  serving,
+  energyKcal,
+  energyUnit,
+  onChange,
+  onOpenNumeric,
+  onHaptic = nativeSelectionHaptic,
+}: Props) {
   const { t } = useTranslation();
   const locale = useFormattingLocale();
   const theme = useTheme();

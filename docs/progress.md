@@ -300,4 +300,9 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - M4 is in progress; screens, navigation, local food search, and device evidence remain.
 
 ### Open questions
-- **M4-Q1:** Approve adding Expo Haptics when the Food Detail screen connects the ruler's test-safe haptic callback? ARCH-01 names haptics, but `expo-haptics` is not currently installed.
+- ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.
+
+### Dependency notes (ARCH-20)
+| Package | Need |
+|---|---|
+| `expo-haptics` 57.0.3 | UX-05/DS-09 ruler feedback on meaningful ticks. Expo SDK-compatible native module; the control injects the callback for tests and never triggers haptics under `NODE_ENV=test`. User-approved in M4-Q1. |
