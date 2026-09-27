@@ -151,12 +151,17 @@
     "loadingFood": "A carregar alimento…",
     "providerNoResults": "Sem resultados no {{provider}}.",
     "retry": "Tentar novamente",
+    "showMore": "Mostrar mais",
     "emptyRecent": "Pesquise um alimento para o adicionar.",
     "searching": "A pesquisar…",
     "noResults": "Nenhum alimento encontrado para «{{query}}».",
     "perBasis": "por {{quantity}} {{unit}}",
     "energy": "{{value}} {{unit}}",
-    "customSource": "Personalizado",
+    "sources": {
+      "custom": "Personalizado",
+      "open_food_facts": "Open Food Facts",
+      "usda": "USDA"
+    },
     "delete": "Eliminar",
     "deleteFood": "Eliminar alimento",
     "deleteError": "Não foi possível eliminar este alimento. Tente novamente."

@@ -2,7 +2,7 @@
 import type { AppConfig } from '@/shared/config/env';
 import { NotFoundError, ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
 
-import { mapOpenFoodFactsProduct, mapOpenFoodFactsSearch, type FoodCandidate } from './mapper';
+import { mapOpenFoodFactsProduct, mapOpenFoodFactsSearch, type FoodCandidate, type FoodSearchPage } from './mapper';
 import { RequestLimiter } from './limiter';
 
 type Fetch = typeof fetch;
@@ -65,7 +65,7 @@ export class OpenFoodFactsClient {
     }
   }
 
-  async search(query: string, page: number, signal: AbortSignal, language = 'en'): Promise<FoodCandidate[]> {
+  async search(query: string, page: number, signal: AbortSignal, language = 'en'): Promise<FoodSearchPage> {
     const terms = query.trim().replace(/\s+/g, ' ');
     const url = new URL('/search', this.config.offSearchBaseUrl);
     url.search = new URLSearchParams({

@@ -151,12 +151,17 @@
     "loadingFood": "Loading food…",
     "providerNoResults": "No results from {{provider}}.",
     "retry": "Retry",
+    "showMore": "Show more",
     "emptyRecent": "Search for a food to add it.",
     "searching": "Searching…",
     "noResults": "No foods found for “{{query}}”.",
     "perBasis": "per {{quantity}} {{unit}}",
     "energy": "{{value}} {{unit}}",
-    "customSource": "Custom",
+    "sources": {
+      "custom": "Custom",
+      "open_food_facts": "Open Food Facts",
+      "usda": "USDA"
+    },
     "delete": "Delete",
     "deleteFood": "Delete food",
     "deleteError": "Couldn't delete this food. Try again."

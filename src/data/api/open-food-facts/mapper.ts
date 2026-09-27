@@ -35,6 +35,12 @@ export type FoodCandidate = {
   input: FoodInput;
 };
 
+export type FoodSearchPage = {
+  candidates: FoodCandidate[];
+  page: number;
+  pageCount: number;
+};
+
 const finiteNonNegative = (value: number | undefined): number | null =>
   value !== undefined && Number.isFinite(value) && value >= 0 ? value : null;
 
@@ -164,16 +170,26 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
   };
 }
 
-export function mapOpenFoodFactsSearch(payload: unknown): FoodCandidate[] {
-  const response = z.object({ hits: z.array(z.unknown()) }).safeParse(payload);
+export function mapOpenFoodFactsSearch(payload: unknown): FoodSearchPage {
+  const response = z
+    .object({
+      hits: z.array(z.unknown()),
+      page: z.number().int().positive().default(1),
+      page_count: z.number().int().nonnegative().default(0),
+    })
+    .safeParse(payload);
   if (!response.success) throw new ProviderResponseError('Open Food Facts search schema error');
-  return response.data.hits.flatMap((hit) => {
-    try {
-      const candidate = mapOpenFoodFactsProduct(hit);
-      return candidate ? [candidate] : [];
-    } catch (error) {
-      if (error instanceof ProviderResponseError) return [];
-      throw error;
-    }
-  });
+  return {
+    candidates: response.data.hits.flatMap((hit) => {
+      try {
+        const candidate = mapOpenFoodFactsProduct(hit);
+        return candidate ? [candidate] : [];
+      } catch (error) {
+        if (error instanceof ProviderResponseError) return [];
+        throw error;
+      }
+    }),
+    page: response.data.page,
+    pageCount: response.data.page_count,
+  };
 }

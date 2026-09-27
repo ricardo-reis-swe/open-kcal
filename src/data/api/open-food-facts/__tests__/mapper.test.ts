@@ -35,7 +35,7 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
 
   it('maps the sanitized captured search and product contract fixtures', () => {
     const search = mapOpenFoodFactsSearch(capturedSearch);
-    expect(search).toEqual(
+    expect(search.candidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ externalId: '7891000360361' }),
         expect.objectContaining({ externalId: '5601009983179' }),
@@ -51,10 +51,19 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
     });
   });
 
+  it('keeps provider pagination metadata while silently dropping unusable hits', () => {
+    expect(mapOpenFoodFactsSearch({ hits: [product], page: 2, page_count: 4 })).toMatchObject({
+      page: 2,
+      pageCount: 4,
+      candidates: [expect.objectContaining({ externalId: '0894700010137' })],
+    });
+  });
+
   it('drops hits with insufficient or clearly invalid nutrition without failing the section', () => {
-    expect(
-      mapOpenFoodFactsSearch({ hits: [{ code: 'empty', product_name: 'Empty', nutriments: {} }, product] }),
-    ).toHaveLength(1);
+    const search = mapOpenFoodFactsSearch({
+      hits: [{ code: 'empty', product_name: 'Empty', nutriments: {} }, product],
+    });
+    expect(search.candidates).toHaveLength(1);
     expect(
       mapOpenFoodFactsProduct({
         code: 'bad',
@@ -102,7 +111,7 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
         { product_name: 'No id', nutriments: { 'energy-kcal_100g': 100 } },
         product,
       ],
-    });
+    }).candidates;
     expect(candidates).toHaveLength(2);
     expect(candidates[0]?.input.nutrients.proteinG).toBeNull();
     expect(

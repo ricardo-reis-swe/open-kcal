@@ -18,7 +18,11 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
   it('uses the documented search shape and identifying header without exposing it in the result', async () => {
     const request = jest.fn().mockResolvedValue(new Response(JSON.stringify({ hits: [product] }), { status: 200 }));
     const client = new OpenFoodFactsClient(config, request);
-    await expect(client.search(' greek  yogurt ', 2, new AbortController().signal)).resolves.toHaveLength(1);
+    await expect(client.search(' greek  yogurt ', 2, new AbortController().signal)).resolves.toMatchObject({
+      candidates: [expect.anything()],
+      page: 1,
+      pageCount: 0,
+    });
     expect(String(request.mock.calls[0]?.[0])).toContain('q=greek+yogurt');
     expect(String(request.mock.calls[0]?.[0])).toContain('langs=en%2Cen');
     expect(request.mock.calls[0]?.[1]?.headers).toEqual({

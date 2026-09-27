@@ -324,7 +324,9 @@ Status: **in progress** · Start commit: `7d04bba`
   - [x] HTTP boundary: documented localized search/product requests, identification header, request timeouts, response/error mapping, and `Retry-After` cooldown parsing (PROV-01/03/10/12).
   - [x] Testable sliding-window limiter, cancellable queued requests, and shared provider cooldown primitive (PROV-04/10).
   - [x] Sanitized captured OFF search (`iogurte grego`) and product (`5601009983179`) fixtures with explicit mapper outputs; synthetic mapper contracts cover the edge cases (PROV-13).
-- [ ] T3 Saved external search, cache refresh, and Food Search remote sections/statuses/paging.
+- [x] T3 Saved external search, cache refresh, and Food Search remote sections/statuses/paging.
+  - [x] Saved external foods stay locally searchable and are deduplicated from OFF results. Expired OFF foods open from cache and refresh silently for the next open (PROV-08/09).
+  - [x] OFF search retains provider page metadata, shows up to five pages via `Show more`, and keeps provider status/error/retry in the remote section (UX-04, PROV-08).
 - [ ] T4 Tests and Android offline cached/custom-food Maestro flow.
 
 ### Known gaps

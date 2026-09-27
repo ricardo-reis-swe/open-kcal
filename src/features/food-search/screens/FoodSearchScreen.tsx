@@ -65,6 +65,7 @@ export function FoodSearchScreen({
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [offQuery, setOffQuery] = useState(initialQuery.trim());
+  const [offPages, setOffPages] = useState(1);
   useEffect(() => {
     if (query.trim() === debouncedQuery) return;
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), LOCAL_DEBOUNCE_MS);
@@ -77,7 +78,7 @@ export function FoodSearchScreen({
   }, [offQuery, query]);
   const custom = useCustomFoodSearch(debouncedQuery);
   const saved = useSavedFoodSearch(debouncedQuery);
-  const off = useOpenFoodFactsSearch(offQuery, 1, i18n.resolvedLanguage ?? i18n.language);
+  const off = useOpenFoodFactsSearch(offQuery, offPages, i18n.resolvedLanguage ?? i18n.language);
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
   const relative = relativeDay(date, today);
@@ -86,7 +87,14 @@ export function FoodSearchScreen({
   const searching = hasQuery && query.trim() !== debouncedQuery;
   const customFoods = custom.data ?? [];
   const savedFoods = saved.data ?? [];
-  const offFoods = off.data ?? [];
+  const savedExternalIds = new Set(
+    savedFoods.filter((food) => food.source === 'open_food_facts' && food.externalId).map((food) => food.externalId!),
+  );
+  const offFoods = off.data.filter((candidate) => !savedExternalIds.has(candidate.externalId));
+  const updateQuery = (value: string) => {
+    if (value.trim() !== offQuery) setOffPages(1);
+    setQuery(value);
+  };
   const deleteFood = async (foodId: string) => {
     setDeleteFailed(false);
     try {
@@ -142,7 +150,7 @@ export function FoodSearchScreen({
               <TextInput
                 autoFocus
                 value={query}
-                onChangeText={setQuery}
+                onChangeText={updateQuery}
                 placeholder={t('foodSearch.placeholder')}
                 placeholderTextColor={theme.colors.textSecondary}
                 accessibilityLabel={t('foodSearch.searchLabel')}
@@ -161,7 +169,7 @@ export function FoodSearchScreen({
                 <PressableIcon
                   icon="close"
                   accessibilityLabel={t('foodSearch.clear')}
-                  onPress={() => setQuery('')}
+                  onPress={() => updateQuery('')}
                   color="textSecondary"
                   testID="food-search-clear"
                 />
@@ -264,12 +272,20 @@ export function FoodSearchScreen({
                     loading={selectingExternalId === candidate.externalId}
                   />
                 ))}
+                {off.hasMore && query.trim() === offQuery ? (
+                  <TextAction
+                    icon="add"
+                    label={t('foodSearch.showMore')}
+                    onPress={() => setOffPages((current) => current + 1)}
+                    testID="food-search-off-show-more"
+                  />
+                ) : null}
                 {off.isSuccess && query.trim() === offQuery && offFoods.length === 0 ? (
                   <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
                     {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
                   </AppText>
                 ) : null}
-                {customFoods.length === 0 && savedFoods.length === 0 ? (
+                {customFoods.length === 0 && savedFoods.length === 0 && offFoods.length === 0 && !off.isLoading ? (
                   <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
                     <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
                     <TextAction
@@ -379,7 +395,7 @@ function FoodResultRow({
           <View style={{ flex: 1, minWidth: 0 }}>
             <AppText numberOfLines={1}>{loading ? t('foodSearch.loadingFood') : food.name}</AppText>
             <AppText variant="compact" color="textSecondary" numberOfLines={1}>
-              {basis} · {t('foodSearch.customSource')}
+              {basis} · {t(`foodSearch.sources.${food.source}`)}
             </AppText>
           </View>
           <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>

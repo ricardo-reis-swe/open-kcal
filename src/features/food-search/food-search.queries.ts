@@ -1,5 +1,5 @@
 // Local Food Search screen models (ARCH-07, UX-04). Remote sections arrive in M5/M6.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices, type AppServices } from '@/bootstrap/services';
 import type { RecentFood } from '@/data/db/repositories/diaryRepository';
@@ -78,15 +78,28 @@ export async function refreshSavedOpenFoodFacts(services: AppServices, food: Foo
 }
 
 /** UX-04 / PROV-04: OFF starts after 800 ms and at least three typed characters. */
-export function useOpenFoodFactsSearch(query: string, page = 1, language = 'en') {
+export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en') {
   const { openFoodFacts } = useServices();
   const normalized = query.trim();
-  return useQuery({
-    queryKey: foodSearchKeys.off(normalized, page),
-    queryFn: ({ signal }) => openFoodFacts.search(normalized, page, signal, language),
-    enabled: normalized.length >= 3,
-    staleTime: 10 * 60_000,
+  const results = useQueries({
+    queries: Array.from({ length: pages }, (_, index) => {
+      const page = index + 1;
+      return {
+        queryKey: foodSearchKeys.off(normalized, page),
+        queryFn: ({ signal }: { signal: AbortSignal }) => openFoodFacts.search(normalized, page, signal, language),
+        enabled: normalized.length >= 3,
+        staleTime: 10 * 60_000,
+      };
+    }),
   });
+  return {
+    data: results.flatMap((result) => result.data?.candidates ?? []),
+    isLoading: results.some((result) => result.isLoading),
+    isError: results.some((result) => result.isError),
+    isSuccess: results.length > 0 && results.every((result) => result.isSuccess),
+    hasMore: results.at(-1)?.data ? results.at(-1)!.data!.page < results.at(-1)!.data!.pageCount && pages < 5 : false,
+    refetch: () => Promise.all(results.map((result) => result.refetch())),
+  };
 }
 
 export function useFood(foodId: string, enabled = true) {
