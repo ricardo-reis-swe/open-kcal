@@ -236,6 +236,24 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
     },
 
+    /** PROV-08 / DATA-15: cached external foods remain searchable even when their refresh TTL has expired. */
+    async searchExternal(query: string, limit = 20): Promise<Food[]> {
+      const tokens = query.trim().split(/\s+/).filter(Boolean);
+      if (tokens.length === 0 || !Number.isInteger(limit) || limit <= 0) return [];
+      const matches = tokens
+        .map(() => "(instr(lower(name), lower(?)) > 0 OR instr(lower(COALESCE(brand, '')), lower(?)) > 0)")
+        .join(' AND ');
+      const args = tokens.flatMap((token) => [token, token]);
+      const rows = await db.getAll<{ id: string }>(
+        `SELECT foods.id FROM foods
+         JOIN food_cache_metadata ON food_cache_metadata.food_id = foods.id
+         WHERE foods.source IN ('usda', 'open_food_facts') AND foods.is_deleted = 0 AND ${matches}
+         ORDER BY foods.name COLLATE NOCASE, foods.id LIMIT ?`,
+        [...args, limit],
+      );
+      return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
+    },
+
     /** DATA-16: validate → insert `custom` food → insert ≥1 servings (one default). Does not create an entry. */
     async createCustom(input: CustomFoodInput): Promise<Food> {
       validateFood(input, true);

@@ -144,6 +144,7 @@
     "createCustom": "Create custom food",
     "recent": "Recent",
     "myFoods": "My foods",
+    "saved": "Saved",
     "emptyRecent": "Search for a food to add it.",
     "searching": "Searching…",
     "noResults": "No foods found for “{{query}}”.",

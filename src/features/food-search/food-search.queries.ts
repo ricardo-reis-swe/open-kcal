@@ -11,6 +11,7 @@ export const foodSearchKeys = {
   all: ['foodSearch'] as const,
   recents: ['foodSearch', 'recents'] as const,
   custom: (query: string) => ['foodSearch', 'custom', query.trim().toLocaleLowerCase()] as const,
+  saved: (query: string) => ['foodSearch', 'saved', query.trim().toLocaleLowerCase()] as const,
   food: (id: string) => ['foodSearch', 'food', id] as const,
 };
 
@@ -35,6 +36,17 @@ export function useCustomFoodSearch(query: string) {
   return useQuery({
     queryKey: foodSearchKeys.custom(normalized),
     queryFn: () => foods.searchCustom(normalized),
+    enabled: normalized.length > 0,
+  });
+}
+
+/** DATA-15 / PROV-08: cached external foods are local results and work while offline. */
+export function useSavedFoodSearch(query: string) {
+  const { foods } = useServices();
+  const normalized = query.trim();
+  return useQuery({
+    queryKey: foodSearchKeys.saved(normalized),
+    queryFn: () => foods.searchExternal(normalized),
     enabled: normalized.length > 0,
   });
 }

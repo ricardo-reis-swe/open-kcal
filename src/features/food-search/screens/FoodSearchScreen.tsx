@@ -11,7 +11,7 @@ import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { useTheme } from '@/shared/theme';
 
-import { useCustomFoodSearch, useLocalFoodWrites, useRecentFoods } from '../food-search.queries';
+import { useCustomFoodSearch, useLocalFoodWrites, useRecentFoods, useSavedFoodSearch } from '../food-search.queries';
 
 const LOCAL_DEBOUNCE_MS = 150;
 const DELETE_REVEAL_WIDTH = 88;
@@ -56,6 +56,7 @@ export function FoodSearchScreen({
     return () => clearTimeout(timer);
   }, [debouncedQuery, query]);
   const custom = useCustomFoodSearch(debouncedQuery);
+  const saved = useSavedFoodSearch(debouncedQuery);
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
   const relative = relativeDay(date, today);
@@ -63,6 +64,7 @@ export function FoodSearchScreen({
   const hasQuery = query.trim().length > 0;
   const searching = hasQuery && query.trim() !== debouncedQuery;
   const customFoods = custom.data ?? [];
+  const savedFoods = saved.data ?? [];
   const deleteFood = async (foodId: string) => {
     setDeleteFailed(false);
     try {
@@ -150,13 +152,14 @@ export function FoodSearchScreen({
         ) : null}
         {hasQuery ? (
           <>
-            <SectionHeader label={t('foodSearch.myFoods')} uppercase />
             {searching ? (
               <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
                 {t('foodSearch.searching')}
               </AppText>
-            ) : customFoods.length > 0 ? (
-              customFoods.map((food) => (
+            ) : (
+              <>
+                {customFoods.length > 0 ? <SectionHeader label={t('foodSearch.myFoods')} uppercase /> : null}
+                {customFoods.map((food) => (
                 <FoodResultRow
                   key={food.id}
                   food={food}
@@ -165,8 +168,12 @@ export function FoodSearchScreen({
                   onPress={() => onSelectFood(food)}
                   onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
                 />
-              ))
-            ) : (
+                ))}
+                {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
+                {savedFoods.map((food) => (
+                  <FoodResultRow key={food.id} food={food} locale={locale} energyUnit={settings.data.energyUnit} onPress={() => onSelectFood(food)} />
+                ))}
+                {customFoods.length === 0 && savedFoods.length === 0 ? (
               <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
                 <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
                 <TextAction
@@ -176,6 +183,8 @@ export function FoodSearchScreen({
                   testID="food-create-custom"
                 />
               </View>
+                ) : null}
+              </>
             )}
           </>
         ) : (

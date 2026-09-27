@@ -144,6 +144,7 @@
     "createCustom": "Criar alimento personalizado",
     "recent": "Recentes",
     "myFoods": "Os meus alimentos",
+    "saved": "Guardados",
     "emptyRecent": "Pesquise um alimento para o adicionar.",
     "searching": "A pesquisar…",
     "noResults": "Nenhum alimento encontrado para «{{query}}».",
