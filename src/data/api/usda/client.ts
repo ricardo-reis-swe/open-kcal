@@ -43,10 +43,12 @@ export class UsdaClient {
     let response: Response;
     try {
       response = await this.request(url.toString(), { headers: { 'X-Api-Key': key }, signal: controller.signal });
-    } catch (cause) {
-      if (signal.aborted) throw cause;
-      if (controller.signal.aborted) throw new TimeoutError('USDA request timed out', { cause });
-      throw new ProviderResponseError('USDA request failed', { cause });
+    } catch {
+      // ARCH-13/15 + PROV-12: native transport errors can retain the request URL,
+      // headers, response body, or key in non-enumerable properties such as `cause`.
+      // Map them to static typed errors before they cross this provider boundary.
+      if (controller.signal.aborted && !signal.aborted) throw new TimeoutError('USDA request timed out');
+      throw new ProviderResponseError('USDA request failed');
     } finally {
       clearTimeout(timeout);
       signal.removeEventListener('abort', abort);
@@ -59,8 +61,9 @@ export class UsdaClient {
     if (!response.ok) throw new ProviderResponseError('USDA response failed');
     try {
       return await response.json();
-    } catch (cause) {
-      throw new ProviderResponseError('USDA response is invalid', { cause });
+    } catch {
+      // A JSON parser error may retain a response body, so it must not become an AppError cause.
+      throw new ProviderResponseError('USDA response is invalid');
     }
   }
 

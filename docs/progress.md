@@ -345,7 +345,7 @@ Status: **done** (accepted by the user 2026-09-27) · Start commit: `7d04bba`
 
 ## M6 USDA
 
-Status: **in progress** · T1 USDA adapter complete (2026-09-27)
+Status: **in progress** · implementation and Android live validation complete; independent re-review/readiness remains pending user confirmation that the previously exposed key was rotated
 
 ### Tasks
 
@@ -377,6 +377,11 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
   - Checks: Android emulator live path passed after one in-screen Retry. No code changed, so focused tests and `npm run check` were not duplicated.
   - Credential handling: no credential was entered, replaced, removed, copied, logged, captured, or committed during the live validation.
   - Next unblocked task: M6 independent review/readiness only; do not begin M7.
+- [x] T6 Security review corrections: USDA transport and JSON-parser failures now map to static typed errors without retaining raw causes, which may contain credentialed URLs, request headers, query terms, or response bodies (ARCH-10/13/15, PROV-12). Focused tests inject credential-bearing request URL/header/body/cause values and inspect all error own properties (including `cause`), logger records, and USDA React Query keys; timeout and malformed JSON mappings remain typed.
+  - Changed: `src/data/api/usda/client.ts`, `src/data/api/usda/__tests__/client.test.ts`, and `docs/progress.md`.
+  - Checks: `npm test -- --runInBand src/data/api/usda/__tests__/client.test.ts` → 1 suite / 5 tests passed; `npm run check` → lint + typecheck + 60 suites / 406 tests passed (pre-existing React `act` and open-handle warnings after passing tests).
+  - Validation still needed: independent M6 re-review/readiness, pending user confirmation that the previously exposed key was rotated. No credential or `.env` value was read, printed, used, modified, or committed for this correction.
+  - Next unblocked task: independent M6 re-review/readiness pending user confirmation that the previously exposed key was rotated; do not begin M7.
 
 ### Known gaps
 
@@ -388,4 +393,4 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
 
 ### Next unblocked task
 
-- M6 independent review/readiness only; do not begin M7.
+- Independent M6 re-review/readiness pending user confirmation that the previously exposed key was rotated; do not begin M7.

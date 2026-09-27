@@ -1,4 +1,6 @@
-import { ProviderConfigurationError, RateLimitError } from '@/shared/errors';
+import { ProviderConfigurationError, ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
+import { createLogger, type LogRecord } from '@/shared/logging/logger';
+import { foodSearchKeys } from '@/features/food-search/food-search.queries';
 
 import { UsdaClient } from '../client';
 
@@ -72,4 +74,87 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
       expect(String(error)).not.toContain('api.nal.usda.gov');
     }
   });
+
+  it('ARCH-10 / ARCH-13 / ARCH-15 / ROAD-02: redacts credential-bearing transport failures from errors, logs and query keys', async () => {
+    const credential = 'usda-key-for-redaction-test';
+    const privateTerm = 'private USDA search term';
+    const unsafeTransportError = Object.assign(
+      new Error(`GET https://api.nal.usda.gov/fdc/v1/foods/search?query=${privateTerm}`),
+      {
+        headers: { 'X-Api-Key': credential },
+        responseBody: `{\"api_key\":\"${credential}\"}`,
+        cause: new Error(`X-Api-Key: ${credential}`),
+      },
+    );
+    const request = jest.fn().mockRejectedValue(unsafeTransportError);
+    const client = new UsdaClient(
+      config,
+      { getUsdaApiKeyForRequest: jest.fn().mockResolvedValue(credential) },
+      request,
+    );
+
+    let received: unknown;
+    try {
+      await client.search(privateTerm, 1, new AbortController().signal);
+    } catch (error) {
+      received = error;
+    }
+
+    expect(received).toBeInstanceOf(ProviderResponseError);
+    expect(allOwnPropertyValues(received)).not.toContain(credential);
+    expect(allOwnPropertyValues(received)).not.toContain(privateTerm);
+    expect(Object.getOwnPropertyNames(received as object)).not.toContain('cause');
+
+    const records: LogRecord[] = [];
+    createLogger({ isDev: true, sink: (record) => records.push(record) }).error('USDA request failed', received);
+    expect(allOwnPropertyValues(records)).not.toContain(credential);
+    expect(allOwnPropertyValues(records)).not.toContain(privateTerm);
+
+    expect(foodSearchKeys.usda(privateTerm, 1)).not.toContain(credential);
+    expect(foodSearchKeys.usda(privateTerm, 1)).toEqual(['foodSearch', 'usda', privateTerm, 1]);
+  });
+
+  it('ARCH-13 / PROV-12: keeps timeout and malformed JSON errors typed without transport causes', async () => {
+    jest.useFakeTimers();
+    const pendingRequest = jest.fn().mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise<never>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new Error('credentialed transport abort')), {
+            once: true,
+          });
+        }),
+    );
+    const client = new UsdaClient(config, credentials, pendingRequest);
+    const timedOut = client.search('egg', 1, new AbortController().signal);
+    const timeoutExpectation = expect(timedOut).rejects.toBeInstanceOf(TimeoutError);
+    await Promise.resolve();
+    await jest.advanceTimersByTimeAsync(8_000);
+    await timeoutExpectation;
+    jest.useRealTimers();
+
+    const invalidJson = new UsdaClient(
+      config,
+      credentials,
+      jest.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.reject(new Error('body with key')) }),
+    );
+    await expect(invalidJson.search('egg', 1, new AbortController().signal)).rejects.toMatchObject({
+      category: 'provider_response',
+    });
+  });
 });
+
+function allOwnPropertyValues(value: unknown, seen = new Set<unknown>()): string {
+  if (value === null || value === undefined || seen.has(value)) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value !== 'object' && typeof value !== 'function') return String(value);
+  seen.add(value);
+  return Reflect.ownKeys(value)
+    .map((key) => {
+      try {
+        return allOwnPropertyValues(Reflect.get(value, key), seen);
+      } catch {
+        return '';
+      }
+    })
+    .join(' ');
+}
