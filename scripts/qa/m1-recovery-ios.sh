@@ -1,5 +1,5 @@
 #!/bin/bash
-# M1 QA capture on iOS (iPhone 17e): the UX-20 recovery screen in light/dark x default/largest text.
+# M1 QA capture on iOS (iPhone 17e): the UX-20 recovery screen in the light theme at default/largest text.
 # It triggers a real startup failure ("database newer than this app") by adding a schema_version row. The EXIT trap
 # removes that row and resets appearance + text size. Needs Metro on localhost:8081, logging to $METRO_LOG.
 #   scripts/qa/m1-recovery-ios.sh <out-dir> <metro-log>
@@ -32,7 +32,7 @@ wait_for_failure() {
 
 xcrun simctl terminate booted $PKG 2>/dev/null
 sqlite3 "$DB" "INSERT INTO schema_version (version, applied_at) VALUES (999, 'qa')"
-for scheme in light dark; do
+for scheme in light; do
   xcrun simctl ui booted appearance $scheme
   for text in default largest; do
     [ $text = largest ] && size=accessibility-extra-extra-extra-large || size=large

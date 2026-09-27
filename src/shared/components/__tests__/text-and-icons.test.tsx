@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react-native';
 import * as RN from 'react-native';
 
 import { renderWithProviders } from '@/shared/testing/render';
-import { darkColors, lightColors, typography } from '@/shared/theme/tokens';
+import { lightColors, typography } from '@/shared/theme/tokens';
 
 import { AppIcon, AppText, SectionHeader } from '..';
 
@@ -43,9 +43,9 @@ describe('DS-12: AppText', () => {
     spy.mockRestore();
   });
 
-  it('DS-03: switches to dark tokens in dark mode', async () => {
-    await renderWithProviders(<AppText>Diary</AppText>, { scheme: 'dark' });
-    expect(RN.StyleSheet.flatten(screen.getByText('Diary').props.style).color).toBe(darkColors.textPrimary);
+  it('DS-03: uses light-theme primary text', async () => {
+    await renderWithProviders(<AppText>Diary</AppText>);
+    expect(RN.StyleSheet.flatten(screen.getByText('Diary').props.style).color).toBe(lightColors.textPrimary);
   });
 });
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# M2 QA capture: Diary in light/dark x default/largest text. Android runs as a small phone (360 dp).
+# M2 QA capture: Diary in the light theme at default/largest text. Android runs as a small phone (360 dp).
 #   scripts/qa/m2.sh android|ios
 # Device settings are reset on exit, including after an interrupted run.
 set -u
@@ -30,13 +30,13 @@ else
   xcrun simctl spawn booted defaults write $PKG EXDevMenuShowFloatingActionButton -bool NO
 fi
 status=0
-for scheme in light dark; do
+for scheme in light; do
   for text in default largest; do
     if [ "$platform" = android ]; then
-      [ $scheme = dark ] && $ADB shell cmd uimode night yes >/dev/null || $ADB shell cmd uimode night no >/dev/null
+      $ADB shell cmd uimode night no >/dev/null
       [ $text = largest ] && $ADB shell settings put system font_scale 2.0 || $ADB shell settings put system font_scale 1.0
     else
-      xcrun simctl ui booted appearance $scheme
+      xcrun simctl ui booted appearance light
       [ $text = largest ] && size=accessibility-extra-extra-extra-large || size=large
       xcrun simctl ui booted content_size $size
     fi

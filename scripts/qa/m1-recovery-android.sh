@@ -1,5 +1,5 @@
 #!/bin/bash
-# M1 QA capture on Android (Pixel_10 as a 360x760 dp small phone): the UX-20 recovery screen in light/dark x
+# M1 QA capture on Android (Pixel_10 as a 360x760 dp small phone): the UX-20 recovery screen in the light theme at
 # default/largest text. It triggers a real startup failure ("database newer than this app"): the app DB is pulled,
 # a schema_version row is added with the host's sqlite3, and the file is pushed back through run-as (there's no
 # sqlite3 on the emulator). The EXIT trap restores the original DB and resets display, font and dark mode.
@@ -39,8 +39,8 @@ push_db "$TMP/broken.db"
 rm -f "$TMP/broken.db"
 
 "$DRIVE" display small >/dev/null
-for scheme in light dark; do
-  [ $scheme = dark ] && "$DRIVE" dark on >/dev/null || "$DRIVE" dark off >/dev/null
+for scheme in light; do
+  "$DRIVE" dark off >/dev/null
   for text in default largest; do
     [ $text = largest ] && "$DRIVE" font 2.0 >/dev/null || "$DRIVE" font 1.0 >/dev/null
     "$DRIVE" open Retry >/dev/null || { echo "recovery screen did not appear" >&2; exit 1; }

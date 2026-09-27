@@ -1,5 +1,5 @@
 #!/bin/bash
-# M0 QA capture on Android: small phone (360dp), light/dark x default/largest text.
+# M0 QA capture on Android: small phone (360dp), light theme x default/largest text.
 set -u
 ADB=~/Library/Android/sdk/platform-tools/adb
 OUT=$1
@@ -27,8 +27,8 @@ reset_device() {
 trap reset_device EXIT # an interrupted run must not leave the emulator altered
 $ADB reverse tcp:8081 tcp:8081 >/dev/null
 $ADB shell wm size 720x1520; $ADB shell wm density 320
-for scheme in light dark; do
-  [ $scheme = dark ] && $ADB shell cmd uimode night yes >/dev/null || $ADB shell cmd uimode night no >/dev/null
+for scheme in light; do
+  $ADB shell cmd uimode night no >/dev/null
   for text in default largest; do
     [ $text = largest ] && $ADB shell settings put system font_scale 2.0 || $ADB shell settings put system font_scale 1.0
     launch

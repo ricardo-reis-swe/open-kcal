@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 
 import { i18next } from '@/shared/i18n/i18n';
 import { renderWithProviders } from '@/shared/testing/render';
-import { darkColors, lightColors } from '@/shared/theme/tokens';
+import { lightColors } from '@/shared/theme/tokens';
 
 import { AppBar, ListRow, PressableIcon, PrimaryButton, TextAction } from '..';
 
@@ -41,9 +41,9 @@ describe('DS-12: PrimaryButton', () => {
     expect(screen.getByTestId('primary-button-spinner').props.color).toBe(lightColors.textSecondary);
   });
 
-  it('DS-03: uses dark content on the bright dark-mode green', async () => {
-    await renderWithProviders(<PrimaryButton label="Add" onPress={jest.fn()} />, { scheme: 'dark' });
-    expect(StyleSheet.flatten(screen.getByText('Add').props.style).color).toBe(darkColors.canvas);
+  it('DS-03: uses high-contrast content on the light primary fill', async () => {
+    await renderWithProviders(<PrimaryButton label="Add" onPress={jest.fn()} />);
+    expect(StyleSheet.flatten(screen.getByText('Add').props.style).color).toBe('#FFFFFF');
   });
 });
 

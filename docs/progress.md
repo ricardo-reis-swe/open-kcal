@@ -23,7 +23,7 @@ Status: **done** (accepted by the user 2026-09-25) · Start commit: `553efac` (r
 - [x] T1 Expo app scaffold: SDK 57, dev client, Expo Router (`src/app`), strict TS, ESLint + Prettier, Jest (`jest-expo`) + RNTL, `npm run lint|typecheck|test|check`
 - [x] T2 Typed env config (Zod, `src/shared/config/env.ts`) + `.env.example`; logger with redaction (`src/shared/logging`) (ARCH-14/15)
 - [x] T3 i18n scaffold (`src/shared/i18n`): `en` + `pt-PT`, device locale → language + formatting locale, typed keys, key-parity test (ARCH-22)
-- [x] T4 Theme from `tokens.ts` (`src/shared/theme`): light/dark `ThemeProvider` + `useTheme`, platform touch minimum, one elevation style, token contrast test (DS-12, DS-05, DS-11)
+- [x] T4 Theme from `tokens.ts` (`src/shared/theme`): forced light `ThemeProvider` + `useTheme`; dark tokens retained for a future setting, platform touch minimum, one elevation style, token contrast test (DS-12, DS-05, DS-11)
 - [x] T5 DS-12 primitives (`src/shared/components`): `AppText, AppIcon, PressableIcon, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus` + component tests; `renderWithProviders` test helper
 - [x] T6 Tabs: `(tabs)/{diary,profile}` stacks, custom `AppTabBar` (`Diary + Profile`) with `+` opening the empty Add Action Sheet, `AppBar` (DS-07), app providers + `initializeApp` (ARCH-17 M0 subset), navigation tests incl. pt-PT smoke
 - [x] T7 Dev builds on iOS simulator (iPhone 17e, iOS 27) + Android emulator (Pixel_10); exit demo run on both platforms (iOS completed in R1-1)
@@ -67,7 +67,7 @@ All versions pinned exactly; installed via `npx expo install` where native.
 |---|---|
 | `expo-router`, `react-native-screens`, `react-native-safe-area-context`, `expo-linking`, `expo-constants`, `expo-status-bar` | ARCH-01 navigation (Router install set) |
 | `expo-dev-client` | ARCH-01 development builds |
-| `expo-system-ui` | Root background follows light/dark on Android (`userInterfaceStyle: automatic`) |
+| `expo-system-ui` | Root background is light on Android (`userInterfaceStyle: light`); dark tokens remain dormant for a future setting |
 | `expo-localization`, `i18next`, `react-i18next` | ARCH-01/22 localization |
 | `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler` | ARCH-01 gestures/motion; worklets is Reanimated 4's required peer |
 | `@expo/vector-icons` + `expo-font`, `expo-asset` (peers) | DS-06 one rounded icon family from the Expo stack |
@@ -287,7 +287,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete). `npm run check`: 362/362.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
   - [x] M4 and cumulative Android flows pass on `Pixel_10` (2026-09-27). The Android run exposed two real interactions: the direct-serving return key dismissed without applying the value, and the translated custom-food row intercepted taps on its revealed Delete action. Both are fixed; the Maestro flow now targets the revealed action directly and asserts the result row disappears. iOS testing is deferred per the user's Linux-only testing instruction.
-- [x] T8 Android exit demo and visual subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation in light/dark default-text states on a 360 dp-wide emulator. iOS QA is deferred per user instruction.
+- [x] T8 Android exit demo and visual subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation in the light theme at default text on a 360 dp-wide emulator. The light 2.0-text capture is pending round-2 review. iOS QA is deferred per user instruction.
 - [ ] T9 Independent review
   - Round 1 (`15f14bb`, now `docs/qa/M4/review-round1.md`): not clean, 1 blocker · 3 majors. Fixed: Android Maestro rerun passes (the reviewer device-server failure did not reproduce); meal-specific add dismisses Food Search back to Meal Detail (NAV-04); food-result kcal column stays readable; ruler major labels stay horizontal and the active unit has a compact indicator. Fresh Android visual capture and round-2 review are pending.
 
@@ -297,7 +297,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
 - [x] M4 flow and cumulative flows pass on Android; iOS deferred per user instruction. Round-1 reviewer device-server failure was followed by a passing Android M4 rerun.
-- [x] Android exit demo and light/dark default-text screenshots captured; iOS deferred per user instruction
+- [x] Android exit demo and light-theme default-text screenshots captured; the 2.0-text capture remains pending round-2 review. iOS deferred per user instruction
 - [ ] Independent review clean
 - [ ] No in-scope placeholder UI or unlogged gaps
 - [ ] Nothing sensitive added to logs

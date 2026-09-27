@@ -21,7 +21,7 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 - White text only on greens that pass contrast for that size; bright greens are for progress/graphics/outlines.
 - Macros: fixed color + text label + fixed position (carbs, protein, fat). Color is never the only identifier.
 - Calorie ring is brand green. Over goal → explicit label + warning/danger color, never an unexplained red ring.
-- Dark mode keeps the same structure and hierarchy: no glow, glass or heavier shadows.
+- The MVP MUST render the light theme only. Dark tokens MAY remain in code for a future theme setting, but MUST NOT be selected by the OS or QA runs.
 
 ## DS-04 Type
 - System font. Routine readable text ≥14 (`compact`). `micro` only for nonessential metadata and it still scales.
@@ -34,7 +34,7 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 - Phones: full width. Large phones/tablets: cap and center reading/form width (diary lists may be wider). Never just scale components up.
 - Radii: `small` chips/compact controls · `medium` inputs/modest containers · `large` sheets/rare cards · `pill` primary pill + circles. Rows are never rounded cards.
 - Dividers 1px (a platform hairline is fine if it stays visible).
-- Elevation: 0 surfaces/rows · 1 sticky nav / center action · 2 sheets/menus/dialogs. One shadow style. Dark mode relies on contrast + borders.
+- Elevation: 0 surfaces/rows · 1 sticky nav / center action · 2 sheets/menus/dialogs. One shadow style.
 
 ## DS-06 Icons
 - One rounded icon family from the Expo stack. Sizes and stroke in `sizes.icon`. Filled = selected only if the family has coherent pairs.
@@ -89,4 +89,4 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 - Feature components build on them: `CalorieRing, MacroStrip, DiaryDateStrip, MealHeader, DiaryEntryRow, QuickCaloriesRow, ServingRuler, WeightSummary`. They don't re-implement primitive behavior.
 
 ## DS-13 Visual QA (per component, before done)
-Light + dark · iOS + Android · small + large phone width · default + large text · empty/typical/long/loading/offline/error/disabled as applicable · increased contrast · reduced motion. Test Diary density with realistic long food and meal names. Screenshot tests may guard primitives and signature components, but also review on real devices.
+Light theme · iOS + Android · small + large phone width · default + large text · empty/typical/long/loading/offline/error/disabled as applicable · increased contrast · reduced motion. Test Diary density with realistic long food and meal names. Screenshot tests may guard primitives and signature components, but also review on real devices.

@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from 'expo-router';
+import { DefaultTheme, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import type { ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,7 +11,7 @@ import { ThemeProvider, useTheme } from '@/shared/theme';
 /** Keeps React Navigation's own colors (screen backgrounds, transitions) on our tokens. */
 function NavigationTheme({ children }: { children: ReactNode }) {
   const theme = useTheme();
-  const base = theme.scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const base = DefaultTheme;
   return (
     <NavigationThemeProvider
       value={{

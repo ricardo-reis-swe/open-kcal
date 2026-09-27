@@ -6,7 +6,7 @@
     "scheme": "calorietracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.ricardoreis.calorietracker",
       "supportsTablet": true

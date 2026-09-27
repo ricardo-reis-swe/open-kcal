@@ -1,6 +1,6 @@
 # M4 QA screenshots (ROAD-02, DS-13 subset)
 
-Android-only capture, per the user's Linux-only testing instruction. `scripts/qa/m4.sh android` runs the M4 flow at 360 dp width in light and dark default-text states, resetting device settings on exit.
+Android-only capture, per the user's Linux-only testing instruction. `scripts/qa/m4.sh android` runs the M4 flow at 360 dp width in the light theme at default/2.0 text, resetting device settings on exit.
 
 | File suffix | Shows |
 |---|---|
