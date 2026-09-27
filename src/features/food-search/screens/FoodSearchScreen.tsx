@@ -6,6 +6,8 @@ import type { Food } from '@/data/db/repositories/foodsRepository';
 import { useServices } from '@/bootstrap/services';
 import { nowUtcIso } from '@/shared/dates';
 import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
+import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
+import { ProviderConfigurationError, RateLimitError } from '@/shared/errors';
 import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
 import { AppBar, AppText, InlineStatus, PressableIcon, SectionHeader, TextAction } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
@@ -22,10 +24,12 @@ import {
   useRecentFoods,
   refreshSavedOpenFoodFacts,
   useSavedFoodSearch,
+  useUsdaSearch,
 } from '../food-search.queries';
 
 const LOCAL_DEBOUNCE_MS = 150;
 const OFF_DEBOUNCE_MS = 800;
+const USDA_DEBOUNCE_MS = 400;
 const DELETE_REVEAL_WIDTH = 88;
 
 export const shouldRevealFoodDelete = (dx: number) => dx <= -40;
@@ -38,6 +42,7 @@ type Props = {
   onBack: () => void;
   onQuickCalories: () => void;
   onCreateCustom: (initialName: string) => void;
+  onFoodDatabases?: () => void;
   onSelectFood: (food: Food) => void;
 };
 
@@ -51,6 +56,7 @@ export function FoodSearchScreen({
   onQuickCalories,
   onCreateCustom,
   onSelectFood,
+  onFoodDatabases,
 }: Props) {
   const { t, i18n } = useTranslation();
   const locale = useFormattingLocale();
@@ -68,9 +74,11 @@ export function FoodSearchScreen({
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [offQuery, setOffQuery] = useState(initialQuery.trim());
+  const [usdaQuery, setUsdaQuery] = useState(initialQuery.trim());
   const [offPages, setOffPages] = useState(1);
   const [customPages, setCustomPages] = useState(1);
   const [savedPages, setSavedPages] = useState(1);
+  const [usdaPages, setUsdaPages] = useState(1);
   useEffect(
     () => () => {
       mounted.current = false;
@@ -88,9 +96,15 @@ export function FoodSearchScreen({
     const timer = setTimeout(() => setOffQuery(query.trim()), OFF_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [offQuery, query]);
+  useEffect(() => {
+    if (query.trim() === usdaQuery) return;
+    const timer = setTimeout(() => setUsdaQuery(query.trim()), USDA_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [usdaQuery, query]);
   const custom = useCustomFoodSearch(debouncedQuery, customPages);
   const saved = useSavedFoodSearch(debouncedQuery, savedPages);
   const off = useOpenFoodFactsSearch(offQuery, offPages, i18n.resolvedLanguage ?? i18n.language);
+  const usda = useUsdaSearch(usdaQuery, usdaPages);
   const online = useOnlineStatus();
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
@@ -109,8 +123,35 @@ export function FoodSearchScreen({
       setOffPages(1);
       setCustomPages(1);
       setSavedPages(1);
+      setUsdaPages(1);
     }
     setQuery(value);
+  };
+  const selectUsda = async (externalId: string) => {
+    setExternalLoadError(null);
+    setSelectingExternalId(externalId);
+    const controller = new AbortController();
+    offDetailController.current?.abort();
+    offDetailController.current = controller;
+    try {
+      const detail = await services.usda.getFood(externalId, controller.signal);
+      if (!detail || controller.signal.aborted || !mounted.current) throw new Error('USDA detail unavailable');
+      const fetchedAt = nowUtcIso(services.clock);
+      const expiresAt = new Date(
+        services.clock.now().getTime() + 90 * 24 * 60 * 60_000,
+      ).toISOString() as typeof fetchedAt;
+      const saved = await services.foods.upsertExternal('usda', detail.externalId, detail.input, {
+        fetchedAt,
+        expiresAt,
+        rawPayloadJson: null,
+        schemaVersion: USDA_PARSER_VERSION,
+      });
+      if (!controller.signal.aborted && mounted.current) onSelectFood(saved);
+    } catch {
+      if (!controller.signal.aborted && mounted.current) setExternalLoadError(externalId);
+    } finally {
+      if (mounted.current) setSelectingExternalId(null);
+    }
   };
   const leaveSearch = () => {
     offDetailController.current?.abort();
@@ -278,10 +319,8 @@ export function FoodSearchScreen({
                     testID="food-search-saved-show-more"
                   />
                 ) : null}
+                {!online ? <InlineStatus tone="info" message={t('foodSearch.offline')} /> : null}
                 {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
-                {query.trim().length >= 3 && !online ? (
-                  <InlineStatus tone="info" message={t('foodSearch.offline')} />
-                ) : null}
                 {query.trim().length >= 3 && query.trim() !== offQuery ? (
                   <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
                     {t('foodSearch.searching')}
@@ -330,6 +369,52 @@ export function FoodSearchScreen({
                   <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
                     {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
                   </AppText>
+                ) : null}
+                {query.trim().length >= 2 ? <SectionHeader label={t('foodSearch.usda')} uppercase /> : null}
+                {query.trim().length >= 2 && usdaQuery !== query.trim() ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
+                ) : null}
+                {online && usda.isLoading ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
+                ) : null}
+                {usda.isError ? (
+                  <UsdaError error={usda.error} onRetry={() => void usda.refetch()} onFoodDatabases={onFoodDatabases} />
+                ) : null}
+                {usda.data
+                  .filter(
+                    (candidate) =>
+                      !savedFoods.some((food) => food.source === 'usda' && food.externalId === candidate.externalId),
+                  )
+                  .map((candidate) => (
+                    <FoodResultRow
+                      key={`usda-${candidate.externalId}`}
+                      food={{
+                        ...candidate.input,
+                        brand: candidate.input.brand ?? null,
+                        id: `usda-${candidate.externalId}`,
+                        source: 'usda',
+                        externalId: candidate.externalId,
+                        isDeleted: false,
+                        servings: [],
+                      }}
+                      locale={locale}
+                      energyUnit={settings.data.energyUnit}
+                      onPress={() => void selectUsda(candidate.externalId)}
+                      disabled={selectingExternalId !== null}
+                      loading={selectingExternalId === candidate.externalId}
+                      error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
+                    />
+                  ))}
+                {usda.hasMore ? (
+                  <TextAction
+                    icon="add"
+                    label={t('foodSearch.showMore')}
+                    onPress={() => setUsdaPages((current) => current + 1)}
+                  />
                 ) : null}
                 {customFoods.length === 0 && savedFoods.length === 0 && offFoods.length === 0 && !off.isLoading ? (
                   <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
@@ -481,6 +566,37 @@ function FoodResultRow({
           </AppText>
         </FocusablePressable>
       ) : null}
+    </View>
+  );
+}
+
+function UsdaError({
+  error,
+  onRetry,
+  onFoodDatabases,
+}: {
+  error: unknown;
+  onRetry: () => void;
+  onFoodDatabases?: () => void;
+}) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  if (error instanceof ProviderConfigurationError) {
+    const missing = error.message.includes('missing');
+    return (
+      <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
+        <InlineStatus tone="error" message={t(missing ? 'foodSearch.usdaKeyMissing' : 'foodSearch.usdaKeyRejected')} />
+        {onFoodDatabases ? (
+          <TextAction icon="settings-outline" label={t('foodSearch.foodDatabases')} onPress={onFoodDatabases} />
+        ) : null}
+      </View>
+    );
+  }
+  if (error instanceof RateLimitError) return <InlineStatus tone="info" message={t('foodSearch.usdaBusy')} />;
+  return (
+    <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
+      <InlineStatus tone="error" message={t('foodSearch.usdaFailed')} />
+      <TextAction icon="refresh" label={t('foodSearch.retry')} onPress={onRetry} />
     </View>
   );
 }

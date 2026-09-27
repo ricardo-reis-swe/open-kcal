@@ -355,6 +355,11 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
   - Blocker: PROV-13's captured, trimmed real responses for search `egg` and detail Foundation `747997`, SR Legacy `174980`, FNDDS `2705413`, and Branded `2035482` cannot be recorded without a user-provided local USDA key. No key was requested, read, logged, committed, or substituted with `DEMO_KEY`; no live request/test was made.
   - Retry point: when the owner has configured a local USDA key for the dev-only recorder, capture and trim only the PROV-02 fields, commit no headers/keys, and verify the explicit expected mapper outputs.
   - Next unblocked task: M6 Food Databases key flow (UX-18), while captured-fixture recording remains deferred as above.
+- [x] T2 Food Databases and Food Search USDA integration: startup now constructs the USDA client with `CredentialsService`; Food Search adds a 400 ms/two-character USDA section after OFF, safely upserts selected detail responses with the 90-day USDA cache TTL, and renders missing/rejected/rate-limited/retry/offline states. Profile now exposes Food Databases with secure, masked key add/replace/test/remove and confirmation; local validation rejects whitespace and `DEMO_KEY`, and test/save behavior keeps an old key until a replacement passes (UX-04/18/19, NAV-06/08/09, DATA-01/15, ARCH-07/10/12/13/15/18/22, PROV-01/02/04/06/08/10/11/12).
+  - Changed: `src/bootstrap/services.tsx`, `src/data/secure-storage/credentialsService.ts`, USDA Food Search queries/screen/route, Profile Food Databases route/screen, navigation routes and both locale files.
+  - Checks: focused USDA credentials/client/Food Search/routes/locales tests passed; `npm run check` → lint + typecheck + 58 suites / 389 tests passed (existing React `act`/open-handle warnings after passing tests).
+  - Known validation gap: UI-level Food Databases test doubles and Android device exercise remain for the next M6 test/QA task; no real key, URL, fixture or log was used.
+  - Next unblocked task: M6 focused Food Databases/search integration tests and `npm run check`.
 
 ### Known gaps
 
@@ -366,4 +371,4 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
 
 ### Next unblocked task
 
-- M6 Food Databases key flow (UX-18). Captured USDA fixture recording remains blocked only until a local user key is configured (see M6 T1).
+- M6 focused Food Databases/search integration tests and `npm run check`. Captured USDA fixture recording remains blocked only until a local user key is configured (see M6 T1).

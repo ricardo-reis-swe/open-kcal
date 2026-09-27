@@ -25,6 +25,7 @@ export default function FoodSearchRoute() {
         router.push(routes.quickCalories({ mealId: params.mealId, date: params.date, origin: 'diary' }))
       }
       onCreateCustom={(initialName) => router.push(routes.createCustomFood({ ...params, initialName }))}
+      onFoodDatabases={() => router.navigate(routes.foodDatabases())}
       onSelectFood={(food) =>
         router.push(
           routes.foodDetail({

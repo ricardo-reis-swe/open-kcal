@@ -26,6 +26,7 @@ export type RouteParams = {
   createCustomFood: { mealId: Uuid; date: LocalDate; initialName?: string; origin?: Origin };
   mealEdit: { mode: 'create' } | { mode: 'edit'; mealId: Uuid };
   weightEntry: { mode: 'create'; date?: LocalDate } | { mode: 'edit'; weightEntryId: Uuid; date?: LocalDate };
+  foodDatabases: undefined;
 };
 
 export type RouteName = keyof RouteParams;
@@ -62,6 +63,7 @@ const paramSchemas = {
   quickCalories: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
+  foodDatabases: z.object({}),
 };
 
 type ParsedParams = { [K in keyof typeof paramSchemas]: z.output<(typeof paramSchemas)[K]> };
@@ -75,6 +77,7 @@ export function parseRouteParams<K extends keyof typeof paramSchemas>(route: K, 
 export const routes = {
   diary: (): Href => '/diary',
   profile: (): Href => '/profile',
+  foodDatabases: (): Href => '/profile/food-databases' as Href,
   foodSearch: (p: RouteParams['foodSearch']): Href => ({
     pathname: '/diary/food-search',
     params: {

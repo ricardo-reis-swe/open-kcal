@@ -9,6 +9,7 @@ import { createMealsRepository } from '@/data/db/repositories/mealsRepository';
 import { createSettingsRepository } from '@/data/db/repositories/settingsRepository';
 import { createWeightRepository } from '@/data/db/repositories/weightRepository';
 import { OpenFoodFactsClient } from '@/data/api/open-food-facts/client';
+import { UsdaClient } from '@/data/api/usda/client';
 import type { SqlDatabase } from '@/data/db/sql';
 import { createCredentialsService, type CredentialsService } from '@/data/secure-storage/credentialsService';
 import type { AppConfig } from '@/shared/config/env';
@@ -28,6 +29,7 @@ export function createServices({
   credentials?: CredentialsService;
 }) {
   const deps = { db, clock, ids };
+  const resolvedCredentials = credentials ?? createCredentialsService();
   return {
     db,
     clock,
@@ -39,8 +41,9 @@ export function createServices({
     diary: createDiaryRepository(deps),
     recents: createRecentsRepository(deps),
     weight: createWeightRepository(deps),
-    credentials: credentials ?? createCredentialsService(),
+    credentials: resolvedCredentials,
     openFoodFacts: new OpenFoodFactsClient(config),
+    usda: new UsdaClient(config, resolvedCredentials),
   };
 }
 

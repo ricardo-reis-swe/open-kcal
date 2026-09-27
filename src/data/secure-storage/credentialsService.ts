@@ -12,6 +12,14 @@ const OPTIONS: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStor
 // ARCH-03: validate what comes back from secure storage.
 const storedKey = z.string().trim().min(1);
 
+/** PROV-11 local validation; this deliberately validates no vendor-specific format. */
+export function validateUsdaApiKey(value: string): string {
+  const key = value.trim();
+  if (!key || /\s/.test(key)) throw new ValidationError('USDA API key is required', ['usdaApiKey']);
+  if (key === 'DEMO_KEY') throw new ValidationError('DEMO_KEY must not be used', ['usdaApiKey']);
+  return key;
+}
+
 export interface CredentialsService {
   hasUsdaApiKey(): Promise<boolean>;
   /** Read per request (ARCH-11); callers must not keep it. `null` when no key is saved. */
@@ -45,9 +53,7 @@ export function createCredentialsService(
     hasUsdaApiKey: async () => (await read()) !== null,
     getUsdaApiKeyForRequest: read,
     async saveUsdaApiKey(value) {
-      const parsed = storedKey.safeParse(value);
-      if (!parsed.success) throw new ValidationError('USDA API key is required', ['usdaApiKey']);
-      await guarded('write', () => store.setItemAsync(USDA_KEY, parsed.data, OPTIONS));
+      await guarded('write', () => store.setItemAsync(USDA_KEY, validateUsdaApiKey(value), OPTIONS));
     },
     removeUsdaApiKey: () => guarded('delete', () => store.deleteItemAsync(USDA_KEY, OPTIONS)),
     async getUsdaApiKeyHint() {

@@ -16,8 +16,36 @@ export const foodSearchKeys = {
   custom: (query: string) => ['foodSearch', 'custom', query.trim().toLocaleLowerCase()] as const,
   saved: (query: string) => ['foodSearch', 'saved', query.trim().toLocaleLowerCase()] as const,
   off: (query: string, page: number) => ['foodSearch', 'openFoodFacts', query.trim(), page] as const,
+  usda: (query: string, page: number) => ['foodSearch', 'usda', query.trim(), page] as const,
   food: (id: string) => ['foodSearch', 'food', id] as const,
 };
+
+/** UX-04 / PROV-04: USDA starts after 400 ms with two characters; credentials never enter this key. */
+export function useUsdaSearch(query: string, pages = 1) {
+  const { usda } = useServices();
+  const normalized = query.trim();
+  const results = useQueries({
+    queries: Array.from({ length: pages }, (_, index) => {
+      const page = index + 1;
+      return {
+        queryKey: foodSearchKeys.usda(normalized, page),
+        queryFn: ({ signal }: { signal: AbortSignal }) => usda.search(normalized, page, signal),
+        enabled: normalized.length >= 2,
+        networkMode: 'online' as const,
+        staleTime: 10 * 60_000,
+      };
+    }),
+  });
+  return {
+    data: results.flatMap((result) => result.data?.candidates ?? []),
+    isLoading: results.some((result) => result.isLoading),
+    isError: results.some((result) => result.isError),
+    error: results.find((result) => result.error)?.error,
+    isSuccess: results.length > 0 && results.every((result) => result.isSuccess),
+    hasMore: results.at(-1)?.data ? results.at(-1)!.data!.page < results.at(-1)!.data!.pageCount && pages < 5 : false,
+    refetch: () => Promise.all(results.map((result) => result.refetch())),
+  };
+}
 
 /** UX-04 / DATA-14: hydrate the newest ≤20 recent records with their selectable food and servings. */
 export async function loadRecentFoods(
