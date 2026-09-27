@@ -334,12 +334,13 @@ Status: **in progress** · Start commit: `7d04bba`
   - [x] Android `m5-offline-local-foods` runs after the dev bundle loads, disables Wi-Fi and mobile data, verifies the offline provider status without hiding local custom/saved results, opens the cached OFF food, sets its count serving to `2 × egg`, then saves and verifies its Diary row (SCOPE-11 flow 1, UX-04/05, ARCH-12/18, PROV-09).
   - [x] Android dev client rebuilt with NetInfo: `npx expo run:android --no-bundler` (2026-09-27). `scripts/e2e-m5-offline-android.sh` passed on Pixel_10 emulator after its wrapper restored networking.
   - [x] Focused: `npm test -- --runInBand src/features/food-search/__tests__/FoodSearchScreen.test.tsx src/bootstrap/__tests__/devSeed.test.ts src/shared/config/__tests__/env.test.ts src/data/api/open-food-facts/__tests__` → 6 suites / 26 tests passed. Full: `npm run check` → lint + typecheck + 56 suites / 372 tests passed.
-  - [x] Review corrections (2026-09-27): `.maestro/m5-offline-local-foods.yaml` and `devSeed.ts` now exercise the cached OFF count serving; `client.ts`/`limiter.ts` bound product-read throttling; focused fake-timer/component tests prove superseded queued OFF searches are cancelled so only the latest pending query runs after a budget slot opens (PROV-04, ROAD-02), and product reads time out after 5 s of limiter waiting with `Couldn't load this food.` rendered (PROV-04, UX-04). Focused: 4 suites / 21 tests passed. Android: `scripts/e2e-m5-offline-android.sh` passed; the updated offline flow saved `Offline E2E saved yoghurt` at `2 × egg` and asserted its 95 kcal Diary row. Full: `npm run check` → lint + typecheck + 56 suites / 376 tests passed.
-  - Next unblocked task: independent M5 milestone review/readiness evidence.
+  - [x] Review corrections (2026-09-27): `.maestro/m5-offline-local-foods.yaml` and `devSeed.ts` now exercise the cached OFF count serving; `client.ts`/`limiter.ts` bound product-read throttling; focused fake-timer/component tests prove superseded queued OFF searches are cancelled so only the latest pending query runs after a budget slot opens (PROV-04, ROAD-02), and product reads time out after 5 s of limiter waiting with `Couldn't load this food.` rendered (PROV-04, UX-04). Focused: 4 suites / 21 tests passed. Full: `npm run check` → lint + typecheck + 56 suites / 376 tests passed.
+  - Post-correction Android evidence (2026-09-27T16:38:32+01:00): `scripts/e2e-m5-offline-android.sh` against `0a83d3619c45ab551d0214845ce0defda7f45823` **failed** (exit 1) before Maestro could begin: `timeout: no element labelled "Add"`. Port 8081 was occupied by a Metro service without `EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1`, so the deterministic cached OFF fixtures were not established and this attempt proves none of the `2 × egg` / `Offline E2E saved yoghurt` 95 kcal flow. Evidence: `docs/qa/M5/android-e2e-post-correction-2026-09-27.md`. Retry after replacing that Metro service with `EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1 npx expo start --dev-client --port 8081`; do not start M6.
+  - Next unblocked task after the successful retry: independent M5 milestone re-review/readiness only.
 
 ### Known gaps
 
-- No implementation gaps. Validation still needed: the independent M5 milestone review/readiness evidence only; do not start M6 yet.
+- No implementation gaps. Android evidence is blocked on a seeded Metro service on port 8081; rerun `scripts/e2e-m5-offline-android.sh` after the documented retry point. Independent M5 milestone re-review/readiness remains blocked; do not start M6 yet.
 
 ### Open questions
 
@@ -347,4 +348,4 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Next unblocked task
 
-- Perform the independent M5 milestone review/readiness evidence. Mark M5 awaiting user acceptance only after that read-only review passes; do not start M6 beforehand.
+- Restore the seeded Metro service and rerun the documented Android E2E retry point. After it passes, perform the independent M5 milestone re-review/readiness only; do not start M6 beforehand.
