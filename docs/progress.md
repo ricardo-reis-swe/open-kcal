@@ -320,10 +320,10 @@ Status: **in progress** · Start commit: `7d04bba`
 ### Tasks
 
 - [x] T1 OFF candidate mapper: Zod-validated response shapes, per-100 g/ml + serving fallbacks, mass/liquid serving initialization, and minimum-data filtering (PROV-05/06/07).
-- [ ] T2 OFF HTTP adapter, responsible request budget/cooldown, and sanitized fixtures.
+- [x] T2 OFF HTTP adapter, responsible request budget/cooldown, and sanitized fixtures.
   - [x] HTTP boundary: documented localized search/product requests, identification header, request timeouts, response/error mapping, and `Retry-After` cooldown parsing (PROV-01/03/10/12).
   - [x] Testable sliding-window limiter, cancellable queued requests, and shared provider cooldown primitive (PROV-04/10).
-  - [ ] Captured OFF fixtures: the public API capture requires the identified request header; complete it when egress with the configured contact email is available. Synthetic mapper contracts are covered locally.
+  - [x] Sanitized captured OFF search (`iogurte grego`) and product (`5601009983179`) fixtures with explicit mapper outputs; synthetic mapper contracts cover the edge cases (PROV-13).
 - [ ] T3 Saved external search, cache refresh, and Food Search remote sections/statuses/paging.
 - [ ] T4 Tests and Android offline cached/custom-food Maestro flow.
 

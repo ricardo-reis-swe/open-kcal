@@ -1,0 +1,25 @@
+{
+  "hits": [
+    {
+      "code": "7891000360361",
+      "brands": ["LEVE MAIS"],
+      "nutriments": {
+        "carbohydrates_100g": 10.6,
+        "energy-kcal_100g": 82.2,
+        "fat_100g": 2.11,
+        "proteins_100g": 5.33
+      },
+      "product_name": "Iogurte Grego Tradicional Morango Nestlé Bandeja 540g 6 Unidades Leve Mais Pague Menos"
+    },
+    {
+      "code": "5601009983179",
+      "nutriments": {
+        "fat_100g": 7.7,
+        "energy-kj_100g": 520,
+        "proteins_100g": 2.5,
+        "carbohydrates_100g": 11.3
+      },
+      "product_name": "Iogurte Grego"
+    }
+  ]
+}

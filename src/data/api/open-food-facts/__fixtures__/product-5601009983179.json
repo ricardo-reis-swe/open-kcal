@@ -1,0 +1,20 @@
+{
+  "status": 1,
+  "product": {
+    "brands": "",
+    "code": "5601009983179",
+    "nutriments": {
+      "carbohydrates_100g": 11.3,
+      "energy-kcal_100g": 125.1,
+      "energy-kj_100g": 520,
+      "fat_100g": 7.7,
+      "proteins_100g": 2.5
+    },
+    "nutrition_data_per": "100g",
+    "product_name": "Iogurte Grego",
+    "product_quantity": 240,
+    "quantity": "240 g",
+    "serving_quantity": 120,
+    "serving_size": "120 g"
+  }
+}

@@ -1,5 +1,8 @@
 import { mapOpenFoodFactsProduct, mapOpenFoodFactsSearch } from '../mapper';
 
+import capturedProduct from '../__fixtures__/product-5601009983179.json';
+import capturedSearch from '../__fixtures__/search-iogurte-grego.json';
+
 describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
   const product = {
     code: '0894700010137',
@@ -27,6 +30,24 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
       label: 'serving',
       basisMultiplier: 1.5,
       isDefault: true,
+    });
+  });
+
+  it('maps the sanitized captured search and product contract fixtures', () => {
+    const search = mapOpenFoodFactsSearch(capturedSearch);
+    expect(search).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ externalId: '7891000360361' }),
+        expect.objectContaining({ externalId: '5601009983179' }),
+      ]),
+    );
+    expect(mapOpenFoodFactsProduct(capturedProduct.product)).toMatchObject({
+      externalId: '5601009983179',
+      input: {
+        name: 'Iogurte Grego',
+        basisUnit: 'g',
+        nutrients: { energyKcal: 125.1, carbohydrateG: 11.3, proteinG: 2.5, fatG: 7.7 },
+      },
     });
   });
 
