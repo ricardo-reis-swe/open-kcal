@@ -287,7 +287,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete). `npm run check`: 362/362.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
   - [x] M4 and cumulative Android flows pass on `Pixel_10` (2026-09-27). The Android run exposed two real interactions: the direct-serving return key dismissed without applying the value, and the translated custom-food row intercepted taps on its revealed Delete action. Both are fixed; the Maestro flow now targets the revealed action directly and asserts the result row disappears. iOS testing is deferred per the user's Linux-only testing instruction.
-- [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
+- [x] T8 Android exit demo and DS-13 subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation at light/dark × default/2.0 text on a 360 dp-wide emulator. iOS QA is deferred per user instruction.
 - [ ] T9 Independent review
 
 ### ROAD-02 checklist
@@ -296,7 +296,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
 - [x] M4 flow and cumulative flows pass on Android; iOS deferred per user instruction
-- [ ] Exit demo and light/dark × default/largest screenshots captured on both platforms
+- [x] Android exit demo and light/dark × default/largest screenshots captured; iOS deferred per user instruction
 - [ ] Independent review clean
 - [ ] No in-scope placeholder UI or unlogged gaps
 - [ ] Nothing sensitive added to logs
