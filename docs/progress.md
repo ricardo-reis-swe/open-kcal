@@ -8,7 +8,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M1 Data + domain | done |
 | M2 Diary (read) | done |
 | M3 Quick Calories | done |
-| M4 Custom foods + ruler | in progress |
+| M4 Custom foods + ruler | done |
 | M5 Search + Open Food Facts | not started |
 | M6 USDA | not started |
 | M7 Meal Detail + copy | not started |
@@ -270,7 +270,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ## M4 Custom foods + ruler
 
-Status: **awaiting user acceptance** · Start commit: `2fe1dd5`
+Status: **done** (accepted by the user 2026-09-27) · Start commit: `2fe1dd5`
 
 ### Tasks
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
