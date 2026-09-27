@@ -3,7 +3,7 @@ import { fixedClock } from '@/shared/dates';
 import { initI18n } from '@/shared/i18n/i18n';
 import { createTestServices } from '@/shared/testing/services';
 
-import { seedDevDiary } from '../devSeed';
+import { seedDevDiary, seedDevFoodSearch } from '../devSeed';
 import type { AppServices } from '../services';
 import { startServices } from '../start-services';
 
@@ -29,14 +29,17 @@ describe('ROAD-01 M2 dev seed gating', () => {
   // Startup seeds meal names in the app language, so i18n must be up (ARCH-17 order).
   beforeAll(() => initI18n({ language: 'en', formattingLocale: 'en', regionCode: 'US' }));
 
-  const config = (devSeedDiary: boolean) => () => ({
-    appVersion: '0.0.0-test',
-    usdaBaseUrl: 'https://api.nal.usda.gov/fdc/v1',
-    offSearchBaseUrl: 'https://search.openfoodfacts.org',
-    offProductBaseUrl: 'https://world.openfoodfacts.org',
-    offContactEmail: 'ricardo_reis@live.com',
-    devSeedDiary,
-  });
+  const config =
+    (devSeedDiary: boolean, devSeedFoodSearch = false) =>
+    () => ({
+      appVersion: '0.0.0-test',
+      usdaBaseUrl: 'https://api.nal.usda.gov/fdc/v1',
+      offSearchBaseUrl: 'https://search.openfoodfacts.org',
+      offProductBaseUrl: 'https://world.openfoodfacts.org',
+      offContactEmail: 'ricardo_reis@live.com',
+      devSeedDiary,
+      devSeedFoodSearch,
+    });
   const clock = fixedClock('2026-09-25T10:00:00.000Z');
   const entriesToday = async (services: AppServices) => (await services.diary.loadDay('2026-09-25')).totals.entryCount;
 
@@ -62,5 +65,19 @@ describe('ROAD-01 M2 dev seed gating', () => {
     } finally {
       (globalThis as { __DEV__?: boolean }).__DEV__ = dev;
     }
+  });
+});
+
+describe('ARCH-18 M5 local Food Search seed', () => {
+  it('inserts the custom and cached OFF records once', async () => {
+    const { services } = await createTestServices();
+    expect(await seedDevFoodSearch(services)).toBe(true);
+    expect(await seedDevFoodSearch(services)).toBe(false);
+    expect((await services.foods.searchCustom('offline e2e')).map((food) => food.name)).toEqual([
+      'Offline E2E custom oats',
+    ]);
+    expect((await services.foods.searchExternal('offline e2e')).map((food) => food.name)).toEqual([
+      'Offline E2E saved yoghurt',
+    ]);
   });
 });

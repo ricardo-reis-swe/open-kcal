@@ -1,0 +1,45 @@
+# ARCH-18 / ROAD-02 M5: scripts/e2e-m5-offline-android.sh loads the cached dev bundle, disables Android networking,
+# then runs this flow. It proves custom and cached OFF results stay usable with the provider offline status in place.
+appId: com.ricardoreis.calorietracker
+---
+- extendedWaitUntil:
+    visible:
+      id: tab-add
+    timeout: 10000
+- tapOn:
+    id: tab-add
+- tapOn: Add food
+- extendedWaitUntil:
+    visible: Choose meal
+    timeout: 5000
+- tapOn: Lunch
+- extendedWaitUntil:
+    visible: Food search
+    timeout: 5000
+- tapOn:
+    id: food-search-input
+- inputText: Offline E2E
+- hideKeyboard
+- extendedWaitUntil:
+    visible: Offline. Showing saved foods only.
+    timeout: 5000
+- assertVisible: Offline E2E custom oats
+- assertVisible: Offline E2E saved yoghurt
+- tapOn: Offline E2E saved yoghurt
+- extendedWaitUntil:
+    visible: Add food
+    timeout: 5000
+- tapOn: Back
+- extendedWaitUntil:
+    visible: Food search
+    timeout: 5000
+- assertVisible: Offline E2E custom oats
+- tapOn: Offline E2E custom oats
+- extendedWaitUntil:
+    visible: Add food
+    timeout: 5000
+- tapOn:
+    id: food-detail-add
+- extendedWaitUntil:
+    visible: Offline E2E custom oats.*372.*
+    timeout: 15000

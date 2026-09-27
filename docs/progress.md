@@ -327,15 +327,18 @@ Status: **in progress** · Start commit: `7d04bba`
 - [x] T3 Saved external search, cache refresh, and Food Search remote sections/statuses/paging.
   - [x] Saved external foods stay locally searchable and are deduplicated from OFF results. Expired OFF foods open from cache and refresh silently for the next open (PROV-08/09).
   - [x] OFF search retains provider page metadata, shows up to five pages via `Show more`, and keeps provider status/error/retry in the remote section (UX-04, PROV-08).
-- [ ] T4 Tests and Android offline cached/custom-food Maestro flow.
-  - [x] Deterministic local fixture + `.maestro/m5-offline-foods.yaml`: with airplane mode enabled after launch, searches cached `E2E Offline Oat Bar`, logs it, then searches the seeded `Scrambled eggs (sample)` custom food. The flow asserts the inline offline status and local Saved/My foods sections; it never calls a provider (ARCH-12/18, UX-04, ROAD-02).
-  - [x] Focused M5 tests: `npm test -- --runInBand src/bootstrap/__tests__/devSeed.test.ts src/data/api/open-food-facts/__tests__/mapper.test.ts src/data/api/open-food-facts/__tests__/client.test.ts src/data/api/open-food-facts/__tests__/limiter.test.ts src/features/food-search/__tests__/food-search.queries.test.ts src/features/food-search/__tests__/FoodSearchScreen.test.tsx` → 6 suites / 24 tests passed (the existing Jest timer warning remains).
-  - [x] Full gate: `npm run check` → lint + typecheck + 56 suites / 371 tests passed (existing Jest teardown/act warnings only).
-  - [ ] Android rebuild/flow: `EXPO_PUBLIC_USDA_BASE_URL=https://api.nal.usda.gov/fdc/v1 EXPO_PUBLIC_OFF_SEARCH_BASE_URL=https://search.openfoodfacts.org EXPO_PUBLIC_OFF_PRODUCT_BASE_URL=https://world.openfoodfacts.org EXPO_PUBLIC_OFF_CONTACT_EMAIL=offline-e2e@example.invalid EXPO_PUBLIC_DEV_SEED_DIARY=1 npm run android` failed before install. Gradle configured and compiled `@react-native-community/netinfo`, then `:react-native-worklets:configureCMakeDebug[x86_64]` and `:react-native-screens:configureCMakeDebug[x86_64]` failed with `WARNING: A restricted method in java.lang.System has been called`; no Maestro result exists.
+- [x] T4 Tests and Android offline cached/custom-food Maestro flow.
+  - Changed: `.maestro/m5-offline-foods.yaml`, `.maestro/m5-offline-local-foods.yaml`, `scripts/e2e-m5-offline-android.sh`, `src/bootstrap/devSeed.ts`, `src/bootstrap/start-services.ts`, `src/shared/config/env.ts`, `.env.example`, and focused tests.
+  - [x] `.maestro/m5-offline-foods.yaml` uses the dev diary's local cached OFF/custom records and Maestro airplane mode; it never calls a provider (ARCH-12/18, UX-04, ROAD-02).
+  - [x] Deterministic dev-only Food Search fixtures seed one custom and one expired cached OFF food only with `EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1`; release builds ignore the flag (ARCH-18, DATA-15).
+  - [x] Android `m5-offline-local-foods` runs after the dev bundle loads, disables Wi-Fi and mobile data, verifies the offline provider status without hiding local custom/saved results, opens the cached OFF food, then logs the custom food (UX-04/05, ARCH-12/18, PROV-09).
+  - [x] Android dev client rebuilt with NetInfo: `npx expo run:android --no-bundler` (2026-09-27). `scripts/e2e-m5-offline-android.sh` passed on Pixel_10 emulator after its wrapper restored networking.
+  - [x] Focused: `npm test -- --runInBand src/features/food-search/__tests__/FoodSearchScreen.test.tsx src/bootstrap/__tests__/devSeed.test.ts src/shared/config/__tests__/env.test.ts src/data/api/open-food-facts/__tests__` → 6 suites / 26 tests passed. Full: `npm run check` → lint + typecheck + 56 suites / 372 tests passed.
+  - Next unblocked task: independent M5 milestone review/readiness evidence.
 
 ### Known gaps
 
-- Android device rebuild and Maestro validation are blocked by the CMake/Java toolchain failure recorded in T4. Affected scope: the NetInfo-enabled Android dev build and `.maestro/m5-offline-foods.yaml`; unit, component, navigation, lint, and type checks are green. Retry point: resolve the local Android CMake/Java toolchain failure, rebuild with `EXPO_PUBLIC_DEV_SEED_DIARY=1`, then run `scripts/e2e.sh android .maestro/m5-offline-foods.yaml`.
+- No implementation gaps. Validation still needed: the independent M5 milestone review/readiness evidence only; do not start M6 yet.
 
 ### Open questions
 

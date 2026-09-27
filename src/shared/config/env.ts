@@ -15,6 +15,8 @@ const envSchema = z.object({
   EXPO_PUBLIC_OFF_CONTACT_EMAIL: z.email(),
   // ROAD-01 M2: dev-only sample diary data. Ignored outside `__DEV__` (see bootstrap/devSeed.ts).
   EXPO_PUBLIC_DEV_SEED_DIARY: z.enum(['0', '1']).optional(),
+  // ARCH-18 M5: deterministic local custom + cached OFF records for the Android offline flow.
+  EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH: z.enum(['0', '1']).optional(),
 });
 
 export type RawEnv = Partial<Record<keyof z.input<typeof envSchema>, string | undefined>>;
@@ -27,6 +29,8 @@ export type AppConfig = {
   offContactEmail: string;
   /** Dev builds only: insert sample diary entries around today, once (ROAD-01 M2). */
   devSeedDiary: boolean;
+  /** Dev builds only: insert deterministic local Food Search fixtures once (ARCH-18 M5). */
+  devSeedFoodSearch: boolean;
 };
 
 /** A typed `ValidationError` (ARCH-13), so startup shows the recovery screen instead of crashing (UX-20). */
@@ -54,6 +58,7 @@ export function parseConfig(env: RawEnv, appVersion: string): AppConfig {
     offProductBaseUrl: value.EXPO_PUBLIC_OFF_PRODUCT_BASE_URL,
     offContactEmail: value.EXPO_PUBLIC_OFF_CONTACT_EMAIL,
     devSeedDiary: value.EXPO_PUBLIC_DEV_SEED_DIARY === '1',
+    devSeedFoodSearch: value.EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH === '1',
   };
 }
 
@@ -65,6 +70,7 @@ function readProcessEnv(): RawEnv {
     EXPO_PUBLIC_OFF_PRODUCT_BASE_URL: process.env.EXPO_PUBLIC_OFF_PRODUCT_BASE_URL,
     EXPO_PUBLIC_OFF_CONTACT_EMAIL: process.env.EXPO_PUBLIC_OFF_CONTACT_EMAIL,
     EXPO_PUBLIC_DEV_SEED_DIARY: process.env.EXPO_PUBLIC_DEV_SEED_DIARY,
+    EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH: process.env.EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH,
   };
 }
 

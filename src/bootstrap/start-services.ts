@@ -13,7 +13,7 @@ import { toAppError } from '@/shared/errors';
 import { i18next } from '@/shared/i18n/i18n';
 import { logger } from '@/shared/logging/logger';
 
-import { seedDevDiary } from './devSeed';
+import { seedDevDiary, seedDevFoodSearch } from './devSeed';
 import { createServices, type AppServices } from './services';
 
 export type StartOptions = { clock?: Clock; ids?: IdGenerator; loadConfig?: () => AppConfig };
@@ -55,6 +55,7 @@ export async function startServices({
     logger.info('database ready', { durationMs: clock.now().getTime() - started });
     const services = createServices({ db, clock, ids, config });
     if (__DEV__ && config.devSeedDiary) await seedDevDiary(services, todayLocal(clock));
+    if (__DEV__ && config.devSeedFoodSearch) await seedDevFoodSearch(services);
     return services;
   } catch (error) {
     const appError = toAppError(error);

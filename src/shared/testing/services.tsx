@@ -15,6 +15,7 @@ const TEST_CONFIG = {
   offProductBaseUrl: 'https://world.openfoodfacts.org',
   offContactEmail: 'ricardo_reis@live.com',
   devSeedDiary: false,
+  devSeedFoodSearch: false,
 };
 
 const noCredentials = {} as CredentialsService;

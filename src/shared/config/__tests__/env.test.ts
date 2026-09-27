@@ -16,6 +16,7 @@ describe('ARCH-14: typed public config', () => {
       offProductBaseUrl: 'https://world.openfoodfacts.org',
       offContactEmail: 'ricardo_reis@live.com',
       devSeedDiary: false,
+      devSeedFoodSearch: false,
     });
   });
 

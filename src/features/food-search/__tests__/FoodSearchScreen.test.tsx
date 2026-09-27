@@ -15,7 +15,14 @@ const almonds: CustomFoodInput = {
   servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
 };
 
-async function setup(options: { withRecent?: boolean; initialQuery?: string; language?: 'en' | 'pt-PT' } = {}) {
+async function setup(
+  options: {
+    withRecent?: boolean;
+    withCachedExternal?: boolean;
+    initialQuery?: string;
+    language?: 'en' | 'pt-PT';
+  } = {},
+) {
   const { services } = await createTestServices();
   const [meal] = await services.meals.list();
   const food = await services.foods.createCustom(almonds);
@@ -27,6 +34,25 @@ async function setup(options: { withRecent?: boolean; initialQuery?: string; lan
       servingId: food.servings[0]!.id,
       quantity: 50,
     });
+  }
+  if (options.withCachedExternal) {
+    await services.foods.upsertExternal(
+      'open_food_facts',
+      'cached-almonds',
+      {
+        name: 'Cached almond yoghurt',
+        basisQuantity: 100,
+        basisUnit: 'g',
+        nutrients: { energyKcal: 100, carbohydrateG: 4, proteinG: 5, fatG: 6 },
+        servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 }],
+      },
+      {
+        fetchedAt: '2026-01-01T00:00:00.000Z',
+        expiresAt: '2026-01-02T00:00:00.000Z',
+        rawPayloadJson: null,
+        schemaVersion: 1,
+      },
+    );
   }
   const onSelectFood = jest.fn();
   const onCreateCustom = jest.fn();
@@ -91,9 +117,10 @@ describe('UX-04: local Food Search screen', () => {
 
   it('ARCH-12 / UX-04: keeps local search available and reports the remote section as offline', async () => {
     onlineManager.setOnline(false);
-    const { food } = await setup({ initialQuery: 'almond' });
+    const { food } = await setup({ initialQuery: 'almond', withCachedExternal: true });
     expect(await screen.findByText('Offline. Showing saved foods only.')).toBeTruthy();
     expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy();
+    expect(screen.getByText('Cached almond yoghurt')).toBeTruthy();
   });
 
   it('ARCH-22: renders the local search shell in pt-PT', async () => {
