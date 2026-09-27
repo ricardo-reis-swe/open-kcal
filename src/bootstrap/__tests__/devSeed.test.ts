@@ -80,4 +80,75 @@ describe('ARCH-18 M5 local Food Search seed', () => {
       'Offline E2E saved yoghurt',
     ]);
   });
+
+  it('ARCH-12 / UX-05: repairs the cached OFF fixture to its egg default and saves 2 × egg as 95 kcal', async () => {
+    const { services } = await createTestServices();
+    await seedDevFoodSearch(services);
+    const cached = (await services.foods.searchExternal('offline e2e'))[0]!;
+    const egg = cached.servings.find((serving) => serving.label === 'egg')!;
+    expect(egg.isDefault).toBe(true);
+
+    const lunch = (await services.meals.list()).find((meal) => meal.name === 'Lunch')!;
+    await services.diary.addFoodEntry({
+      diaryDate: '2026-09-25',
+      mealId: lunch.id,
+      foodId: cached.id,
+      servingId: egg.id,
+      quantity: 2,
+    });
+    const entry = (await services.diary.loadDay('2026-09-25')).meals.find((meal) => meal.meal.id === lunch.id)!
+      .entries[0]!;
+    expect(entry).toMatchObject({
+      name: 'Offline E2E saved yoghurt',
+      servingQuantity: 2,
+      servingUnit: 'egg',
+      nutrients: { energyKcal: 95 },
+    });
+  });
+
+  it('repairs the obsolete gram-serving fixture and stale recent choice on an existing dev DB', async () => {
+    const { services } = await createTestServices();
+    await services.foods.createCustom({
+      name: 'Offline E2E custom oats',
+      basisQuantity: 100,
+      basisUnit: 'g',
+      nutrients: { energyKcal: 372, carbohydrateG: 60, proteinG: 13, fatG: 7 },
+      servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+    });
+    const stale = await services.foods.upsertExternal(
+      'open_food_facts',
+      'm5-offline-e2e-yoghurt',
+      {
+        name: 'Offline E2E saved yoghurt',
+        basisQuantity: 100,
+        basisUnit: 'g',
+        nutrients: { energyKcal: 95, carbohydrateG: 4, proteinG: 8, fatG: 5 },
+        servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+      },
+      {
+        fetchedAt: '2026-01-01T00:00:00.000Z',
+        expiresAt: '2026-01-02T00:00:00.000Z',
+        rawPayloadJson: null,
+        schemaVersion: 1,
+      },
+    );
+    const lunch = (await services.meals.list()).find((meal) => meal.name === 'Lunch')!;
+    await services.diary.addFoodEntry({
+      diaryDate: '2026-09-25',
+      mealId: lunch.id,
+      foodId: stale.id,
+      servingId: stale.servings[0]!.id,
+      quantity: 102,
+    });
+
+    expect(await seedDevFoodSearch(services)).toBe(true);
+    const repaired = (await services.foods.searchExternal('offline e2e'))[0]!;
+    const egg = repaired.servings.find((serving) => serving.label === 'egg')!;
+    expect(
+      await services.db.getFirst<{ last_serving_id: string; last_serving_quantity: number }>(
+        'SELECT last_serving_id, last_serving_quantity FROM recent_foods WHERE food_id = ?',
+        [repaired.id],
+      ),
+    ).toEqual({ last_serving_id: egg.id, last_serving_quantity: 1 });
+  });
 });

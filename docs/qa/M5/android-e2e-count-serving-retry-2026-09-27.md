@@ -1,0 +1,10 @@
+# M5 cached OFF count-serving retry
+
+- Time: 2026-09-27T16:54:08+01:00
+- Fix under test: pending commit; `seedDevFoodSearch` now repairs the obsolete cached gram-default fixture and any stale `recent_foods` choice to the `egg` default at quantity `1`.
+- Diagnosis: the revised `egg` fixture was correct, but the seed returned as soon as its custom-food marker existed. Existing emulator DBs therefore retained the former gram-only OFF serving and its failed-run recent selection. Maestro's `eraseText: 1` then changed the inherited `100` g value to `102`, producing the observed 97 kcal row. This was seed persistence, not Food Detail conversion or the cache implementation.
+- Focused proof: `npm test -- --runInBand src/bootstrap/__tests__/devSeed.test.ts` → PASS, 1 suite / 7 tests. It covers cached OFF default selection, a `2 × egg` Diary save at 95 kcal, and repair of the obsolete gram fixture plus stale recent choice (ARCH-12/18, UX-05, PROV-09).
+- Full check: `npm run check` → PASS: lint, typecheck, 56 suites / 378 tests.
+- Seeded commands: `EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1 npx expo start --dev-client --port 8081`, then `ADB="$HOME/Android/Sdk/platform-tools/adb" scripts/e2e-m5-offline-android.sh`.
+- Android result: **BLOCKED**. Three wrapper attempts were terminated after Maestro reached `Tap on "Lunch"`; none printed the wrapper's required `E2E Android: PASS|FAIL` sentinel. The captured final attempt output is exactly: `open: ready`, `Running on Pixel_10`, flow start, completed tab/Add-food/Choose-meal steps, then `Tap on "Lunch"...`. A direct `adb exec-out uiautomator dump /dev/tty` was also terminated with `Killed`. This environment failure does not establish the Android outcome.
+- Retry point: rerun the same seeded Metro command and wrapper in an emulator session where ADB/Maestro is not terminated; require its `E2E Android: PASS` sentinel and final `Offline E2E saved yoghurt.*95.*` assertion before independent M5 milestone re-review/readiness. M6 remains blocked.

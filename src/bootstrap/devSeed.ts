@@ -96,19 +96,26 @@ const FOOD_SEARCH_MARKER = 'Offline E2E custom oats';
 
 /** ARCH-18 / ROAD-02 M5: local-only data for the Android offline Maestro flow; never a DATA-17 default. */
 export async function seedDevFoodSearch(services: AppServices): Promise<boolean> {
-  const exists = await services.db.getFirst<{ ok: number }>(
+  const custom = await services.db.getFirst<{ ok: number }>(
     "SELECT 1 AS ok FROM foods WHERE source = 'custom' AND name = ?",
     [FOOD_SEARCH_MARKER],
   );
-  if (exists) return false;
-  await services.foods.createCustom({
-    name: FOOD_SEARCH_MARKER,
-    basisQuantity: 100,
-    basisUnit: 'g',
-    nutrients: { energyKcal: 372, carbohydrateG: 60, proteinG: 13, fatG: 7 },
-    servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
-  });
-  await services.foods.upsertExternal(
+  if (!custom) {
+    await services.foods.createCustom({
+      name: FOOD_SEARCH_MARKER,
+      basisQuantity: 100,
+      basisUnit: 'g',
+      nutrients: { energyKcal: 372, carbohydrateG: 60, proteinG: 13, fatG: 7 },
+      servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+    });
+  }
+  const oldServing = await services.db.getFirst<{ label: string; unit: string; basis_multiplier: number }>(
+    `SELECT servings.label, servings.unit, servings.basis_multiplier
+     FROM foods JOIN food_servings AS servings ON servings.food_id = foods.id
+     WHERE foods.source = 'open_food_facts' AND foods.external_id = ? AND servings.is_default = 1`,
+    ['m5-offline-e2e-yoghurt'],
+  );
+  const cached = await services.foods.upsertExternal(
     'open_food_facts',
     'm5-offline-e2e-yoghurt',
     {
@@ -129,5 +136,19 @@ export async function seedDevFoodSearch(services: AppServices): Promise<boolean>
       schemaVersion: 1,
     },
   );
-  return true;
+  const egg = cached.servings.find((serving) => serving.label === 'egg' && serving.unit === 'egg')!;
+  // The fixture changed from grams to eggs during M5. Repair old dev DBs, including a failed run's recent choice,
+  // so the offline Maestro flow always starts at the UX-05 default count serving.
+  const repairedRecent = await services.db.run(
+    `UPDATE recent_foods SET last_serving_id = ?, last_serving_quantity = 1
+     WHERE food_id = ? AND (last_serving_id IS NOT ? OR last_serving_quantity IS NOT 1)`,
+    [egg.id, cached.id, egg.id],
+  );
+  return (
+    !custom ||
+    oldServing?.label !== 'egg' ||
+    oldServing.unit !== 'egg' ||
+    oldServing.basis_multiplier !== 0.5 ||
+    repairedRecent.changes > 0
+  );
 }
