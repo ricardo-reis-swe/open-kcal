@@ -106,6 +106,7 @@
     "demoKey": "Use your own key; DEMO_KEY is limited to 30 requests per hour.",
     "rejected": "USDA rejected this key.",
     "keyWorks": "Key works.",
+    "keyRateLimited": "Key works, but it's over its hourly limit right now.",
     "savedOffline": "Saved · will check when online",
     "testFailed": "Couldn't reach USDA. Try again.",
     "connectToTest": "Connect to the internet to test.",

@@ -3,7 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
-import { TimeoutError } from '@/shared/errors';
+import { ProviderConfigurationError, RateLimitError, TimeoutError } from '@/shared/errors';
 
 import { FoodSearchScreen, shouldRevealFoodDelete } from '../screens/FoodSearchScreen';
 
@@ -25,6 +25,10 @@ async function setup(
     throttledOffProduct?: boolean;
     pendingOffProduct?: boolean;
     localPaging?: boolean;
+    usdaError?: Error;
+    usdaCandidates?: { externalId: string; input: CustomFoodInput }[];
+    usdaDetail?: { externalId: string; input: CustomFoodInput } | null;
+    onFoodDatabases?: () => void;
   } = {},
 ) {
   const { services } = await createTestServices();
@@ -80,6 +84,12 @@ async function setup(
   }
   const onSelectFood = jest.fn();
   const onCreateCustom = jest.fn();
+  if (options.usdaError) jest.spyOn(services.usda, 'search').mockRejectedValue(options.usdaError);
+  else if (options.usdaCandidates)
+    jest
+      .spyOn(services.usda, 'search')
+      .mockResolvedValue({ candidates: options.usdaCandidates, page: 1, pageCount: 1 });
+  if (options.usdaDetail !== undefined) jest.spyOn(services.usda, 'getFood').mockResolvedValue(options.usdaDetail);
   if (options.throttledOffProduct) {
     jest.spyOn(services.openFoodFacts, 'search').mockResolvedValue({
       candidates: [
@@ -138,6 +148,7 @@ async function setup(
       onQuickCalories={jest.fn()}
       onCreateCustom={onCreateCustom}
       onSelectFood={onSelectFood}
+      onFoodDatabases={options.onFoodDatabases}
     />,
     services,
     { language: options.language },
@@ -234,6 +245,44 @@ describe('UX-04: local Food Search screen', () => {
     fireEvent.press(await screen.findByText('Throttled OFF yoghurt'));
     const row = await screen.findByTestId('food-result-off-throttled-off-product');
     expect(await within(row).findByText("Couldn't load this food.")).toBeTruthy();
+  });
+
+  it.each([
+    ['missing', new ProviderConfigurationError('USDA API key is missing'), 'Add a USDA API key to search USDA'],
+    ['rejected', new ProviderConfigurationError('USDA API key was rejected'), 'USDA rejected your key.'],
+    ['rate limited', new RateLimitError('USDA is rate limited'), 'USDA is busy. Try again later.'],
+    ['timeout', new TimeoutError('USDA request timed out'), 'USDA search failed.'],
+  ])('PROV-10 / PROV-11: renders the USDA %s state', async (_kind, usdaError, expected) => {
+    const onFoodDatabases = jest.fn();
+    await setup({ initialQuery: 'eg', usdaError, onFoodDatabases });
+    expect(await screen.findByText(expected)).toBeTruthy();
+    if (_kind === 'missing' || _kind === 'rejected') {
+      await fireEvent.press(screen.getByRole('button', { name: 'Food Databases' }));
+      expect(onFoodDatabases).toHaveBeenCalledTimes(1);
+    }
+    if (_kind === 'timeout') expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+
+  it('PROV-08 / DATA-15: shows generic USDA hits in supplied order and upserts selected detail before navigation', async () => {
+    const generic: CustomFoodInput = { ...almonds, name: 'Egg, whole, raw', brand: null };
+    const branded: CustomFoodInput = { ...almonds, name: 'Eggs brand', brand: 'Brand' };
+    const { services, onSelectFood } = await setup({
+      initialQuery: 'eg',
+      usdaCandidates: [
+        { externalId: 'generic', input: generic },
+        { externalId: 'branded', input: branded },
+      ],
+      usdaDetail: { externalId: 'generic', input: generic },
+    });
+    expect(await screen.findByText('Egg, whole, raw')).toBeTruthy();
+    expect(screen.getByText('Eggs brand')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('food-result-usda-generic'));
+    await waitFor(() =>
+      expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ source: 'usda', externalId: 'generic' })),
+    );
+    expect(await services.foods.searchExternal('egg')).toEqual([
+      expect.objectContaining({ source: 'usda', externalId: 'generic', name: 'Egg, whole, raw' }),
+    ]);
   });
 
   it('PROV-08 / UX-04: pages each local section in twenty-row increments', async () => {

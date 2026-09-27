@@ -106,6 +106,7 @@
     "demoKey": "Use a sua chave; DEMO_KEY está limitada a 30 pedidos por hora.",
     "rejected": "A USDA rejeitou esta chave.",
     "keyWorks": "A chave funciona.",
+    "keyRateLimited": "A chave funciona, mas está acima do limite horário neste momento.",
     "savedOffline": "Guardada · será verificada quando houver ligação",
     "testFailed": "Não foi possível contactar a USDA. Tente novamente.",
     "connectToTest": "Ligue-se à internet para testar.",

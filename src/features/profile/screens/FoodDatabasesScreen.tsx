@@ -46,7 +46,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
     void Promise.resolve().then(load);
   }, [load]);
 
-  const check = async (candidate: string): Promise<'active' | 'saved' | 'rejected'> => {
+  const check = async (candidate: string): Promise<'active' | 'saved' | 'rejected' | 'rateLimited'> => {
     if (!online) return 'saved';
     // Do not mutate the credentials service for a replacement until the key is accepted (PROV-11).
     const client = new UsdaClient(services.config, { getUsdaApiKeyForRequest: async () => candidate });
@@ -54,7 +54,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
       await client.search('apple', 1, new AbortController().signal);
       return 'active';
     } catch (cause) {
-      if (cause instanceof RateLimitError) return 'active';
+      if (cause instanceof RateLimitError) return 'rateLimited';
       if (cause instanceof ProviderConfigurationError) return 'rejected';
       return 'saved';
     }
@@ -83,10 +83,16 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
       }
       await services.credentials.saveUsdaApiKey(candidate);
       setHint(await services.credentials.getUsdaApiKeyHint());
-      setStatus(outcome);
+      setStatus(outcome === 'rateLimited' ? 'active' : outcome);
       setEditing(false);
       setKey('');
-      setMessage(outcome === 'active' ? t('foodDatabases.keyWorks') : t('foodDatabases.savedOffline'));
+      setMessage(
+        outcome === 'active'
+          ? t('foodDatabases.keyWorks')
+          : outcome === 'rateLimited'
+            ? t('foodDatabases.keyRateLimited')
+            : t('foodDatabases.savedOffline'),
+      );
     } finally {
       setBusy(false);
     }
@@ -99,10 +105,16 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
       const existing = await services.credentials.getUsdaApiKeyForRequest();
       if (!existing) return;
       const outcome = await check(existing);
-      setStatus(outcome);
-      if (outcome === 'rejected') setError(t('foodDatabases.rejected'));
-      else if (outcome === 'active') setMessage(t('foodDatabases.keyWorks'));
-      else setError(t('foodDatabases.testFailed'));
+      if (outcome === 'rejected') {
+        setStatus('rejected');
+        setError(t('foodDatabases.rejected'));
+      } else if (outcome === 'active' || outcome === 'rateLimited') {
+        setStatus('active');
+        setMessage(outcome === 'active' ? t('foodDatabases.keyWorks') : t('foodDatabases.keyRateLimited'));
+      } else {
+        // PROV-11: a reachability failure does not change the session status of a stored key.
+        setError(t('foodDatabases.testFailed'));
+      }
     } finally {
       setBusy(false);
     }

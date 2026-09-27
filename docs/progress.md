@@ -360,10 +360,16 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
   - Checks: focused USDA credentials/client/Food Search/routes/locales tests passed; `npm run check` → lint + typecheck + 58 suites / 389 tests passed (existing React `act`/open-handle warnings after passing tests).
   - Known validation gap: UI-level Food Databases test doubles and Android device exercise remain for the next M6 test/QA task; no real key, URL, fixture or log was used.
   - Next unblocked task: M6 focused Food Databases/search integration tests and `npm run check`.
+- [x] T3 Food Databases/search integration tests and Android QA attempt: focused UI tests cover secure/masked input, local invalid keys, replacement retention, 200/401/403/429/reachability `Test key` paths, removal confirmation, key-state retention, Food Search missing/rejected/rate-limited/retry/offline states, generic USDA ordering, selection/upsert, and navigation callbacks. The test path found and fixed two PROV-11 gaps: 429 now has its required explanatory message, and a failed `Test key` reachability check preserves the existing session status.
+  - Changed: `src/features/profile/screens/__tests__/FoodDatabasesScreen.test.tsx`, `src/features/food-search/__tests__/FoodSearchScreen.test.tsx`, `src/features/profile/screens/FoodDatabasesScreen.tsx`, locale strings, and `docs/qa/M6/android-food-databases-2026-09-27.md`.
+  - Checks: focused USDA/profile/search tests → 5 suites / 32 tests passed; `npm run check` → lint + typecheck + 59 suites / 399 tests passed (existing React `act` and open-handle warnings after passing tests).
+  - Android QA: blocked before launch because this environment exposes no Android emulator, device, or mobile app target; exact evidence and retry path are in `docs/qa/M6/android-food-databases-2026-09-27.md`. No live USDA search or real key was used or claimed.
+  - Blocker: PROV-13 captured USDA fixtures remain blocked until the owner provides a local key; this task did not request, read, or substitute one.
+  - Next unblocked task: M6 independent review/acceptance preparation; Android device QA and captured-fixture recording remain deferred to their stated environment/key prerequisites.
 
 ### Known gaps
 
-- Android E2E has no passing result: the emulator environment terminated Maestro after selecting Lunch before it emitted a result sentinel. The user explicitly waived that unavailable execution for M5; it does not block M6 work.
+- Android E2E has no passing result: the emulator environment terminated Maestro after selecting Lunch before it emitted a result sentinel. The user explicitly waived that unavailable execution for M5; it does not block M6 work. M6’s Food Databases Android QA attempt also has no runnable target in this environment (see `docs/qa/M6/android-food-databases-2026-09-27.md`).
 
 ### Open questions
 
@@ -371,4 +377,4 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
 
 ### Next unblocked task
 
-- M6 focused Food Databases/search integration tests and `npm run check`. Captured USDA fixture recording remains blocked only until a local user key is configured (see M6 T1).
+- M6 independent review/acceptance preparation. Captured USDA fixture recording remains blocked only until a local user key is configured (see M6 T1); Android Food Databases QA remains blocked until an Android target is available.
