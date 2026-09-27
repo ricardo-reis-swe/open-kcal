@@ -1,0 +1,48 @@
+# ARCH-12 / ARCH-18 / ROAD-02 M5: the dev seed supplies a cached OFF food and custom foods locally. This flow
+# deliberately goes offline after Metro has loaded; no provider request or live fixture is used.
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: subflows/launch.yaml
+- tapOn:
+    id: tab-add
+- tapOn: Add food
+- extendedWaitUntil:
+    visible: Choose meal
+    timeout: 5000
+- tapOn: Lunch
+- extendedWaitUntil:
+    visible: Food search
+    timeout: 5000
+- setAirplaneMode: enabled
+- tapOn:
+    id: food-search-input
+- inputText: E2E Offline Oat Bar
+- extendedWaitUntil:
+    visible: Offline. Showing saved foods only.
+    timeout: 5000
+- assertVisible: SAVED
+- assertVisible: E2E Offline Oat Bar
+- tapOn: E2E Offline Oat Bar
+- extendedWaitUntil:
+    visible: Add food
+    timeout: 5000
+- tapOn:
+    id: food-detail-add
+- extendedWaitUntil:
+    visible: E2E Offline Oat Bar
+    timeout: 10000
+- tapOn:
+    text: Add food
+    index: 1
+- extendedWaitUntil:
+    visible: Food search
+    timeout: 5000
+- tapOn:
+    id: food-search-input
+- inputText: Scrambled eggs sample
+- extendedWaitUntil:
+    visible: Offline. Showing saved foods only.
+    timeout: 5000
+- assertVisible: MY FOODS
+- assertVisible: Scrambled eggs (sample)
+- setAirplaneMode: disabled

@@ -1,6 +1,6 @@
 // ROAD-01 M2: dev-only sample diary data for display and QA. Runs only in `__DEV__` builds with
 // EXPO_PUBLIC_DEV_SEED_DIARY=1, and only once (keyed on its marker food). Never part of the DATA-17 seed.
-import { addDays, type LocalDate } from '@/shared/dates';
+import { addDays, nowUtcIso, type LocalDate } from '@/shared/dates';
 
 import type { AppServices } from './services';
 
@@ -39,6 +39,29 @@ export async function seedDevDiary(services: AppServices, today: LocalDate): Pro
     nutrients: { energyKcal: 97, carbohydrateG: 3.9, proteinG: 9, fatG: 5 },
     servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
   });
+  // ARCH-18 / ROAD-02 M5: deterministic cached OFF food for the Android offline flow. It is inserted directly
+  // through the repository, never fetched from a provider, and remains local data like a real selected OFF food.
+  await services.foods.upsertExternal(
+    'open_food_facts',
+    'e2e-offline-oat-bar',
+    {
+      name: 'E2E Offline Oat Bar',
+      brand: 'Local test fixture',
+      basisQuantity: 100,
+      basisUnit: 'g',
+      nutrients: { energyKcal: 380, carbohydrateG: 58, proteinG: 9, fatG: 12 },
+      servings: [
+        { label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 },
+        { label: 'bar', quantity: 1, unit: 'bar', basisMultiplier: 0.12, isDefault: true },
+      ],
+    },
+    {
+      fetchedAt: nowUtcIso(services.clock),
+      expiresAt: '9999-12-31T23:59:59.999Z',
+      rawPayloadJson: null,
+      schemaVersion: 1,
+    },
+  );
   const serving = (food: typeof eggs, label: string) => food.servings.find((s) => s.label === label)!.id;
   const addFood = (date: LocalDate, mealId: string, food: typeof eggs, label: string, quantity: number) =>
     services.diary.addFoodEntry({

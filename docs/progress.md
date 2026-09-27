@@ -328,11 +328,19 @@ Status: **in progress** · Start commit: `7d04bba`
   - [x] Saved external foods stay locally searchable and are deduplicated from OFF results. Expired OFF foods open from cache and refresh silently for the next open (PROV-08/09).
   - [x] OFF search retains provider page metadata, shows up to five pages via `Show more`, and keeps provider status/error/retry in the remote section (UX-04, PROV-08).
 - [ ] T4 Tests and Android offline cached/custom-food Maestro flow.
+  - [x] Deterministic local fixture + `.maestro/m5-offline-foods.yaml`: with airplane mode enabled after launch, searches cached `E2E Offline Oat Bar`, logs it, then searches the seeded `Scrambled eggs (sample)` custom food. The flow asserts the inline offline status and local Saved/My foods sections; it never calls a provider (ARCH-12/18, UX-04, ROAD-02).
+  - [x] Focused M5 tests: `npm test -- --runInBand src/bootstrap/__tests__/devSeed.test.ts src/data/api/open-food-facts/__tests__/mapper.test.ts src/data/api/open-food-facts/__tests__/client.test.ts src/data/api/open-food-facts/__tests__/limiter.test.ts src/features/food-search/__tests__/food-search.queries.test.ts src/features/food-search/__tests__/FoodSearchScreen.test.tsx` → 6 suites / 24 tests passed (the existing Jest timer warning remains).
+  - [x] Full gate: `npm run check` → lint + typecheck + 56 suites / 371 tests passed (existing Jest teardown/act warnings only).
+  - [ ] Android rebuild/flow: `EXPO_PUBLIC_USDA_BASE_URL=https://api.nal.usda.gov/fdc/v1 EXPO_PUBLIC_OFF_SEARCH_BASE_URL=https://search.openfoodfacts.org EXPO_PUBLIC_OFF_PRODUCT_BASE_URL=https://world.openfoodfacts.org EXPO_PUBLIC_OFF_CONTACT_EMAIL=offline-e2e@example.invalid EXPO_PUBLIC_DEV_SEED_DIARY=1 npm run android` failed before install. Gradle configured and compiled `@react-native-community/netinfo`, then `:react-native-worklets:configureCMakeDebug[x86_64]` and `:react-native-screens:configureCMakeDebug[x86_64]` failed with `WARNING: A restricted method in java.lang.System has been called`; no Maestro result exists.
 
 ### Known gaps
 
-- Android device rebuild and Maestro validation remain. Current test coverage includes OFF mapping, limiter/cooldown, paging metadata, remote selection/cache refresh, and offline local-search status.
+- Android device rebuild and Maestro validation are blocked by the CMake/Java toolchain failure recorded in T4. Affected scope: the NetInfo-enabled Android dev build and `.maestro/m5-offline-foods.yaml`; unit, component, navigation, lint, and type checks are green. Retry point: resolve the local Android CMake/Java toolchain failure, rebuild with `EXPO_PUBLIC_DEV_SEED_DIARY=1`, then run `scripts/e2e.sh android .maestro/m5-offline-foods.yaml`.
 
 ### Open questions
 
 - ~~**M5-Q1**~~ Resolved 2026-09-27: approved `@react-native-community/netinfo` 12.0.1. It now drives TanStack Query's online state and the OFF section's offline status (ARCH-12); Android rebuild and Maestro validation remain in T4.
+
+### Next unblocked task
+
+- Resolve the recorded Android CMake/Java build-tooling failure, rebuild the dev app with the deterministic seed, and run the M5 Android offline Maestro flow. After T4 passes, perform the M5 milestone review/readiness evidence and mark M5 awaiting user acceptance only after independent review.

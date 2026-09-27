@@ -16,6 +16,9 @@ describe('ROAD-01 M2 dev-only seed', () => {
     const today = await services.diary.loadDay('2026-09-25');
     expect(today.totals.entryCount).toBe(5);
     expect(today.totals.proteinG.unknownCount).toBe(2); // Quick Calories → partial macros (DATA-06)
+    expect((await services.foods.searchExternal('offline oat')).map((food) => food.name)).toEqual([
+      'E2E Offline Oat Bar',
+    ]);
     const tomorrow = await services.diary.loadDay('2026-09-26');
     expect(tomorrow.totals.energyKcal).toBeGreaterThan(tomorrow.goal!.calorieTargetKcal); // over goal
     expect((await services.diary.loadDay('2026-09-27')).totals.entryCount).toBe(0);
@@ -45,6 +48,9 @@ describe('ROAD-01 M2 dev seed gating', () => {
   it('startup seeds sample data in a dev build with the flag on', async () => {
     const services = await startServices({ clock, ids: sequentialIds(), loadConfig: config(true) });
     expect(await entriesToday(services)).toBe(5);
+    expect((await services.foods.searchExternal('offline oat')).map((food) => food.name)).toEqual([
+      'E2E Offline Oat Bar',
+    ]);
   });
 
   it('startup never seeds outside __DEV__, even with the flag on', async () => {
