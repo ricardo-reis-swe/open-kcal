@@ -59,18 +59,95 @@ describe('DATA-11 / DATA-16: foods repository', () => {
     expect(noDefault.servings[0]!.isDefault).toBe(true);
   });
 
-  it('UX-04 / DATA-15: searches active custom foods by name or brand, with prefix matches first', async () => {
-    const { foods } = await setup();
-    const almond = await foods.createCustom({ ...eggs, name: 'Almond oats', brand: 'Morning Foods' });
-    const oats = await foods.createCustom({ ...eggs, name: 'Oats with almond', brand: null });
-    const branded = await foods.createCustom({ ...eggs, name: 'Porridge', brand: 'Almond Kitchen' });
-    await foods.createCustom({ ...eggs, name: 'Toast', brand: null });
+  it('PROV-08: custom search requires every token and ranks exact, prefix, word starts, then remaining matches', async () => {
+    const { deps, foods } = await setup();
+    const exact = await foods.createCustom({ ...eggs, name: 'Apple pie' });
+    const prefix = await foods.createCustom({ ...eggs, name: 'Apple pie crust' });
+    const wordStarts = await foods.createCustom({ ...eggs, name: 'Best apple pie' });
+    const highUse = await foods.createCustom({ ...eggs, name: 'Pineapple pie generous' });
+    const recent = await foods.createCustom({ ...eggs, name: 'Pineapple pie longer' });
+    const short = await foods.createCustom({ ...eggs, name: 'Pineapple pie' });
+    await foods.createCustom({ ...eggs, name: 'Apple tart' });
+    await deps.db.run(
+      'INSERT INTO recent_foods (food_id, last_used_at, use_count) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)',
+      [
+        highUse.id,
+        '2026-09-20T00:00:00.000Z',
+        3,
+        recent.id,
+        '2026-09-24T00:00:00.000Z',
+        1,
+        short.id,
+        '2026-09-24T00:00:00.000Z',
+        1,
+      ],
+    );
 
-    expect((await foods.searchCustom(' almond ')).map((food) => food.id)).toEqual([almond.id, oats.id, branded.id]);
-    await foods.deleteCustom(almond.id);
-    expect((await foods.searchCustom('almond')).map((food) => food.id)).toEqual([oats.id, branded.id]);
+    expect((await foods.searchCustom(' apple   pie ')).map((food) => food.id)).toEqual([
+      exact.id,
+      prefix.id,
+      wordStarts.id,
+      highUse.id,
+      short.id,
+      recent.id,
+    ]);
     expect(await foods.searchCustom('')).toEqual([]);
-    expect(await foods.searchCustom('almond', 1)).toHaveLength(1);
+  });
+
+  it('PROV-08: saved search applies the same token matching, rank and twenty-row paging', async () => {
+    const { deps, foods } = await setup();
+    const exact = await foods.upsertExternal(
+      'open_food_facts',
+      'exact',
+      { ...offBar(100), name: 'Apple pie' },
+      cache('2026-10-01T00:00:00.000Z'),
+    );
+    const prefix = await foods.upsertExternal(
+      'open_food_facts',
+      'prefix',
+      { ...offBar(100), name: 'Apple pie crust' },
+      cache('2026-10-01T00:00:00.000Z'),
+    );
+    const wordStarts = await foods.upsertExternal(
+      'open_food_facts',
+      'word',
+      { ...offBar(100), name: 'Best apple pie' },
+      cache('2026-10-01T00:00:00.000Z'),
+    );
+    const other = await foods.upsertExternal(
+      'open_food_facts',
+      'other',
+      { ...offBar(100), name: 'Pineapple pie' },
+      cache('2026-10-01T00:00:00.000Z'),
+    );
+    await deps.db.run('INSERT INTO recent_foods (food_id, last_used_at, use_count) VALUES (?, ?, ?)', [
+      other.id,
+      '2026-09-24T00:00:00.000Z',
+      2,
+    ]);
+    const paged = await Promise.all(
+      Array.from({ length: 21 }, (_, index) =>
+        foods.upsertExternal(
+          'open_food_facts',
+          `page-${index}`,
+          { ...offBar(100), name: `Almond paging ${index}` },
+          cache('2026-10-01T00:00:00.000Z'),
+        ),
+      ),
+    );
+
+    const results = await foods.searchExternal('apple pie');
+    expect(results[0]!.id).toBe(exact.id);
+    expect(results.findIndex((food) => food.id === prefix.id)).toBeLessThan(
+      results.findIndex((food) => food.id === wordStarts.id),
+    );
+    expect(results.findIndex((food) => food.id === wordStarts.id)).toBeLessThan(
+      results.findIndex((food) => food.id === other.id),
+    );
+    expect(results).toEqual(expect.arrayContaining([prefix, wordStarts, other]));
+    expect(await foods.searchExternal('almond paging')).toHaveLength(20);
+    expect((await foods.searchExternal('almond paging', 20, 20)).map((food) => food.id)).toEqual([paged[20]!.id]);
+    expect(await foods.searchExternal('apple tart')).toEqual([]);
   });
 
   it('custom foods require every macro and a complete serving', async () => {

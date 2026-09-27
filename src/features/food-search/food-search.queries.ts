@@ -34,23 +34,33 @@ export function useRecentFoods() {
 }
 
 /** M4 local search runs on every debounced query; provider requests are added separately in M5/M6. */
-export function useCustomFoodSearch(query: string) {
+export function useCustomFoodSearch(query: string, pages = 1) {
   const { foods } = useServices();
   const normalized = query.trim();
   return useQuery({
-    queryKey: foodSearchKeys.custom(normalized),
-    queryFn: () => foods.searchCustom(normalized),
+    queryKey: [...foodSearchKeys.custom(normalized), pages],
+    queryFn: async () => {
+      const results = await Promise.all(
+        Array.from({ length: pages }, (_, page) => foods.searchCustom(normalized, 20, page * 20)),
+      );
+      return results.flat();
+    },
     enabled: normalized.length > 0,
   });
 }
 
 /** DATA-15 / PROV-08: cached external foods are local results and work while offline. */
-export function useSavedFoodSearch(query: string) {
+export function useSavedFoodSearch(query: string, pages = 1) {
   const { foods } = useServices();
   const normalized = query.trim();
   return useQuery({
-    queryKey: foodSearchKeys.saved(normalized),
-    queryFn: () => foods.searchExternal(normalized),
+    queryKey: [...foodSearchKeys.saved(normalized), pages],
+    queryFn: async () => {
+      const results = await Promise.all(
+        Array.from({ length: pages }, (_, page) => foods.searchExternal(normalized, 20, page * 20)),
+      );
+      return results.flat();
+    },
     enabled: normalized.length > 0,
   });
 }

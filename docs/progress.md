@@ -338,11 +338,13 @@ Status: **in progress** · Start commit: `7d04bba`
   - Post-correction Android evidence (2026-09-27T16:38:32+01:00): `scripts/e2e-m5-offline-android.sh` against `0a83d3619c45ab551d0214845ce0defda7f45823` **failed** (exit 1) before Maestro could begin: `timeout: no element labelled "Add"`. Port 8081 was occupied by a Metro service without `EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1`, so the deterministic cached OFF fixtures were not established and this attempt proves none of the `2 × egg` / `Offline E2E saved yoghurt` 95 kcal flow. Evidence: `docs/qa/M5/android-e2e-post-correction-2026-09-27.md`.
   - Cached OFF count-serving correction (2026-09-27): the `egg` fixture itself was correct; the deterministic seed returned when its custom marker existed, leaving prior emulator DBs with the former gram-only OFF serving and stale recent selection. Maestro therefore edited inherited `100` g to `102` g. `seedDevFoodSearch` now upserts/repairs the cached fixture and resets its stale recent choice to default `1 × egg`; focused repository coverage proves the cached selection saves `2 × egg` at 95 kcal and repairs the old state (ARCH-12/18, UX-05, PROV-09). Focused `devSeed.test.ts`: 1 suite / 7 passed. Full `npm run check`: lint + typecheck + 56 suites / 378 passed.
   - Android post-fix attempt: started the required seeded Metro command and ran `ADB="$HOME/Android/Sdk/platform-tools/adb" scripts/e2e-m5-offline-android.sh` three times. The environment terminated Maestro after `Tap on "Lunch"`; the wrapper never emitted `E2E Android: PASS|FAIL`, and direct ADB UI inspection was `Killed`. This is not a passing Android result. Evidence: `docs/qa/M5/android-e2e-count-serving-retry-2026-09-27.md`.
-  - Next unblocked task: rerun the seeded Android wrapper in a non-terminating emulator session and require `E2E Android: PASS`; then perform independent M5 milestone re-review/readiness only. Do not start M6.
+  - Final-review corrections (2026-09-27): local custom and Saved search now require every whitespace token to match name or brand, rank exact name → name prefix → every name-token word start → other matches, then recent use count, recency, and shorter name; both local sections page in 20-row increments with `Show more` (PROV-08, UX-04). Selected OFF detail reads are aborted on Search unmount/back and cannot upsert or navigate after leaving (PROV-10). A failed OFF detail now renders `Couldn't load this food.` on the selected result row (UX-04). Focused: `npm test -- --runInBand src/data/db/repositories/__tests__/foods-diary.test.ts src/features/food-search/__tests__/FoodSearchScreen.test.tsx` → 2 suites / 28 tests passed. Full: `npm run check` → lint + typecheck + 56 suites / 381 tests passed (Jest reported existing React act/open-handle warnings after completion).
+  - Android execution waiver: the documented environment termination remains explicitly user-waived. It is not an Android pass and does not block this correction or M5 independent re-review/readiness.
+  - Next unblocked task: independent M5 re-review/readiness only, under the explicitly recorded Android execution waiver. Do not start M6.
 
 ### Known gaps
 
-- Android E2E remains blocked by the emulator execution environment: the count-serving seed defect is corrected and locally covered, but Maestro is terminated after selecting Lunch before it emits a result sentinel. Rerun the seeded wrapper to obtain the required Android pass; independent M5 milestone re-review/readiness and M6 remain blocked.
+- Android E2E has no passing result: the emulator environment terminated Maestro after selecting Lunch before it emitted a result sentinel. The user explicitly waived that unavailable execution for M5; M6 remains out of scope until independent M5 re-review/readiness completes.
 
 ### Open questions
 
@@ -350,4 +352,4 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Next unblocked task
 
-- Rerun the corrected seeded Android E2E in a non-terminating emulator session. After it passes, perform independent M5 milestone re-review/readiness only; do not start M6 beforehand.
+- Independent M5 re-review/readiness only, under the explicitly recorded Android execution waiver. Do not start M6.

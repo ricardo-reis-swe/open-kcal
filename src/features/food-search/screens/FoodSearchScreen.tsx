@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanResponder, ScrollView, TextInput, View } from 'react-native';
 
@@ -63,10 +63,21 @@ export function FoodSearchScreen({
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [externalLoadError, setExternalLoadError] = useState<string | null>(null);
   const [selectingExternalId, setSelectingExternalId] = useState<string | null>(null);
+  const offDetailController = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [offQuery, setOffQuery] = useState(initialQuery.trim());
   const [offPages, setOffPages] = useState(1);
+  const [customPages, setCustomPages] = useState(1);
+  const [savedPages, setSavedPages] = useState(1);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+      offDetailController.current?.abort();
+    },
+    [],
+  );
   useEffect(() => {
     if (query.trim() === debouncedQuery) return;
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), LOCAL_DEBOUNCE_MS);
@@ -77,8 +88,8 @@ export function FoodSearchScreen({
     const timer = setTimeout(() => setOffQuery(query.trim()), OFF_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [offQuery, query]);
-  const custom = useCustomFoodSearch(debouncedQuery);
-  const saved = useSavedFoodSearch(debouncedQuery);
+  const custom = useCustomFoodSearch(debouncedQuery, customPages);
+  const saved = useSavedFoodSearch(debouncedQuery, savedPages);
   const off = useOpenFoodFactsSearch(offQuery, offPages, i18n.resolvedLanguage ?? i18n.language);
   const online = useOnlineStatus();
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
@@ -94,8 +105,16 @@ export function FoodSearchScreen({
   );
   const offFoods = off.data.filter((candidate) => !savedExternalIds.has(candidate.externalId));
   const updateQuery = (value: string) => {
-    if (value.trim() !== offQuery) setOffPages(1);
+    if (value.trim() !== offQuery) {
+      setOffPages(1);
+      setCustomPages(1);
+      setSavedPages(1);
+    }
     setQuery(value);
+  };
+  const leaveSearch = () => {
+    offDetailController.current?.abort();
+    onBack();
   };
   const deleteFood = async (foodId: string) => {
     setDeleteFailed(false);
@@ -108,8 +127,12 @@ export function FoodSearchScreen({
   const selectOff = async (externalId: string) => {
     setExternalLoadError(null);
     setSelectingExternalId(externalId);
+    offDetailController.current?.abort();
+    const controller = new AbortController();
+    offDetailController.current = controller;
     try {
-      const detail = await services.openFoodFacts.getFood(externalId, new AbortController().signal);
+      const detail = await services.openFoodFacts.getFood(externalId, controller.signal);
+      if (controller.signal.aborted || !mounted.current) return;
       if (!detail) throw new Error('Open Food Facts returned insufficient data');
       const fetchedAt = nowUtcIso(services.clock);
       const expiresAt = new Date(
@@ -121,11 +144,13 @@ export function FoodSearchScreen({
         rawPayloadJson: null,
         schemaVersion: PARSER_VERSION,
       });
+      if (controller.signal.aborted || !mounted.current) return;
       onSelectFood(saved);
     } catch {
-      setExternalLoadError(externalId);
+      if (!controller.signal.aborted && mounted.current) setExternalLoadError(externalId);
     } finally {
-      setSelectingExternalId(null);
+      if (offDetailController.current === controller) offDetailController.current = null;
+      if (mounted.current) setSelectingExternalId(null);
     }
   };
 
@@ -133,7 +158,7 @@ export function FoodSearchScreen({
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
       <AppBar
         title={t('foodSearch.title')}
-        back={{ label: t('common.back'), onPress: onBack }}
+        back={{ label: t('common.back'), onPress: leaveSearch }}
         bottom={
           <View style={{ paddingHorizontal: theme.spacing[3], paddingBottom: theme.spacing[2] }}>
             <View
@@ -224,6 +249,14 @@ export function FoodSearchScreen({
                     onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
                   />
                 ))}
+                {customFoods.length === customPages * 20 ? (
+                  <TextAction
+                    icon="add"
+                    label={t('foodSearch.showMore')}
+                    onPress={() => setCustomPages((current) => current + 1)}
+                    testID="food-search-custom-show-more"
+                  />
+                ) : null}
                 {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
                 {savedFoods.map((food) => (
                   <FoodResultRow
@@ -237,6 +270,14 @@ export function FoodSearchScreen({
                     }}
                   />
                 ))}
+                {savedFoods.length === savedPages * 20 ? (
+                  <TextAction
+                    icon="add"
+                    label={t('foodSearch.showMore')}
+                    onPress={() => setSavedPages((current) => current + 1)}
+                    testID="food-search-saved-show-more"
+                  />
+                ) : null}
                 {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
                 {query.trim().length >= 3 && !online ? (
                   <InlineStatus tone="info" message={t('foodSearch.offline')} />
@@ -257,7 +298,6 @@ export function FoodSearchScreen({
                     <TextAction icon="refresh" label={t('foodSearch.retry')} onPress={() => void off.refetch()} />
                   </View>
                 ) : null}
-                {externalLoadError ? <InlineStatus tone="error" message={t('foodSearch.offLoadFailed')} /> : null}
                 {offFoods.map((candidate) => (
                   <FoodResultRow
                     key={`off-${candidate.externalId}`}
@@ -275,6 +315,7 @@ export function FoodSearchScreen({
                     onPress={() => void selectOff(candidate.externalId)}
                     disabled={selectingExternalId !== null}
                     loading={selectingExternalId === candidate.externalId}
+                    error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
                   />
                 ))}
                 {off.hasMore && query.trim() === offQuery ? (
@@ -338,6 +379,7 @@ function FoodResultRow({
   onDelete,
   disabled = false,
   loading = false,
+  error,
 }: {
   food: Food;
   locale: string;
@@ -346,6 +388,7 @@ function FoodResultRow({
   onDelete?: () => void;
   disabled?: boolean;
   loading?: boolean;
+  error?: string;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -402,6 +445,7 @@ function FoodResultRow({
             <AppText variant="compact" color="textSecondary" numberOfLines={1}>
               {basis} · {t(`foodSearch.sources.${food.source}`)}
             </AppText>
+            {error ? <InlineStatus tone="error" message={error} /> : null}
           </View>
           <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
             <AppText variant="compact" numberOfLines={1} tabular align="right">

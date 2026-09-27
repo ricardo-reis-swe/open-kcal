@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
@@ -23,6 +23,8 @@ async function setup(
     initialQuery?: string;
     language?: 'en' | 'pt-PT';
     throttledOffProduct?: boolean;
+    pendingOffProduct?: boolean;
+    localPaging?: boolean;
   } = {},
 ) {
   const { services } = await createTestServices();
@@ -56,6 +58,26 @@ async function setup(
       },
     );
   }
+  if (options.localPaging) {
+    await Promise.all(
+      Array.from({ length: 20 }, (_, index) => services.foods.createCustom({ ...almonds, name: `Al custom ${index}` })),
+    );
+    await Promise.all(
+      Array.from({ length: 21 }, (_, index) =>
+        services.foods.upsertExternal(
+          'open_food_facts',
+          `saved-almond-${index}`,
+          { ...almonds, name: `Al saved ${index}` },
+          {
+            fetchedAt: '2026-01-01T00:00:00.000Z',
+            expiresAt: '2026-01-02T00:00:00.000Z',
+            rawPayloadJson: null,
+            schemaVersion: 1,
+          },
+        ),
+      ),
+    );
+  }
   const onSelectFood = jest.fn();
   const onCreateCustom = jest.fn();
   if (options.throttledOffProduct) {
@@ -78,7 +100,35 @@ async function setup(
     });
     jest.spyOn(services.openFoodFacts, 'getFood').mockRejectedValue(new TimeoutError('budget wait timed out'));
   }
-  await renderWithServices(
+  let resolvePendingProduct: (() => void) | undefined;
+  let productSignal: AbortSignal | undefined;
+  if (options.pendingOffProduct) {
+    jest.spyOn(services.openFoodFacts, 'search').mockResolvedValue({
+      candidates: [
+        {
+          externalId: 'pending-off-product',
+          input: {
+            name: 'Pending OFF yoghurt',
+            brand: null,
+            basisQuantity: 100,
+            basisUnit: 'g',
+            nutrients: { energyKcal: 95, carbohydrateG: 4, proteinG: 8, fatG: 5 },
+            servings: [],
+          },
+        },
+      ],
+      page: 1,
+      pageCount: 1,
+    });
+    jest.spyOn(services.openFoodFacts, 'getFood').mockImplementation(
+      (_id, signal) =>
+        new Promise((resolve) => {
+          productSignal = signal;
+          resolvePendingProduct = () => resolve(null);
+        }),
+    );
+  }
+  const view = await renderWithServices(
     <FoodSearchScreen
       mealId={meal!.id}
       date="2026-09-25"
@@ -92,10 +142,22 @@ async function setup(
     services,
     { language: options.language },
   );
-  return { services, food, onSelectFood, onCreateCustom };
+  return {
+    services,
+    food,
+    onSelectFood,
+    onCreateCustom,
+    view,
+    productSignal: () => productSignal,
+    resolvePendingProduct,
+  };
 }
 
-afterEach(() => onlineManager.setOnline(true));
+afterEach(async () => {
+  await cleanup();
+  onlineManager.setOnline(true);
+  jest.restoreAllMocks();
+});
 
 describe('UX-04: local Food Search screen', () => {
   it('focuses the search field and shows the empty Recent state plus compact actions', async () => {
@@ -145,10 +207,19 @@ describe('UX-04: local Food Search screen', () => {
     expect(screen.getByText('Cached almond yoghurt')).toBeTruthy();
   });
 
-  it('PROV-04 / UX-04: shows the row error when a throttled OFF product read reaches its five-second bound', async () => {
-    await setup({ initialQuery: 'yoghurt', throttledOffProduct: true });
-    fireEvent.press(await screen.findByText('Throttled OFF yoghurt'));
-    expect(await screen.findByText("Couldn't load this food.")).toBeTruthy();
+  it('PROV-10 / UX-04: aborts a selected OFF detail on unmount and never upserts or navigates', async () => {
+    const { services, onSelectFood, productSignal, view, resolvePendingProduct } = await setup({
+      initialQuery: 'yoghurt',
+      pendingOffProduct: true,
+    });
+    fireEvent.press(await screen.findByText('Pending OFF yoghurt'));
+    await waitFor(() => expect(productSignal()).toBeDefined());
+    view.unmount();
+    await waitFor(() => expect(productSignal()!.aborted).toBe(true));
+    resolvePendingProduct?.();
+    await Promise.resolve();
+    expect(onSelectFood).not.toHaveBeenCalled();
+    expect(await services.foods.searchExternal('pending')).toEqual([]);
   });
 
   it('ARCH-22: renders the local search shell in pt-PT', async () => {
@@ -156,5 +227,24 @@ describe('UX-04: local Food Search screen', () => {
     expect(await screen.findByRole('header', { name: 'Pesquisa de alimentos' })).toBeTruthy();
     expect(screen.getByText('A adicionar a Breakfast · Hoje')).toBeTruthy();
     expect(screen.getByText('Pesquise um alimento para o adicionar.')).toBeTruthy();
+  });
+
+  it('PROV-04 / UX-04: shows the row error when a throttled OFF product read reaches its five-second bound', async () => {
+    await setup({ initialQuery: 'yoghurt', throttledOffProduct: true });
+    fireEvent.press(await screen.findByText('Throttled OFF yoghurt'));
+    const row = await screen.findByTestId('food-result-off-throttled-off-product');
+    expect(await within(row).findByText("Couldn't load this food.")).toBeTruthy();
+  });
+
+  it('PROV-08 / UX-04: pages each local section in twenty-row increments', async () => {
+    await setup({ initialQuery: 'al', localPaging: true });
+    expect(await screen.findByTestId('food-search-custom-show-more')).toBeTruthy();
+    expect(screen.getByTestId('food-search-saved-show-more')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('food-search-custom-show-more'));
+    fireEvent.press(screen.getByTestId('food-search-saved-show-more'));
+    await waitFor(() => expect(screen.getByText('Al custom 19')).toBeTruthy());
+    expect(screen.getByText('Al saved 20')).toBeTruthy();
+    expect(screen.queryByTestId('food-search-custom-show-more')).toBeNull();
+    expect(screen.queryByTestId('food-search-saved-show-more')).toBeNull();
   });
 });

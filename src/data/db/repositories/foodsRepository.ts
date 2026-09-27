@@ -222,34 +222,66 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
     },
 
     /** UX-04 / DATA-15: active custom-food matches for the local `My foods` section. */
-    async searchCustom(query: string, limit = 20): Promise<Food[]> {
-      const normalized = query.trim();
-      if (normalized.length === 0 || !Number.isInteger(limit) || limit <= 0) return [];
+    async searchCustom(query: string, limit = 20, offset = 0): Promise<Food[]> {
+      const tokens = query.trim().split(/\s+/).filter(Boolean);
+      if (tokens.length === 0 || !Number.isInteger(limit) || limit <= 0 || !Number.isInteger(offset) || offset < 0)
+        return [];
+      const normalized = tokens.join(' ');
+      const matches = tokens
+        .map(() => "(instr(lower(foods.name), lower(?)) > 0 OR instr(lower(COALESCE(foods.brand, '')), lower(?)) > 0)")
+        .join(' AND ');
+      const matchArgs = tokens.flatMap((token) => [token, token]);
+      // PROV-08: a word start is the beginning of the name or follows whitespace.
+      const wordStarts = tokens
+        .map(() => '(lower(foods.name) LIKE lower(?) OR lower(foods.name) LIKE lower(?))')
+        .join(' AND ');
+      const wordArgs = tokens.flatMap((token) => [`${token}%`, `% ${token}%`]);
       const rows = await db.getAll<{ id: string }>(
-        `SELECT id FROM foods
-         WHERE source = 'custom' AND is_deleted = 0
-           AND (instr(lower(name), lower(?)) > 0 OR instr(lower(COALESCE(brand, '')), lower(?)) > 0)
-         ORDER BY CASE WHEN lower(name) LIKE lower(?) THEN 0 ELSE 1 END, name COLLATE NOCASE, id
-         LIMIT ?`,
-        [normalized, normalized, `${normalized}%`, limit],
+        `SELECT foods.id FROM foods
+         LEFT JOIN recent_foods ON recent_foods.food_id = foods.id
+         WHERE foods.source = 'custom' AND foods.is_deleted = 0 AND ${matches}
+         ORDER BY CASE
+           WHEN lower(foods.name) = lower(?) THEN 0
+           WHEN lower(foods.name) LIKE lower(?) THEN 1
+           WHEN ${wordStarts} THEN 2
+           ELSE 3
+         END,
+         COALESCE(recent_foods.use_count, 0) DESC, recent_foods.last_used_at DESC,
+         length(foods.name), foods.id
+         LIMIT ? OFFSET ?`,
+        [...matchArgs, normalized, `${normalized}%`, ...wordArgs, limit, offset],
       );
       return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
     },
 
     /** PROV-08 / DATA-15: cached external foods remain searchable even when their refresh TTL has expired. */
-    async searchExternal(query: string, limit = 20): Promise<Food[]> {
+    async searchExternal(query: string, limit = 20, offset = 0): Promise<Food[]> {
       const tokens = query.trim().split(/\s+/).filter(Boolean);
-      if (tokens.length === 0 || !Number.isInteger(limit) || limit <= 0) return [];
+      if (tokens.length === 0 || !Number.isInteger(limit) || limit <= 0 || !Number.isInteger(offset) || offset < 0)
+        return [];
+      const normalized = tokens.join(' ');
       const matches = tokens
-        .map(() => "(instr(lower(name), lower(?)) > 0 OR instr(lower(COALESCE(brand, '')), lower(?)) > 0)")
+        .map(() => "(instr(lower(foods.name), lower(?)) > 0 OR instr(lower(COALESCE(foods.brand, '')), lower(?)) > 0)")
         .join(' AND ');
-      const args = tokens.flatMap((token) => [token, token]);
+      const matchArgs = tokens.flatMap((token) => [token, token]);
+      const wordStarts = tokens
+        .map(() => '(lower(foods.name) LIKE lower(?) OR lower(foods.name) LIKE lower(?))')
+        .join(' AND ');
+      const wordArgs = tokens.flatMap((token) => [`${token}%`, `% ${token}%`]);
       const rows = await db.getAll<{ id: string }>(
         `SELECT foods.id FROM foods
          JOIN food_cache_metadata ON food_cache_metadata.food_id = foods.id
+         LEFT JOIN recent_foods ON recent_foods.food_id = foods.id
          WHERE foods.source IN ('usda', 'open_food_facts') AND foods.is_deleted = 0 AND ${matches}
-         ORDER BY foods.name COLLATE NOCASE, foods.id LIMIT ?`,
-        [...args, limit],
+         ORDER BY CASE
+           WHEN lower(foods.name) = lower(?) THEN 0
+           WHEN lower(foods.name) LIKE lower(?) THEN 1
+           WHEN ${wordStarts} THEN 2
+           ELSE 3
+         END,
+         COALESCE(recent_foods.use_count, 0) DESC, recent_foods.last_used_at DESC,
+         length(foods.name), foods.id LIMIT ? OFFSET ?`,
+        [...matchArgs, normalized, `${normalized}%`, ...wordArgs, limit, offset],
       );
       return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
     },
