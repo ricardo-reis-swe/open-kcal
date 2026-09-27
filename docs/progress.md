@@ -9,7 +9,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M2 Diary (read) | done |
 | M3 Quick Calories | done |
 | M4 Custom foods + ruler | done |
-| M5 Search + Open Food Facts | awaiting user acceptance |
+| M5 Search + Open Food Facts | done |
 | M6 USDA | not started |
 | M7 Meal Detail + copy | not started |
 | M8 Profile | not started |
@@ -315,7 +315,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ## M5 Search + Open Food Facts
 
-Status: **awaiting user acceptance** · Start commit: `7d04bba`
+Status: **done** (accepted by the user 2026-09-27) · Start commit: `7d04bba`
 
 ### Tasks
 
@@ -353,4 +353,4 @@ Status: **awaiting user acceptance** · Start commit: `7d04bba`
 
 ### Next unblocked task
 
-- User acceptance of M5. M6 MUST NOT start until acceptance is recorded.
+- M6 T1: USDA adapter and fixtures (PROV-02/05/06/11/13), then Food Databases key flow (UX-18).
