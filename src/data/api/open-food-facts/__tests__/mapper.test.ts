@@ -42,4 +42,54 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
       }),
     ).toBeNull();
   });
+
+  it('uses serving fallbacks and creates a liquid basis plus a parsed count serving', () => {
+    const candidate = mapOpenFoodFactsProduct({
+      code: 'liquid',
+      product_name: 'OAT DRINK',
+      quantity: '1 l',
+      serving_quantity: '200',
+      serving_size: '2 glasses (200 ml)',
+      nutriments: {
+        'energy-kj_serving': '400',
+        proteins_serving: '2',
+        carbohydrates_serving: '8',
+        fat_serving: '3',
+      },
+    });
+    expect(candidate).toMatchObject({
+      input: {
+        name: 'Oat drink',
+        basisUnit: 'ml',
+        nutrients: { energyKcal: expect.closeTo(47.801, 3), proteinG: 1, carbohydrateG: 4, fatG: 1.5 },
+      },
+    });
+    expect(candidate?.input.servings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: 'serving', basisMultiplier: 2, isDefault: true }),
+        expect.objectContaining({ label: 'glasses', basisMultiplier: 1 }),
+        expect.objectContaining({ label: 'ml' }),
+        expect.objectContaining({ label: 'fl oz' }),
+      ]),
+    );
+  });
+
+  it('drops malformed individual hits and treats invalid macros as unknown', () => {
+    const candidates = mapOpenFoodFactsSearch({
+      hits: [
+        { code: 'too-many-macros', product_name: 'Nope', nutriments: { 'energy-kcal_100g': 100, proteins_100g: 101 } },
+        { product_name: 'No id', nutriments: { 'energy-kcal_100g': 100 } },
+        product,
+      ],
+    });
+    expect(candidates).toHaveLength(2);
+    expect(candidates[0]?.input.nutrients.proteinG).toBeNull();
+    expect(
+      mapOpenFoodFactsProduct({
+        code: 'too-much-energy',
+        product_name: 'Nope',
+        nutriments: { 'energy-kcal_100g': 901 },
+      }),
+    ).toBeNull();
+  });
 });

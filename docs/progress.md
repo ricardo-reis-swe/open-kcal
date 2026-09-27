@@ -319,7 +319,7 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Tasks
 
-- [x] T1 OFF candidate mapper: Zod-validated response shapes, energy/nutrient normalization, serving initialization, and minimum-data filtering (PROV-05/06/07).
+- [x] T1 OFF candidate mapper: Zod-validated response shapes, per-100 g/ml + serving fallbacks, mass/liquid serving initialization, and minimum-data filtering (PROV-05/06/07).
 - [ ] T2 OFF HTTP adapter, responsible request budget/cooldown, and sanitized fixtures.
   - [x] HTTP boundary: documented search/product requests, identification header, response/error mapping, and `Retry-After` cooldown parsing (PROV-01/03/12).
   - [x] Testable sliding-window limiter and shared provider cooldown primitive (PROV-04/10).

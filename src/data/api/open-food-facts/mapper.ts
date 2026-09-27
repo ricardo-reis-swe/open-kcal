@@ -23,6 +23,8 @@ const productSchema = z.object({
   nutriments: nutrimentsSchema.default({}),
   serving_quantity: numberLike.optional(),
   serving_size: z.string().optional(),
+  quantity: z.string().optional(),
+  product_quantity: numberLike.optional(),
   nutrition_data_per: z.string().optional(),
 });
 
@@ -51,15 +53,41 @@ function brand(value: string | string[] | undefined): string | null {
   return normalized || null;
 }
 
-function nutrient(values: Record<string, number | undefined>, key: string): number | null {
-  return finiteNonNegative(values[key]);
+function nutrient(values: Record<string, number | undefined>, key: string, maximum = 100): number | null {
+  const value = finiteNonNegative(values[key]);
+  return value === null || value > maximum ? null : value;
 }
 
-function servingFromProduct(product: OpenFoodFactsProduct): { quantity: number; unit: 'g' | 'ml' } | null {
+function isVolume(text: string): boolean {
+  return /\b(?:ml|cl|dl|l|fl\.?\s*oz)\b/i.test(text);
+}
+
+function isMass(text: string): boolean {
+  return /\b(?:g|gr|kg|oz|lb)\b/i.test(text);
+}
+
+function basisUnit(product: OpenFoodFactsProduct): 'g' | 'ml' {
+  const text = `${product.serving_size ?? ''} ${product.quantity ?? ''}`;
+  return isVolume(text) && !isMass(text) ? 'ml' : 'g';
+}
+
+function servingFromProduct(
+  product: OpenFoodFactsProduct,
+  unit: 'g' | 'ml',
+): { quantity: number; unit: 'g' | 'ml' } | null {
   const quantity = finiteNonNegative(product.serving_quantity);
   if (quantity === null || quantity <= 0) return null;
-  const text = product.serving_size?.toLowerCase() ?? '';
-  return { quantity, unit: /\bml\b/.test(text) ? 'ml' : 'g' };
+  return { quantity, unit };
+}
+
+function hintedServing(product: OpenFoodFactsProduct, unit: 'g' | 'ml'): ServingInput | null {
+  const match = product.serving_size?.match(/^\s*([\d.,]+)\s+(.+?)\s+\(([\d.,]+)\s*(g|ml)\)\s*$/i);
+  if (!match || match[4]!.toLowerCase() !== unit) return null;
+  const count = Number(match[1]!.replace(',', '.'));
+  const amount = Number(match[3]!.replace(',', '.'));
+  const label = match[2]!.trim();
+  if (!(count > 0 && amount > 0 && label)) return null;
+  return { label, quantity: 1, unit: label, basisMultiplier: amount / count / 100 };
 }
 
 /** Returns null for a single unusable hit: dropping it is not a provider-wide error (PROV-07). */
@@ -73,24 +101,43 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
 
   const n = product.nutriments;
   const energy =
-    nutrient(n, 'energy-kcal_100g') ??
+    nutrient(n, 'energy-kcal_100g', 900) ??
     (() => {
-      const kj = nutrient(n, 'energy-kj_100g') ?? nutrient(n, 'energy_100g');
-      return kj === null ? null : kj / 4.184;
+      const kj = finiteNonNegative(n['energy-kj_100g']) ?? finiteNonNegative(n.energy_100g);
+      const converted = kj === null ? null : kj / 4.184;
+      return converted === null || converted > 900 ? null : converted;
     })();
-  const protein = nutrient(n, 'proteins_100g');
-  const carbohydrate = nutrient(n, 'carbohydrates_100g');
-  const fat = nutrient(n, 'fat_100g');
-  if (energy === null || (energy === 0 && protein === null && carbohydrate === null && fat === null)) return null;
+  const unit = basisUnit(product);
+  const servingQuantity = finiteNonNegative(product.serving_quantity);
+  const fromServing = (key: string, maximum = 100) => {
+    const value = finiteNonNegative(n[`${key}_serving`]);
+    if (value === null || servingQuantity === null || servingQuantity <= 0) return null;
+    const per100 = (value / servingQuantity) * 100;
+    return per100 > maximum ? null : per100;
+  };
+  const protein = nutrient(n, 'proteins_100g') ?? fromServing('proteins');
+  const carbohydrate = nutrient(n, 'carbohydrates_100g') ?? fromServing('carbohydrates');
+  const fat = nutrient(n, 'fat_100g') ?? fromServing('fat');
+  const resolvedEnergy =
+    energy ??
+    (() => {
+      const per100 = fromServing('energy-kcal', 900);
+      return (
+        per100 ??
+        (() => {
+          const kj = fromServing('energy-kj', 900 * 4.184) ?? fromServing('energy', 900 * 4.184);
+          return kj === null ? null : kj / 4.184;
+        })()
+      );
+    })();
+  if (resolvedEnergy === null || (resolvedEnergy === 0 && protein === null && carbohydrate === null && fat === null))
+    return null;
   const macroKcal = 4 * (protein ?? 0) + 4 * (carbohydrate ?? 0) + 9 * (fat ?? 0);
-  if (energy === 0 && macroKcal >= 20) return null;
+  if (resolvedEnergy === 0 && macroKcal >= 20) return null;
 
-  const serving = servingFromProduct(product);
-  const basisUnit = serving?.unit ?? 'g';
-  const servings: ServingInput[] = [
-    { label: basisUnit, quantity: 1, unit: basisUnit, basisMultiplier: 0.01, isDefault: !serving },
-  ];
-  if (basisUnit === 'g') servings.push({ label: 'oz', quantity: 1, unit: 'oz', basisMultiplier: 0.028349523125 });
+  const serving = servingFromProduct(product, unit);
+  const servings: ServingInput[] = [{ label: unit, quantity: 1, unit, basisMultiplier: 0.01, isDefault: !serving }];
+  if (unit === 'g') servings.push({ label: 'oz', quantity: 1, unit: 'oz', basisMultiplier: 0.028349523125 });
   else servings.push({ label: 'fl oz', quantity: 1, unit: 'fl oz', basisMultiplier: 0.0295735295625 });
   if (serving) {
     servings.unshift({
@@ -101,14 +148,17 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
       isDefault: true,
     });
   }
+  const hint = hintedServing(product, unit);
+  if (hint && !servings.some((candidate) => candidate.label.toLowerCase() === hint.label.toLowerCase()))
+    servings.splice(serving ? 1 : 0, 0, hint);
   return {
     externalId,
     input: {
       name,
       brand: brand(product.brands),
       basisQuantity: 100,
-      basisUnit,
-      nutrients: { energyKcal: energy, carbohydrateG: carbohydrate, proteinG: protein, fatG: fat },
+      basisUnit: unit,
+      nutrients: { energyKcal: resolvedEnergy, carbohydrateG: carbohydrate, proteinG: protein, fatG: fat },
       servings,
     },
   };
@@ -118,7 +168,12 @@ export function mapOpenFoodFactsSearch(payload: unknown): FoodCandidate[] {
   const response = z.object({ hits: z.array(z.unknown()) }).safeParse(payload);
   if (!response.success) throw new ProviderResponseError('Open Food Facts search schema error');
   return response.data.hits.flatMap((hit) => {
-    const candidate = mapOpenFoodFactsProduct(hit);
-    return candidate ? [candidate] : [];
+    try {
+      const candidate = mapOpenFoodFactsProduct(hit);
+      return candidate ? [candidate] : [];
+    } catch (error) {
+      if (error instanceof ProviderResponseError) return [];
+      throw error;
+    }
   });
 }
