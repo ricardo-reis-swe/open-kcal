@@ -328,7 +328,7 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Known gaps
 
-- OFF results are wired into Food Search and selected products are cached before Food Detail. Paging, retries, offline wiring and cache refresh remain.
+- OFF results are wired into Food Search; remote taps show an in-row loading state, cache the selected product before Food Detail, and retain an inline load error. Paging, retries, offline wiring and cache refresh remain.
 
 ### Open questions
 

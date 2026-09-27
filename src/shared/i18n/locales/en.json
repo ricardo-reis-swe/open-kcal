@@ -147,6 +147,8 @@
     "saved": "Saved",
     "openFoodFacts": "Open Food Facts",
     "offFailed": "Open Food Facts search failed.",
+    "offLoadFailed": "Couldn't load this food.",
+    "loadingFood": "Loading food…",
     "emptyRecent": "Search for a food to add it.",
     "searching": "Searching…",
     "noResults": "No foods found for “{{query}}”.",

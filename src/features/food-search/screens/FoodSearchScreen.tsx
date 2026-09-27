@@ -5,6 +5,7 @@ import { PanResponder, ScrollView, TextInput, View } from 'react-native';
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import { useServices } from '@/bootstrap/services';
 import { nowUtcIso } from '@/shared/dates';
+import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
 import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
 import { AppBar, AppText, InlineStatus, PressableIcon, SectionHeader, TextAction } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
@@ -58,6 +59,8 @@ export function FoodSearchScreen({
   const writes = useLocalFoodWrites();
   const services = useServices();
   const [deleteFailed, setDeleteFailed] = useState(false);
+  const [externalLoadError, setExternalLoadError] = useState<string | null>(null);
+  const [selectingExternalId, setSelectingExternalId] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [offQuery, setOffQuery] = useState(initialQuery.trim());
@@ -92,19 +95,27 @@ export function FoodSearchScreen({
     }
   };
   const selectOff = async (externalId: string) => {
-    const detail = await services.openFoodFacts.getFood(externalId, new AbortController().signal);
-    if (!detail) return;
-    const fetchedAt = nowUtcIso(services.clock);
-    const expiresAt = new Date(
-      services.clock.now().getTime() + 30 * 24 * 60 * 60_000,
-    ).toISOString() as typeof fetchedAt;
-    const saved = await services.foods.upsertExternal('open_food_facts', detail.externalId, detail.input, {
-      fetchedAt,
-      expiresAt,
-      rawPayloadJson: null,
-      schemaVersion: 1,
-    });
-    onSelectFood(saved);
+    setExternalLoadError(null);
+    setSelectingExternalId(externalId);
+    try {
+      const detail = await services.openFoodFacts.getFood(externalId, new AbortController().signal);
+      if (!detail) throw new Error('Open Food Facts returned insufficient data');
+      const fetchedAt = nowUtcIso(services.clock);
+      const expiresAt = new Date(
+        services.clock.now().getTime() + 30 * 24 * 60 * 60_000,
+      ).toISOString() as typeof fetchedAt;
+      const saved = await services.foods.upsertExternal('open_food_facts', detail.externalId, detail.input, {
+        fetchedAt,
+        expiresAt,
+        rawPayloadJson: null,
+        schemaVersion: PARSER_VERSION,
+      });
+      onSelectFood(saved);
+    } catch {
+      setExternalLoadError(externalId);
+    } finally {
+      setSelectingExternalId(null);
+    }
   };
 
   return (
@@ -224,6 +235,7 @@ export function FoodSearchScreen({
                   </AppText>
                 ) : null}
                 {off.isError ? <InlineStatus tone="error" message={t('foodSearch.offFailed')} /> : null}
+                {externalLoadError ? <InlineStatus tone="error" message={t('foodSearch.offLoadFailed')} /> : null}
                 {offFoods.map((candidate) => (
                   <FoodResultRow
                     key={`off-${candidate.externalId}`}
@@ -239,6 +251,8 @@ export function FoodSearchScreen({
                     locale={locale}
                     energyUnit={settings.data.energyUnit}
                     onPress={() => void selectOff(candidate.externalId)}
+                    disabled={selectingExternalId !== null}
+                    loading={selectingExternalId === candidate.externalId}
                   />
                 ))}
                 {customFoods.length === 0 && savedFoods.length === 0 ? (
@@ -287,12 +301,16 @@ function FoodResultRow({
   energyUnit,
   onPress,
   onDelete,
+  disabled = false,
+  loading = false,
 }: {
   food: Food;
   locale: string;
   energyUnit: 'kcal' | 'kJ';
   onPress: () => void;
   onDelete?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -328,6 +346,7 @@ function FoodResultRow({
           onAccessibilityAction={(event) => {
             if (event.nativeEvent.actionName === 'delete') onDelete?.();
           }}
+          disabled={disabled}
           onPress={() => {
             if (revealed) setRevealed(false);
             else onPress();
@@ -344,7 +363,7 @@ function FoodResultRow({
           })}
         >
           <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText numberOfLines={1}>{food.name}</AppText>
+            <AppText numberOfLines={1}>{loading ? t('foodSearch.loadingFood') : food.name}</AppText>
             <AppText variant="compact" color="textSecondary" numberOfLines={1}>
               {basis} · {t('foodSearch.customSource')}
             </AppText>
