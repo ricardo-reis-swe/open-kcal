@@ -13,6 +13,8 @@ export type TextActionProps = {
   /** `danger` for destructive text actions such as `Delete entry` (DS-09, UX-00). */
   tone?: 'primary' | 'danger';
   disabled?: boolean;
+  /** Shows the compact selected-state indicator used by controls such as serving unit tabs (DS-09). */
+  selected?: boolean;
   accessibilityHint?: string;
   testID?: string;
 };
@@ -24,6 +26,7 @@ export function TextAction({
   icon,
   tone = 'primary',
   disabled = false,
+  selected = false,
   accessibilityHint,
   testID,
 }: TextActionProps) {
@@ -37,13 +40,15 @@ export function TextAction({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
         styles.base,
         {
           minHeight: theme.touchMin,
           paddingHorizontal: theme.spacing[2],
           borderRadius: theme.radii.small,
+          borderBottomWidth: 2,
+          borderBottomColor: selected ? theme.colors.primary : 'transparent',
           gap: theme.spacing[1],
         },
         pressed && { backgroundColor: tone === 'danger' ? theme.colors.dangerTint : theme.colors.primaryTint },

@@ -146,7 +146,19 @@ export function ServingRuler({
             return (
               <View key={offset} style={{ width: 16, alignItems: 'center', justifyContent: 'flex-end' }}>
                 {major ? (
-                  <AppText variant="label" style={{ color: theme.colors.onPrimary }} tabular>
+                  <AppText
+                    variant="label"
+                    numberOfLines={1}
+                    style={{
+                      position: 'absolute',
+                      bottom: 32,
+                      left: -16,
+                      width: 48,
+                      color: theme.colors.onPrimary,
+                    }}
+                    tabular
+                    align="center"
+                  >
                     {displayQuantity(value, locale)}
                   </AppText>
                 ) : null}

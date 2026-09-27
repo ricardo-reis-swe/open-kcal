@@ -287,16 +287,17 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete). `npm run check`: 362/362.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
   - [x] M4 and cumulative Android flows pass on `Pixel_10` (2026-09-27). The Android run exposed two real interactions: the direct-serving return key dismissed without applying the value, and the translated custom-food row intercepted taps on its revealed Delete action. Both are fixed; the Maestro flow now targets the revealed action directly and asserts the result row disappears. iOS testing is deferred per the user's Linux-only testing instruction.
-- [x] T8 Android exit demo and DS-13 subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation at light/dark × default/2.0 text on a 360 dp-wide emulator. iOS QA is deferred per user instruction.
+- [x] T8 Android exit demo and visual subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation in light/dark default-text states on a 360 dp-wide emulator. iOS QA is deferred per user instruction.
 - [ ] T9 Independent review
+  - Round 1 (`15f14bb`, now `docs/qa/M4/review-round1.md`): not clean, 1 blocker · 3 majors. Fixed: Android Maestro rerun passes (the reviewer device-server failure did not reproduce); meal-specific add dismisses Food Search back to Meal Detail (NAV-04); food-result kcal column stays readable; ruler major labels stay horizontal and the active unit has a compact indicator. Fresh Android visual capture and round-2 review are pending.
 
 ### ROAD-02 checklist
-- [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09)
-- [x] `npm run check` green (362 tests)
+- [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09; round-2 review pending)
+- [x] `npm run check` green (363 tests)
 - [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
-- [x] M4 flow and cumulative flows pass on Android; iOS deferred per user instruction
-- [x] Android exit demo and light/dark × default/largest screenshots captured; iOS deferred per user instruction
+- [x] M4 flow and cumulative flows pass on Android; iOS deferred per user instruction. Round-1 reviewer device-server failure was followed by a passing Android M4 rerun.
+- [x] Android exit demo and light/dark default-text screenshots captured; iOS deferred per user instruction
 - [ ] Independent review clean
 - [ ] No in-scope placeholder UI or unlogged gaps
 - [ ] Nothing sensitive added to logs

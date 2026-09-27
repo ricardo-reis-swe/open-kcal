@@ -236,7 +236,10 @@ function FoodDetailForm({
           quantity,
         });
         setDate(mode.date);
-        router.dismissTo(routes.diary());
+        // NAV-04: a meal-specific add returns past Food Search to its Meal Detail.
+        // Global and Diary flows end on the target Diary date (NAV-03).
+        if (mode.origin === 'mealDetail') router.dismiss(2);
+        else router.dismissTo(routes.diary());
       } else {
         await writes.editFoodEntry.mutateAsync({
           id: mode.entryId,
@@ -301,7 +304,12 @@ function FoodDetailForm({
           {allowServingChange ? (
             <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.spacing[3] }}>
               {visibleUnits.map((unit) => (
-                <TextAction key={unit.id} label={unit.label} onPress={() => chooseServing(unit)} />
+                <TextAction
+                  key={unit.id}
+                  label={unit.label}
+                  onPress={() => chooseServing(unit)}
+                  selected={unit.id === serving.id}
+                />
               ))}
               {orderedServings.length > 3 ? (
                 <TextAction label={t('foodDetail.moreUnits')} onPress={() => setPickingUnit(true)} />

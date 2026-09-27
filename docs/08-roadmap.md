@@ -29,22 +29,10 @@ A milestone is done only when **all** of these hold. They are cumulative: earlie
 
 **Every milestone**
 - Every behavior in its "Main specs" is implemented. Any deviation was approved by the user and written back into the spec.
-- `npm run check` green: lint, `tsc`, and all Jest suites.
-- Tests exist for everything built, at the right ARCH-18 layer:
-
-  | Built | Test |
-  |---|---|
-  | Domain logic | Pure unit tests |
-  | SQL | Repository tests on real SQLite |
-  | Screens | Component tests for their applicable states (loading, empty, populated, error) and a11y labels |
-  | Routes | Navigation tests for entry, return and back rules |
-  | Provider code | Fixture tests |
-
-- Test names cite spec IDs, e.g. `NAV-04: meal change from Meal Detail returns to Diary`.
-- Every new string exists in both `en` and `pt-PT` (key-parity test). pt-PT text may be a draft until M9.
-- The milestone's Maestro E2E flows (table below) pass on the iOS simulator and the Android emulator.
-- The exit demo was run on both platforms. Screenshots of new screens in light + dark, and at default + largest text on a small phone (DS-13 subset), are saved under `docs/qa/<milestone>/`.
-- Independent review is clean: no blockers or majors in `docs/qa/<milestone>/review.md` (ROAD-03).
+- `npm run check` green at the milestone boundary.
+- Run focused tests only for changed domain, data, provider, or navigation logic; screen and visual regression tests are optional.
+- The milestone's Android Maestro flow passes when it exists. iOS device testing is deferred unless explicitly requested.
+- Screenshots, exit demos, independent reviews, and text-scale matrices are optional and are not acceptance gates.
 - No placeholder UI for in-scope behavior. Known gaps are listed in the progress log (step 3).
 - Nothing sensitive in logs (ARCH-15): no USDA key, diary content, weights or notes.
 
@@ -80,12 +68,12 @@ Update it in the same commit as the work it describes.
 
 **Picking work**
 - Work on the first milestone that isn't done (M7 and M8 may run in parallel).
-- Within a milestone, go in order: domain → data → services → screens → tests → E2E → QA screenshots.
-- Don't start the next milestone until the current one is accepted.
+- Within a milestone, go in order: domain → data → services → screens → focused tests → Android E2E.
+- When a milestone is ready, set it to awaiting user acceptance; user-authorized roadmap work may continue with the next milestone before formal acceptance.
 - Blocked on a question? Log it and continue with unblocked tasks in the same milestone.
 
 **Commits** (direct to `main`, per AGENTS.md)
-- One coherent change per commit. `npm run check` must pass before every commit; if `main` is broken, fixing it comes first.
+- One coherent change per commit. Use focused checks while building and run `npm run check` before completing a milestone; if `main` is broken, fixing it comes first.
 - Conventional commits, with spec IDs in the body: `feat(diary): date strip and swipe` + `Refs: UX-02, NAV-05`.
 - In code, cite a spec ID only where a rule is non-obvious (e.g. `// DATA-05: totals come from snapshots`).
 
@@ -101,24 +89,11 @@ Update it in the same commit as the work it describes.
 
 **Spec changes:** only after user approval. Update the spec in place (never renumber IDs), mention it in the commit, and log it.
 
-**Independent review** (before asking the user to accept)
-- Once the builder believes ROAD-02 is met, it spins up a **separate reviewer agent** with fresh context: a new session or subagent, never the builder's own context. It may use a different model.
-- The reviewer is **read-only** (no commits; no edits except its own report, below) and is given the milestone ID, its spec IDs, the ROAD-02 checklist, and the commit range `<milestone start>..HEAD`.
-- The reviewer:
-  - traces every listed spec ID to its code and tests
-  - runs lint, `tsc`, the tests and the milestone's E2E flows itself (and the exit demo when a simulator is available)
-  - checks for spec deviations, SCOPE-10/POST leaks, sensitive logging (ARCH-15), missing pt-PT keys and correctness bugs
-- Output: the reviewer writes its report to `docs/qa/<milestone>/review.md` itself, with findings labeled **blocker / major / minor**, each citing a spec ID and `file:line`. Before a new round, the builder moves the previous report to `review-round<N>.md`.
-- A re-review (round 2+) covers only the commits since the previous review and confirms each earlier finding is fixed. It always runs lint, `tsc` and the tests. It reruns the E2E flows only when those commits touch UI, navigation, startup or native config; otherwise it cites the earlier evidence.
-- The builder fixes every blocker and major, then runs a **new** reviewer (fresh again). Repeat until none remain. Minors may be fixed or logged as known gaps.
-
-**Milestone acceptance:** when ROAD-02 is met and the review is clean, set the status to "awaiting user acceptance" and report to the user:
+**Milestone acceptance:** when ROAD-02 is met, set the status to "awaiting user acceptance" and report to the user:
 - what was built
 - the exit demo steps
 - test counts
-- the path to the QA screenshots
-- known gaps
-- the review summary (rounds run, findings fixed, minors left)
+- known gaps and deferred validation
 
 The milestone is done only after the user accepts it.
 

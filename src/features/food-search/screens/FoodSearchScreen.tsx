@@ -224,6 +224,8 @@ function FoodResultRow({
     value: formatEnergy(food.nutrients.energyKcal, energyUnit, locale),
     unit: t(`diary.units.${energyUnit}`),
   });
+  const energyValue = formatEnergy(food.nutrients.energyKcal, energyUnit, locale);
+  const energyUnitLabel = t(`diary.units.${energyUnit}`);
   const [revealed, setRevealed] = useState(false);
   const pan = useMemo(
     () =>
@@ -264,15 +266,20 @@ function FoodResultRow({
             backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
           })}
         >
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <AppText numberOfLines={1}>{food.name}</AppText>
             <AppText variant="compact" color="textSecondary" numberOfLines={1}>
               {basis} · {t('foodSearch.customSource')}
             </AppText>
           </View>
-          <AppText variant="compact" tabular>
-            {energy}
-          </AppText>
+          <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
+            <AppText variant="compact" numberOfLines={1} tabular align="right">
+              {energyValue}
+            </AppText>
+            <AppText variant="compact" numberOfLines={1} align="right">
+              {energyUnitLabel}
+            </AppText>
+          </View>
         </FocusablePressable>
       </View>
       {onDelete ? (

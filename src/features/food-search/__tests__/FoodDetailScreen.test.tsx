@@ -28,7 +28,7 @@ const mockFood: Food = {
 
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
-  router: { back: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), replace: jest.fn() },
+  router: { back: jest.fn(), dismiss: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), replace: jest.fn() },
 }));
 jest.mock('@/features/diary/hooks/DiaryDateContext', () => ({
   useDiaryDate: () => ({ today: '2026-09-25', date: '2026-09-25', setDate: jest.fn() }),
@@ -107,6 +107,26 @@ describe('UX-05: Food Detail / Add Entry', () => {
     );
     expect(screen.getByRole('header', { name: 'Adicionar alimento' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Adicionar a Breakfast' })).toBeTruthy();
+  });
+
+  it('NAV-04: a meal-specific add returns past Food Search to Meal Detail', async () => {
+    mockAddFoodEntry.mockResolvedValue({ id: 'entry-1' });
+    await renderWithProviders(
+      <FoodDetailScreen
+        mode={{
+          kind: 'add',
+          foodId: mockFood.id,
+          foodSource: 'custom',
+          mealId: 'meal-1',
+          date: '2026-09-25',
+          origin: 'mealDetail',
+        }}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('food-detail-add'));
+    await waitFor(() => expect(router.dismiss).toHaveBeenCalledWith(2));
+    expect(router.dismissTo).not.toHaveBeenCalled();
   });
 
   it('UX-00 / UX-05: submits a direct numeric serving from the keyboard', async () => {
