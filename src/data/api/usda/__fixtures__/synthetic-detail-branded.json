@@ -1,0 +1,16 @@
+{
+  "fdcId": 2035482,
+  "description": "PEANUT BUTTER",
+  "dataType": "Branded",
+  "brandName": "EXAMPLE FOODS",
+  "servingSize": 30,
+  "servingSizeUnit": "g",
+  "householdServingFullText": "2 Tbsp",
+  "foodNutrients": [
+    { "nutrient": { "number": "208", "unitName": "kcal" }, "amount": 600 },
+    { "nutrient": { "number": "203", "unitName": "g" }, "amount": 25 },
+    { "nutrient": { "number": "204", "unitName": "g" }, "amount": 50 },
+    { "nutrient": { "number": "205", "unitName": "g" }, "amount": 25 },
+    { "nutrient": { "number": "291", "unitName": "g" }, "amount": 6 }
+  ]
+}

@@ -10,7 +10,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M3 Quick Calories | done |
 | M4 Custom foods + ruler | done |
 | M5 Search + Open Food Facts | done |
-| M6 USDA | not started |
+| M6 USDA | in progress — T1 complete; captured-fixture recording blocked on a user-supplied local key |
 | M7 Meal Detail + copy | not started |
 | M8 Profile | not started |
 | M9 Hardening | not started |
@@ -343,9 +343,22 @@ Status: **done** (accepted by the user 2026-09-27) · Start commit: `7d04bba`
   - Independent final review (2026-09-27): **clean** — 0 blockers, 0 majors, 0 minors. It verified the final local-search, OFF detail-cancellation, and selected-row-error corrections; `npm run check` passed lint + typecheck + 56 suites / 381 tests. M5 is ready for user acceptance under the explicitly recorded Android execution waiver.
   - Next unblocked task: independent M5 re-review/readiness only, under the explicitly recorded Android execution waiver. Do not start M6.
 
+## M6 USDA
+
+Status: **in progress** · T1 USDA adapter complete (2026-09-27)
+
+### Tasks
+
+- [x] T1 USDA adapter and synthetic contract fixtures: `src/data/api/usda/{client,mapper}.ts` maps the documented search/detail shapes, promotes Foundation/SR Legacy/FNDDS over Branded within a search page, maps nutrient fallbacks and fibre-excluded carbs, produces per-type bases/servings, and maps missing/rejected keys, 404, 429 and bad responses to typed errors. The request reads the key from `CredentialsService` per call and sends it only in `X-Api-Key`; tests prove it is absent from URLs and error text (PROV-01/02/05/06/07/08/10/12, DATA-04/06/11/15, ARCH-10/11/13/15/18).
+  - Changed: `src/data/api/usda/client.ts`, `src/data/api/usda/mapper.ts`, synthetic fixtures and focused mapper/client contract tests.
+  - Checks: `npm test -- --runInBand src/data/api/usda` → 2 suites / 8 tests passed; `npm run check` → lint + typecheck + 58 suites / 389 tests passed (existing React `act`/open-handle warnings after passing tests).
+  - Blocker: PROV-13's captured, trimmed real responses for search `egg` and detail Foundation `747997`, SR Legacy `174980`, FNDDS `2705413`, and Branded `2035482` cannot be recorded without a user-provided local USDA key. No key was requested, read, logged, committed, or substituted with `DEMO_KEY`; no live request/test was made.
+  - Retry point: when the owner has configured a local USDA key for the dev-only recorder, capture and trim only the PROV-02 fields, commit no headers/keys, and verify the explicit expected mapper outputs.
+  - Next unblocked task: M6 Food Databases key flow (UX-18), while captured-fixture recording remains deferred as above.
+
 ### Known gaps
 
-- Android E2E has no passing result: the emulator environment terminated Maestro after selecting Lunch before it emitted a result sentinel. The user explicitly waived that unavailable execution for M5; M6 remains out of scope until independent M5 re-review/readiness completes.
+- Android E2E has no passing result: the emulator environment terminated Maestro after selecting Lunch before it emitted a result sentinel. The user explicitly waived that unavailable execution for M5; it does not block M6 work.
 
 ### Open questions
 
@@ -353,4 +366,4 @@ Status: **done** (accepted by the user 2026-09-27) · Start commit: `7d04bba`
 
 ### Next unblocked task
 
-- M6 T1: USDA adapter and fixtures (PROV-02/05/06/11/13), then Food Databases key flow (UX-18).
+- M6 Food Databases key flow (UX-18). Captured USDA fixture recording remains blocked only until a local user key is configured (see M6 T1).

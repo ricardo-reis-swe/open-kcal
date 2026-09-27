@@ -1,0 +1,24 @@
+{
+  "foods": [
+    {
+      "fdcId": 2,
+      "description": "BRANDED EGG",
+      "dataType": "Branded",
+      "foodNutrients": [{ "nutrientNumber": "208", "unitName": "KCAL", "value": 150 }]
+    },
+    {
+      "fdcId": 1,
+      "description": "EGG, WHOLE",
+      "dataType": "Foundation",
+      "foodNutrients": [
+        { "nutrientNumber": "208", "unitName": "KCAL", "value": 143 },
+        { "nutrientNumber": "203", "unitName": "G", "value": 12.6 },
+        { "nutrientNumber": "205", "unitName": "g", "value": 1.1 },
+        { "nutrientNumber": "291", "unitName": "g", "value": 0.2 },
+        { "nutrientNumber": "204", "unitName": "g", "value": 9.5 }
+      ]
+    }
+  ],
+  "currentPage": 1,
+  "totalPages": 3
+}
