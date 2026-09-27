@@ -8,8 +8,8 @@ import { RequestLimiter } from './limiter';
 type Fetch = typeof fetch;
 
 export class OpenFoodFactsClient {
-  private readonly searchLimiter = new RequestLimiter(8, 60_000);
-  private readonly productLimiter = new RequestLimiter(12, 60_000);
+  private readonly searchLimiter: RequestLimiter;
+  private readonly productLimiter: RequestLimiter;
 
   constructor(
     private readonly config: Pick<
@@ -17,14 +17,23 @@ export class OpenFoodFactsClient {
       'appVersion' | 'offSearchBaseUrl' | 'offProductBaseUrl' | 'offContactEmail'
     >,
     private readonly request: Fetch = fetch,
-  ) {}
+    limiters: { search?: RequestLimiter; product?: RequestLimiter } = {},
+  ) {
+    this.searchLimiter = limiters.search ?? new RequestLimiter(8, 60_000);
+    this.productLimiter = limiters.product ?? new RequestLimiter(12, 60_000);
+  }
 
   private headers() {
     return { 'User-Agent': `CalorieTracker/${this.config.appVersion} (${this.config.offContactEmail})` };
   }
 
-  private async throttled<T>(limiter: RequestLimiter, signal: AbortSignal, operation: () => Promise<T>): Promise<T> {
-    await limiter.take(signal);
+  private async throttled<T>(
+    limiter: RequestLimiter,
+    signal: AbortSignal,
+    operation: () => Promise<T>,
+    maxWaitMs?: number,
+  ): Promise<T> {
+    await limiter.take(signal, maxWaitMs);
     try {
       return await operation();
     } catch (error) {
@@ -86,7 +95,13 @@ export class OpenFoodFactsClient {
       fields:
         'code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments',
     }).toString();
-    const payload = await this.throttled(this.productLimiter, signal, () => this.json(url.toString(), signal, 10_000));
+    // PROV-04: a tapped row may wait briefly for a product-read slot, never for the full one-minute window.
+    const payload = await this.throttled(
+      this.productLimiter,
+      signal,
+      () => this.json(url.toString(), signal, 10_000),
+      5_000,
+    );
     const status =
       typeof payload === 'object' && payload !== null ? (payload as { status?: unknown }).status : undefined;
     if (status === 0) throw new NotFoundError('Open Food Facts product not found');

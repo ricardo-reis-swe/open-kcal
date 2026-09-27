@@ -331,9 +331,10 @@ Status: **in progress** · Start commit: `7d04bba`
   - Changed: `.maestro/m5-offline-foods.yaml`, `.maestro/m5-offline-local-foods.yaml`, `scripts/e2e-m5-offline-android.sh`, `src/bootstrap/devSeed.ts`, `src/bootstrap/start-services.ts`, `src/shared/config/env.ts`, `.env.example`, and focused tests.
   - [x] `.maestro/m5-offline-foods.yaml` uses the dev diary's local cached OFF/custom records and Maestro airplane mode; it never calls a provider (ARCH-12/18, UX-04, ROAD-02).
   - [x] Deterministic dev-only Food Search fixtures seed one custom and one expired cached OFF food only with `EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1`; release builds ignore the flag (ARCH-18, DATA-15).
-  - [x] Android `m5-offline-local-foods` runs after the dev bundle loads, disables Wi-Fi and mobile data, verifies the offline provider status without hiding local custom/saved results, opens the cached OFF food, then logs the custom food (UX-04/05, ARCH-12/18, PROV-09).
+  - [x] Android `m5-offline-local-foods` runs after the dev bundle loads, disables Wi-Fi and mobile data, verifies the offline provider status without hiding local custom/saved results, opens the cached OFF food, sets its count serving to `2 × egg`, then saves and verifies its Diary row (SCOPE-11 flow 1, UX-04/05, ARCH-12/18, PROV-09).
   - [x] Android dev client rebuilt with NetInfo: `npx expo run:android --no-bundler` (2026-09-27). `scripts/e2e-m5-offline-android.sh` passed on Pixel_10 emulator after its wrapper restored networking.
   - [x] Focused: `npm test -- --runInBand src/features/food-search/__tests__/FoodSearchScreen.test.tsx src/bootstrap/__tests__/devSeed.test.ts src/shared/config/__tests__/env.test.ts src/data/api/open-food-facts/__tests__` → 6 suites / 26 tests passed. Full: `npm run check` → lint + typecheck + 56 suites / 372 tests passed.
+  - [x] Review corrections (2026-09-27): `.maestro/m5-offline-local-foods.yaml` and `devSeed.ts` now exercise the cached OFF count serving; `client.ts`/`limiter.ts` bound product-read throttling; focused fake-timer/component tests prove superseded queued OFF searches are cancelled so only the latest pending query runs after a budget slot opens (PROV-04, ROAD-02), and product reads time out after 5 s of limiter waiting with `Couldn't load this food.` rendered (PROV-04, UX-04). Focused: 4 suites / 21 tests passed. Android: `scripts/e2e-m5-offline-android.sh` passed; the updated offline flow saved `Offline E2E saved yoghurt` at `2 × egg` and asserted its 95 kcal Diary row. Full: `npm run check` → lint + typecheck + 56 suites / 376 tests passed.
   - Next unblocked task: independent M5 milestone review/readiness evidence.
 
 ### Known gaps
@@ -346,4 +347,4 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Next unblocked task
 
-- Resolve the recorded Android CMake/Java build-tooling failure, rebuild the dev app with the deterministic seed, and run the M5 Android offline Maestro flow. After T4 passes, perform the M5 milestone review/readiness evidence and mark M5 awaiting user acceptance only after independent review.
+- Perform the independent M5 milestone review/readiness evidence. Mark M5 awaiting user acceptance only after that read-only review passes; do not start M6 beforehand.

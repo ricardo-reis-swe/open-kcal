@@ -1,3 +1,5 @@
+import { TimeoutError } from '@/shared/errors';
+
 // Sliding-window request budget (PROV-04). Callers retain only the latest query while `tryTake` is false.
 export class RequestLimiter {
   private readonly timestamps: number[] = [];
@@ -18,10 +20,15 @@ export class RequestLimiter {
   }
 
   /** Wait for a slot while preserving cancellation of stale Food Search requests (PROV-04/10). */
-  async take(signal: AbortSignal): Promise<void> {
+  async take(signal: AbortSignal, maxWaitMs?: number): Promise<void> {
     if (signal.aborted) throw signal.reason;
+    const deadline = maxWaitMs === undefined ? null : this.now() + maxWaitMs;
     while (!this.tryTake()) {
-      const delay = this.nextWaitMs();
+      const remaining = deadline === null ? null : deadline - this.now();
+      if (remaining !== null && remaining <= 0) {
+        throw new TimeoutError('Open Food Facts request budget wait timed out');
+      }
+      const delay = remaining === null ? this.nextWaitMs() : Math.min(this.nextWaitMs(), remaining);
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => {
           signal.removeEventListener('abort', abort);

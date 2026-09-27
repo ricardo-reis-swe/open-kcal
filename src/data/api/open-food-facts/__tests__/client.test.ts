@@ -1,6 +1,7 @@
 import { NotFoundError, RateLimitError } from '@/shared/errors';
 
 import { OpenFoodFactsClient } from '../client';
+import { RequestLimiter } from '../limiter';
 
 const config = {
   appVersion: '1.2.3',
@@ -16,7 +17,9 @@ const product = {
 
 describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
   it('uses the documented search shape and identifying header without exposing it in the result', async () => {
-    const request = jest.fn().mockResolvedValue(new Response(JSON.stringify({ hits: [product] }), { status: 200 }));
+    const request = jest
+      .fn()
+      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ hits: [product] }), { status: 200 })));
     const client = new OpenFoodFactsClient(config, request);
     await expect(client.search(' greek  yogurt ', 2, new AbortController().signal)).resolves.toMatchObject({
       candidates: [expect.anything()],
@@ -50,5 +53,47 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
       jest.fn().mockResolvedValue(new Response(JSON.stringify({ status: 0 }), { status: 200 })),
     );
     await expect(missing.getFood('missing', new AbortController().signal)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('PROV-04 / ROAD-02: fast queries retain only the latest pending request within the OFF search budget', async () => {
+    jest.useFakeTimers();
+    let time = 0;
+    const searchLimiter = new RequestLimiter(2, 60_000, () => time);
+    const request = jest
+      .fn()
+      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ hits: [product] }), { status: 200 })));
+    const client = new OpenFoodFactsClient(config, request, { search: searchLimiter });
+    await Promise.all([
+      client.search('egg', 1, new AbortController().signal),
+      client.search('eggs', 1, new AbortController().signal),
+    ]);
+
+    const stale = new AbortController();
+    const pendingStale = client.search('eggs o', 1, stale.signal);
+    const latest = client.search('eggs omelette', 1, new AbortController().signal);
+    stale.abort(new Error('superseded query'));
+    await expect(pendingStale).rejects.toBeInstanceOf(Error);
+    time = 60_000;
+    await jest.advanceTimersByTimeAsync(60_000);
+    await latest;
+
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(String(request.mock.calls.at(-1)?.[0])).toContain('q=eggs+omelette');
+    jest.useRealTimers();
+  });
+
+  it('PROV-04 / UX-04: a throttled product read reaches the row error within five seconds', async () => {
+    jest.useFakeTimers();
+    let time = 0;
+    const productLimiter = new RequestLimiter(1, 60_000, () => time);
+    const client = new OpenFoodFactsClient(config, jest.fn(), { product: productLimiter });
+    expect(productLimiter.tryTake()).toBe(true);
+    const pending = expect(client.getFood('1', new AbortController().signal)).rejects.toMatchObject({
+      category: 'timeout',
+    });
+    time = 5_000;
+    await jest.advanceTimersByTimeAsync(5_000);
+    await pending;
+    jest.useRealTimers();
   });
 });

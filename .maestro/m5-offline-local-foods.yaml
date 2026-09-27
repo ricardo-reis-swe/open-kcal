@@ -29,17 +29,15 @@ appId: com.ricardoreis.calorietracker
 - extendedWaitUntil:
     visible: Add food
     timeout: 5000
-- tapOn: Back
-- extendedWaitUntil:
-    visible: Food search
-    timeout: 5000
-- assertVisible: Offline E2E custom oats
-- tapOn: Offline E2E custom oats
-- extendedWaitUntil:
-    visible: Add food
-    timeout: 5000
+- tapOn:
+    id: serving-ruler-value
+- tapOn:
+    id: serving-value-input
+- eraseText: 1
+- inputText: '2'
+- tapOn: Done
 - tapOn:
     id: food-detail-add
 - extendedWaitUntil:
-    visible: Offline E2E custom oats.*372.*
+    visible: Offline E2E saved yoghurt.*95.*
     timeout: 15000

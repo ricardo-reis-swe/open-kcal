@@ -3,6 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
+import { TimeoutError } from '@/shared/errors';
 
 import { FoodSearchScreen, shouldRevealFoodDelete } from '../screens/FoodSearchScreen';
 
@@ -21,6 +22,7 @@ async function setup(
     withCachedExternal?: boolean;
     initialQuery?: string;
     language?: 'en' | 'pt-PT';
+    throttledOffProduct?: boolean;
   } = {},
 ) {
   const { services } = await createTestServices();
@@ -56,6 +58,26 @@ async function setup(
   }
   const onSelectFood = jest.fn();
   const onCreateCustom = jest.fn();
+  if (options.throttledOffProduct) {
+    jest.spyOn(services.openFoodFacts, 'search').mockResolvedValue({
+      candidates: [
+        {
+          externalId: 'throttled-off-product',
+          input: {
+            name: 'Throttled OFF yoghurt',
+            brand: null,
+            basisQuantity: 100,
+            basisUnit: 'g',
+            nutrients: { energyKcal: 95, carbohydrateG: 4, proteinG: 8, fatG: 5 },
+            servings: [],
+          },
+        },
+      ],
+      page: 1,
+      pageCount: 1,
+    });
+    jest.spyOn(services.openFoodFacts, 'getFood').mockRejectedValue(new TimeoutError('budget wait timed out'));
+  }
   await renderWithServices(
     <FoodSearchScreen
       mealId={meal!.id}
@@ -121,6 +143,12 @@ describe('UX-04: local Food Search screen', () => {
     expect(await screen.findByText('Offline. Showing saved foods only.')).toBeTruthy();
     expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy();
     expect(screen.getByText('Cached almond yoghurt')).toBeTruthy();
+  });
+
+  it('PROV-04 / UX-04: shows the row error when a throttled OFF product read reaches its five-second bound', async () => {
+    await setup({ initialQuery: 'yoghurt', throttledOffProduct: true });
+    fireEvent.press(await screen.findByText('Throttled OFF yoghurt'));
+    expect(await screen.findByText("Couldn't load this food.")).toBeTruthy();
   });
 
   it('ARCH-22: renders the local search shell in pt-PT', async () => {

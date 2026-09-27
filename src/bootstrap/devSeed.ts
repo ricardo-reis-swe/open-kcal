@@ -117,7 +117,10 @@ export async function seedDevFoodSearch(services: AppServices): Promise<boolean>
       basisQuantity: 100,
       basisUnit: 'g',
       nutrients: { energyKcal: 95, carbohydrateG: 4, proteinG: 8, fatG: 5 },
-      servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+      servings: [
+        { label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 },
+        { label: 'egg', quantity: 1, unit: 'egg', basisMultiplier: 0.5, isDefault: true },
+      ],
     },
     {
       fetchedAt: '2026-01-01T00:00:00.000Z',
