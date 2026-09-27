@@ -321,6 +321,7 @@ Status: **in progress** · Start commit: `7d04bba`
 
 - [x] T1 OFF candidate mapper: Zod-validated response shapes, energy/nutrient normalization, serving initialization, and minimum-data filtering (PROV-05/06/07).
 - [ ] T2 OFF HTTP adapter, responsible request budget/cooldown, and sanitized fixtures.
+  - [x] HTTP boundary: documented search/product requests, identification header, response/error mapping, and `Retry-After` cooldown parsing (PROV-01/03/12).
 - [ ] T3 Saved external search, cache refresh, and Food Search remote sections/statuses/paging.
 - [ ] T4 Tests and Android offline cached/custom-food Maestro flow.
 
