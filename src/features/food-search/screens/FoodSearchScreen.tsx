@@ -19,6 +19,7 @@ import {
   useLocalFoodWrites,
   useOpenFoodFactsSearch,
   useRecentFoods,
+  refreshSavedOpenFoodFacts,
   useSavedFoodSearch,
 } from '../food-search.queries';
 
@@ -220,7 +221,10 @@ export function FoodSearchScreen({
                     food={food}
                     locale={locale}
                     energyUnit={settings.data.energyUnit}
-                    onPress={() => onSelectFood(food)}
+                    onPress={() => {
+                      void refreshSavedOpenFoodFacts(services, food);
+                      onSelectFood(food);
+                    }}
                   />
                 ))}
                 {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}

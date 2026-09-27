@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServices, type AppServices } from '@/bootstrap/services';
 import type { RecentFood } from '@/data/db/repositories/diaryRepository';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
+import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
+import { nowUtcIso } from '@/shared/dates';
 
 export type RecentFoodResult = RecentFood & { food: Food };
 
@@ -50,6 +52,29 @@ export function useSavedFoodSearch(query: string) {
     queryFn: () => foods.searchExternal(normalized),
     enabled: normalized.length > 0,
   });
+}
+
+/** PROV-09: expired saved OFF foods open immediately; a successful refresh is only visible on a later open. */
+export async function refreshSavedOpenFoodFacts(services: AppServices, food: Food): Promise<void> {
+  if (food.source !== 'open_food_facts' || !food.externalId) return;
+  const cache = await services.foods.cacheMetadata(food.id);
+  if (!cache || (!cache.isExpired && cache.schemaVersion >= PARSER_VERSION)) return;
+  try {
+    const candidate = await services.openFoodFacts.getFood(food.externalId, new AbortController().signal);
+    if (!candidate) return;
+    const fetchedAt = nowUtcIso(services.clock);
+    const expiresAt = new Date(
+      services.clock.now().getTime() + 30 * 24 * 60 * 60_000,
+    ).toISOString() as typeof fetchedAt;
+    await services.foods.upsertExternal('open_food_facts', candidate.externalId, candidate.input, {
+      fetchedAt,
+      expiresAt,
+      rawPayloadJson: null,
+      schemaVersion: PARSER_VERSION,
+    });
+  } catch {
+    // PROV-09: refresh failures are silent; the cached food remains fully usable.
+  }
 }
 
 /** UX-04 / PROV-04: OFF starts after 800 ms and at least three typed characters. */
