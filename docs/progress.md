@@ -335,4 +335,4 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Open questions
 
-- None.
+- **M5-Q1 (blocking T4 only):** May I add Expo-compatible `@react-native-community/netinfo` to wire the required online/offline state into TanStack Query (`ARCH-12`)? It is needed for the `Offline. Showing saved foods only.` behavior and deterministic Android offline Maestro coverage. No other M5 work is blocked; M6 can proceed meanwhile.
