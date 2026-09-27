@@ -148,6 +148,7 @@
     "openFoodFacts": "Open Food Facts",
     "offFailed": "A pesquisa no Open Food Facts falhou.",
     "offLoadFailed": "Não foi possível carregar este alimento.",
+    "offline": "Sem ligação. A mostrar apenas alimentos guardados.",
     "loadingFood": "A carregar alimento…",
     "providerNoResults": "Sem resultados no {{provider}}.",
     "retry": "Tentar novamente",

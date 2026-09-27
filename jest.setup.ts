@@ -13,3 +13,6 @@ jest.mock('expo-sqlite', () => require('./src/shared/testing/expoSqliteMock'));
 
 // expo-crypto's native randomUUID, backed by Node's (same RFC 9562 v4 output).
 jest.mock('expo-crypto', () => ({ randomUUID: () => require('crypto').randomUUID() }));
+
+// ARCH-12: native connectivity is represented by the package's deterministic test implementation.
+jest.mock('@react-native-community/netinfo', () => require('@react-native-community/netinfo/jest/netinfo-mock'));

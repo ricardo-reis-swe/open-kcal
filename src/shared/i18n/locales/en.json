@@ -148,6 +148,7 @@
     "openFoodFacts": "Open Food Facts",
     "offFailed": "Open Food Facts search failed.",
     "offLoadFailed": "Couldn't load this food.",
+    "offline": "Offline. Showing saved foods only.",
     "loadingFood": "Loading food…",
     "providerNoResults": "No results from {{provider}}.",
     "retry": "Retry",

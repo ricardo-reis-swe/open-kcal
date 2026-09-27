@@ -1,5 +1,6 @@
 // Local Food Search screen models (ARCH-07, UX-04). Remote sections arrive in M5/M6.
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSyncExternalStore } from 'react';
 
 import { useServices, type AppServices } from '@/bootstrap/services';
 import type { RecentFood } from '@/data/db/repositories/diaryRepository';
@@ -88,6 +89,7 @@ export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en'
         queryKey: foodSearchKeys.off(normalized, page),
         queryFn: ({ signal }: { signal: AbortSignal }) => openFoodFacts.search(normalized, page, signal, language),
         enabled: normalized.length >= 3,
+        networkMode: 'online' as const,
         staleTime: 10 * 60_000,
       };
     }),
@@ -100,6 +102,15 @@ export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en'
     hasMore: results.at(-1)?.data ? results.at(-1)!.data!.page < results.at(-1)!.data!.pageCount && pages < 5 : false,
     refetch: () => Promise.all(results.map((result) => result.refetch())),
   };
+}
+
+/** ARCH-12: local sections remain usable while remote-provider sections are paused offline. */
+export function useOnlineStatus() {
+  return useSyncExternalStore(
+    onlineManager.subscribe.bind(onlineManager),
+    onlineManager.isOnline.bind(onlineManager),
+    onlineManager.isOnline.bind(onlineManager),
+  );
 }
 
 export function useFood(foodId: string, enabled = true) {

@@ -9,7 +9,7 @@ import { LATEST_SCHEMA_VERSION } from '@/data/db/migrations';
 import { toAppError, type AppError } from '@/shared/errors';
 import { useTheme } from '@/shared/theme';
 
-import { createQueryClient } from './query-client';
+import { configureOnlineManager, createQueryClient } from './query-client';
 import { RecoveryScreen } from './RecoveryScreen';
 import { ServicesProvider, type AppServices } from './services';
 
@@ -32,6 +32,8 @@ export function StartupGate({ start, appVersion, copyText, children }: StartupGa
   const [state, setState] = useState<State>({ status: 'starting', attempt: 0 });
   const attempt = state.status === 'ready' ? -1 : state.attempt;
   const starting = state.status === 'starting';
+
+  useEffect(() => configureOnlineManager(), []);
 
   useEffect(() => {
     if (!starting) return;

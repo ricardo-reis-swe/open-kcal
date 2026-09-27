@@ -18,6 +18,7 @@ import {
   useCustomFoodSearch,
   useLocalFoodWrites,
   useOpenFoodFactsSearch,
+  useOnlineStatus,
   useRecentFoods,
   refreshSavedOpenFoodFacts,
   useSavedFoodSearch,
@@ -79,6 +80,7 @@ export function FoodSearchScreen({
   const custom = useCustomFoodSearch(debouncedQuery);
   const saved = useSavedFoodSearch(debouncedQuery);
   const off = useOpenFoodFactsSearch(offQuery, offPages, i18n.resolvedLanguage ?? i18n.language);
+  const online = useOnlineStatus();
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
   const relative = relativeDay(date, today);
@@ -236,12 +238,15 @@ export function FoodSearchScreen({
                   />
                 ))}
                 {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
+                {query.trim().length >= 3 && !online ? (
+                  <InlineStatus tone="info" message={t('foodSearch.offline')} />
+                ) : null}
                 {query.trim().length >= 3 && query.trim() !== offQuery ? (
                   <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
                     {t('foodSearch.searching')}
                   </AppText>
                 ) : null}
-                {off.isLoading && query.trim() === offQuery ? (
+                {online && off.isLoading && query.trim() === offQuery ? (
                   <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
                     {t('foodSearch.searching')}
                   </AppText>
