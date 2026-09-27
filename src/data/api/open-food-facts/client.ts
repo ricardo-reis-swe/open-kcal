@@ -3,10 +3,14 @@ import type { AppConfig } from '@/shared/config/env';
 import { NotFoundError, ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
 
 import { mapOpenFoodFactsProduct, mapOpenFoodFactsSearch, type FoodCandidate } from './mapper';
+import { RequestLimiter } from './limiter';
 
 type Fetch = typeof fetch;
 
 export class OpenFoodFactsClient {
+  private readonly searchLimiter = new RequestLimiter(8, 60_000);
+  private readonly productLimiter = new RequestLimiter(12, 60_000);
+
   constructor(
     private readonly config: Pick<
       AppConfig,
@@ -17,6 +21,20 @@ export class OpenFoodFactsClient {
 
   private headers() {
     return { 'User-Agent': `CalorieTracker/${this.config.appVersion} (${this.config.offContactEmail})` };
+  }
+
+  private async throttled<T>(limiter: RequestLimiter, signal: AbortSignal, operation: () => Promise<T>): Promise<T> {
+    await limiter.take(signal);
+    try {
+      return await operation();
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        const delay = error.retryAfterMs ?? 60_000;
+        this.searchLimiter.cooldown(delay);
+        this.productLimiter.cooldown(delay);
+      }
+      throw error;
+    }
   }
 
   private async json(url: string, signal: AbortSignal, timeoutMs: number): Promise<unknown> {
@@ -57,7 +75,9 @@ export class OpenFoodFactsClient {
       page: String(page),
       fields: 'code,product_name,brands,nutriments',
     }).toString();
-    return mapOpenFoodFactsSearch(await this.json(url.toString(), signal, 8_000));
+    return this.throttled(this.searchLimiter, signal, async () =>
+      mapOpenFoodFactsSearch(await this.json(url.toString(), signal, 8_000)),
+    );
   }
 
   async getFood(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
@@ -66,7 +86,7 @@ export class OpenFoodFactsClient {
       fields:
         'code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments',
     }).toString();
-    const payload = await this.json(url.toString(), signal, 10_000);
+    const payload = await this.throttled(this.productLimiter, signal, () => this.json(url.toString(), signal, 10_000));
     const status =
       typeof payload === 'object' && payload !== null ? (payload as { status?: unknown }).status : undefined;
     if (status === 0) throw new NotFoundError('Open Food Facts product not found');
