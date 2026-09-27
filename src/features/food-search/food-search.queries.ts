@@ -12,6 +12,7 @@ export const foodSearchKeys = {
   recents: ['foodSearch', 'recents'] as const,
   custom: (query: string) => ['foodSearch', 'custom', query.trim().toLocaleLowerCase()] as const,
   saved: (query: string) => ['foodSearch', 'saved', query.trim().toLocaleLowerCase()] as const,
+  off: (query: string, page: number) => ['foodSearch', 'openFoodFacts', query.trim(), page] as const,
   food: (id: string) => ['foodSearch', 'food', id] as const,
 };
 
@@ -48,6 +49,18 @@ export function useSavedFoodSearch(query: string) {
     queryKey: foodSearchKeys.saved(normalized),
     queryFn: () => foods.searchExternal(normalized),
     enabled: normalized.length > 0,
+  });
+}
+
+/** UX-04 / PROV-04: OFF starts after 800 ms and at least three typed characters. */
+export function useOpenFoodFactsSearch(query: string, page = 1) {
+  const { openFoodFacts } = useServices();
+  const normalized = query.trim();
+  return useQuery({
+    queryKey: foodSearchKeys.off(normalized, page),
+    queryFn: ({ signal }) => openFoodFacts.search(normalized, page, signal),
+    enabled: normalized.length >= 3,
+    staleTime: 10 * 60_000,
   });
 }
 

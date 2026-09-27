@@ -8,6 +8,7 @@ import { createGoalsRepository } from '@/data/db/repositories/goalsRepository';
 import { createMealsRepository } from '@/data/db/repositories/mealsRepository';
 import { createSettingsRepository } from '@/data/db/repositories/settingsRepository';
 import { createWeightRepository } from '@/data/db/repositories/weightRepository';
+import { OpenFoodFactsClient } from '@/data/api/open-food-facts/client';
 import type { SqlDatabase } from '@/data/db/sql';
 import { createCredentialsService, type CredentialsService } from '@/data/secure-storage/credentialsService';
 import type { AppConfig } from '@/shared/config/env';
@@ -39,6 +40,7 @@ export function createServices({
     recents: createRecentsRepository(deps),
     weight: createWeightRepository(deps),
     credentials: credentials ?? createCredentialsService(),
+    openFoodFacts: new OpenFoodFactsClient(config),
   };
 }
 

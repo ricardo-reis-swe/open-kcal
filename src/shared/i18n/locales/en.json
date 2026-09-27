@@ -145,6 +145,8 @@
     "recent": "Recent",
     "myFoods": "My foods",
     "saved": "Saved",
+    "openFoodFacts": "Open Food Facts",
+    "offFailed": "Open Food Facts search failed.",
     "emptyRecent": "Search for a food to add it.",
     "searching": "Searching…",
     "noResults": "No foods found for “{{query}}”.",

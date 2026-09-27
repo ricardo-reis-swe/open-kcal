@@ -328,7 +328,7 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Known gaps
 
-- OFF requests, cached-external search, and remote sections are not wired yet; Food Search currently exposes only local custom/recent foods.
+- OFF results are wired into Food Search and selected products are cached before Food Detail. Paging, retries, offline wiring and cache refresh remain.
 
 ### Open questions
 

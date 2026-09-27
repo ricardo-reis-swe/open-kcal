@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { PanResponder, ScrollView, TextInput, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
+import { useServices } from '@/bootstrap/services';
+import { nowUtcIso } from '@/shared/dates';
 import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
 import { AppBar, AppText, InlineStatus, PressableIcon, SectionHeader, TextAction } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
@@ -11,9 +13,10 @@ import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { useTheme } from '@/shared/theme';
 
-import { useCustomFoodSearch, useLocalFoodWrites, useRecentFoods, useSavedFoodSearch } from '../food-search.queries';
+import { useCustomFoodSearch, useLocalFoodWrites, useOpenFoodFactsSearch, useRecentFoods, useSavedFoodSearch } from '../food-search.queries';
 
 const LOCAL_DEBOUNCE_MS = 150;
+const OFF_DEBOUNCE_MS = 800;
 const DELETE_REVEAL_WIDTH = 88;
 
 export const shouldRevealFoodDelete = (dx: number) => dx <= -40;
@@ -47,16 +50,24 @@ export function FoodSearchScreen({
   const settings = useAppSettings();
   const recents = useRecentFoods();
   const writes = useLocalFoodWrites();
+  const services = useServices();
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
+  const [offQuery, setOffQuery] = useState(initialQuery.trim());
   useEffect(() => {
     if (query.trim() === debouncedQuery) return;
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), LOCAL_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [debouncedQuery, query]);
+  useEffect(() => {
+    if (query.trim() === offQuery) return;
+    const timer = setTimeout(() => setOffQuery(query.trim()), OFF_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [offQuery, query]);
   const custom = useCustomFoodSearch(debouncedQuery);
   const saved = useSavedFoodSearch(debouncedQuery);
+  const off = useOpenFoodFactsSearch(offQuery);
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
   const relative = relativeDay(date, today);
@@ -65,6 +76,7 @@ export function FoodSearchScreen({
   const searching = hasQuery && query.trim() !== debouncedQuery;
   const customFoods = custom.data ?? [];
   const savedFoods = saved.data ?? [];
+  const offFoods = off.data ?? [];
   const deleteFood = async (foodId: string) => {
     setDeleteFailed(false);
     try {
@@ -72,6 +84,14 @@ export function FoodSearchScreen({
     } catch {
       setDeleteFailed(true);
     }
+  };
+  const selectOff = async (externalId: string) => {
+    const detail = await services.openFoodFacts.getFood(externalId, new AbortController().signal);
+    if (!detail) return;
+    const fetchedAt = nowUtcIso(services.clock);
+    const expiresAt = new Date(services.clock.now().getTime() + 30 * 24 * 60 * 60_000).toISOString() as typeof fetchedAt;
+    const saved = await services.foods.upsertExternal('open_food_facts', detail.externalId, detail.input, { fetchedAt, expiresAt, rawPayloadJson: null, schemaVersion: 1 });
+    onSelectFood(saved);
   };
 
   return (
@@ -172,6 +192,19 @@ export function FoodSearchScreen({
                 {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
                 {savedFoods.map((food) => (
                   <FoodResultRow key={food.id} food={food} locale={locale} energyUnit={settings.data.energyUnit} onPress={() => onSelectFood(food)} />
+                ))}
+                {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
+                {query.trim().length >= 3 && query.trim() !== offQuery ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>{t('foodSearch.searching')}</AppText>
+                ) : null}
+                {off.isLoading && query.trim() === offQuery ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>{t('foodSearch.searching')}</AppText>
+                ) : null}
+                {off.isError ? (
+                  <InlineStatus tone="error" message={t('foodSearch.offFailed')} />
+                ) : null}
+                {offFoods.map((candidate) => (
+                  <FoodResultRow key={`off-${candidate.externalId}`} food={{ ...candidate.input, brand: candidate.input.brand ?? null, id: `off-${candidate.externalId}`, source: 'open_food_facts', externalId: candidate.externalId, isDeleted: false, servings: [] }} locale={locale} energyUnit={settings.data.energyUnit} onPress={() => void selectOff(candidate.externalId)} />
                 ))}
                 {customFoods.length === 0 && savedFoods.length === 0 ? (
               <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
