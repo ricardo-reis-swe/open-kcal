@@ -234,7 +234,12 @@ export function FoodSearchScreen({
                     {t('foodSearch.searching')}
                   </AppText>
                 ) : null}
-                {off.isError ? <InlineStatus tone="error" message={t('foodSearch.offFailed')} /> : null}
+                {off.isError ? (
+                  <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
+                    <InlineStatus tone="error" message={t('foodSearch.offFailed')} />
+                    <TextAction icon="refresh" label={t('foodSearch.retry')} onPress={() => void off.refetch()} />
+                  </View>
+                ) : null}
                 {externalLoadError ? <InlineStatus tone="error" message={t('foodSearch.offLoadFailed')} /> : null}
                 {offFoods.map((candidate) => (
                   <FoodResultRow
@@ -255,6 +260,11 @@ export function FoodSearchScreen({
                     loading={selectingExternalId === candidate.externalId}
                   />
                 ))}
+                {off.isSuccess && query.trim() === offQuery && offFoods.length === 0 ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
+                  </AppText>
+                ) : null}
                 {customFoods.length === 0 && savedFoods.length === 0 ? (
                   <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
                     <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>

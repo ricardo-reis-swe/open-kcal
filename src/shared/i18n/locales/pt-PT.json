@@ -149,6 +149,8 @@
     "offFailed": "A pesquisa no Open Food Facts falhou.",
     "offLoadFailed": "Não foi possível carregar este alimento.",
     "loadingFood": "A carregar alimento…",
+    "providerNoResults": "Sem resultados no {{provider}}.",
+    "retry": "Tentar novamente",
     "emptyRecent": "Pesquise um alimento para o adicionar.",
     "searching": "A pesquisar…",
     "noResults": "Nenhum alimento encontrado para «{{query}}».",
