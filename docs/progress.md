@@ -9,7 +9,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M2 Diary (read) | done |
 | M3 Quick Calories | done |
 | M4 Custom foods + ruler | done |
-| M5 Search + Open Food Facts | not started |
+| M5 Search + Open Food Facts | in progress |
 | M6 USDA | not started |
 | M7 Meal Detail + copy | not started |
 | M8 Profile | not started |
@@ -312,3 +312,22 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 | Package | Need |
 |---|---|
 | `expo-haptics` 57.0.3 | UX-05/DS-09 ruler feedback on meaningful ticks. Expo SDK-compatible native module; the control injects the callback for tests and never triggers haptics under `NODE_ENV=test`. User-approved in M4-Q1. |
+
+## M5 Search + Open Food Facts
+
+Status: **in progress** · Start commit: `7d04bba`
+
+### Tasks
+
+- [x] T1 OFF candidate mapper: Zod-validated response shapes, energy/nutrient normalization, serving initialization, and minimum-data filtering (PROV-05/06/07).
+- [ ] T2 OFF HTTP adapter, responsible request budget/cooldown, and sanitized fixtures.
+- [ ] T3 Saved external search, cache refresh, and Food Search remote sections/statuses/paging.
+- [ ] T4 Tests and Android offline cached/custom-food Maestro flow.
+
+### Known gaps
+
+- OFF requests, cached-external search, and remote sections are not wired yet; Food Search currently exposes only local custom/recent foods.
+
+### Open questions
+
+- None.
