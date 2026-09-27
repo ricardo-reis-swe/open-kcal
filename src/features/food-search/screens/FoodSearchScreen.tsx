@@ -236,30 +236,6 @@ function FoodResultRow({
   );
   return (
     <View style={{ overflow: 'hidden', backgroundColor: theme.colors.danger }}>
-      {onDelete ? (
-        <FocusablePressable
-          accessibilityRole="button"
-          accessibilityLabel={t('foodSearch.delete')}
-          accessible={revealed}
-          accessibilityElementsHidden={!revealed}
-          importantForAccessibility={revealed ? 'auto' : 'no-hide-descendants'}
-          onPress={onDelete}
-          testID={`food-delete-${food.id}`}
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: DELETE_REVEAL_WIDTH,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <AppText variant="compactStrong" color="onPrimary">
-            {t('foodSearch.delete')}
-          </AppText>
-        </FocusablePressable>
-      ) : null}
       <View
         {...pan.panHandlers}
         testID={`food-swipe-${food.id}`}
@@ -299,6 +275,30 @@ function FoodResultRow({
           </AppText>
         </FocusablePressable>
       </View>
+      {onDelete ? (
+        <FocusablePressable
+          accessibilityRole="button"
+          accessibilityLabel={t('foodSearch.delete')}
+          accessible={revealed}
+          accessibilityElementsHidden={!revealed}
+          importantForAccessibility={revealed ? 'auto' : 'no-hide-descendants'}
+          onPress={onDelete}
+          testID={`food-delete-${food.id}`}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: DELETE_REVEAL_WIDTH,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <AppText variant="compactStrong" color="onPrimary">
+            {t('foodSearch.delete')}
+          </AppText>
+        </FocusablePressable>
+      ) : null}
     </View>
   );
 }

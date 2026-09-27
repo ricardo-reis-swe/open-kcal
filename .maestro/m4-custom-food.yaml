@@ -122,9 +122,9 @@ appId: com.ricardoreis.calorietracker
     from:
       id: 'food-swipe-.*'
     direction: LEFT
-# The translated row still overlaps the left edge of its revealed action.
 - tapOn:
-    point: 98%,35%
+    id: 'food-delete-.*'
 - extendedWaitUntil:
-    notVisible: '${output.food}.*'
+    notVisible:
+      id: 'food-result-.*'
     timeout: 5000

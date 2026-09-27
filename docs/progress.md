@@ -284,9 +284,9 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
   - [x] Route and continuation: preserves the search meal/date context and replaces Create Custom Food with Food Detail after save (NAV-04).
 - [x] T5 Food Detail / Add Entry, `ServingRuler`, and Serving Unit Picker: recent/default initialization, preferred unit ordering, conversion, direct numeric entry, live nutrition, Meal Picker, add-entry snapshot + refreshed Diary return; snapped pan, fixed pointer/ticks, a11y adjustable, and test-safe throttled haptics.
 - [x] T6 Edit Food Entry: Diary row route, quantity/unit/meal edits, snapshot-preserving display and snapshot-only fallback when food/serving is unavailable, origin-aware save, confirmed delete, and inline mutation failures.
-- [ ] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete; device E2E pending). `npm run check`: 361/361.
+- [x] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete). `npm run check`: 362/362.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
-  - [ ] Run the M4 flow and cumulative flows on Android + iOS. Android `Pixel_10` emulator and Maestro 2.10.0 became available on 2026-09-26. `scripts/e2e.sh` now discovers its compatible Java 17/21 runtime and Android SDK location, and the M4 flow dismisses the one-time Gboard handwriting prompt before continuing. The Android run exposed two real interactions: the direct-serving return key dismissed without applying the value, and the translated custom-food row intercepted taps on its revealed Delete action. Both are fixed and covered by component tests; final Android re-run pending. iOS tooling/device is unavailable.
+  - [x] M4 and cumulative Android flows pass on `Pixel_10` (2026-09-27). The Android run exposed two real interactions: the direct-serving return key dismissed without applying the value, and the translated custom-food row intercepted taps on its revealed Delete action. Both are fixed; the Maestro flow now targets the revealed action directly and asserts the result row disappears. iOS testing is deferred per the user's Linux-only testing instruction.
 - [ ] T8 Both-platform exit demo and QA matrix under `docs/qa/M4/`
 - [ ] T9 Independent review
 
@@ -295,7 +295,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] `npm run check` green (362 tests)
 - [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
 - [ ] Every new string in `en` + `pt-PT`
-- [ ] Maestro M4 flow and cumulative flows pass on iOS and Android
+- [x] M4 flow and cumulative flows pass on Android; iOS deferred per user instruction
 - [ ] Exit demo and light/dark × default/largest screenshots captured on both platforms
 - [ ] Independent review clean
 - [ ] No in-scope placeholder UI or unlogged gaps
@@ -303,8 +303,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [ ] M4 extra: ruler is an a11y `adjustable`; haptics are off in tests
 
 ### Known gaps
-- M4 is in progress: the Maestro M4 flow, device exit demo/QA matrix, and independent review remain.
-- Android device QA is pending a fresh retry after the local Maestro/runtime and Gboard-prompt fixes. iOS tooling/device is unavailable.
+- M4 is in progress: Android exit demo/QA matrix and independent review remain. iOS QA is deferred per user instruction.
 
 ### Open questions
 - ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.
