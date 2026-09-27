@@ -21,5 +21,5 @@
 
 ## Credential handling
 
-- No credential was written to the repository, fixture contents, documentation, test output, URLs, query keys, logs, or screenshots.
+- No credential was written to the repository, fixture contents, documentation, URLs, query keys, or screenshots. A failed first local recorder invocation echoed the owner-supplied key in terminal output before capture; the key MUST be rotated and is not used again.
 - The local recorder process unset its environment value on exit. The emulator's temporary secure-storage key was removed through Food Databases → Remove key; the final screen returned to `USDA, Not set up` (`android-food-databases-key-removed-2026-09-27.png`).

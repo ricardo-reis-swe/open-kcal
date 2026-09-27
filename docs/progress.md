@@ -370,8 +370,8 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
   - Changed: `scripts/capture-usda-fixtures.mjs`, USDA captured fixtures and mapper tests, `src/data/api/usda/client.ts` + client tests, `docs/qa/M6/usda-fixtures-and-android-2026-09-27.md`, redacted Android evidence.
   - Checks: `npm test -- --runInBand src/data/api/usda` → 3 suites / 13 tests passed; `npm run check` → lint + typecheck + 60 suites / 404 tests passed (pre-existing React `act` and open-handle warnings after passing tests).
   - Android result: partial. The device is connected and Profile → Food Databases showed the expected empty/masked/saved controls. The first live test exposed the fixed base-path bug; after Metro reload, the live USDA query did not reach an addable selection in the QA window. The exact commands, results, and redacted evidence are in `docs/qa/M6/usda-fixtures-and-android-2026-09-27.md`.
-  - Validation still needed: rerun the live USDA search → detail → add flow after confirming the provider response on the fixed client.
-  - Next unblocked task: M6 live Android USDA selection/add rerun.
+  - Validation still needed: rerun the live USDA search → detail → add flow after confirming the provider response on the fixed client. The first failed local recorder invocation echoed the owner-supplied key in terminal output before capture; repository artifacts remain clean, but the key MUST be rotated and is not used again.
+  - Next unblocked task: M6 live Android USDA selection/add rerun with a replacement key.
 
 ### Known gaps
 
