@@ -331,7 +331,7 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Known gaps
 
-- OFF results are wired into Food Search; remote taps show an in-row loading state, cache the selected product before Food Detail, and retain an inline load error. Expired saved OFF foods now open immediately and silently refresh for later opens. Paging, retries, and offline wiring remain.
+- Android device rebuild and Maestro validation remain. Current test coverage includes OFF mapping, limiter/cooldown, paging metadata, remote selection/cache refresh, and offline local-search status.
 
 ### Open questions
 

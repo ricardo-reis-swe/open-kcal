@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
@@ -46,6 +47,8 @@ async function setup(options: { withRecent?: boolean; initialQuery?: string; lan
   return { services, food, onSelectFood, onCreateCustom };
 }
 
+afterEach(() => onlineManager.setOnline(true));
+
 describe('UX-04: local Food Search screen', () => {
   it('focuses the search field and shows the empty Recent state plus compact actions', async () => {
     await setup();
@@ -84,6 +87,13 @@ describe('UX-04: local Food Search screen', () => {
     expect(await screen.findByText('No foods found for “new food”.')).toBeTruthy();
     fireEvent.press(screen.getByTestId('food-create-custom'));
     expect(onCreateCustom).toHaveBeenCalledWith('new food');
+  });
+
+  it('ARCH-12 / UX-04: keeps local search available and reports the remote section as offline', async () => {
+    onlineManager.setOnline(false);
+    const { food } = await setup({ initialQuery: 'almond' });
+    expect(await screen.findByText('Offline. Showing saved foods only.')).toBeTruthy();
+    expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy();
   });
 
   it('ARCH-22: renders the local search shell in pt-PT', async () => {
