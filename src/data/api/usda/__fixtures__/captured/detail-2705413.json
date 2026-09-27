@@ -1,0 +1,84 @@
+{
+  "fdcId": 2705413,
+  "description": "Coconut milk",
+  "dataType": "Survey (FNDDS)",
+  "foodNutrients": [
+    {
+      "nutrient": {
+        "number": "203",
+        "unitName": "g"
+      },
+      "amount": 0.21
+    },
+    {
+      "nutrient": {
+        "number": "204",
+        "unitName": "g"
+      },
+      "amount": 2.08
+    },
+    {
+      "nutrient": {
+        "number": "205",
+        "unitName": "g"
+      },
+      "amount": 2.92
+    },
+    {
+      "nutrient": {
+        "number": "208",
+        "unitName": "kcal"
+      },
+      "amount": 31
+    },
+    {
+      "nutrient": {
+        "number": "291",
+        "unitName": "g"
+      },
+      "amount": 0
+    }
+  ],
+  "foodPortions": [
+    {
+      "gramWeight": 244,
+      "modifier": "10205",
+      "portionDescription": "1 cup",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    },
+    {
+      "gramWeight": 2.5,
+      "modifier": "63480",
+      "portionDescription": "Guideline amount per fl oz of beverage",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    },
+    {
+      "gramWeight": 244,
+      "modifier": "90000",
+      "portionDescription": "Quantity not specified",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    },
+    {
+      "gramWeight": 30.5,
+      "modifier": "30000",
+      "portionDescription": "1 fl oz",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    },
+    {
+      "gramWeight": 61,
+      "modifier": "63546",
+      "portionDescription": "Guideline amount per cup of hot cereal",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    }
+  ]
+}

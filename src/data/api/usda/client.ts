@@ -32,7 +32,8 @@ export class UsdaClient {
     signal: AbortSignal,
     timeoutMs: number,
   ): Promise<unknown> {
-    const url = new URL(path, this.config.usdaBaseUrl);
+    // PROV-01: preserve the configured `/fdc/v1` path; a leading URL path would discard it.
+    const url = new URL(path, `${this.config.usdaBaseUrl.replace(/\/$/, '')}/`);
     url.search = new URLSearchParams(query).toString();
     const key = await this.key();
     const controller = new AbortController();
@@ -66,7 +67,7 @@ export class UsdaClient {
   async search(query: string, page: number, signal: AbortSignal): Promise<FoodSearchPage> {
     return mapUsdaSearch(
       await this.json(
-        '/foods/search',
+        'foods/search',
         {
           query: query.trim().replace(/\s+/g, ' '),
           dataType: 'Foundation,SR Legacy,Survey (FNDDS),Branded',
@@ -80,7 +81,7 @@ export class UsdaClient {
   }
 
   async getFood(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
-    return mapUsdaFood(await this.json(`/food/${encodeURIComponent(externalId)}`, { format: 'full' }, signal, 10_000));
+    return mapUsdaFood(await this.json(`food/${encodeURIComponent(externalId)}`, { format: 'full' }, signal, 10_000));
   }
 }
 

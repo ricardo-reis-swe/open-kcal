@@ -1,0 +1,676 @@
+{
+  "foods": [
+    {
+      "fdcId": 2575290,
+      "description": "EGG",
+      "dataType": "Branded",
+      "brandOwner": "Mars Chocolate North America LLC",
+      "brandName": "SNICKERS",
+      "servingSize": 31.200000762939453,
+      "servingSizeUnit": "GRM",
+      "householdServingFullText": "1 EGG",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 6.41
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 28.8
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 57.7
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 513
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 3.2
+        }
+      ]
+    },
+    {
+      "fdcId": 2171141,
+      "description": "EGG",
+      "dataType": "Branded",
+      "brandOwner": "Ross Acquisition Inc.",
+      "brandName": "GALERIE",
+      "servingSize": 30,
+      "servingSizeUnit": "g",
+      "householdServingFullText": "30 pieces",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 0
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 0
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 90
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 367
+        }
+      ]
+    },
+    {
+      "fdcId": 2677671,
+      "description": "EGG",
+      "dataType": "Branded",
+      "brandOwner": "Just, Inc.",
+      "brandName": "JUST",
+      "servingSize": 44,
+      "servingSizeUnit": "MLT",
+      "householdServingFullText": "3 Tbsp",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 11.4
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 11.4
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 2.27
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 159
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "fdcId": 747997,
+      "description": "Eggs, Grade A, Large, egg white",
+      "dataType": "Foundation",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 10.7
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 0
+        },
+        {
+          "nutrientNumber": "268",
+          "unitName": "kJ",
+          "value": 231
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 55
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 2.36
+        }
+      ]
+    },
+    {
+      "fdcId": 748967,
+      "description": "Eggs, Grade A, Large, egg whole",
+      "dataType": "Foundation",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 148
+        },
+        {
+          "nutrientNumber": "268",
+          "unitName": "kJ",
+          "value": 617
+        },
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 12.4
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 9.96
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 0.96
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        },
+        {
+          "nutrientNumber": "205.2",
+          "unitName": "G",
+          "value": 0.2
+        }
+      ]
+    },
+    {
+      "fdcId": 748236,
+      "description": "Eggs, Grade A, Large, egg yolk",
+      "dataType": "Foundation",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 28.8
+        },
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 16.2
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 1.02
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 334
+        },
+        {
+          "nutrientNumber": "268",
+          "unitName": "kJ",
+          "value": 1400
+        }
+      ]
+    },
+    {
+      "fdcId": 2707180,
+      "description": "Egg, Benedict",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 13.81
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 22.1
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 8.48
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 288
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0.6
+        }
+      ]
+    },
+    {
+      "fdcId": 2707179,
+      "description": "Egg, creamed",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 7.79
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 10.35
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 5.52
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 148
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0.1
+        }
+      ]
+    },
+    {
+      "fdcId": 2707181,
+      "description": "Egg, deviled",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 11.52
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 15.9
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 1.07
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 198
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "fdcId": 174901,
+      "description": "Bagels, egg",
+      "dataType": "SR Legacy",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 2.3
+        },
+        {
+          "nutrientNumber": "268",
+          "unitName": "kJ",
+          "value": 1160
+        },
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 10.6
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 2.1
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 53
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 278
+        }
+      ]
+    },
+    {
+      "fdcId": 172673,
+      "description": "Bread, egg",
+      "dataType": "SR Legacy",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 2.3
+        },
+        {
+          "nutrientNumber": "268",
+          "unitName": "kJ",
+          "value": 1200
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 287
+        },
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 9.5
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 6
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 47.8
+        }
+      ]
+    },
+    {
+      "fdcId": 2708984,
+      "description": "Congee, with egg",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 3.12
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 2.06
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 6.91
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 60
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0.1
+        }
+      ]
+    },
+    {
+      "fdcId": 2707343,
+      "description": "Egg burrito",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 10.91
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 13.71
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 20.06
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 249
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 1.4
+        }
+      ]
+    },
+    {
+      "fdcId": 2708597,
+      "description": "Quesadilla, egg",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 10.91
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 13.71
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 20.06
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 249
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 1.4
+        }
+      ]
+    },
+    {
+      "fdcId": 2708602,
+      "description": "Taquito, egg",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 9.9
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 13.56
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 29.25
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 281
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "fdcId": 2707201,
+      "description": "Egg omelet or scrambled egg, made with butter",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 11.61
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 14.64
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 0.9
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 182
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "fdcId": 2707199,
+      "description": "Egg omelet or scrambled egg, made with margarine",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 11.57
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 13.52
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 0.95
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 171
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "fdcId": 2707200,
+      "description": "Egg omelet or scrambled egg, made with oil",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 11.56
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 15.81
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 0.9
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 192
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "fdcId": 2707205,
+      "description": "Egg omelet or scrambled egg, no added fat",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 12.36
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 9.93
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 0.96
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 143
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "fdcId": 2707198,
+      "description": "Egg omelet or scrambled egg, NS as to fat",
+      "dataType": "Survey (FNDDS)",
+      "foodNutrients": [
+        {
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "value": 11.58
+        },
+        {
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "value": 15
+        },
+        {
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "value": 0.91
+        },
+        {
+          "nutrientNumber": "208",
+          "unitName": "KCAL",
+          "value": 185
+        },
+        {
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "currentPage": 1,
+  "totalPages": 2467
+}

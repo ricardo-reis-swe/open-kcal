@@ -366,6 +366,12 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
   - Android QA: blocked before launch because this environment exposes no Android emulator, device, or mobile app target; exact evidence and retry path are in `docs/qa/M6/android-food-databases-2026-09-27.md`. No live USDA search or real key was used or claimed.
   - Blocker: PROV-13 captured USDA fixtures remain blocked until the owner provides a local key; this task did not request, read, or substitute one.
   - Next unblocked task: M6 independent review/acceptance preparation; Android device QA and captured-fixture recording remain deferred to their stated environment/key prerequisites.
+- [x] T4 USDA captured fixtures and Android QA: captured the requested USDA search/detail responses through a one-process, stdin-only recorder, then sanitized them to the fields the mapper reads. Explicit fixture tests pin generic-first `egg` ordering and Foundation `747997`, SR Legacy `174980`, FNDDS `2705413`, and Branded `2035482` normalized output (PROV-13). The Android emulator exercised Food Databases empty/masked/local-validation/save/test states with redacted evidence. It exposed and fixed a production transport bug: leading request paths discarded the configured `/fdc/v1` base path. The client contract test now asserts complete search/detail URL paths.
+  - Changed: `scripts/capture-usda-fixtures.mjs`, USDA captured fixtures and mapper tests, `src/data/api/usda/client.ts` + client tests, `docs/qa/M6/usda-fixtures-and-android-2026-09-27.md`, redacted Android evidence.
+  - Checks: `npm test -- --runInBand src/data/api/usda` → 3 suites / 13 tests passed; `npm run check` → lint + typecheck + 60 suites / 404 tests passed (pre-existing React `act` and open-handle warnings after passing tests).
+  - Android result: partial. The device is connected and Profile → Food Databases showed the expected empty/masked/saved controls. The first live test exposed the fixed base-path bug; after Metro reload, the live USDA query did not reach an addable selection in the QA window. The exact commands, results, and redacted evidence are in `docs/qa/M6/usda-fixtures-and-android-2026-09-27.md`.
+  - Validation still needed: rerun the live USDA search → detail → add flow after confirming the provider response on the fixed client.
+  - Next unblocked task: M6 live Android USDA selection/add rerun.
 
 ### Known gaps
 

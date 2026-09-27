@@ -1,0 +1,65 @@
+{
+  "fdcId": 2035482,
+  "description": "GREEK YOGURT",
+  "dataType": "Branded",
+  "brandOwner": "Ocean Spray Cranberries, Inc.",
+  "brandName": "OCEAN SPRAY",
+  "servingSize": 30,
+  "servingSizeUnit": "g",
+  "householdServingFullText": "2 Tbsp",
+  "foodNutrients": [
+    {
+      "nutrient": {
+        "number": "291",
+        "unitName": "g"
+      },
+      "amount": 3.3
+    },
+    {
+      "nutrient": {
+        "number": "203",
+        "unitName": "g"
+      },
+      "amount": 3.33
+    },
+    {
+      "nutrient": {
+        "number": "205",
+        "unitName": "g"
+      },
+      "amount": 70
+    },
+    {
+      "nutrient": {
+        "number": "204",
+        "unitName": "g"
+      },
+      "amount": 20
+    },
+    {
+      "nutrient": {
+        "number": "208",
+        "unitName": "kcal"
+      },
+      "amount": 467
+    }
+  ],
+  "foodPortions": [],
+  "labelNutrients": {
+    "calories": {
+      "value": 140
+    },
+    "protein": {
+      "value": 0.999
+    },
+    "fat": {
+      "value": 6
+    },
+    "carbohydrates": {
+      "value": 21
+    },
+    "fiber": {
+      "value": 0.99
+    }
+  }
+}

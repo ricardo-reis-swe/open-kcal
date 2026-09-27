@@ -1,0 +1,59 @@
+{
+  "fdcId": 747997,
+  "description": "Eggs, Grade A, Large, egg white",
+  "dataType": "Foundation",
+  "foodNutrients": [
+    {
+      "nutrient": {
+        "number": "208",
+        "unitName": "kcal"
+      },
+      "amount": 55
+    },
+    {
+      "nutrient": {
+        "number": "268",
+        "unitName": "kJ"
+      },
+      "amount": 231
+    },
+    {
+      "nutrient": {
+        "number": "203",
+        "unitName": "g"
+      },
+      "amount": 10.7
+    },
+    {
+      "nutrient": {
+        "number": "204",
+        "unitName": "g"
+      },
+      "amount": 0
+    },
+    {
+      "nutrient": {
+        "number": "205",
+        "unitName": "g"
+      },
+      "amount": 2.36
+    }
+  ],
+  "foodPortions": [
+    {
+      "amount": 1,
+      "gramWeight": 34,
+      "modifier": "white",
+      "measureUnit": {
+        "name": "egg"
+      }
+    },
+    {
+      "amount": 1,
+      "gramWeight": 50,
+      "measureUnit": {
+        "name": "RACC"
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "fdcId": 174980,
+  "description": "Crackers, milk",
+  "dataType": "SR Legacy",
+  "foodNutrients": [
+    {
+      "nutrient": {
+        "number": "208",
+        "unitName": "kcal"
+      },
+      "amount": 446
+    },
+    {
+      "nutrient": {
+        "number": "268",
+        "unitName": "kJ"
+      },
+      "amount": 1865
+    },
+    {
+      "nutrient": {
+        "number": "203",
+        "unitName": "g"
+      },
+      "amount": 7.6
+    },
+    {
+      "nutrient": {
+        "number": "204",
+        "unitName": "g"
+      },
+      "amount": 13.77
+    },
+    {
+      "nutrient": {
+        "number": "205",
+        "unitName": "g"
+      },
+      "amount": 71.73
+    },
+    {
+      "nutrient": {
+        "number": "291",
+        "unitName": "g"
+      },
+      "amount": 3.4
+    }
+  ],
+  "foodPortions": [
+    {
+      "amount": 1,
+      "gramWeight": 11,
+      "modifier": "cracker",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    },
+    {
+      "amount": 0.5,
+      "gramWeight": 14.2,
+      "modifier": "oz",
+      "measureUnit": {
+        "name": "undetermined"
+      }
+    }
+  ]
+}

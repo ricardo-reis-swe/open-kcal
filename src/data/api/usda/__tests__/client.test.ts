@@ -24,7 +24,7 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
     await client.search('  egg  ', 2, new AbortController().signal);
     const [url, init] = request.mock.calls[0]!;
     expect(String(url)).toContain(
-      '/foods/search?query=egg&dataType=Foundation%2CSR+Legacy%2CSurvey+%28FNDDS%29%2CBranded&pageSize=20&pageNumber=2',
+      '/fdc/v1/foods/search?query=egg&dataType=Foundation%2CSR+Legacy%2CSurvey+%28FNDDS%29%2CBranded&pageSize=20&pageNumber=2',
     );
     expect(String(url)).not.toContain('api_key');
     expect(init.headers).toEqual({ 'X-Api-Key': 'test-usda-key' });
@@ -39,7 +39,7 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
         ),
       );
     await new UsdaClient(config, credentials, request).getFood('1/2', new AbortController().signal);
-    expect(String(request.mock.calls[0]?.[0])).toContain('/food/1%2F2?format=full');
+    expect(String(request.mock.calls[0]?.[0])).toContain('/fdc/v1/food/1%2F2?format=full');
     const missing = new UsdaClient(config, { getUsdaApiKeyForRequest: jest.fn().mockResolvedValue(null) }, request);
     await expect(missing.search('secret term', 1, new AbortController().signal)).rejects.toBeInstanceOf(
       ProviderConfigurationError,
