@@ -8,7 +8,10 @@ type Fetch = typeof fetch;
 
 export class OpenFoodFactsClient {
   constructor(
-    private readonly config: Pick<AppConfig, 'appVersion' | 'offSearchBaseUrl' | 'offProductBaseUrl' | 'offContactEmail'>,
+    private readonly config: Pick<
+      AppConfig,
+      'appVersion' | 'offSearchBaseUrl' | 'offProductBaseUrl' | 'offContactEmail'
+    >,
     private readonly request: Fetch = fetch,
   ) {}
 
@@ -39,17 +42,28 @@ export class OpenFoodFactsClient {
   async search(query: string, page: number, signal: AbortSignal): Promise<FoodCandidate[]> {
     const terms = query.trim().replace(/\s+/g, ' ');
     const url = new URL('/search', this.config.offSearchBaseUrl);
-    url.search = new URLSearchParams({ q: terms, langs: 'en', page_size: '20', page: String(page), fields: 'code,product_name,brands,nutriments' }).toString();
+    url.search = new URLSearchParams({
+      q: terms,
+      langs: 'en',
+      page_size: '20',
+      page: String(page),
+      fields: 'code,product_name,brands,nutriments',
+    }).toString();
     return mapOpenFoodFactsSearch(await this.json(url.toString(), signal));
   }
 
   async getFood(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
     const url = new URL(`/api/v2/product/${encodeURIComponent(externalId)}`, this.config.offProductBaseUrl);
-    url.search = new URLSearchParams({ fields: 'code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments' }).toString();
+    url.search = new URLSearchParams({
+      fields:
+        'code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments',
+    }).toString();
     const payload = await this.json(url.toString(), signal);
-    const status = typeof payload === 'object' && payload !== null ? (payload as { status?: unknown }).status : undefined;
+    const status =
+      typeof payload === 'object' && payload !== null ? (payload as { status?: unknown }).status : undefined;
     if (status === 0) throw new NotFoundError('Open Food Facts product not found');
-    const product = typeof payload === 'object' && payload !== null ? (payload as { product?: unknown }).product : undefined;
+    const product =
+      typeof payload === 'object' && payload !== null ? (payload as { product?: unknown }).product : undefined;
     return mapOpenFoodFactsProduct(product);
   }
 }

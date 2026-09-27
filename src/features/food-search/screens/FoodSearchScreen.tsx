@@ -13,7 +13,13 @@ import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { useTheme } from '@/shared/theme';
 
-import { useCustomFoodSearch, useLocalFoodWrites, useOpenFoodFactsSearch, useRecentFoods, useSavedFoodSearch } from '../food-search.queries';
+import {
+  useCustomFoodSearch,
+  useLocalFoodWrites,
+  useOpenFoodFactsSearch,
+  useRecentFoods,
+  useSavedFoodSearch,
+} from '../food-search.queries';
 
 const LOCAL_DEBOUNCE_MS = 150;
 const OFF_DEBOUNCE_MS = 800;
@@ -89,8 +95,15 @@ export function FoodSearchScreen({
     const detail = await services.openFoodFacts.getFood(externalId, new AbortController().signal);
     if (!detail) return;
     const fetchedAt = nowUtcIso(services.clock);
-    const expiresAt = new Date(services.clock.now().getTime() + 30 * 24 * 60 * 60_000).toISOString() as typeof fetchedAt;
-    const saved = await services.foods.upsertExternal('open_food_facts', detail.externalId, detail.input, { fetchedAt, expiresAt, rawPayloadJson: null, schemaVersion: 1 });
+    const expiresAt = new Date(
+      services.clock.now().getTime() + 30 * 24 * 60 * 60_000,
+    ).toISOString() as typeof fetchedAt;
+    const saved = await services.foods.upsertExternal('open_food_facts', detail.externalId, detail.input, {
+      fetchedAt,
+      expiresAt,
+      rawPayloadJson: null,
+      schemaVersion: 1,
+    });
     onSelectFood(saved);
   };
 
@@ -180,42 +193,64 @@ export function FoodSearchScreen({
               <>
                 {customFoods.length > 0 ? <SectionHeader label={t('foodSearch.myFoods')} uppercase /> : null}
                 {customFoods.map((food) => (
-                <FoodResultRow
-                  key={food.id}
-                  food={food}
-                  locale={locale}
-                  energyUnit={settings.data.energyUnit}
-                  onPress={() => onSelectFood(food)}
-                  onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
-                />
+                  <FoodResultRow
+                    key={food.id}
+                    food={food}
+                    locale={locale}
+                    energyUnit={settings.data.energyUnit}
+                    onPress={() => onSelectFood(food)}
+                    onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
+                  />
                 ))}
                 {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
                 {savedFoods.map((food) => (
-                  <FoodResultRow key={food.id} food={food} locale={locale} energyUnit={settings.data.energyUnit} onPress={() => onSelectFood(food)} />
+                  <FoodResultRow
+                    key={food.id}
+                    food={food}
+                    locale={locale}
+                    energyUnit={settings.data.energyUnit}
+                    onPress={() => onSelectFood(food)}
+                  />
                 ))}
                 {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
                 {query.trim().length >= 3 && query.trim() !== offQuery ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>{t('foodSearch.searching')}</AppText>
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
                 ) : null}
                 {off.isLoading && query.trim() === offQuery ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>{t('foodSearch.searching')}</AppText>
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
                 ) : null}
-                {off.isError ? (
-                  <InlineStatus tone="error" message={t('foodSearch.offFailed')} />
-                ) : null}
+                {off.isError ? <InlineStatus tone="error" message={t('foodSearch.offFailed')} /> : null}
                 {offFoods.map((candidate) => (
-                  <FoodResultRow key={`off-${candidate.externalId}`} food={{ ...candidate.input, brand: candidate.input.brand ?? null, id: `off-${candidate.externalId}`, source: 'open_food_facts', externalId: candidate.externalId, isDeleted: false, servings: [] }} locale={locale} energyUnit={settings.data.energyUnit} onPress={() => void selectOff(candidate.externalId)} />
+                  <FoodResultRow
+                    key={`off-${candidate.externalId}`}
+                    food={{
+                      ...candidate.input,
+                      brand: candidate.input.brand ?? null,
+                      id: `off-${candidate.externalId}`,
+                      source: 'open_food_facts',
+                      externalId: candidate.externalId,
+                      isDeleted: false,
+                      servings: [],
+                    }}
+                    locale={locale}
+                    energyUnit={settings.data.energyUnit}
+                    onPress={() => void selectOff(candidate.externalId)}
+                  />
                 ))}
                 {customFoods.length === 0 && savedFoods.length === 0 ? (
-              <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
-                <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
-                <TextAction
-                  icon="add"
-                  label={t('foodSearch.createCustom')}
-                  onPress={() => onCreateCustom(query.trim())}
-                  testID="food-create-custom"
-                />
-              </View>
+                  <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
+                    <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
+                    <TextAction
+                      icon="add"
+                      label={t('foodSearch.createCustom')}
+                      onPress={() => onCreateCustom(query.trim())}
+                      testID="food-create-custom"
+                    />
+                  </View>
                 ) : null}
               </>
             )}

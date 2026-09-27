@@ -3,7 +3,11 @@ export class RequestLimiter {
   private readonly timestamps: number[] = [];
   private cooldownUntil = 0;
 
-  constructor(private readonly limit: number, private readonly windowMs: number, private readonly now: () => number = Date.now) {}
+  constructor(
+    private readonly limit: number,
+    private readonly windowMs: number,
+    private readonly now: () => number = Date.now,
+  ) {}
 
   tryTake(): boolean {
     const time = this.now();

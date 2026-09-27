@@ -72,7 +72,8 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
   if (!externalId || !name) return null;
 
   const n = product.nutriments;
-  const energy = nutrient(n, 'energy-kcal_100g') ??
+  const energy =
+    nutrient(n, 'energy-kcal_100g') ??
     (() => {
       const kj = nutrient(n, 'energy-kj_100g') ?? nutrient(n, 'energy_100g');
       return kj === null ? null : kj / 4.184;

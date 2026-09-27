@@ -24,12 +24,22 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
     });
     expect(candidate?.input.nutrients.energyKcal).toBeCloseTo(100, 10);
     expect(candidate?.input.servings[0]).toMatchObject({
-      label: 'serving', basisMultiplier: 1.5, isDefault: true,
+      label: 'serving',
+      basisMultiplier: 1.5,
+      isDefault: true,
     });
   });
 
   it('drops hits with insufficient or clearly invalid nutrition without failing the section', () => {
-    expect(mapOpenFoodFactsSearch({ hits: [{ code: 'empty', product_name: 'Empty', nutriments: {} }, product] })).toHaveLength(1);
-    expect(mapOpenFoodFactsProduct({ code: 'bad', product_name: 'Bad', nutriments: { 'energy-kcal_100g': 0, proteins_100g: 10 } })).toBeNull();
+    expect(
+      mapOpenFoodFactsSearch({ hits: [{ code: 'empty', product_name: 'Empty', nutriments: {} }, product] }),
+    ).toHaveLength(1);
+    expect(
+      mapOpenFoodFactsProduct({
+        code: 'bad',
+        product_name: 'Bad',
+        nutriments: { 'energy-kcal_100g': 0, proteins_100g: 10 },
+      }),
+    ).toBeNull();
   });
 });
