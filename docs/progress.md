@@ -10,7 +10,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M3 Quick Calories | done |
 | M4 Custom foods + ruler | done |
 | M5 Search + Open Food Facts | done |
-| M6 USDA | in progress — T1 complete; captured-fixture recording blocked on a user-supplied local key |
+| M6 USDA | in progress — implementation and Android live validation complete; independent review/readiness remains |
 | M7 Meal Detail + copy | not started |
 | M8 Profile | not started |
 | M9 Hardening | not started |
@@ -372,10 +372,11 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
   - Android result: partial. The device is connected and Profile → Food Databases showed the expected empty/masked/saved controls. The first live test exposed the fixed base-path bug; after Metro reload, the live USDA query did not reach an addable selection in the QA window. The exact commands, results, and redacted evidence are in `docs/qa/M6/usda-fixtures-and-android-2026-09-27.md`.
   - Validation still needed: rerun the live USDA search → detail → add flow after confirming the provider response on the fixed client. The first failed local recorder invocation echoed the owner-supplied key in terminal output before capture; repository artifacts remain clean, but the key MUST be rotated and is not used again.
   - Next unblocked task: M6 live Android USDA selection/add rerun with a replacement key.
-- [ ] T5 Live Android USDA selection/add rerun: **blocked before a live request**. The connected Android emulator reached Profile → Food Databases → Add key and visibly showed `USDA, Not set up`. The approved ignored local key was read only inside the input process; an initial direct device-input attempt was interrupted before save and the retry used in-process alphanumeric input. Android instead opened its system `Display over other apps` settings surface. No system permission was changed. The app never showed a masked saved hint or `Test key`, and a fresh return to Food Databases again showed `Not set up`; therefore no credential reached emulator secure storage and none remained to remove. No key value was printed, written to a log, bundled, placed in a URL, fixture, screenshot, app environment variable, or repository artifact. No live USDA search, detail, selection, diary write, or fixture recording occurred. Exact redacted evidence and retry point: `docs/qa/M6/android-live-usda-rerun-2026-09-27.md`.
-  - Changed: `docs/progress.md`, `docs/qa/M6/android-live-usda-rerun-2026-09-27.md`.
-  - Checks: `npm run check` → lint + typecheck + 60 suites / 404 tests passed (existing React `act` and open-handle warnings after passing tests).
-  - Next unblocked task: resolve the emulator/system secure-field input interception without granting unrelated overlay permissions, then repeat M6 T5; independent M6 review/readiness remains premature.
+- [x] T5 Live Android USDA selection/add rerun: Food Search `egg` initially showed the sanitized `USDA search failed.` state; its in-screen Retry returned USDA results. The first USDA item was generic `Eggs, Grade A, Large, egg white` (Foundation `747997`), before any Branded USDA item. Selecting it opened Food Detail; `Add to Breakfast` returned immediately to Diary, which showed the new `1 × egg, white` / `19 kcal` Breakfast entry. No live fixture was recorded. Redacted evidence: `docs/qa/M6/android-live-usda-search-generic-first-2026-09-27.png`, `docs/qa/M6/android-live-usda-diary-updated-2026-09-27.png`; transient sanitized error evidence: `docs/qa/M6/android-live-usda-provider-failure-2026-09-27.png`.
+  - Changed: `docs/progress.md`, `docs/qa/M6/android-live-usda-rerun-2026-09-27.md`, and the three redacted Android evidence images above.
+  - Checks: Android emulator live path passed after one in-screen Retry. No code changed, so focused tests and `npm run check` were not duplicated.
+  - Credential handling: no credential was entered, replaced, removed, copied, logged, captured, or committed during the live validation.
+  - Next unblocked task: M6 independent review/readiness only; do not begin M7.
 
 ### Known gaps
 
@@ -387,4 +388,4 @@ Status: **in progress** · T1 USDA adapter complete (2026-09-27)
 
 ### Next unblocked task
 
-- Resolve the Android emulator/system secure-field input interception without granting unrelated overlay permissions, then repeat M6 T5 live USDA selection/add validation. Independent M6 review/readiness is only next after a successful rerun.
+- M6 independent review/readiness only; do not begin M7.
