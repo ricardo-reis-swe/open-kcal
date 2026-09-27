@@ -20,8 +20,16 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
     const client = new OpenFoodFactsClient(config, request);
     await expect(client.search(' greek  yogurt ', 2, new AbortController().signal)).resolves.toHaveLength(1);
     expect(String(request.mock.calls[0]?.[0])).toContain('q=greek+yogurt');
+    expect(String(request.mock.calls[0]?.[0])).toContain('langs=en%2Cen');
     expect(request.mock.calls[0]?.[1]?.headers).toEqual({
       'User-Agent': 'CalorieTracker/1.2.3 (ricardo_reis@live.com)',
+    });
+  });
+
+  it('uses the active app language and maps a network failure without leaking request details', async () => {
+    const client = new OpenFoodFactsClient(config, jest.fn().mockRejectedValue(new Error('network down')));
+    await expect(client.search('iogurte', 1, new AbortController().signal, 'pt-PT')).rejects.toMatchObject({
+      category: 'provider_response',
     });
   });
 

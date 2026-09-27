@@ -49,7 +49,7 @@ export function FoodSearchScreen({
   onCreateCustom,
   onSelectFood,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const locale = useFormattingLocale();
   const theme = useTheme();
   const meals = useMeals();
@@ -73,7 +73,7 @@ export function FoodSearchScreen({
   }, [offQuery, query]);
   const custom = useCustomFoodSearch(debouncedQuery);
   const saved = useSavedFoodSearch(debouncedQuery);
-  const off = useOpenFoodFactsSearch(offQuery);
+  const off = useOpenFoodFactsSearch(offQuery, 1, i18n.resolvedLanguage ?? i18n.language);
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
   const relative = relativeDay(date, today);

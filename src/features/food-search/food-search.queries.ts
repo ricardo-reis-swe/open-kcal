@@ -53,12 +53,12 @@ export function useSavedFoodSearch(query: string) {
 }
 
 /** UX-04 / PROV-04: OFF starts after 800 ms and at least three typed characters. */
-export function useOpenFoodFactsSearch(query: string, page = 1) {
+export function useOpenFoodFactsSearch(query: string, page = 1, language = 'en') {
   const { openFoodFacts } = useServices();
   const normalized = query.trim();
   return useQuery({
     queryKey: foodSearchKeys.off(normalized, page),
-    queryFn: ({ signal }) => openFoodFacts.search(normalized, page, signal),
+    queryFn: ({ signal }) => openFoodFacts.search(normalized, page, signal, language),
     enabled: normalized.length >= 3,
     staleTime: 10 * 60_000,
   });
