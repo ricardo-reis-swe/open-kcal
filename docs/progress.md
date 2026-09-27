@@ -9,7 +9,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M2 Diary (read) | done |
 | M3 Quick Calories | done |
 | M4 Custom foods + ruler | done |
-| M5 Search + Open Food Facts | in progress |
+| M5 Search + Open Food Facts | awaiting user acceptance |
 | M6 USDA | not started |
 | M7 Meal Detail + copy | not started |
 | M8 Profile | not started |
@@ -315,7 +315,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ## M5 Search + Open Food Facts
 
-Status: **in progress** · Start commit: `7d04bba`
+Status: **awaiting user acceptance** · Start commit: `7d04bba`
 
 ### Tasks
 
@@ -340,6 +340,7 @@ Status: **in progress** · Start commit: `7d04bba`
   - Android post-fix attempt: started the required seeded Metro command and ran `ADB="$HOME/Android/Sdk/platform-tools/adb" scripts/e2e-m5-offline-android.sh` three times. The environment terminated Maestro after `Tap on "Lunch"`; the wrapper never emitted `E2E Android: PASS|FAIL`, and direct ADB UI inspection was `Killed`. This is not a passing Android result. Evidence: `docs/qa/M5/android-e2e-count-serving-retry-2026-09-27.md`.
   - Final-review corrections (2026-09-27): local custom and Saved search now require every whitespace token to match name or brand, rank exact name → name prefix → every name-token word start → other matches, then recent use count, recency, and shorter name; both local sections page in 20-row increments with `Show more` (PROV-08, UX-04). Selected OFF detail reads are aborted on Search unmount/back and cannot upsert or navigate after leaving (PROV-10). A failed OFF detail now renders `Couldn't load this food.` on the selected result row (UX-04). Focused: `npm test -- --runInBand src/data/db/repositories/__tests__/foods-diary.test.ts src/features/food-search/__tests__/FoodSearchScreen.test.tsx` → 2 suites / 28 tests passed. Full: `npm run check` → lint + typecheck + 56 suites / 381 tests passed (Jest reported existing React act/open-handle warnings after completion).
   - Android execution waiver: the documented environment termination remains explicitly user-waived. It is not an Android pass and does not block this correction or M5 independent re-review/readiness.
+  - Independent final review (2026-09-27): **clean** — 0 blockers, 0 majors, 0 minors. It verified the final local-search, OFF detail-cancellation, and selected-row-error corrections; `npm run check` passed lint + typecheck + 56 suites / 381 tests. M5 is ready for user acceptance under the explicitly recorded Android execution waiver.
   - Next unblocked task: independent M5 re-review/readiness only, under the explicitly recorded Android execution waiver. Do not start M6.
 
 ### Known gaps
@@ -352,4 +353,4 @@ Status: **in progress** · Start commit: `7d04bba`
 
 ### Next unblocked task
 
-- Independent M5 re-review/readiness only, under the explicitly recorded Android execution waiver. Do not start M6.
+- User acceptance of M5. M6 MUST NOT start until acceptance is recorded.
