@@ -1,6 +1,7 @@
 #!/bin/bash
 # Runs the Maestro flows in .maestro/ on one device (ARCH-18, ROAD-02). Needs the dev build installed and
-# Metro on localhost:8081 (`npx expo start --dev-client --port 8081`).
+# Metro on localhost:8081 (`npx expo start --dev-client --port 8081`). Set METRO_PORT only when the host port
+# needs an emulator reverse override; the device deep link remains on localhost:8081.
 #   scripts/e2e.sh android|ios [flow.yaml ...]
 set -euo pipefail
 java_major() {
@@ -24,6 +25,7 @@ fi
   exit 1
 }
 MAESTRO=${MAESTRO:-$HOME/.maestro/bin/maestro}
+METRO_PORT=${METRO_PORT:-8081}
 if [ -z "${ADB:-}" ]; then
   for candidate in "$HOME/Library/Android/sdk/platform-tools/adb" "$HOME/Android/Sdk/platform-tools/adb"; do
     if [ -x "$candidate" ]; then
@@ -37,7 +39,7 @@ platform=${1:?usage: scripts/e2e.sh android|ios [flow.yaml ...]}
 shift
 case "$platform" in
   android)
-    "$ADB" reverse tcp:8081 tcp:8081 >/dev/null
+    "$ADB" reverse tcp:8081 "tcp:$METRO_PORT" >/dev/null
     device=$("$ADB" devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')
     ;;
   ios) device=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1) ;;

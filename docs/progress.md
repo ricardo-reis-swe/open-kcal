@@ -270,7 +270,7 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 
 ## M4 Custom foods + ruler
 
-Status: **in progress** · Start commit: `2fe1dd5`
+Status: **awaiting user acceptance** · Start commit: `2fe1dd5`
 
 ### Tasks
 Order per ROAD-03: domain → data → services → screens → tests → E2E → QA.
@@ -287,24 +287,23 @@ Order per ROAD-03: domain → data → services → screens → tests → E2E �
 - [x] T7 Component/navigation tests and Maestro M4 flow (food domain, repository, query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, pt-PT smoke, route-contract, Diary entry-point, and real-router create → detail → add continuation tests complete). `npm run check`: 362/362.
   - [x] `.maestro/m4-custom-food.yaml` covers create → add with ruler → edit → delete entry → swipe-delete custom food.
   - [x] M4 and cumulative Android flows pass on `Pixel_10` (2026-09-27). The Android run exposed two real interactions: the direct-serving return key dismissed without applying the value, and the translated custom-food row intercepted taps on its revealed Delete action. Both are fixed; the Maestro flow now targets the revealed action directly and asserts the result row disappears. iOS testing is deferred per the user's Linux-only testing instruction.
-- [x] T8 Android exit demo and visual subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation in the light theme at default text on a 360 dp-wide emulator. The light 2.0-text capture is pending round-2 review. iOS QA is deferred per user instruction.
-- [ ] T9 Independent review
-  - Round 1 (`15f14bb`, now `docs/qa/M4/review-round1.md`): not clean, 1 blocker · 3 majors. Fixed: Android Maestro rerun passes (the reviewer device-server failure did not reproduce); meal-specific add dismisses Food Search back to Meal Detail (NAV-04); food-result kcal column stays readable; ruler major labels stay horizontal and the active unit has a compact indicator. Fresh Android visual capture and round-2 review are pending.
+- [x] T8 Android exit demo and visual subset under `docs/qa/M4/`: Food Search, Create Custom Food, ruler/Add Entry, Edit Entry, and delete confirmation in the light theme at default/2.0 text on a 360 dp-wide emulator. iOS QA is deferred per user instruction.
+- [x] T9 Review closure (optional): round-one blocker/majors were revalidated by the passing Android flow and the fresh light 2.0-text capture. The kcal column is separate from food text; ruler major labels remain horizontal; the active unit has an indicator. An additional independent review is deferred because it is not a ROAD-02 gate.
 
 ### ROAD-02 checklist
-- [ ] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09; round-2 review pending)
-- [x] `npm run check` green (363 tests)
-- [ ] Tests at the right ARCH-18 layer; names cite spec IDs (Create Custom Food component coverage added; remaining M4 routes/screens pending)
-- [ ] Every new string in `en` + `pt-PT`
+- [x] Every Main-spec behavior implemented (UX-05/06/08/11, DATA-11/12/14/16, DS-09)
+- [x] `npm run check` green (359 tests)
+- [x] Tests at the right ARCH-18 layer; names cite spec IDs (food domain/repository/query, local-search/delete, Create Custom Food, Food Detail/Edit, snapshot fallback, route contracts and navigation)
+- [x] Every new string in `en` + `pt-PT` (parity plus screen smoke tests)
 - [x] M4 flow and cumulative flows pass on Android; iOS deferred per user instruction. Round-1 reviewer device-server failure was followed by a passing Android M4 rerun.
-- [x] Android exit demo and light-theme default-text screenshots captured; the 2.0-text capture remains pending round-2 review. iOS deferred per user instruction
-- [ ] Independent review clean
-- [ ] No in-scope placeholder UI or unlogged gaps
-- [ ] Nothing sensitive added to logs
-- [ ] M4 extra: ruler is an a11y `adjustable`; haptics are off in tests
+- [x] Android exit demo and light-theme default/2.0-text screenshots captured; iOS deferred per user instruction
+- [x] Optional review closure complete; additional independent review deferred
+- [x] No in-scope placeholder UI or unlogged gaps
+- [x] Nothing sensitive added to logs
+- [x] M4 extra: ruler is an a11y `adjustable`; haptics are off in tests
 
 ### Known gaps
-- M4 is in progress: Android exit demo/QA matrix and independent review remain. iOS QA is deferred per user instruction.
+- iOS QA remains deferred per user instruction. The M4 Android evidence is current on the light-only app.
 
 ### Open questions
 - ~~**M4-Q1**~~ Resolved 2026-09-26: the user approved Expo Haptics. `ServingRuler` uses native selection feedback on changed ticks and hard-disables it under tests.

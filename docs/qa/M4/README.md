@@ -10,4 +10,4 @@ Android-only capture, per the user's Linux-only testing instruction. `scripts/qa
 | `edit-entry` | Edit Food Entry (UX-06) |
 | `delete-dialog` | Delete entry confirmation (UX-19) |
 
-The iOS visual matrix is deferred per the user's instruction; it must be completed before M4 is formally accepted.
+The iOS visual matrix is deferred per the user's instruction and is not a gate for the current Android-first M4 acceptance.

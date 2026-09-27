@@ -17,9 +17,10 @@ for scheme in light; do
   "$ADB" shell cmd uimode night no >/dev/null
   "$ADB" shell settings put system font_scale 1.0
   scripts/e2e.sh android -e SHOT="docs/qa/M4/android-$scheme-default" scripts/qa/m4-capture.yaml
+  capture=$(ls -td ~/.maestro/tests/*/ | head -1)
+  cp "$capture"m4-capture/takeScreenshot/docs/qa/M4/android-"$scheme"-default-*.png docs/qa/M4/
   "$ADB" shell settings put system font_scale 2.0
   scripts/e2e.sh android -e SHOT="docs/qa/M4/android-$scheme-largest" scripts/qa/m4-capture.yaml
-done
-for run in $(ls -tdr ~/.maestro/tests/*/); do
-  cp "$run"m4-capture/takeScreenshot/docs/qa/M4/android-*.png docs/qa/M4/ 2>/dev/null || true
+  capture=$(ls -td ~/.maestro/tests/*/ | head -1)
+  cp "$capture"m4-capture/takeScreenshot/docs/qa/M4/android-"$scheme"-largest-*.png docs/qa/M4/
 done
