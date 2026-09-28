@@ -41,6 +41,7 @@ const dateSchema = z.string().refine(isLocalDate);
 type RawParams = Record<string, string | string[] | undefined>;
 
 const paramSchemas = {
+  mealDetail: z.object({ mealId: idSchema, date: dateSchema }),
   foodSearch: z.object({
     mealId: idSchema,
     date: dateSchema,
@@ -78,6 +79,9 @@ export const routes = {
   diary: (): Href => '/diary',
   profile: (): Href => '/profile',
   foodDatabases: (): Href => '/profile/food-databases' as Href,
+  /** NAV-04: Meal Detail by `mealId` (never by name) on a diary date. */
+  mealDetail: (p: RouteParams['mealDetail']): Href =>
+    ({ pathname: '/diary/meal/[mealId]', params: { mealId: p.mealId, date: p.date } }) as unknown as Href,
   foodSearch: (p: RouteParams['foodSearch']): Href => ({
     pathname: '/diary/food-search',
     params: {

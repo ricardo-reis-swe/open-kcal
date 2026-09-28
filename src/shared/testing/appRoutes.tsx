@@ -7,6 +7,7 @@ import DiaryIndex from '@/app/(tabs)/diary/index';
 import CreateCustomFoodRoute from '@/app/(tabs)/diary/create-custom-food';
 import FoodDetailRoute from '@/app/(tabs)/diary/food-detail/[foodId]';
 import EditFoodEntryRoute from '@/app/(tabs)/diary/food-entry/[entryId]';
+import MealDetailRoute from '@/app/(tabs)/diary/meal/[mealId]';
 import FoodSearchRoute from '@/app/(tabs)/diary/food-search/index';
 import EditQuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/[entryId]';
 import QuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/index';
@@ -23,6 +24,7 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/_layout': TabsLayout,
     '(tabs)/diary/_layout': DiaryStackLayout,
     '(tabs)/diary/index': DiaryIndex,
+    '(tabs)/diary/meal/[mealId]': MealDetailRoute,
     '(tabs)/diary/food-search/index': FoodSearchRoute,
     '(tabs)/diary/food-detail/[foodId]': FoodDetailRoute,
     '(tabs)/diary/food-entry/[entryId]': EditFoodEntryRoute,

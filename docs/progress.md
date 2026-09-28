@@ -24,7 +24,7 @@ Status: **in progress** · Start commit: `6c78c1a` (review range `6c78c1a..HEAD`
 ### Tasks
 
 - [x] T1 Copy meal transaction + Meal Detail model: `diaryRepository.copyMeal` (DATA-16), `useDiaryMeal` + `useDiaryWrites().copyMeal` in `src/features/diary/diary.queries.ts`; tests `src/data/db/repositories/__tests__/copy-meal.test.ts` (exact snapshots, order, append, same-date duplicates, independence, rollback).
-- [ ] T2 Meal Detail screen (UX-03, NAV-07): header, date, total, entry rows, `+ Add food`, empty state, `Copy meal` disabled when empty, Not found when the meal is gone.
+- [x] T2 Meal Detail screen (UX-03, NAV-04): `src/features/diary/screens/MealDetailScreen.tsx` at `/diary/meal/[mealId]` (`routes.mealDetail`), Diary header tap → Meal Detail and header `+` → Food Search; entries return with `origin: mealDetail`; `Copy meal` opens sheet state for T3 (no sheet yet); tests `src/features/diary/__tests__/meal-detail.nav.test.tsx`.
 - [ ] T3 Copy Meal Sheet + copy flow (UX-12, UX-13 destination mode, NAV-07): Today/Tomorrow absolute shortcuts, `Choose date…`, back to source Meal Detail + success toast.
 - [ ] T4 Focused tests / QA wrap-up (navigation + return rules); no Maestro flow for M7 (ARCH-18 table).
 

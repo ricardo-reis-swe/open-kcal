@@ -60,7 +60,8 @@
       "energy": "{{value}} {{unit}}",
       "a11y": "{{meal}}, {{value}} {{unit}}",
       "addFood": "Add food",
-      "addFoodTo": "Add food to {{meal}}"
+      "addFoodTo": "Add food to {{meal}}",
+      "openHint": "Opens meal details"
     },
     "entry": {
       "serving": "{{quantity}} {{unit}}",
@@ -260,5 +261,11 @@
     "deleteTitle": "Delete food entry?",
     "deleteBody": "{{name}}, {{quantity}} {{unit}}, from {{meal}} on {{date}}.",
     "deleteError": "Couldn't delete. Try again."
+  },
+  "mealDetail": {
+    "copyMeal": "Copy meal",
+    "empty": "No foods logged for this meal.",
+    "totalA11y": "Total, {{value}} {{unit}}",
+    "addFood": "Add food"
   }
 }

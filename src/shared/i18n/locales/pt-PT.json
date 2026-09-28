@@ -60,7 +60,8 @@
       "energy": "{{value}} {{unit}}",
       "a11y": "{{meal}}, {{value}} {{unit}}",
       "addFood": "Adicionar alimento",
-      "addFoodTo": "Adicionar alimento a {{meal}}"
+      "addFoodTo": "Adicionar alimento a {{meal}}",
+      "openHint": "Abre os detalhes da refeição"
     },
     "entry": {
       "serving": "{{quantity}} {{unit}}",
@@ -260,5 +261,11 @@
     "deleteTitle": "Eliminar registo de alimento?",
     "deleteBody": "{{name}}, {{quantity}} {{unit}}, de {{meal}} em {{date}}.",
     "deleteError": "Não foi possível eliminar. Tente novamente."
+  },
+  "mealDetail": {
+    "copyMeal": "Copiar refeição",
+    "empty": "Nenhum alimento registado nesta refeição.",
+    "totalA11y": "Total, {{value}} {{unit}}",
+    "addFood": "Adicionar alimento"
   }
 }

@@ -12,7 +12,7 @@ import { useTheme } from '@/shared/theme';
 
 import { useAppSettings, useDiaryDay } from '../diary.queries';
 import { CalorieRing } from './CalorieRing';
-import { DiaryEntryRow, QuickCaloriesRow } from './DiaryEntryRow';
+import { MealEntries } from './DiaryEntryRow';
 import { MacroStrip } from './MacroStrip';
 import { MealHeader } from './MealHeader';
 
@@ -117,30 +117,16 @@ function MealSection({ meal, unit, date }: { meal: DiaryMeal; unit: EnergyUnit; 
   const theme = useTheme();
   return (
     <View testID={`diary-meal-${meal.meal.id}`}>
-      <MealHeader name={meal.meal.name} energyKcal={meal.totals.energyKcal} unit={unit} />
-      {meal.entries.map((entry) => {
-        switch (entry.kind) {
-          case 'food':
-            return (
-              <DiaryEntryRow
-                key={entry.id}
-                entry={entry}
-                unit={unit}
-                onPress={() => router.push(routes.editFoodEntry({ entryId: entry.id, origin: 'diary' }))}
-              />
-            );
-          case 'quick_calories':
-            return (
-              <QuickCaloriesRow
-                key={entry.id}
-                entry={entry}
-                unit={unit}
-                // UX-02: row tap → the matching edit screen; it returns here (NAV-04).
-                onPress={() => router.push(routes.editQuickCalories({ entryId: entry.id, origin: 'diary' }))}
-              />
-            );
-        }
-      })}
+      {/* UX-02: header tap → Meal Detail (mealId, date); header `+` → Food Search (meal, date). */}
+      <MealHeader
+        name={meal.meal.name}
+        energyKcal={meal.totals.energyKcal}
+        unit={unit}
+        onPress={() => router.push(routes.mealDetail({ mealId: meal.meal.id, date }))}
+        onAdd={() => router.push(routes.foodSearch({ mealId: meal.meal.id, date }))}
+      />
+      {/* UX-02: row tap → the matching edit screen; it returns here (NAV-04). */}
+      <MealEntries entries={meal.entries} unit={unit} origin="diary" />
       {/* DS-08 Add Food row (42–44): the last row per meal. */}
       <View
         style={{

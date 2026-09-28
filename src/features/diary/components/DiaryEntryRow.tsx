@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
@@ -6,6 +7,7 @@ import type { EnergyUnit } from '@/domain/units/units';
 import { AppIcon, AppText, FocusablePressable } from '@/shared/components';
 import { formatEnergy } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
+import { routes, type Origin } from '@/shared/navigation/routes';
 import { useTheme } from '@/shared/theme';
 
 export type EntryRowProps = {
@@ -74,6 +76,27 @@ export function QuickCaloriesRow({ entry, unit, onPress }: EntryRowProps) {
       value={t('diary.meal.energy', { value, unit: t(`diary.units.${unit}`) })}
       marker
     />
+  );
+}
+
+/** A meal's entries in saved order; a row tap opens the matching edit screen, which returns to `origin` (NAV-04). */
+export function MealEntries({ entries, unit, origin }: { entries: DiaryEntry[]; unit: EnergyUnit; origin: Origin }) {
+  return entries.map((entry) =>
+    entry.kind === 'food' ? (
+      <DiaryEntryRow
+        key={entry.id}
+        entry={entry}
+        unit={unit}
+        onPress={() => router.push(routes.editFoodEntry({ entryId: entry.id, origin }))}
+      />
+    ) : (
+      <QuickCaloriesRow
+        key={entry.id}
+        entry={entry}
+        unit={unit}
+        onPress={() => router.push(routes.editQuickCalories({ entryId: entry.id, origin }))}
+      />
+    ),
   );
 }
 

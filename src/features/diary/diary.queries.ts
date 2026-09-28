@@ -30,10 +30,11 @@ export function useDiaryDay(date: LocalDate) {
  * Meal Detail model (UX-03): one meal of the day with its entries and totals, derived from the cached day so both
  * screens share one query and refresh together. `null` = the meal no longer exists (deleted in Profile → UX-00).
  */
-export function useDiaryMeal(date: LocalDate, mealId: string) {
+export function useDiaryMeal(date: LocalDate, mealId: string, enabled = true) {
   const { diary } = useServices();
   return useQuery({
     queryKey: diaryKeys.day(date),
+    enabled,
     queryFn: () => diary.loadDay(date),
     select: (day: DiaryDay): DiaryMeal | null => day.meals.find((m) => m.meal.id === mealId) ?? null,
   });

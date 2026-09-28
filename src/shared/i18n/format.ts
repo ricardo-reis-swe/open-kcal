@@ -67,3 +67,16 @@ export function formatShortDate(date: LocalDate, today: LocalDate, locale: strin
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(y, m - 1, d)));
 }
+
+/** UX-03: locale long date (`Friday, 25 September`), with the year only when it isn't the current year. */
+export function formatLongDate(date: LocalDate, today: LocalDate, locale: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  const sameYear = date.slice(0, 4) === today.slice(0, 4);
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    ...(sameYear ? {} : { year: 'numeric' }),
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, m - 1, d)));
+}

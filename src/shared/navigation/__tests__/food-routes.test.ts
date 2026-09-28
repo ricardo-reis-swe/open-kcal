@@ -38,7 +38,19 @@ describe('ARCH-03 / NAV-04 / NAV-09: food route contracts', () => {
     });
   });
 
+  it('NAV-04: validates and builds Meal Detail by mealId + date', () => {
+    expect(parseRouteParams('mealDetail', { mealId: 'lunch', date: '2026-09-25' })).toEqual({
+      mealId: 'lunch',
+      date: '2026-09-25',
+    });
+    expect(routes.mealDetail({ mealId: 'lunch', date: '2026-09-25' })).toEqual({
+      pathname: '/diary/meal/[mealId]',
+      params: { mealId: 'lunch', date: '2026-09-25' },
+    });
+  });
+
   it.each([
+    ['mealDetail', { mealId: 'lunch', date: 'tomorrow' }],
     ['foodSearch', { mealId: '', date: '2026-09-25' }],
     ['foodDetail', { foodId: 'f', foodSource: 'other', mealId: 'm', date: '2026-09-25' }],
     ['createCustomFood', { mealId: 'm', date: '2026-02-30' }],
