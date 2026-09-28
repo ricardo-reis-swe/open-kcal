@@ -24,8 +24,9 @@ export type CustomFoodFormValues = {
   fat: string;
 };
 
+// Hermes on iOS has no `NumberFormat.prototype.formatToParts`: read the separator from `format(1.1)` instead.
 function decimalSeparator(locale: string): string {
-  return new Intl.NumberFormat(locale).formatToParts(1.1).find((part) => part.type === 'decimal')?.value ?? '.';
+  return new Intl.NumberFormat(locale).format(1.1).replace(/\d/g, '') || '.';
 }
 
 /** UX-00 / ARCH-22: parse an ungrouped decimal-pad value using the app locale, with at most two decimals. */

@@ -1,0 +1,72 @@
+# ARCH-18 / ROAD-02 M8: add and edit weight (UX-14, UX-15, UX-16, DATA-13). Profile → Update weight → Save updates
+# the Profile summary; Weight History row → edit → Save updates the row; Delete (confirmed) cleans up the entry.
+# A per-run whole number (valid in kg and lb, no decimal separator so any formatting locale accepts it) keeps entries
+# from earlier runs from matching; displays may add a locale decimal (`171,0 kg`).
+appId: com.ricardoreis.calorietracker
+---
+- runFlow: subflows/launch.yaml
+- evalScript: ${output.w = String(150 + (Date.now() % 50)); output.w2 = String(Number(output.w) + 1)}
+- tapOn:
+    id: tab-profile
+# Add
+- tapOn:
+    id: profile-update-weight
+- extendedWaitUntil:
+    visible:
+      id: weight-entry-input
+    timeout: 5000
+- tapOn:
+    id: weight-entry-input
+- inputText: ${output.w}
+- tapOn: # avoidKeyboard keeps Save above the keypad
+    id: weight-entry-save
+- extendedWaitUntil:
+    notVisible:
+      id: weight-entry-sheet
+    timeout: 5000
+- assertVisible:
+    id: profile-current-weight
+    text: ${'Current ' + output.w + '[ ,.].*'}
+# Edit from Weight History (newest first)
+- tapOn:
+    id: profile-weight-history
+- extendedWaitUntil:
+    visible:
+      id: weight-history-row-0
+      text: ${'.*' + output.w + '[ ,.].*'}
+    timeout: 5000
+- tapOn:
+    id: weight-history-row-0
+- extendedWaitUntil:
+    visible:
+      id: weight-entry-delete
+    timeout: 5000
+- tapOn:
+    id: weight-entry-input
+- eraseText: 8
+- inputText: ${output.w2}
+- tapOn:
+    id: weight-entry-save
+- extendedWaitUntil:
+    visible:
+      id: weight-history-row-0
+      text: ${'.*' + output.w2 + '[ ,.].*'}
+    timeout: 5000
+# Clean up: delete the entry (confirmed).
+- tapOn:
+    id: weight-history-row-0
+- extendedWaitUntil:
+    visible:
+      id: weight-entry-delete
+    timeout: 5000
+- tapOn:
+    id: weight-entry-delete
+- tapOn:
+    id: weight-entry-delete-dialog-confirm
+- extendedWaitUntil:
+    notVisible:
+      text: ${'.*' + output.w2 + '[ ,.].*'}
+    timeout: 5000
+- tapOn: Back
+- assertVisible:
+    id: profile-weight-history

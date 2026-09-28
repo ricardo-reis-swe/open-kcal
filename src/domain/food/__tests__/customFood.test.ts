@@ -20,6 +20,15 @@ const valid: CustomFoodFormValues = {
 };
 
 describe('ARCH-22 / UX-08: localized custom-food input', () => {
+  it('does not need Intl formatToParts (missing on iOS Hermes)', () => {
+    const spy = jest.spyOn(Intl.NumberFormat.prototype, 'formatToParts').mockImplementation(() => {
+      throw new TypeError('undefined is not a function');
+    });
+    expect(parseLocalizedDecimal('12,5', 'pt-PT')).toBe(12.5);
+    expect(parseLocalizedDecimal('180.5', 'en-US')).toBe(180.5);
+    spy.mockRestore();
+  });
+
   it('accepts the locale decimal separator and at most two decimal places', () => {
     expect(parseLocalizedDecimal(' 12.25 ', 'en-GB')).toBe(12.25);
     expect(parseLocalizedDecimal('12,25', 'pt-PT')).toBe(12.25);
