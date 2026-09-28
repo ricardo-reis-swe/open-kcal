@@ -47,6 +47,20 @@ export function moveMealToIndex(orderedIds: readonly string[], id: string, toInd
 
 /** UX-17 drag: the row index a drag of `translationY` from row `from` drops on (rows of `rowHeight`, clamped). */
 export function dropIndex(from: number, translationY: number, rowHeight: number, count: number): number {
+  'worklet';
   if (rowHeight <= 0 || count <= 0) return from;
   return Math.max(0, Math.min(count - 1, from + Math.round(translationY / rowHeight)));
+}
+
+/**
+ * UX-17 live drag preview: how far row `index` shifts while row `from` is dragged over slot `hover` (rows of
+ * `rowHeight`). Rows between the two slots move one row toward `from` to open the drop slot; `from < 0` = no drag.
+ * The dragged row itself follows the finger, so it gets 0 here. The order still commits only on drop (DATA-10).
+ */
+export function dragShift(index: number, from: number, hover: number, rowHeight: number): number {
+  'worklet';
+  if (from < 0 || index === from) return 0;
+  if (from < hover && index > from && index <= hover) return -rowHeight;
+  if (from > hover && index >= hover && index < from) return rowHeight;
+  return 0;
 }

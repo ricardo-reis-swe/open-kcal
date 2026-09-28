@@ -1,4 +1,4 @@
-import { dropIndex, duplicateMealName, isValidMealName, moveMeal, moveMealToIndex } from '../meals';
+import { dragShift, dropIndex, duplicateMealName, isValidMealName, moveMeal, moveMealToIndex } from '../meals';
 
 describe('UX-17: meal helpers', () => {
   const meals = [
@@ -36,5 +36,15 @@ describe('UX-17: meal helpers', () => {
     expect(moveMealToIndex(['a', 'b', 'c'], 'c', 0)).toEqual(['c', 'a', 'b']);
     expect(moveMealToIndex(['a', 'b', 'c'], 'b', 1)).toBeNull();
     expect(moveMealToIndex(['a', 'b', 'c'], 'x', 1)).toBeNull();
+  });
+
+  it('UX-17 drag preview: rows between the dragged row and the hovered slot shift one row toward it', () => {
+    const shifts = (from: number, hover: number) => [0, 1, 2, 3].map((i) => dragShift(i, from, hover, 50));
+    expect(shifts(-1, 2)).toEqual([0, 0, 0, 0]);
+    expect(shifts(1, 1)).toEqual([0, 0, 0, 0]);
+    expect(shifts(0, 3)).toEqual([0, -50, -50, -50]);
+    expect(shifts(0, 1)).toEqual([0, -50, 0, 0]);
+    expect(shifts(3, 0)).toEqual([50, 50, 50, 0]);
+    expect(shifts(2, 1)).toEqual([0, 50, 0, 0]);
   });
 });

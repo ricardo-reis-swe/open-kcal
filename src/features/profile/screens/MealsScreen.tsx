@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import type { Meal } from '@/data/db/repositories/mealsRepository';
-import { dropIndex, moveMeal, moveMealToIndex } from '@/domain/meals/meals';
+import { dragShift, dropIndex, moveMeal, moveMealToIndex } from '@/domain/meals/meals';
 import { useMeals } from '@/features/diary/diary.queries';
 import { AppBar, AppIcon, AppText, FocusablePressable, InlineStatus, TextAction } from '@/shared/components';
 import { useTheme } from '@/shared/theme';
@@ -37,6 +37,12 @@ export function MealsScreen({ onBack, onAddMeal, onEditMeal }: Props) {
     reorder.mutate(next, { onError: () => setSaveFailed(true) });
   };
   const ids = meals?.map((m) => m.id) ?? [];
+  // UX-17 live preview: the dragged row index, the slot it hovers and its height; other rows shift from these.
+  const drag: DragState = {
+    active: useSharedValue(-1),
+    hover: useSharedValue(-1),
+    rowHeight: useSharedValue<number>(theme.sizes.settingsRow[0]),
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
@@ -53,6 +59,7 @@ export function MealsScreen({ onBack, onAddMeal, onEditMeal }: Props) {
             meal={meal}
             index={index}
             count={meals.length}
+            drag={drag}
             onPress={() => onEditMeal(meal.id)}
             onMove={(delta) => commit(moveMeal(ids, meal.id, delta))}
             onDrop={(to) => commit(moveMealToIndex(ids, meal.id, to))}
@@ -68,10 +75,13 @@ export function MealsScreen({ onBack, onAddMeal, onEditMeal }: Props) {
   );
 }
 
+type DragState = { active: SharedValue<number>; hover: SharedValue<number>; rowHeight: SharedValue<number> };
+
 type RowProps = {
   meal: Meal;
   index: number;
   count: number;
+  drag: DragState;
   onPress: () => void;
   onMove: (delta: -1 | 1) => void;
   onDrop: (toIndex: number) => void;
@@ -79,11 +89,10 @@ type RowProps = {
 
 const LONG_PRESS_MS = 400;
 
-function MealRow({ meal, index, count, onPress, onMove, onDrop }: RowProps) {
+function MealRow({ meal, index, count, drag, onPress, onMove, onDrop }: RowProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const dragY = useSharedValue(0);
-  const dragging = useSharedValue(0);
   const height = useSharedValue<number>(theme.sizes.settingsRow[0]);
   // A long-press drag ends with a touch release on the row; that release must not also open Edit Meal.
   const dropped = useSharedValue(false);
@@ -97,27 +106,37 @@ function MealRow({ meal, index, count, onPress, onMove, onDrop }: RowProps) {
     const gesture = Gesture.Pan()
       .withTestId(testId)
       .onStart(() => {
-        dragging.set(1);
+        drag.rowHeight.set(height.get());
+        drag.hover.set(index);
+        drag.active.set(index);
         dropped.set(true);
       })
       .onUpdate((event) => {
         dragY.set(event.translationY);
+        drag.hover.set(dropIndex(index, event.translationY, height.get(), count));
       })
       .onEnd((event) => {
         scheduleOnRN(drop, event.translationY);
       })
       .onFinalize(() => {
-        dragging.set(0);
+        drag.active.set(-1);
+        drag.hover.set(-1);
         dragY.set(0);
       });
     return longPress ? gesture.activateAfterLongPress(LONG_PRESS_MS) : gesture.minDistance(4);
   };
 
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: dragY.get() }],
-    zIndex: dragging.get() ? 1 : 0,
-    opacity: dragging.get() ? 0.9 : 1,
-  }));
+  const style = useAnimatedStyle(() => {
+    const active = drag.active.get();
+    const isDragged = active === index;
+    const shift = dragShift(index, active, drag.hover.get(), drag.rowHeight.get());
+    return {
+      // Snap back without animation when the drag ends so the committed order doesn't slide from stale offsets.
+      transform: [{ translateY: isDragged ? dragY.get() : active < 0 ? 0 : withTiming(shift, { duration: 150 }) }],
+      zIndex: isDragged ? 1 : 0,
+      opacity: isDragged ? 0.9 : 1,
+    };
+  });
 
   const actions = [
     ...(index > 0 ? [{ name: 'moveUp', label: t('meals.moveUp') }] : []),

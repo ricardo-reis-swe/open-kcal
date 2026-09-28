@@ -1,6 +1,7 @@
-# ARCH-18 / ROAD-02 M8: reorder meals (UX-17, NAV-06, DATA-10). Profile → Meals; a handle drag moves the first meal
-# to the end and commits on drop (no Save). The order survives leaving and reopening Meals; a second drag restores it.
-# Assumes the four default meals (index 3 is last); the first meal's name is read at run time, not hard-coded.
+# ARCH-18 / ROAD-02 M8: reorder meals (UX-17, NAV-06, DATA-10). Profile → Meals; a handle drag moves the second meal
+# to the top and commits on drop (no Save). The order survives leaving and reopening Meals; a second drag restores it.
+# Works with any meal count >= 2: only rows 0 and 1 are used, and the UP drag clamps to index 0. Names are read at
+# run time, not hard-coded.
 appId: com.ricardoreis.calorietracker
 ---
 - runFlow: subflows/launch.yaml
@@ -10,23 +11,26 @@ appId: com.ricardoreis.calorietracker
     id: profile-meals
 - extendedWaitUntil:
     visible:
-      id: meals-handle-3
+      id: meals-handle-1
     timeout: 5000
 - copyTextFrom:
     id: meals-row-0
 - evalScript: ${output.first = maestro.copiedText}
-- swipe: # handle drag down past the last row; the drop index clamps to the end
+- copyTextFrom:
+    id: meals-row-1
+- evalScript: ${output.second = maestro.copiedText}
+- swipe: # handle drag up past the top; the drop index clamps to 0
     from:
-      id: meals-handle-0
-    direction: DOWN
+      id: meals-handle-1
+    direction: UP
     duration: 1500
 - extendedWaitUntil:
     visible:
-      id: meals-row-3
-      text: ${output.first}
+      id: meals-row-0
+      text: ${output.second}
     timeout: 5000
-- assertNotVisible:
-    id: meals-row-0
+- assertVisible:
+    id: meals-row-1
     text: ${output.first}
 # Committed on drop: the order is still there after leaving Meals.
 - tapOn: Back
@@ -34,13 +38,13 @@ appId: com.ricardoreis.calorietracker
     id: profile-meals
 - extendedWaitUntil:
     visible:
-      id: meals-row-3
-      text: ${output.first}
+      id: meals-row-0
+      text: ${output.second}
     timeout: 5000
-# Restore: drag the last meal back to the top.
+# Restore: drag the original first meal (now row 1) back to the top.
 - swipe:
     from:
-      id: meals-handle-3
+      id: meals-handle-1
     direction: UP
     duration: 1500
 - extendedWaitUntil:
@@ -48,6 +52,9 @@ appId: com.ricardoreis.calorietracker
       id: meals-row-0
       text: ${output.first}
     timeout: 5000
+- assertVisible:
+    id: meals-row-1
+    text: ${output.second}
 - tapOn: Back
 - assertVisible:
     id: profile-meals
