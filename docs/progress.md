@@ -342,6 +342,11 @@ Status: **done** (accepted by the user 2026-09-27) · Start commit: `7d04bba`
   - Android execution waiver: the documented environment termination remains explicitly user-waived. It is not an Android pass and does not block this correction or M5 independent re-review/readiness.
   - Independent final review (2026-09-27): **clean** — 0 blockers, 0 majors, 0 minors. It verified the final local-search, OFF detail-cancellation, and selected-row-error corrections; `npm run check` passed lint + typecheck + 56 suites / 381 tests. M5 is ready for user acceptance under the explicitly recorded Android execution waiver.
   - Next unblocked task: independent M5 re-review/readiness only, under the explicitly recorded Android execution waiver. Do not start M6.
+  - Post-acceptance correction (2026-09-28): an Android smoke pass (after pulling M4–M6) found every live OFF product selection failing with `Couldn't load this food.`, 100% reproducible. Root cause: real OFF products mix non-numeric `_modifier` annotations (e.g. `"<"`, `"~"`) into the same `nutriments` object as the numeric fields; the strict Zod schema in `mapper.ts` rejected the whole product on any such field (PROV-05/07). The hand-sanitized T2 captured fixture never included a modifier field, so the suite stayed green while the feature was completely broken for real-world data. Fixed by dropping unparsable nutrient entries instead of failing the parse; added a regression test reproducing the real payload shape.
+    - Changed: `src/data/api/open-food-facts/mapper.ts`, `src/data/api/open-food-facts/__tests__/mapper.test.ts`.
+    - Checks: `npm test -- --runInBand src/data/api/open-food-facts` → 3 suites / 15 tests passed; `npm run check` → lint + typecheck + 60 suites / 407 tests passed.
+    - Android verification: live OFF search on Pixel_10 (`12 large eggs`, birdbros) selected, loaded, and added to Lunch at 131 kcal with the diary totals updating correctly, after failing consistently before the fix.
+    - Commit: `3fcc6ce`.
 
 ## M6 USDA
 
