@@ -43,3 +43,46 @@ export function planGoalSave(goals: readonly NutritionGoal[], today: LocalDate, 
   }
   return { kind: 'upsertEffectiveToday', effectiveFrom: today };
 }
+
+/** UX-00 goal ranges (canonical). */
+export const GOAL_CALORIES_MIN_KCAL = 500;
+export const GOAL_CALORIES_MAX_KCAL = 10_000;
+export const GOAL_MACRO_MAX_G = 1_000;
+
+/** UX-16 helper energy factors (4/4/9 kcal per g). */
+export const KCAL_PER_GRAM = { carbohydrateG: 4, proteinG: 4, fatG: 9 } as const;
+
+export type GoalMacroKey = keyof typeof KCAL_PER_GRAM;
+
+/**
+ * UX-16 read-only helper under each macro (`≈ 1,000 kcal · 50%`): the macro's energy and its share of the calorie
+ * target, unrounded. `percent` is `null` when the calorie target isn't a positive number yet.
+ */
+export function macroEnergyShare(
+  grams: number,
+  macro: GoalMacroKey,
+  calorieTargetKcal: number | null,
+): { kcal: number; percent: number | null } {
+  const kcal = grams * KCAL_PER_GRAM[macro];
+  const percent =
+    calorieTargetKcal !== null && Number.isFinite(calorieTargetKcal) && calorieTargetKcal > 0
+      ? (kcal / calorieTargetKcal) * 100
+      : null;
+  return { kcal, percent };
+}
+
+export type GoalFieldKey = keyof NutritionTargets;
+
+/** UX-00 range check on canonical targets; returns the invalid fields (empty = valid). */
+export function invalidGoalFields(targets: NutritionTargets): GoalFieldKey[] {
+  const bad: GoalFieldKey[] = [];
+  const kcal = targets.calorieTargetKcal;
+  if (!(Number.isFinite(kcal) && kcal >= GOAL_CALORIES_MIN_KCAL && kcal <= GOAL_CALORIES_MAX_KCAL)) {
+    bad.push('calorieTargetKcal');
+  }
+  for (const key of ['carbohydrateTargetG', 'proteinTargetG', 'fatTargetG'] as const) {
+    const g = targets[key];
+    if (!(Number.isFinite(g) && g >= 0 && g <= GOAL_MACRO_MAX_G)) bad.push(key);
+  }
+  return bad;
+}

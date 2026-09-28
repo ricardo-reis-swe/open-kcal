@@ -42,3 +42,33 @@ export function measuredAtForDate(date: LocalDate, now: Date): Date {
 export function isAllowedWeightDate(date: LocalDate, today: LocalDate): boolean {
   return date <= today;
 }
+
+/** UX-00 body weight / goal weight range (canonical kg). */
+export const WEIGHT_MIN_KG = 20;
+export const WEIGHT_MAX_KG = 500;
+
+export function isValidWeightKg(kg: number): boolean {
+  return Number.isFinite(kg) && kg >= WEIGHT_MIN_KG && kg <= WEIGHT_MAX_KG;
+}
+
+export type WeightHistoryRow<T extends WeightEntry = WeightEntry> = {
+  entry: T;
+  /** Several entries share this local date, so the row shows the time too (UX-18). */
+  showTime: boolean;
+  /** Change vs the previous (older) entry in kg, unrounded; `null` for the oldest entry. */
+  changeKg: number | null;
+};
+
+/** UX-18 Weight History rows from entries sorted newest first (the repository order). */
+export function weightHistoryRows<T extends WeightEntry>(newestFirst: readonly T[]): WeightHistoryRow<T>[] {
+  const perDate = new Map<string, number>();
+  for (const e of newestFirst) perDate.set(e.localDate, (perDate.get(e.localDate) ?? 0) + 1);
+  return newestFirst.map((entry, i) => {
+    const previous = newestFirst[i + 1];
+    return {
+      entry,
+      showTime: (perDate.get(entry.localDate) ?? 0) > 1,
+      changeKg: previous ? entry.weightKg - previous.weightKg : null,
+    };
+  });
+}

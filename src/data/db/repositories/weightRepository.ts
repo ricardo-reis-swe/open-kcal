@@ -1,5 +1,5 @@
 // Body weight history (DATA-13). Canonical kg; several measurements per day; physical delete.
-import { measuredAtForDate, type WeightEntry } from '@/domain/weight/weight';
+import { isValidWeightKg, measuredAtForDate, type WeightEntry } from '@/domain/weight/weight';
 import { isLocalDate, nowUtcIso, todayLocal, toLocalDate, type LocalDate } from '@/shared/dates';
 import { NotFoundError, ValidationError } from '@/shared/errors';
 
@@ -25,7 +25,7 @@ export function createWeightRepository({ db, clock, ids }: RepositoryDeps) {
   function prepare(input: WeightInput) {
     const bad: string[] = [];
     if (!isLocalDate(input.localDate) || input.localDate > todayLocal(clock)) bad.push('localDate');
-    if (!(Number.isFinite(input.weightKg) && input.weightKg > 0)) bad.push('weightKg');
+    if (!isValidWeightKg(input.weightKg)) bad.push('weightKg'); // UX-00 20–500 kg
     if (bad.length > 0) throw new ValidationError('Invalid weight entry', bad);
     const measuredAt = measuredAtForDate(input.localDate, clock.now());
     return { measuredAt: measuredAt.toISOString(), localDate: toLocalDate(measuredAt) };
@@ -56,6 +56,15 @@ export function createWeightRepository({ db, clock, ids }: RepositoryDeps) {
         await db.getAll<WeightRow>(
           `SELECT id, measured_at, local_date, weight_kg, created_at FROM weight_entries ${ORDER} LIMIT ? OFFSET ?`,
           [limit, offset],
+        )
+      ).map(toWeight);
+    },
+
+    /** Every entry, newest first: Weight History needs the full list to compute each change (UX-18). */
+    async history(): Promise<WeightEntry[]> {
+      return (
+        await db.getAll<WeightRow>(
+          `SELECT id, measured_at, local_date, weight_kg, created_at FROM weight_entries ${ORDER}`,
         )
       ).map(toWeight);
     },

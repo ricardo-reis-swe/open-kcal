@@ -91,18 +91,33 @@ describe('DATA-10: meals repository', () => {
   it('ROAD-02 M8: delete + reassign rolls back fully on failure', async () => {
     const { deps, meals, byName } = await setup();
     await addEntry(deps, byName('Lunch'), 'e1');
-    const before = {
+    await deps.db.run(
+      `INSERT INTO foods (id, source, name, basis_quantity, basis_unit, energy_kcal, created_at, updated_at)
+       VALUES ('f1', 'custom', 'Toast', 1, 'slice', 80, 'x', 'x')`,
+    );
+    await deps.db.run(
+      "INSERT INTO recent_foods (food_id, last_used_at, use_count, last_meal_id) VALUES ('f1', 'x', 1, ?)",
+      [byName('Lunch')],
+    );
+    const snapshot = async () => ({
       meals: await deps.db.getAll('SELECT * FROM meals ORDER BY sort_order'),
       entries: await deps.db.getAll('SELECT * FROM diary_entries'),
-    };
+      recents: await deps.db.getAll('SELECT * FROM recent_foods'),
+    });
+    const before = await snapshot();
     // Fail the final step (compaction) so the reassign and delete have already run inside the transaction.
     await deps.db.exec(
       `CREATE TRIGGER fail_compact BEFORE UPDATE OF sort_order ON meals BEGIN SELECT RAISE(ABORT, 'boom'); END`,
     );
     await expect(meals.delete(byName('Lunch'), byName('Dinner'))).rejects.toMatchObject({ category: 'database' });
     await deps.db.exec('DROP TRIGGER fail_compact');
-    expect(await deps.db.getAll('SELECT * FROM meals ORDER BY sort_order')).toEqual(before.meals);
-    expect(await deps.db.getAll('SELECT * FROM diary_entries')).toEqual(before.entries);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it('UX-00: meal names are at most 40 characters after trim', async () => {
+    const { meals } = await setup();
+    expect(await meals.create(` ${'a'.repeat(40)} `)).toMatchObject({ name: 'a'.repeat(40) });
+    await expect(meals.create('a'.repeat(41))).rejects.toMatchObject({ category: 'validation' });
   });
 
   it('the last meal cannot be deleted', async () => {

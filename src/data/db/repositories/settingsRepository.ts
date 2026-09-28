@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 import type { UnitPreferences } from '@/domain/units/units';
+import { isValidWeightKg } from '@/domain/weight/weight';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
 import { DatabaseError, ValidationError } from '@/shared/errors';
 
@@ -55,7 +56,9 @@ export function createSettingsRepository({ db, clock }: RepositoryDeps) {
 
     /** Canonical kg; `null` clears the goal (UX-18). */
     async setGoalWeightKg(kg: number | null): Promise<AppSettings> {
-      if (kg !== null && !(Number.isFinite(kg) && kg > 0))
+      if (kg !== null && !isValidWeightKg(kg))
+        // UX-00 20–500 kg
+
         throw new ValidationError('Invalid goal weight', ['goalWeightKg']);
       await db.run('UPDATE app_settings SET goal_weight_kg = ?, updated_at = ? WHERE id = 1', [kg, nowUtcIso(clock)]);
       return readSettings(db);

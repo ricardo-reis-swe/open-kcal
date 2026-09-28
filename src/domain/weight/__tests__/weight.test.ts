@@ -1,6 +1,6 @@
 import { toLocalDate } from '@/shared/dates';
 
-import { currentWeight, isAllowedWeightDate, measuredAtForDate } from '../weight';
+import { currentWeight, isAllowedWeightDate, isValidWeightKg, measuredAtForDate, weightHistoryRows } from '../weight';
 
 describe('DATA-13: weight', () => {
   it('current weight = latest measured_at, tie-break created_at', () => {
@@ -28,5 +28,32 @@ describe('DATA-13: weight', () => {
   it('local_date must not be after today', () => {
     expect(isAllowedWeightDate('2026-09-25', '2026-09-25')).toBe(true);
     expect(isAllowedWeightDate('2026-09-26', '2026-09-25')).toBe(false);
+  });
+});
+
+describe('UX-18: weight history rows', () => {
+  const e = (id: string, localDate: string, weightKg: number) => ({
+    id,
+    localDate,
+    weightKg,
+    measuredAt: `${localDate}T08:00:00.000Z`,
+    createdAt: `${localDate}T08:00:00.000Z`,
+  });
+
+  it('shows the time only when a date has several entries and the change vs the previous entry', () => {
+    const rows = weightHistoryRows([e('c', '2026-09-25', 82), e('b', '2026-09-25', 82.4), e('a', '2026-09-20', 83)]);
+    expect(rows.map((r) => [r.entry.id, r.showTime])).toEqual([
+      ['c', true],
+      ['b', true],
+      ['a', false],
+    ]);
+    expect(rows[0]!.changeKg).toBeCloseTo(-0.4);
+    expect(rows[1]!.changeKg).toBeCloseTo(-0.6);
+    expect(rows[2]!.changeKg).toBeNull();
+    expect(weightHistoryRows([])).toEqual([]);
+  });
+
+  it('UX-00: body and goal weight must be 20–500 kg', () => {
+    expect([19.9, 20, 500, 500.1, NaN].map(isValidWeightKg)).toEqual([false, true, true, false, false]);
   });
 });

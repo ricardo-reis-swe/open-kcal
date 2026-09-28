@@ -1,4 +1,11 @@
-import { PROVISIONAL_TARGETS, planGoalSave, resolveGoal, type NutritionGoal } from '../goals';
+import {
+  PROVISIONAL_TARGETS,
+  invalidGoalFields,
+  macroEnergyShare,
+  planGoalSave,
+  resolveGoal,
+  type NutritionGoal,
+} from '../goals';
 
 const goal = (id: string, effectiveFrom: string, kcal = 2000): NutritionGoal => ({
   id,
@@ -47,5 +54,22 @@ describe('DATA-09: effective goals', () => {
       proteinTargetG: 100,
       fatTargetG: 67,
     });
+  });
+});
+
+describe('UX-16 / UX-00: goal helpers', () => {
+  it('macro helper uses 4/4/9 kcal per g and the share of the calorie target', () => {
+    expect(macroEnergyShare(250, 'carbohydrateG', 2000)).toEqual({ kcal: 1000, percent: 50 });
+    expect(macroEnergyShare(100, 'proteinG', 2000)).toEqual({ kcal: 400, percent: 20 });
+    expect(macroEnergyShare(10, 'fatG', 0)).toEqual({ kcal: 90, percent: null });
+    expect(macroEnergyShare(10, 'fatG', null).percent).toBeNull();
+  });
+
+  it('flags calories outside 500–10,000 kcal and macros outside 0–1,000 g', () => {
+    expect(invalidGoalFields(PROVISIONAL_TARGETS)).toEqual([]);
+    expect(
+      invalidGoalFields({ calorieTargetKcal: 499, carbohydrateTargetG: 1001, proteinTargetG: 0, fatTargetG: NaN }),
+    ).toEqual(['calorieTargetKcal', 'carbohydrateTargetG', 'fatTargetG']);
+    expect(invalidGoalFields({ ...PROVISIONAL_TARGETS, calorieTargetKcal: 10_000 })).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 // Effective-dated nutrition goals (DATA-09, UX-01).
-import { planGoalSave, type NutritionGoal, type NutritionTargets } from '@/domain/nutrition/goals';
+import { invalidGoalFields, planGoalSave, type NutritionGoal, type NutritionTargets } from '@/domain/nutrition/goals';
 import { nowUtcIso, todayLocal, type LocalDate } from '@/shared/dates';
 import { ValidationError } from '@/shared/errors';
 
@@ -28,11 +28,7 @@ const toGoal = (r: GoalRow): NutritionGoal => ({
 });
 
 function validateTargets(t: NutritionTargets): void {
-  const bad: string[] = [];
-  if (!(Number.isFinite(t.calorieTargetKcal) && t.calorieTargetKcal > 0)) bad.push('calorieTargetKcal');
-  for (const key of ['carbohydrateTargetG', 'proteinTargetG', 'fatTargetG'] as const) {
-    if (!(Number.isFinite(t[key]) && t[key] >= 0)) bad.push(key);
-  }
+  const bad = invalidGoalFields(t); // UX-00 ranges
   if (bad.length > 0) throw new ValidationError('Invalid goal targets', bad);
 }
 

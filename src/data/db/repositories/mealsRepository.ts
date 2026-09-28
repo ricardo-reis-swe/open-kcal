@@ -1,4 +1,5 @@
 // Meals (DATA-10). Ordinary records; names may repeat; at least one meal always exists.
+import { isValidMealName } from '@/domain/meals/meals';
 import { nowUtcIso } from '@/shared/dates';
 import { ConflictError, NotFoundError, ValidationError } from '@/shared/errors';
 
@@ -11,9 +12,8 @@ type MealRow = { id: string; name: string; sort_order: number };
 const toMeal = (r: MealRow): Meal => ({ id: r.id, name: r.name, sortOrder: r.sort_order });
 
 function validName(name: string): string {
-  const trimmed = name.trim();
-  if (trimmed.length === 0) throw new ValidationError('Meal name is required', ['name']);
-  return trimmed;
+  if (!isValidMealName(name)) throw new ValidationError('Meal name must be 1–40 characters', ['name']);
+  return name.trim();
 }
 
 async function listMeals(db: SqlExecutor): Promise<Meal[]> {

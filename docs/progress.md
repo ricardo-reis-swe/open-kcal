@@ -12,7 +12,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M5 Search + Open Food Facts | done |
 | M6 USDA | done |
 | M7 Meal Detail + copy | awaiting user acceptance |
-| M8 Profile | not started |
+| M8 Profile | in progress |
 | M9 Hardening | not started |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived.
@@ -48,7 +48,42 @@ Exit demo (Android emulator, review §Manual exit demo in `docs/qa/M7/review.md`
 
 - PROV-12 dev-build diagnostic logging in the USDA/OFF adapters (carried from M6).
 - Short dates in `en` follow the device `Intl` format (`Fri, Sep 25`), not the UX-02/UX-12 example `Fri 25 Sep` (`src/shared/i18n/format.ts` `formatShortDate`, since M2; review finding 1, minor).
-- iOS simulator dev build (iPhone 17e) crashes at startup with `NativeModule.RNCNetInfo is null` (stale native link from before `@react-native-community/netinfo`, M5-Q1); not a ROAD-02 gate. Retry: rebuild with `npx expo run:ios --device "iPhone 17e" --no-bundler` using the NETRC/LANG CocoaPods workaround (local-dev notes).
+
+### Open questions
+
+- None.
+
+## M8 Profile
+
+Status: **in progress** · Start commit: `58b4d18`
+
+### Tasks
+
+- [x] T1 Data/services: repositories existed from M1; added `weight.history()`, UX-00 ranges in repos (meal name ≤40, weight/goal weight 20–500 kg, goals 500–10,000 kcal / 0–1,000 g), domain helpers (`macroEnergyShare`, `invalidGoalFields` in `src/domain/nutrition/goals.ts`; `weightHistoryRows`, `isValidWeightKg` in `src/domain/weight/weight.ts`; `src/domain/meals/meals.ts` duplicate-name/move), hooks `src/features/profile/profile.queries.ts`; tests `src/features/profile/__tests__/profile.queries.test.tsx`, `src/domain/meals/__tests__/meals.test.ts`, rollback incl. recents in `src/data/db/repositories/__tests__/meals.test.ts`. iOS dev build rebuilt (netinfo crash fixed).
+- [ ] T2 Profile screen (UX-15, NAV-06)
+- [ ] T3 Calories & Macros with the UX-01 first save (UX-16)
+- [ ] T4 Meals + Add/Edit Meal: reorder, add, edit, delete + reassign (UX-17, UX-19)
+- [ ] T5 Units + Weight Goal (UX-18), unit changes showing everywhere
+- [ ] T6 Weight Entry Sheet + Weight History (UX-14, UX-18)
+- [ ] T7 Maestro flows `m8-reorder-meals` and `m8-weight` on both platforms
+
+Food Databases (UX-18) already exists from M6.
+
+### ROAD-02 checklist
+
+- [ ] Main specs implemented (UX-14–18, NAV-06, DATA-09/10/13).
+- [ ] `npm run check` green at the milestone boundary.
+- [x] Focused tests for changed data/domain logic (T1).
+- [x] M8 extra: meal delete + reassign rolls back fully on failure (`meals.test.ts` `ROAD-02 M8` case: meals, entries and recents unchanged).
+- [ ] Maestro flows: reorder meals · add and edit weight (ARCH-18).
+- [ ] Every string in `en` + `pt-PT`.
+- [ ] No placeholder UI for in-scope behavior.
+- [ ] Known gaps listed below.
+- [ ] Nothing sensitive in logs (ARCH-15: no weights).
+
+### Known gaps
+
+- None yet.
 
 ### Open questions
 
