@@ -31,7 +31,7 @@ Status: **in progress** · Start commit: `7a84bb7` · User instructions 2026-09-
 
 - [x] T1 Food Search section order + visibility, data and search (DATA-19, UX-18, UX-04): migration 2 `food_search_sections` + `schema.sql` v2, `src/domain/food/searchSections.ts` (Zod, default fallback, move/visibility helpers), `settingsRepository.get/setFoodSearchSections`, `useFoodSearchSections`/`useSetFoodSearchSections`; Food Search renders visible sections in the saved order, hidden remote sections send no requests, Saved dedupe only while Saved is visible, offline row above the first visible remote section; tests `searchSections.test.ts`, `migrations.test.ts`, `settings-goals.test.ts`, `seed.test.ts`, `FoodSearchScreen.test.tsx` (M9 extra).
 - [x] T2 Food Databases `Search results` group (UX-18): `src/features/profile/components/SearchResultsGroup.tsx` on `FoodDatabasesScreen` — per-section switch + drag handle (UX-17 helpers) + a11y Move up/down, saves on each change, last visible switch disabled with helper; en + pt-PT; tests in `FoodDatabasesScreen.test.tsx`; test QueryClient now uses mutation `gcTime: 0` (`src/shared/testing/services.tsx`).
-- [ ] T3 pt-PT completeness + copy review sheet for the user; accessibility pass (DS-11); DS-13 MVP check (code-level).
+- [x] T3 pt-PT complete (315 keys, nothing untranslated) + user review sheet `docs/qa/M9/pt-PT-copy-review.md`; DS-11 code-level pass, no defects (contrast, scaling, labels, gesture alternatives); DS-13 device check deferred by the user. Evidence: `docs/qa/M9/a11y-and-ds13-2026-09-28.md`.
 - [ ] T4 ARCH-19 performance checks (code-level).
 - [ ] T5 Release-config builds + ROAD-04 smoke test on the user's phone (user runs it; no device tests by the agent).
 - [ ] T6 Maestro E2E suite: deferred by the user (includes the untested `7a84bb7` flow fixes).
@@ -41,7 +41,7 @@ Status: **in progress** · Start commit: `7a84bb7` · User instructions 2026-09-
 - [ ] Main specs implemented (DS-11/13, ARCH-18/19, ROAD-04; UX-18 `Search results` + DATA-19 done in T1/T2)
 - [ ] `npm run check` green at the milestone boundary
 - [x] M9 extra: hidden remote sections send no requests; sections render in the saved order (T1)
-- [ ] The user reviews the pt-PT copy
+- [ ] The user reviews the pt-PT copy (sheet ready: `docs/qa/M9/pt-PT-copy-review.md`)
 - [ ] ARCH-19 performance checks run
 - [ ] Release-config build passes the ROAD-04 smoke test
 - [ ] Every ARCH-18 E2E flow green on both platforms (deferred by the user)
