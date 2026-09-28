@@ -1,5 +1,5 @@
-// Migration 1 (DATA-17): the v1 schema. Kept identical to `schema/schema.sql` (the source of truth); a test fails
-// if they differ. Forward-only: never edit a shipped migration, add a new one.
+// Migration 1 (DATA-17): the v1 schema. All migrations together must build `schema/schema.sql` (the source of truth);
+// a test fails if they differ. Forward-only: never edit a shipped migration, add a new one.
 import type { Migration } from './types';
 
 const SQL = `

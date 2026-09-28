@@ -4,6 +4,8 @@ import { useSyncExternalStore } from 'react';
 
 import { useServices, type AppServices } from '@/bootstrap/services';
 import type { RecentFood } from '@/data/db/repositories/diaryRepository';
+import type { FoodSearchSections } from '@/domain/food/searchSections';
+import { settingsKeys } from '@/features/diary/diary.queries';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
 import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
 import { nowUtcIso } from '@/shared/dates';
@@ -20,8 +22,29 @@ export const foodSearchKeys = {
   food: (id: string) => ['foodSearch', 'food', id] as const,
 };
 
+/** DATA-19 / UX-18 `Search results`: saved order + visibility of the 4 Food Search sections. */
+export const foodSearchSectionsKey = [...settingsKeys.all, 'foodSearchSections'] as const;
+
+export function useFoodSearchSections() {
+  const { settings } = useServices();
+  return useQuery({ queryKey: foodSearchSectionsKey, queryFn: () => settings.getFoodSearchSections() });
+}
+
+/** UX-18: every switch change or drop saves immediately (as Units); Food Search reads the stored value. */
+export function useSetFoodSearchSections() {
+  const { settings } = useServices();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (sections: FoodSearchSections) => settings.setFoodSearchSections(sections),
+    onSuccess: (saved) => {
+      client.setQueryData(foodSearchSectionsKey, saved);
+      return client.invalidateQueries({ queryKey: foodSearchSectionsKey });
+    },
+  });
+}
+
 /** UX-04 / PROV-04: USDA starts after 400 ms with two characters; credentials never enter this key. */
-export function useUsdaSearch(query: string, pages = 1) {
+export function useUsdaSearch(query: string, pages = 1, visible = true) {
   const { usda } = useServices();
   const normalized = query.trim();
   const results = useQueries({
@@ -30,7 +53,7 @@ export function useUsdaSearch(query: string, pages = 1) {
       return {
         queryKey: foodSearchKeys.usda(normalized, page),
         queryFn: ({ signal }: { signal: AbortSignal }) => usda.search(normalized, page, signal),
-        enabled: normalized.length >= 2,
+        enabled: visible && normalized.length >= 2, // UX-18: a hidden section sends no requests
         networkMode: 'online' as const,
         staleTime: 10 * 60_000,
       };
@@ -62,7 +85,7 @@ export function useRecentFoods() {
 }
 
 /** M4 local search runs on every debounced query; provider requests are added separately in M5/M6. */
-export function useCustomFoodSearch(query: string, pages = 1) {
+export function useCustomFoodSearch(query: string, pages = 1, visible = true) {
   const { foods } = useServices();
   const normalized = query.trim();
   return useQuery({
@@ -73,12 +96,12 @@ export function useCustomFoodSearch(query: string, pages = 1) {
       );
       return results.flat();
     },
-    enabled: normalized.length > 0,
+    enabled: visible && normalized.length > 0,
   });
 }
 
 /** DATA-15 / PROV-08: cached external foods are local results and work while offline. */
-export function useSavedFoodSearch(query: string, pages = 1) {
+export function useSavedFoodSearch(query: string, pages = 1, visible = true) {
   const { foods } = useServices();
   const normalized = query.trim();
   return useQuery({
@@ -89,7 +112,7 @@ export function useSavedFoodSearch(query: string, pages = 1) {
       );
       return results.flat();
     },
-    enabled: normalized.length > 0,
+    enabled: visible && normalized.length > 0,
   });
 }
 
@@ -117,7 +140,7 @@ export async function refreshSavedOpenFoodFacts(services: AppServices, food: Foo
 }
 
 /** UX-04 / PROV-04: OFF starts after 800 ms and at least three typed characters. */
-export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en') {
+export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en', visible = true) {
   const { openFoodFacts } = useServices();
   const normalized = query.trim();
   const results = useQueries({
@@ -126,7 +149,7 @@ export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en'
       return {
         queryKey: foodSearchKeys.off(normalized, page),
         queryFn: ({ signal }: { signal: AbortSignal }) => openFoodFacts.search(normalized, page, signal, language),
-        enabled: normalized.length >= 3,
+        enabled: visible && normalized.length >= 3, // UX-18: a hidden section sends no requests (PROV-04 budget)
         networkMode: 'online' as const,
         staleTime: 10 * 60_000,
       };

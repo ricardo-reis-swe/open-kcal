@@ -4,6 +4,7 @@ import { openTestDatabase } from '@/shared/testing/nodeSqlite';
 
 import { prepareDatabase } from '../database';
 import { sequentialIds } from '../ids';
+import { LATEST_SCHEMA_VERSION, MIGRATIONS } from '../migrations';
 import { readSchemaVersion } from '../migrations/runner';
 import { seedDefaults, type SeedInput } from '../seed';
 import type { SqlDatabase } from '../sql';
@@ -38,7 +39,7 @@ describe('DATA-17: first-launch init + seed', () => {
   it('seeds settings, four meals in order and the provisional goal', async () => {
     const db = await openTestDatabase();
     await init(db, input());
-    expect(await readSchemaVersion(db)).toBe(1);
+    expect(await readSchemaVersion(db)).toBe(LATEST_SCHEMA_VERSION);
     expect(await db.getFirst('SELECT * FROM app_settings')).toEqual({
       id: 1,
       weight_unit: 'kg',
@@ -49,6 +50,9 @@ describe('DATA-17: first-launch init + seed', () => {
       goals_confirmed_at: null,
       created_at: '2026-09-25T10:00:00.000Z',
       updated_at: '2026-09-25T10:00:00.000Z',
+      // DATA-19 default (migration 2)
+      food_search_sections:
+        '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]',
     });
     expect(await db.getAll('SELECT name, sort_order FROM meals ORDER BY sort_order')).toEqual(
       EN_MEALS.map((name, sort_order) => ({ name, sort_order })),
@@ -74,7 +78,7 @@ describe('DATA-17: first-launch init + seed', () => {
     await init(db, input());
     const before = await db.getAll('SELECT * FROM meals ORDER BY sort_order');
     await init(db, input({ ids: sequentialIds(100), today: '2026-09-26', mealNames: PT_MEALS }));
-    expect(await counts(db)).toEqual({ settings: 1, meals: 4, goals: 1, versions: 1 });
+    expect(await counts(db)).toEqual({ settings: 1, meals: 4, goals: 1, versions: MIGRATIONS.length });
     expect(await db.getAll('SELECT * FROM meals ORDER BY sort_order')).toEqual(before);
   });
 
@@ -100,7 +104,7 @@ describe('DATA-17: first-launch init + seed', () => {
     await expect(init(db, input({ mealNames: ['Breakfast', '   '] }))).rejects.toMatchObject({ category: 'migration' });
     expect(await readSchemaVersion(db)).toBe(0);
     await init(db, input());
-    expect(await counts(db)).toEqual({ settings: 1, meals: 4, goals: 1, versions: 1 });
+    expect(await counts(db)).toEqual({ settings: 1, meals: 4, goals: 1, versions: MIGRATIONS.length });
   });
 
   it('uses the generated UUIDs as meal and goal ids', async () => {

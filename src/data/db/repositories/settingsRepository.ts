@@ -1,6 +1,11 @@
 // app_settings singleton (DATA-01, DATA-04). Non-secret preferences only; the USDA key never comes here.
 import { z } from 'zod';
 
+import {
+  isValidFoodSearchSections,
+  parseFoodSearchSections,
+  type FoodSearchSections,
+} from '@/domain/food/searchSections';
 import type { UnitPreferences } from '@/domain/units/units';
 import { isValidWeightKg } from '@/domain/weight/weight';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
@@ -52,6 +57,26 @@ export function createSettingsRepository({ db, clock }: RepositoryDeps) {
         [next.weightUnit, next.foodWeightUnit, next.energyUnit, next.volumeUnit, nowUtcIso(clock)],
       );
       return readSettings(db);
+    },
+
+    /** DATA-19: invalid or unparseable stored data reads as the default order, all visible (never a crash). */
+    async getFoodSearchSections(): Promise<FoodSearchSections> {
+      const row = await db.getFirst<{ food_search_sections: unknown }>(
+        'SELECT food_search_sections FROM app_settings WHERE id = 1',
+      );
+      return parseFoodSearchSections(row?.food_search_sections);
+    },
+
+    /** DATA-19: rejects anything but the 4 ids, each once, with ≥1 visible. */
+    async setFoodSearchSections(sections: FoodSearchSections): Promise<FoodSearchSections> {
+      if (!isValidFoodSearchSections(sections))
+        throw new ValidationError('Invalid Food Search sections', ['foodSearchSections']);
+      const json = JSON.stringify(sections.map(({ id, visible }) => ({ id, visible })));
+      await db.run('UPDATE app_settings SET food_search_sections = ?, updated_at = ? WHERE id = 1', [
+        json,
+        nowUtcIso(clock),
+      ]);
+      return parseFoodSearchSections(json);
     },
 
     /** Canonical kg; `null` clears the goal (UX-18). */

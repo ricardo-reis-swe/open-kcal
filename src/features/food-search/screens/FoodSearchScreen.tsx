@@ -1,8 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanResponder, ScrollView, TextInput, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
+import {
+  REMOTE_FOOD_SEARCH_SECTIONS,
+  visibleFoodSearchSections,
+  type FoodSearchSectionId,
+} from '@/domain/food/searchSections';
 import { useServices } from '@/bootstrap/services';
 import { nowUtcIso } from '@/shared/dates';
 import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
@@ -18,6 +23,7 @@ import { useTheme } from '@/shared/theme';
 
 import {
   useCustomFoodSearch,
+  useFoodSearchSections,
   useLocalFoodWrites,
   useOpenFoodFactsSearch,
   useOnlineStatus,
@@ -101,24 +107,36 @@ export function FoodSearchScreen({
     const timer = setTimeout(() => setUsdaQuery(query.trim()), USDA_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [usdaQuery, query]);
-  const custom = useCustomFoodSearch(debouncedQuery, customPages);
-  const saved = useSavedFoodSearch(debouncedQuery, savedPages);
-  const off = useOpenFoodFactsSearch(offQuery, offPages, i18n.resolvedLanguage ?? i18n.language);
-  const usda = useUsdaSearch(usdaQuery, usdaPages);
+  // DATA-19 / UX-18: until the setting loads nothing is visible, so a hidden remote section never sends a request.
+  const sections = useFoodSearchSections();
+  const visibleSections = sections.data ? visibleFoodSearchSections(sections.data) : [];
+  const shows = (id: FoodSearchSectionId) => visibleSections.includes(id);
+  const custom = useCustomFoodSearch(debouncedQuery, customPages, shows('custom'));
+  const saved = useSavedFoodSearch(debouncedQuery, savedPages, shows('saved'));
+  const off = useOpenFoodFactsSearch(
+    offQuery,
+    offPages,
+    i18n.resolvedLanguage ?? i18n.language,
+    shows('open_food_facts'),
+  );
+  const usda = useUsdaSearch(usdaQuery, usdaPages, shows('usda'));
   const online = useOnlineStatus();
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
-  if (!meal || !settings.data) return null;
+  if (!meal || !settings.data || !sections.data) return null;
   const relative = relativeDay(date, today);
   const dateLabel = relative ? t(`diary.${relative}`) : formatShortDate(date, today, locale);
   const hasQuery = query.trim().length > 0;
   const searching = hasQuery && query.trim() !== debouncedQuery;
-  const customFoods = custom.data ?? [];
-  const savedFoods = saved.data ?? [];
+  const customFoods = shows('custom') ? (custom.data ?? []) : [];
+  // UX-18: while `Saved` is hidden there is no PROV-08 dedupe, so cached remote hits show in their remote section.
+  const savedFoods = shows('saved') ? (saved.data ?? []) : [];
   const savedExternalIds = new Set(
     savedFoods.filter((food) => food.source === 'open_food_facts' && food.externalId).map((food) => food.externalId!),
   );
-  const offFoods = off.data.filter((candidate) => !savedExternalIds.has(candidate.externalId));
-  const usdaFoods = usda.data.filter(
+  const offFoods = shows('open_food_facts')
+    ? off.data.filter((candidate) => !savedExternalIds.has(candidate.externalId))
+    : [];
+  const usdaFoods = (shows('usda') ? usda.data : []).filter(
     (candidate) => !savedFoods.some((food) => food.source === 'usda' && food.externalId === candidate.externalId),
   );
   const updateQuery = (value: string) => {
@@ -196,6 +214,167 @@ export function FoodSearchScreen({
       if (offDetailController.current === controller) offDetailController.current = null;
       if (mounted.current) setSelectingExternalId(null);
     }
+  };
+
+  // UX-18: the offline row shows once, above the first visible remote section, only while one is visible.
+  const firstVisibleRemote = visibleSections.find((id) => REMOTE_FOOD_SEARCH_SECTIONS.includes(id));
+  const remoteLoading = (shows('open_food_facts') && off.isLoading) || (shows('usda') && usda.isLoading);
+  const sectionContent: Record<FoodSearchSectionId, ReactNode> = {
+    custom: (
+      <>
+        {customFoods.length > 0 ? <SectionHeader label={t('foodSearch.myFoods')} uppercase /> : null}
+        {customFoods.map((food) => (
+          <FoodResultRow
+            key={food.id}
+            food={food}
+            locale={locale}
+            energyUnit={settings.data.energyUnit}
+            onPress={() => onSelectFood(food)}
+            onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
+          />
+        ))}
+        {customFoods.length === customPages * 20 ? (
+          <TextAction
+            icon="add"
+            label={t('foodSearch.showMore')}
+            onPress={() => setCustomPages((current) => current + 1)}
+            testID="food-search-custom-show-more"
+          />
+        ) : null}
+      </>
+    ),
+    saved: (
+      <>
+        {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
+        {savedFoods.map((food) => (
+          <FoodResultRow
+            key={food.id}
+            food={food}
+            locale={locale}
+            energyUnit={settings.data.energyUnit}
+            onPress={() => {
+              void refreshSavedOpenFoodFacts(services, food);
+              onSelectFood(food);
+            }}
+          />
+        ))}
+        {savedFoods.length === savedPages * 20 ? (
+          <TextAction
+            icon="add"
+            label={t('foodSearch.showMore')}
+            onPress={() => setSavedPages((current) => current + 1)}
+            testID="food-search-saved-show-more"
+          />
+        ) : null}
+      </>
+    ),
+    open_food_facts: (
+      <>
+        {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
+        {query.trim().length >= 3 && query.trim() !== offQuery ? (
+          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+            {t('foodSearch.searching')}
+          </AppText>
+        ) : null}
+        {online && off.isLoading && query.trim() === offQuery ? (
+          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+            {t('foodSearch.searching')}
+          </AppText>
+        ) : null}
+        {off.isError ? (
+          <ProviderError provider="open_food_facts" error={off.error} onRetry={() => void off.refetch()} />
+        ) : null}
+        {offFoods.map((candidate) => (
+          <FoodResultRow
+            key={`off-${candidate.externalId}`}
+            food={{
+              ...candidate.input,
+              brand: candidate.input.brand ?? null,
+              id: `off-${candidate.externalId}`,
+              source: 'open_food_facts',
+              externalId: candidate.externalId,
+              isDeleted: false,
+              servings: [],
+            }}
+            locale={locale}
+            energyUnit={settings.data.energyUnit}
+            onPress={() => void selectOff(candidate.externalId)}
+            disabled={selectingExternalId !== null}
+            loading={selectingExternalId === candidate.externalId}
+            error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
+          />
+        ))}
+        {off.hasMore && query.trim() === offQuery ? (
+          <TextAction
+            icon="add"
+            label={t('foodSearch.showMore')}
+            onPress={() => setOffPages((current) => current + 1)}
+            testID="food-search-off-show-more"
+          />
+        ) : null}
+        {off.isSuccess && query.trim() === offQuery && offFoods.length === 0 ? (
+          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+            {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
+          </AppText>
+        ) : null}
+      </>
+    ),
+    usda: (
+      <>
+        {query.trim().length >= 2 ? <SectionHeader label={t('foodSearch.usda')} uppercase /> : null}
+        {query.trim().length >= 2 && usdaQuery !== query.trim() ? (
+          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+            {t('foodSearch.searching')}
+          </AppText>
+        ) : null}
+        {online && usda.isLoading ? (
+          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+            {t('foodSearch.searching')}
+          </AppText>
+        ) : null}
+        {usda.isError ? (
+          <ProviderError
+            provider="usda"
+            error={usda.error}
+            onRetry={() => void usda.refetch()}
+            onFoodDatabases={onFoodDatabases}
+          />
+        ) : null}
+        {usdaFoods.map((candidate) => (
+          <FoodResultRow
+            key={`usda-${candidate.externalId}`}
+            food={{
+              ...candidate.input,
+              brand: candidate.input.brand ?? null,
+              id: `usda-${candidate.externalId}`,
+              source: 'usda',
+              externalId: candidate.externalId,
+              isDeleted: false,
+              servings: [],
+            }}
+            locale={locale}
+            energyUnit={settings.data.energyUnit}
+            onPress={() => void selectUsda(candidate.externalId)}
+            disabled={selectingExternalId !== null}
+            loading={selectingExternalId === candidate.externalId}
+            error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
+          />
+        ))}
+        {usda.hasMore && usdaQuery === query.trim() ? (
+          <TextAction
+            icon="add"
+            label={t('foodSearch.showMore')}
+            onPress={() => setUsdaPages((current) => current + 1)}
+            testID="food-search-usda-show-more"
+          />
+        ) : null}
+        {usda.isSuccess && usdaQuery === query.trim() && usdaFoods.length === 0 ? (
+          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+            {t('foodSearch.providerNoResults', { provider: t('foodSearch.usda') })}
+          </AppText>
+        ) : null}
+      </>
+    ),
   };
 
   return (
@@ -291,152 +470,19 @@ export function FoodSearchScreen({
               </AppText>
             ) : (
               <>
-                {customFoods.length > 0 ? <SectionHeader label={t('foodSearch.myFoods')} uppercase /> : null}
-                {customFoods.map((food) => (
-                  <FoodResultRow
-                    key={food.id}
-                    food={food}
-                    locale={locale}
-                    energyUnit={settings.data.energyUnit}
-                    onPress={() => onSelectFood(food)}
-                    onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
-                  />
+                {visibleSections.map((id) => (
+                  <Fragment key={id}>
+                    {id === firstVisibleRemote && !online ? (
+                      <InlineStatus tone="info" message={t('foodSearch.offline')} />
+                    ) : null}
+                    {sectionContent[id]}
+                  </Fragment>
                 ))}
-                {customFoods.length === customPages * 20 ? (
-                  <TextAction
-                    icon="add"
-                    label={t('foodSearch.showMore')}
-                    onPress={() => setCustomPages((current) => current + 1)}
-                    testID="food-search-custom-show-more"
-                  />
-                ) : null}
-                {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
-                {savedFoods.map((food) => (
-                  <FoodResultRow
-                    key={food.id}
-                    food={food}
-                    locale={locale}
-                    energyUnit={settings.data.energyUnit}
-                    onPress={() => {
-                      void refreshSavedOpenFoodFacts(services, food);
-                      onSelectFood(food);
-                    }}
-                  />
-                ))}
-                {savedFoods.length === savedPages * 20 ? (
-                  <TextAction
-                    icon="add"
-                    label={t('foodSearch.showMore')}
-                    onPress={() => setSavedPages((current) => current + 1)}
-                    testID="food-search-saved-show-more"
-                  />
-                ) : null}
-                {!online ? <InlineStatus tone="info" message={t('foodSearch.offline')} /> : null}
-                {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
-                {query.trim().length >= 3 && query.trim() !== offQuery ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                    {t('foodSearch.searching')}
-                  </AppText>
-                ) : null}
-                {online && off.isLoading && query.trim() === offQuery ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                    {t('foodSearch.searching')}
-                  </AppText>
-                ) : null}
-                {off.isError ? (
-                  <ProviderError provider="open_food_facts" error={off.error} onRetry={() => void off.refetch()} />
-                ) : null}
-                {offFoods.map((candidate) => (
-                  <FoodResultRow
-                    key={`off-${candidate.externalId}`}
-                    food={{
-                      ...candidate.input,
-                      brand: candidate.input.brand ?? null,
-                      id: `off-${candidate.externalId}`,
-                      source: 'open_food_facts',
-                      externalId: candidate.externalId,
-                      isDeleted: false,
-                      servings: [],
-                    }}
-                    locale={locale}
-                    energyUnit={settings.data.energyUnit}
-                    onPress={() => void selectOff(candidate.externalId)}
-                    disabled={selectingExternalId !== null}
-                    loading={selectingExternalId === candidate.externalId}
-                    error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
-                  />
-                ))}
-                {off.hasMore && query.trim() === offQuery ? (
-                  <TextAction
-                    icon="add"
-                    label={t('foodSearch.showMore')}
-                    onPress={() => setOffPages((current) => current + 1)}
-                    testID="food-search-off-show-more"
-                  />
-                ) : null}
-                {off.isSuccess && query.trim() === offQuery && offFoods.length === 0 ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                    {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
-                  </AppText>
-                ) : null}
-                {query.trim().length >= 2 ? <SectionHeader label={t('foodSearch.usda')} uppercase /> : null}
-                {query.trim().length >= 2 && usdaQuery !== query.trim() ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                    {t('foodSearch.searching')}
-                  </AppText>
-                ) : null}
-                {online && usda.isLoading ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                    {t('foodSearch.searching')}
-                  </AppText>
-                ) : null}
-                {usda.isError ? (
-                  <ProviderError
-                    provider="usda"
-                    error={usda.error}
-                    onRetry={() => void usda.refetch()}
-                    onFoodDatabases={onFoodDatabases}
-                  />
-                ) : null}
-                {usdaFoods.map((candidate) => (
-                  <FoodResultRow
-                    key={`usda-${candidate.externalId}`}
-                    food={{
-                      ...candidate.input,
-                      brand: candidate.input.brand ?? null,
-                      id: `usda-${candidate.externalId}`,
-                      source: 'usda',
-                      externalId: candidate.externalId,
-                      isDeleted: false,
-                      servings: [],
-                    }}
-                    locale={locale}
-                    energyUnit={settings.data.energyUnit}
-                    onPress={() => void selectUsda(candidate.externalId)}
-                    disabled={selectingExternalId !== null}
-                    loading={selectingExternalId === candidate.externalId}
-                    error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
-                  />
-                ))}
-                {usda.hasMore && usdaQuery === query.trim() ? (
-                  <TextAction
-                    icon="add"
-                    label={t('foodSearch.showMore')}
-                    onPress={() => setUsdaPages((current) => current + 1)}
-                    testID="food-search-usda-show-more"
-                  />
-                ) : null}
-                {usda.isSuccess && usdaQuery === query.trim() && usdaFoods.length === 0 ? (
-                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                    {t('foodSearch.providerNoResults', { provider: t('foodSearch.usda') })}
-                  </AppText>
-                ) : null}
                 {customFoods.length === 0 &&
                 savedFoods.length === 0 &&
                 offFoods.length === 0 &&
                 usdaFoods.length === 0 &&
-                !off.isLoading &&
-                !usda.isLoading ? (
+                !remoteLoading ? (
                   <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
                     <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
                     <TextAction

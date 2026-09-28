@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
+import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
 import { ProviderConfigurationError, RateLimitError, TimeoutError } from '@/shared/errors';
 
@@ -35,9 +36,11 @@ async function setup(
       pageCount: number;
     }>;
     onFoodDatabases?: () => void;
+    sections?: FoodSearchSections;
   } = {},
 ) {
   const { services } = await createTestServices();
+  if (options.sections) await services.settings.setFoodSearchSections(options.sections);
   const [meal] = await services.meals.list();
   const food = await services.foods.createCustom(almonds);
   if (options.withRecent) {
@@ -330,5 +333,77 @@ describe('UX-04: local Food Search screen', () => {
     });
     expect(await screen.findByText('Open Food Facts is busy. Try again later.', {}, { timeout: 3_000 })).toBeTruthy();
     expect(screen.getByText('Egg, whole, raw')).toBeTruthy();
+  });
+});
+
+describe('UX-18 / DATA-19: Food Search section order and visibility', () => {
+  const hit = (externalId: string, name: string) => ({ externalId, input: { ...almonds, name, brand: null } });
+  const headerNames = () =>
+    screen
+      .getAllByRole('header', { name: /^(My foods|Saved|Open Food Facts|USDA)$/ })
+      .map((node) => node.props.children);
+  const sections = (order: string, hidden: string[] = []) =>
+    order.split(',').map((id) => ({ id, visible: !hidden.includes(id) })) as FoodSearchSections;
+
+  it('ROAD-02 M9: hidden remote sections send no requests and render nothing, not even the USDA key status', async () => {
+    const offSearch = jest.fn(async () => ({ candidates: [hit('o1', 'Almond OFF')], page: 1, pageCount: 1 }));
+    const { services } = await setup({
+      initialQuery: 'almond',
+      offSearch,
+      usdaError: new ProviderConfigurationError('key state', 'usda_key_missing'),
+      sections: sections('custom,saved,open_food_facts,usda', ['open_food_facts', 'usda']),
+    });
+    expect(await screen.findByText('Almond oats')).toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 1_000)); // past the 400 ms USDA and 800 ms OFF debounces
+    expect(offSearch).not.toHaveBeenCalled();
+    expect(services.usda.search).not.toHaveBeenCalled();
+    expect(headerNames()).toEqual(['My foods']);
+    expect(screen.queryByText('Add a USDA API key to search USDA', { exact: false })).toBeNull();
+  });
+
+  it('ROAD-02 M9: renders visible sections in the saved order', async () => {
+    await setup({
+      initialQuery: 'almond',
+      withCachedExternal: true,
+      usdaCandidates: [hit('u1', 'Almond USDA')],
+      offSearch: async () => ({ candidates: [hit('o1', 'Almond OFF')], page: 1, pageCount: 1 }),
+      sections: sections('usda,open_food_facts,saved,custom'),
+    });
+    expect(await screen.findByText('Almond OFF', {}, { timeout: 3_000 })).toBeTruthy();
+    expect(await screen.findByText('Almond USDA')).toBeTruthy();
+    expect(headerNames()).toEqual(['USDA', 'Open Food Facts', 'Saved', 'My foods']);
+  });
+
+  it('hiding Saved turns off the dedupe, so a cached remote hit shows in its remote section', async () => {
+    await setup({
+      initialQuery: 'almond',
+      withCachedExternal: true,
+      offSearch: async () => ({
+        candidates: [hit('cached-almonds', 'Cached almond yoghurt')],
+        page: 1,
+        pageCount: 1,
+      }),
+      sections: sections('custom,saved,open_food_facts,usda', ['saved']),
+    });
+    expect(await screen.findByTestId('food-result-off-cached-almonds', {}, { timeout: 3_000 })).toBeTruthy();
+    expect(headerNames()).not.toContain('Saved');
+  });
+
+  it('No foods found counts only visible sections; offline row only while a remote section is visible', async () => {
+    onlineManager.setOnline(false);
+    await setup({
+      initialQuery: 'almond',
+      sections: sections('saved,custom,open_food_facts,usda', ['custom', 'open_food_facts', 'usda']),
+    });
+    expect(await screen.findByText('No foods found for “almond”.')).toBeTruthy();
+    expect(screen.queryByText('Almond oats')).toBeNull();
+    expect(screen.queryByText('Offline. Showing saved foods only.')).toBeNull();
+  });
+
+  it('shows the offline row once, above the first visible remote section', async () => {
+    onlineManager.setOnline(false);
+    await setup({ initialQuery: 'almond', sections: sections('usda,custom,open_food_facts,saved') });
+    expect(await screen.findByText('Almond oats')).toBeTruthy();
+    expect(screen.getAllByText('Offline. Showing saved foods only.')).toHaveLength(1);
   });
 });

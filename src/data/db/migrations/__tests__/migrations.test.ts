@@ -2,6 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+import { DEFAULT_FOOD_SEARCH_SECTIONS } from '@/domain/food/searchSections';
 import { MigrationError } from '@/shared/errors';
 import { fixedClock } from '@/shared/dates';
 import { openTestDatabase } from '@/shared/testing/nodeSqlite';
@@ -15,20 +16,35 @@ const clock = fixedClock('2026-09-25T10:00:00.000Z');
 const quietLogger = () => ({ info: jest.fn(), error: jest.fn() });
 
 async function schemaOf(db: SqlExecutor) {
-  return db.getAll<{ type: string; name: string; sql: string | null }>(
+  const rows = await db.getAll<{ type: string; name: string; sql: string | null }>(
     "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name",
   );
+  // `ALTER TABLE ... ADD COLUMN` rewrites the stored CREATE text with different whitespace; compare without it.
+  return rows.map((row) => ({ ...row, sql: row.sql?.replace(/\s+/g, '') ?? null }));
 }
 
 describe('DATA-17: migrations', () => {
-  it('migration 1 from an empty DB matches schema.sql exactly', async () => {
+  it('every migration from an empty DB builds schema.sql exactly', async () => {
     const migrated = await openTestDatabase();
     await migrate(migrated, MIGRATIONS, { clock, logger: quietLogger() });
     const reference = await openTestDatabase();
     await reference.exec(readFileSync(join(__dirname, '../../schema/schema.sql'), 'utf8'));
     expect(await schemaOf(migrated)).toEqual(await schemaOf(reference));
-    expect(await readSchemaVersion(migrated)).toBe(1);
-    expect(LATEST_SCHEMA_VERSION).toBe(1);
+    expect(await readSchemaVersion(migrated)).toBe(2);
+    expect(LATEST_SCHEMA_VERSION).toBe(2);
+  });
+
+  it('DATA-19: migration 2 adds food_search_sections with the default, preserving existing settings', async () => {
+    const db = await openTestDatabase();
+    await migrate(db, MIGRATIONS.slice(0, 1), { clock, logger: quietLogger() });
+    await db.run(
+      "INSERT INTO app_settings (id, weight_unit, food_weight_unit, energy_unit, volume_unit, goal_weight_kg, goals_confirmed_at, created_at, updated_at) VALUES (1, 'lb', 'oz', 'kJ', 'fl_oz', 80, 'x', 'x', 'x')",
+    );
+    const result = await migrate(db, MIGRATIONS, { clock, logger: quietLogger() });
+    expect(result).toEqual({ fromVersion: 1, toVersion: 2, applied: [2] });
+    const row = await db.getFirst<Record<string, unknown>>('SELECT * FROM app_settings');
+    expect(row).toMatchObject({ weight_unit: 'lb', energy_unit: 'kJ', goal_weight_kg: 80 });
+    expect(JSON.parse(row!.food_search_sections as string)).toEqual(DEFAULT_FOOD_SEARCH_SECTIONS);
   });
 
   it('is detected as already applied on the next launch', async () => {
@@ -36,16 +52,19 @@ describe('DATA-17: migrations', () => {
     const logger = quietLogger();
     const first = await migrate(db, MIGRATIONS, { clock, logger });
     const second = await migrate(db, MIGRATIONS, { clock, logger });
-    expect(first.applied).toEqual([1]);
-    expect(second).toEqual({ fromVersion: 1, toVersion: 1, applied: [] });
-    expect(await db.getAll('SELECT version FROM schema_version')).toEqual([{ version: 1 }]);
+    expect(first.applied).toEqual([1, 2]);
+    expect(second).toEqual({ fromVersion: 2, toVersion: 2, applied: [] });
+    expect(await db.getAll('SELECT version FROM schema_version ORDER BY version')).toEqual([
+      { version: 1 },
+      { version: 2 },
+    ]);
   });
 
   it('ARCH-15: logs only version, duration and outcome', async () => {
     const db = await openTestDatabase();
     const logger = quietLogger();
     await migrate(db, MIGRATIONS, { clock, logger });
-    expect(logger.info).toHaveBeenCalledWith('migration applied', { version: 1, durationMs: 0, outcome: 'ok' });
+    expect(logger.info).toHaveBeenCalledWith('migration applied', { version: 2, durationMs: 0, outcome: 'ok' });
   });
 
   it('runs a later migration on existing data, preserving it, and records its version after success', async () => {
@@ -54,17 +73,17 @@ describe('DATA-17: migrations', () => {
     await db.run(
       "INSERT INTO meals (id, name, sort_order, created_at, updated_at) VALUES ('m1', 'Breakfast', 0, 'x', 'x')",
     );
-    const m2: Migration = {
-      version: 2,
+    const m3: Migration = {
+      version: 3,
       name: 'add meal colour',
       up: (tx) => tx.exec('ALTER TABLE meals ADD COLUMN colour TEXT'),
     };
-    const result = await migrate(db, [...MIGRATIONS, m2], { clock, logger: quietLogger() });
-    expect(result).toEqual({ fromVersion: 1, toVersion: 2, applied: [2] });
+    const result = await migrate(db, [...MIGRATIONS, m3], { clock, logger: quietLogger() });
+    expect(result).toEqual({ fromVersion: 2, toVersion: 3, applied: [3] });
     expect(await db.getAll('SELECT id, name, colour FROM meals')).toEqual([
       { id: 'm1', name: 'Breakfast', colour: null },
     ]);
-    expect(await readSchemaVersion(db)).toBe(2);
+    expect(await readSchemaVersion(db)).toBe(3);
   });
 
   it('rolls back a failed migration fully and keeps the previous version and data', async () => {
@@ -74,7 +93,7 @@ describe('DATA-17: migrations', () => {
       "INSERT INTO meals (id, name, sort_order, created_at, updated_at) VALUES ('m1', 'Breakfast', 0, 'x', 'x')",
     );
     const broken: Migration = {
-      version: 2,
+      version: 3,
       name: 'broken',
       up: async (tx) => {
         await tx.exec('ALTER TABLE meals ADD COLUMN colour TEXT');
@@ -85,14 +104,14 @@ describe('DATA-17: migrations', () => {
     const logger = quietLogger();
     await expect(migrate(db, [...MIGRATIONS, broken], { clock, logger })).rejects.toMatchObject({
       category: 'migration',
-      version: 2,
+      version: 3,
     });
     expect(logger.error).toHaveBeenCalledWith('migration failed', undefined, {
-      version: 2,
+      version: 3,
       durationMs: 0,
       outcome: 'failed',
     });
-    expect(await readSchemaVersion(db)).toBe(1);
+    expect(await readSchemaVersion(db)).toBe(2);
     expect(await db.getAll('SELECT * FROM meals')).toEqual([
       { id: 'm1', name: 'Breakfast', sort_order: 0, created_at: 'x', updated_at: 'x' },
     ]);
@@ -107,7 +126,7 @@ describe('DATA-17: migrations', () => {
     expect(await schemaOf(db)).toEqual([]);
     seed.mockResolvedValueOnce(undefined);
     await migrate(db, MIGRATIONS, { clock, logger: quietLogger(), seed });
-    expect(await readSchemaVersion(db)).toBe(1);
+    expect(await readSchemaVersion(db)).toBe(2);
   });
 
   it('refuses a database written by a newer app instead of resetting it', async () => {
@@ -123,7 +142,7 @@ describe('DATA-17: migrations', () => {
 
   it('rejects gaps in migration numbering', async () => {
     const db = await openTestDatabase();
-    const gap: Migration = { version: 3, name: 'gap', up: async () => undefined };
+    const gap: Migration = { version: 4, name: 'gap', up: async () => undefined };
     await expect(migrate(db, [...MIGRATIONS, gap], { clock, logger: quietLogger() })).rejects.toBeInstanceOf(
       MigrationError,
     );

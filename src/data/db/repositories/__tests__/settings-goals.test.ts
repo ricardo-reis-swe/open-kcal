@@ -1,3 +1,4 @@
+import { DEFAULT_FOOD_SEARCH_SECTIONS } from '@/domain/food/searchSections';
 import { openSeededTestDatabase } from '@/shared/testing/testDb';
 
 import { createGoalsRepository } from '../goalsRepository';
@@ -36,6 +37,30 @@ describe('DATA-04: settings repository', () => {
     expect((await settings.setGoalWeightKg(70.5)).goalWeightKg).toBe(70.5);
     expect((await settings.setGoalWeightKg(null)).goalWeightKg).toBeNull();
     await expect(settings.setGoalWeightKg(0)).rejects.toMatchObject({ category: 'validation' });
+  });
+
+  it('DATA-19: stores Food Search section order + visibility and rejects invalid writes', async () => {
+    const deps = await openSeededTestDatabase();
+    const settings = createSettingsRepository(deps);
+    expect(await settings.getFoodSearchSections()).toEqual(DEFAULT_FOOD_SEARCH_SECTIONS);
+    const next = [
+      { id: 'usda', visible: true },
+      { id: 'custom', visible: true },
+      { id: 'saved', visible: false },
+      { id: 'open_food_facts', visible: false },
+    ] as const;
+    expect(await settings.setFoodSearchSections(next)).toEqual(next);
+    expect(await settings.getFoodSearchSections()).toEqual(next);
+    const hidden = next.map((s) => ({ ...s, visible: false }));
+    await expect(settings.setFoodSearchSections(hidden)).rejects.toMatchObject({ category: 'validation' });
+    await expect(settings.setFoodSearchSections(next.slice(1))).rejects.toMatchObject({ category: 'validation' });
+    expect(await settings.getFoodSearchSections()).toEqual(next);
+  });
+
+  it('DATA-19: corrupt stored sections read as the default instead of crashing', async () => {
+    const deps = await openSeededTestDatabase();
+    await deps.db.run("UPDATE app_settings SET food_search_sections = 'not json'");
+    expect(await createSettingsRepository(deps).getFoodSearchSections()).toEqual(DEFAULT_FOOD_SEARCH_SECTIONS);
   });
 
   it('ARCH-03: a corrupt settings row fails as a DatabaseError', async () => {

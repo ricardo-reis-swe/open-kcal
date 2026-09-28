@@ -1,4 +1,4 @@
--- Reference schema v1 (DATA doc). Source of truth for table shape; migration 1 is derived from this.
+-- Reference schema v2 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections).
 -- Conventions: ids are app-generated UUID TEXT; *_at are UTC ISO-8601 with ms ("2026-09-25T14:32:18.123Z");
 -- *_date / effective_from are local dates 'YYYY-MM-DD'. Canonical units: kg, g, ml, kcal. NULL nutrient = unknown, 0 = known zero.
 -- Every connection: PRAGMA foreign_keys = ON; WAL where supported.
@@ -18,7 +18,8 @@ CREATE TABLE app_settings (
   goal_weight_kg     REAL CHECK (goal_weight_kg IS NULL OR goal_weight_kg > 0),
   goals_confirmed_at TEXT, -- NULL while goals are the provisional first-launch default (UX-01)
   created_at         TEXT NOT NULL,
-  updated_at         TEXT NOT NULL
+  updated_at         TEXT NOT NULL,
+  food_search_sections TEXT NOT NULL DEFAULT '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]'
 );
 
 -- Effective-dated. Goal for date D = row with greatest effective_from <= D.
