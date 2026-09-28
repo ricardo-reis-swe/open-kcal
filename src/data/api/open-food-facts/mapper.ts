@@ -15,7 +15,17 @@ const numberLike = z.union([z.number(), z.string()]).transform((value, ctx) => {
   return parsed;
 });
 
-const nutrimentsSchema = z.record(z.string(), numberLike.optional());
+// Real OFF products mix in non-numeric "_modifier" annotations (e.g. "<", "~") alongside the
+// numeric fields on the same nutriments object; drop those instead of failing the whole product.
+const nutrimentsSchema = z.record(z.string(), z.union([z.number(), z.string()]).optional()).transform((record) => {
+  const result: Record<string, number> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (value === undefined) continue;
+    const parsed = typeof value === 'number' ? value : Number(value);
+    if (Number.isFinite(parsed)) result[key] = parsed;
+  }
+  return result;
+});
 const productSchema = z.object({
   code: z.union([z.string(), z.number()]).transform(String),
   product_name: z.string().optional(),

@@ -51,6 +51,23 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
     });
   });
 
+  it('ignores non-numeric "_modifier" annotations real OFF products mix into nutriments', () => {
+    const productWithModifiers = {
+      ...product,
+      nutriments: {
+        ...product.nutriments,
+        carbohydrates_modifier: '<',
+        'energy-kcal_modifier': '~',
+        fiber_modifier: '<',
+      },
+    };
+    const candidate = mapOpenFoodFactsProduct(productWithModifiers);
+    expect(candidate).toMatchObject({
+      externalId: '0894700010137',
+      input: { nutrients: { proteinG: 9, carbohydrateG: 4, fatG: 2 } },
+    });
+  });
+
   it('keeps provider pagination metadata while silently dropping unusable hits', () => {
     expect(mapOpenFoodFactsSearch({ hits: [product], page: 2, page_count: 4 })).toMatchObject({
       page: 2,
