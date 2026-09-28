@@ -13,7 +13,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M6 USDA | done |
 | M7 Meal Detail + copy | done |
 | M8 Profile | done |
-| M9 Hardening | in progress |
+| M9 Hardening | awaiting user acceptance |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -25,7 +25,7 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 
 ## M9 Hardening
 
-Status: **in progress** · Start commit: `7a84bb7` · User instructions 2026-09-28: work in-session, no subagents, no Maestro or other device tests (gate on `npm run check`).
+Status: **awaiting user acceptance** (agent work done; T5 phone smoke test and the pt-PT review are the user's) · Start commit: `7a84bb7` · User instructions 2026-09-28: work in-session, no subagents, no Maestro or other device tests (gate on `npm run check`).
 
 ### Tasks
 
@@ -33,18 +33,31 @@ Status: **in progress** · Start commit: `7a84bb7` · User instructions 2026-09-
 - [x] T2 Food Databases `Search results` group (UX-18): `src/features/profile/components/SearchResultsGroup.tsx` on `FoodDatabasesScreen` — per-section switch + drag handle (UX-17 helpers) + a11y Move up/down, saves on each change, last visible switch disabled with helper; en + pt-PT; tests in `FoodDatabasesScreen.test.tsx`; test QueryClient now uses mutation `gcTime: 0` (`src/shared/testing/services.tsx`).
 - [x] T3 pt-PT complete (315 keys, nothing untranslated) + user review sheet `docs/qa/M9/pt-PT-copy-review.md`; DS-11 code-level pass, no defects (contrast, scaling, labels, gesture alternatives); DS-13 device check deferred by the user. Evidence: `docs/qa/M9/a11y-and-ds13-2026-09-28.md`.
 - [x] T4 ARCH-19 performance checks, code-level (no device profiling, per the user): indexes, SQL totals, debounce/cancel, paging, virtualized lists, worklet ruler, no sync SQLite all hold; 2 minor gaps logged. Evidence: `docs/qa/M9/performance-2026-09-28.md`.
-- [ ] T5 Release-config builds + ROAD-04 smoke test on the user's phone (user runs it; no device tests by the agent).
+- [ ] T5 Release-config builds + ROAD-04 smoke test on the user's phone: **handed to the user** (commands in the acceptance report below).
 - [ ] T6 Maestro E2E suite: deferred by the user (includes the untested `7a84bb7` flow fixes).
 
 ### ROAD-02 checklist
 
-- [ ] Main specs implemented (DS-11/13, ARCH-18/19, ROAD-04; UX-18 `Search results` + DATA-19 done in T1/T2)
-- [ ] `npm run check` green at the milestone boundary
+- [x] Main specs implemented at code level: UX-18 `Search results` + DATA-19 (T1/T2), DS-11 (T3), ARCH-19 (T4); DS-13 and ARCH-18 device parts deferred by the user; ROAD-04 smoke test is the user's (T5)
+- [x] `npm run check` green at the milestone boundary (80 suites / 538 tests, `9161e63`; later M9 commits are docs only)
 - [x] M9 extra: hidden remote sections send no requests; sections render in the saved order (T1)
 - [ ] The user reviews the pt-PT copy (sheet ready: `docs/qa/M9/pt-PT-copy-review.md`)
 - [x] ARCH-19 performance checks run (code-level, T4)
 - [ ] Release-config build passes the ROAD-04 smoke test
 - [ ] Every ARCH-18 E2E flow green on both platforms (deferred by the user)
+
+### Changelog (M9 finish checklist step 2)
+
+- MVP feature-complete: Diary with a scrollable date strip, Quick Calories, custom foods + ruler, Food Search (My foods, Saved, Open Food Facts, USDA; 10 per page; section order and visibility set on Food Databases), USDA key flow, Meal Detail + copy, Profile (goals, meals, units, weight goal, weight history), en + pt-PT.
+
+### Acceptance report (ROAD-03)
+
+Built this milestone: Food Search section order + visibility (DATA-19 migration 2, UX-18 `Search results`, UX-04 wiring; hidden remote sections send no requests), pt-PT completeness + review sheet, DS-11 and ARCH-19 code-level passes. Per the user: no subagents, no device tests, no independent review round.
+
+Left for the user:
+1. Review the pt-PT copy: `docs/qa/M9/pt-PT-copy-review.md`.
+2. Release-config smoke test on a phone (ROAD-04): `npx expo run:ios --configuration Release --device` or `npx expo run:android --variant release` with the phone connected. Then first launch → add Quick Calories → log an Open Food Facts food → go offline and log a saved food → relaunch and check the data persisted.
+3. Maestro suite on both platforms (T6), including the untested `7a84bb7` flow fixes: deferred until the user wants it.
 
 ### Known gaps
 
