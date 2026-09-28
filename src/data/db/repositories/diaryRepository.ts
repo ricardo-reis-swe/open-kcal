@@ -167,6 +167,7 @@ export type AddFoodEntryInput = {
 /** The serving currently chosen in the editor (optional); the repository decides whether it changed. */
 export type EditFoodEntryInput = { mealId: string; quantity: number; servingId?: string };
 export type QuickCaloriesInput = { diaryDate: LocalDate; mealId: string; energyKcal: number; note?: string | null };
+export type CopyMealInput = { mealId: string; sourceDate: LocalDate; destinationDate: LocalDate };
 
 export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
   return {
@@ -357,6 +358,53 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
           id,
         ]);
         return readEntry(tx, id);
+      });
+    },
+
+    /**
+     * DATA-16 Copy meal, one transaction: source entries in order → new IDs → snapshots copied exactly (incl. food_id
+     * and note) → same `meal_id` on the destination date, appended after its existing entries. The source date may
+     * equal the destination (UX-12 appends duplicates). Recents are not touched. Returns the number of copied entries.
+     */
+    async copyMeal(input: CopyMealInput): Promise<{ copiedCount: number }> {
+      assertDate(input.sourceDate);
+      assertDate(input.destinationDate);
+      return db.transaction(async (tx) => {
+        await assertMeal(tx, input.mealId);
+        const rows = await tx.getAll<EntryRow>(
+          'SELECT * FROM diary_entries WHERE diary_date = ? AND meal_id = ? ORDER BY sort_order, created_at',
+          [input.sourceDate, input.mealId],
+        );
+        const base = await nextSortOrder(tx, input.destinationDate, input.mealId);
+        const now = nowUtcIso(clock);
+        for (const [i, r] of rows.entries()) {
+          await tx.run(
+            `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
+               serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
+               created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              ids.newId(),
+              r.entry_kind,
+              input.destinationDate,
+              input.mealId,
+              r.food_id,
+              r.food_name_snapshot,
+              r.brand_snapshot,
+              r.serving_quantity,
+              r.serving_unit_snapshot,
+              r.energy_kcal,
+              r.protein_g,
+              r.carbohydrate_g,
+              r.fat_g,
+              r.note,
+              base + i,
+              now,
+              now,
+            ],
+          );
+        }
+        return { copiedCount: rows.length };
       });
     },
 
