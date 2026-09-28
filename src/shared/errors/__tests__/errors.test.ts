@@ -27,7 +27,7 @@ describe('ARCH-13: typed errors', () => {
     [new OfflineError('x'), 'offline', 'OfflineError'],
     [new TimeoutError('x'), 'timeout', 'TimeoutError'],
     [new RateLimitError('x', 3000), 'rate_limit', 'RateLimitError'],
-    [new ProviderConfigurationError('x'), 'provider_configuration', 'ProviderConfigurationError'],
+    [new ProviderConfigurationError('x', 'usda_key_rejected'), 'provider_configuration', 'ProviderConfigurationError'],
     [new ProviderResponseError('x'), 'provider_response', 'ProviderResponseError'],
     [new UnexpectedError('x'), 'unexpected', 'UnexpectedError'],
   ] as const)('%s has a stable category and name', (error, category, name) => {

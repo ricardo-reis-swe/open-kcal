@@ -68,7 +68,7 @@ describe('UX-18 / UX-19: Food Databases', () => {
   it('PROV-11: keeps an old key on a rejected replacement, saves only a successful replacement, and never puts it in the URL', async () => {
     const { searchSpy, value } = await setup({ key: 'old-key' });
     await fireEvent.press(await screen.findByRole('button', { name: 'Replace key' }));
-    searchSpy.mockRejectedValueOnce(new ProviderConfigurationError('rejected'));
+    searchSpy.mockRejectedValueOnce(new ProviderConfigurationError('rejected', 'usda_key_rejected'));
     await fireEvent.changeText(screen.getByTestId('usda-key-input'), 'new-key');
     await fireEvent.press(screen.getByTestId('usda-save-key'));
     expect(await screen.findByText('USDA rejected this key.')).toBeTruthy();
@@ -96,7 +96,7 @@ describe('UX-18 / UX-19: Food Databases', () => {
     expect(await screen.findByText("Couldn't reach USDA. Try again.")).toBeTruthy();
     expect(screen.getByText('Active')).toBeTruthy();
 
-    searchSpy.mockRejectedValueOnce(new ProviderConfigurationError('rejected'));
+    searchSpy.mockRejectedValueOnce(new ProviderConfigurationError('rejected', 'usda_key_rejected'));
     await fireEvent.press(screen.getByRole('button', { name: 'Test key' }));
     expect(await screen.findByText('USDA rejected this key.')).toBeTruthy();
     expect(screen.getByText('Key rejected')).toBeTruthy();

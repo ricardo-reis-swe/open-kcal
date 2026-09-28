@@ -409,7 +409,7 @@ export function FoodSearchScreen({
                       error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
                     />
                   ))}
-                {usda.hasMore ? (
+                {usda.hasMore && usdaQuery === query.trim() ? (
                   <TextAction
                     icon="add"
                     label={t('foodSearch.showMore')}
@@ -582,7 +582,7 @@ function UsdaError({
   const { t } = useTranslation();
   const theme = useTheme();
   if (error instanceof ProviderConfigurationError) {
-    const missing = error.message.includes('missing');
+    const missing = error.code === 'usda_key_missing'; // ARCH-13: branch on the typed code, never message text
     return (
       <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
         <InlineStatus tone="error" message={t(missing ? 'foodSearch.usdaKeyMissing' : 'foodSearch.usdaKeyRejected')} />

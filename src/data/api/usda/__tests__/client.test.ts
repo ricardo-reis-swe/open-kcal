@@ -1,4 +1,4 @@
-import { ProviderConfigurationError, ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
+import { ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
 import { createLogger, type LogRecord } from '@/shared/logging/logger';
 import { foodSearchKeys } from '@/features/food-search/food-search.queries';
 
@@ -43,9 +43,10 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
     await new UsdaClient(config, credentials, request).getFood('1/2', new AbortController().signal);
     expect(String(request.mock.calls[0]?.[0])).toContain('/fdc/v1/food/1%2F2?format=full');
     const missing = new UsdaClient(config, { getUsdaApiKeyForRequest: jest.fn().mockResolvedValue(null) }, request);
-    await expect(missing.search('secret term', 1, new AbortController().signal)).rejects.toBeInstanceOf(
-      ProviderConfigurationError,
-    );
+    await expect(missing.search('secret term', 1, new AbortController().signal)).rejects.toMatchObject({
+      category: 'provider_configuration',
+      code: 'usda_key_missing',
+    });
     expect(request).toHaveBeenCalledTimes(1);
     const rejected = new UsdaClient(
       config,
@@ -54,6 +55,7 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
     );
     await expect(rejected.search('secret term', 1, new AbortController().signal)).rejects.toMatchObject({
       category: 'provider_configuration',
+      code: 'usda_key_rejected',
     });
   });
 

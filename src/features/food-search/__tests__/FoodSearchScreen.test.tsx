@@ -248,8 +248,8 @@ describe('UX-04: local Food Search screen', () => {
   });
 
   it.each([
-    ['missing', new ProviderConfigurationError('USDA API key is missing'), 'Add a USDA API key to search USDA'],
-    ['rejected', new ProviderConfigurationError('USDA API key was rejected'), 'USDA rejected your key.'],
+    ['missing', new ProviderConfigurationError('key state', 'usda_key_missing'), 'Add a USDA API key to search USDA'],
+    ['rejected', new ProviderConfigurationError('key state', 'usda_key_rejected'), 'USDA rejected your key.'],
     ['rate limited', new RateLimitError('USDA is rate limited'), 'USDA is busy. Try again later.'],
     ['timeout', new TimeoutError('USDA request timed out'), 'USDA search failed.'],
   ])('PROV-10 / PROV-11: renders the USDA %s state', async (_kind, usdaError, expected) => {

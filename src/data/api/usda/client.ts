@@ -22,7 +22,7 @@ export class UsdaClient {
 
   private async key(): Promise<string> {
     const key = await this.credentials.getUsdaApiKeyForRequest();
-    if (!key) throw new ProviderConfigurationError('USDA API key is missing');
+    if (!key) throw new ProviderConfigurationError('USDA API key is missing', 'usda_key_missing');
     return key;
   }
 
@@ -54,7 +54,7 @@ export class UsdaClient {
       signal.removeEventListener('abort', abort);
     }
     if (response.status === 401 || response.status === 403)
-      throw new ProviderConfigurationError('USDA API key was rejected');
+      throw new ProviderConfigurationError('USDA API key was rejected', 'usda_key_rejected');
     if (response.status === 429)
       throw new RateLimitError('USDA is rate limited', retryAfter(response.headers.get('Retry-After')));
     if (response.status === 404) throw new NotFoundError('USDA food not found');

@@ -81,8 +81,17 @@ export class RateLimitError extends AppError {
   }
 }
 
+/** PROV-12 key states; callers branch on this, never on message text (ARCH-13). */
+export type ProviderConfigurationCode = 'usda_key_missing' | 'usda_key_rejected';
+
 export class ProviderConfigurationError extends AppError {
   readonly category = 'provider_configuration';
+  readonly code: ProviderConfigurationCode;
+
+  constructor(message: string, code: ProviderConfigurationCode, options?: { cause?: unknown }) {
+    super(message, options);
+    this.code = code;
+  }
 }
 
 export class ProviderResponseError extends AppError {
