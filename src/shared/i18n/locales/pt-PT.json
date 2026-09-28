@@ -323,5 +323,29 @@
     "kJ": "kJ",
     "ml": "ml",
     "fl_oz": "fl oz"
+  },
+  "meals": {
+    "title": "Refeições",
+    "addMeal": "Adicionar refeição",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "saveError": "Não foi possível guardar. Tente novamente."
+  },
+  "mealEdit": {
+    "addTitle": "Adicionar refeição",
+    "editTitle": "Editar refeição",
+    "name": "Nome",
+    "save": "Guardar",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "nameError": "Introduza um nome com até 40 caracteres.",
+    "duplicate": "Já tem uma refeição chamada {{name}}.",
+    "delete": "Eliminar refeição",
+    "lastMeal": "É necessária pelo menos uma refeição.",
+    "deleteTitle": "Eliminar {{name}}?",
+    "deleteConfirm": "Eliminar refeição",
+    "moveTitle_one": "Eliminar {{name}}? Tem {{count}} registo. Mover para:",
+    "moveTitle_other": "Eliminar {{name}}? Tem {{count}} registos. Movê-los para:",
+    "moveConfirm": "Eliminar e mover registos",
+    "deleteError": "Não foi possível eliminar. Tente novamente."
   }
 }

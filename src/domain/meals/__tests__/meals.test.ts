@@ -1,4 +1,4 @@
-import { duplicateMealName, isValidMealName, moveMeal } from '../meals';
+import { dropIndex, duplicateMealName, isValidMealName, moveMeal, moveMealToIndex } from '../meals';
 
 describe('UX-17: meal helpers', () => {
   const meals = [
@@ -25,5 +25,16 @@ describe('UX-17: meal helpers', () => {
     expect(moveMeal(['a', 'b', 'c'], 'a', -1)).toBeNull();
     expect(moveMeal(['a', 'b', 'c'], 'c', 1)).toBeNull();
     expect(moveMeal(['a'], 'x', 1)).toBeNull();
+  });
+
+  it('UX-17 drag: drops on the nearest row (clamped) and moves the ID there', () => {
+    expect(dropIndex(0, 110, 52, 4)).toBe(2);
+    expect(dropIndex(3, -20, 52, 4)).toBe(3);
+    expect(dropIndex(1, -500, 52, 4)).toBe(0);
+    expect(dropIndex(1, 500, 52, 4)).toBe(3);
+    expect(moveMealToIndex(['a', 'b', 'c'], 'a', 2)).toEqual(['b', 'c', 'a']);
+    expect(moveMealToIndex(['a', 'b', 'c'], 'c', 0)).toEqual(['c', 'a', 'b']);
+    expect(moveMealToIndex(['a', 'b', 'c'], 'b', 1)).toBeNull();
+    expect(moveMealToIndex(['a', 'b', 'c'], 'x', 1)).toBeNull();
   });
 });

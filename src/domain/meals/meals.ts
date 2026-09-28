@@ -32,3 +32,21 @@ export function moveMeal(orderedIds: readonly string[], id: string, delta: -1 | 
   next.splice(to, 0, id);
   return next;
 }
+
+/** UX-17 drag drop: the new ID order with `id` moved to `toIndex` (clamped), or `null` when nothing moves. */
+export function moveMealToIndex(orderedIds: readonly string[], id: string, toIndex: number): string[] | null {
+  const from = orderedIds.indexOf(id);
+  if (from < 0) return null;
+  const to = Math.max(0, Math.min(orderedIds.length - 1, toIndex));
+  if (to === from) return null;
+  const next = [...orderedIds];
+  next.splice(from, 1);
+  next.splice(to, 0, id);
+  return next;
+}
+
+/** UX-17 drag: the row index a drag of `translationY` from row `from` drops on (rows of `rowHeight`, clamped). */
+export function dropIndex(from: number, translationY: number, rowHeight: number, count: number): number {
+  if (rowHeight <= 0 || count <= 0) return from;
+  return Math.max(0, Math.min(count - 1, from + Math.round(translationY / rowHeight)));
+}

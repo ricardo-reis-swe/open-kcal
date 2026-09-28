@@ -66,6 +66,8 @@ const paramSchemas = {
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   foodDatabases: z.object({}),
+  /** NAV-06 Edit Meal (`/profile/meals/[mealId]`); create mode has its own route without params. */
+  mealEdit: z.object({ mealId: idSchema }),
 };
 
 type ParsedParams = { [K in keyof typeof paramSchemas]: z.output<(typeof paramSchemas)[K]> };
@@ -82,6 +84,13 @@ export const routes = {
   foodDatabases: (): Href => '/profile/food-databases' as Href,
   /** NAV-06 / UX-16 (also the Diary's UX-01 `Set goals`, pushed `withAnchor` so the Profile hub sits under it). */
   caloriesMacros: (): Href => '/profile/calories-macros' as Href,
+  /** NAV-06 / UX-17 Meals list. */
+  meals: (): Href => '/profile/meals' as Href,
+  /** NAV-06 Add / Edit Meal: create mode, or edit by `mealId`. */
+  mealEdit: (p: RouteParams['mealEdit']): Href =>
+    (p.mode === 'create'
+      ? '/profile/meals/new'
+      : { pathname: '/profile/meals/[mealId]', params: { mealId: p.mealId } }) as unknown as Href,
   /** NAV-04: Meal Detail by `mealId` (never by name) on a diary date. */
   mealDetail: (p: RouteParams['mealDetail']): Href =>
     ({ pathname: '/diary/meal/[mealId]', params: { mealId: p.mealId, date: p.date } }) as unknown as Href,

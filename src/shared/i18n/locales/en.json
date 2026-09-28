@@ -323,5 +323,29 @@
     "kJ": "kJ",
     "ml": "ml",
     "fl_oz": "fl oz"
+  },
+  "meals": {
+    "title": "Meals",
+    "addMeal": "Add meal",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "saveError": "Couldn't save. Try again."
+  },
+  "mealEdit": {
+    "addTitle": "Add meal",
+    "editTitle": "Edit meal",
+    "name": "Name",
+    "save": "Save",
+    "saveError": "Couldn't save. Try again.",
+    "nameError": "Enter a name up to 40 characters.",
+    "duplicate": "You already have a meal named {{name}}.",
+    "delete": "Delete meal",
+    "lastMeal": "At least one meal is required.",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteConfirm": "Delete meal",
+    "moveTitle_one": "Delete {{name}}? It has {{count}} entry. Move it to:",
+    "moveTitle_other": "Delete {{name}}? It has {{count}} entries. Move them to:",
+    "moveConfirm": "Delete and move entries",
+    "deleteError": "Couldn't delete. Try again."
   }
 }

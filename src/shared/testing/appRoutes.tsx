@@ -14,6 +14,9 @@ import QuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/index';
 import ProfileStackLayout from '@/app/(tabs)/profile/_layout';
 import ProfileIndex from '@/app/(tabs)/profile/index';
 import CaloriesMacrosRoute from '@/app/(tabs)/profile/calories-macros';
+import MealsRoute from '@/app/(tabs)/profile/meals/index';
+import AddMealRoute from '@/app/(tabs)/profile/meals/new';
+import EditMealRoute from '@/app/(tabs)/profile/meals/[mealId]';
 import RootLayout from '@/app/_layout';
 import Index from '@/app/index';
 
@@ -35,6 +38,9 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/profile/_layout': ProfileStackLayout,
     '(tabs)/profile/index': ProfileIndex,
     '(tabs)/profile/calories-macros': CaloriesMacrosRoute,
+    '(tabs)/profile/meals/index': MealsRoute,
+    '(tabs)/profile/meals/new': AddMealRoute,
+    '(tabs)/profile/meals/[mealId]': EditMealRoute,
     ...extra,
   };
 }
