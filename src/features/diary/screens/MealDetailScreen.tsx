@@ -1,20 +1,32 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import type { DiaryMeal } from '@/data/db/repositories/diaryRepository';
 import type { EnergyUnit } from '@/domain/units/units';
-import { AppBar, AppText, NotFoundState, PressableIcon, PrimaryButton, TextAction } from '@/shared/components';
+import {
+  AppBar,
+  AppText,
+  InlineStatus,
+  NotFoundState,
+  PressableIcon,
+  PrimaryButton,
+  TextAction,
+} from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
 import { formatEnergy, formatLongDate } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { routes, type RouteParams } from '@/shared/navigation/routes';
 import { useTheme } from '@/shared/theme';
 
+import { CopyMealFlow } from '../components/CopyMealFlow';
 import { MealEntries } from '../components/DiaryEntryRow';
 import { useAppSettings, useDiaryMeal } from '../diary.queries';
 import { useDiaryDate } from '../hooks/DiaryDateContext';
+
+/** How long the copy confirmation stays (DS-10: the copied result isn't visible on this screen). */
+const TOAST_MS = 4000;
 
 /** UX-00 not found → the Diary stack root. */
 const toDiaryRoot = () => router.dismissTo(routes.diary());
@@ -28,8 +40,15 @@ export function MealDetailScreen({ params }: { params: RouteParams['mealDetail']
   const theme = useTheme();
   const meal = useDiaryMeal(params?.date ?? '', params?.mealId ?? '', params !== null);
   const settings = useAppSettings();
-  // T3 (UX-12) renders the Copy Meal Sheet from this state.
-  const [, setCopying] = useState(false);
+  const { today } = useDiaryDate();
+  const [copying, setCopying] = useState(false);
+  // UX-12: after a copy we stay on the source Meal Detail and confirm with a transient banner.
+  const [toast, setToast] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const back = { label: t('common.back'), onPress: () => router.back() };
   const addFood = params
@@ -63,7 +82,10 @@ export function MealDetailScreen({ params }: { params: RouteParams['mealDetail']
         date={params.date}
         unit={settings.data.energyUnit}
         onAddFood={addFood!}
-        onCopy={() => setCopying(true)}
+        onCopy={() => {
+          setToast(null);
+          setCopying(true);
+        }}
       />
     );
   }
@@ -84,7 +106,24 @@ export function MealDetailScreen({ params }: { params: RouteParams['mealDetail']
           ) : undefined
         }
       />
+      {toast ? (
+        <View style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[2] }}>
+          <InlineStatus tone={toast.tone} message={toast.message} testID="meal-detail-toast" />
+        </View>
+      ) : null}
       {body}
+      {params && title ? (
+        <CopyMealFlow
+          visible={copying}
+          mealId={params.mealId}
+          mealName={title}
+          date={params.date}
+          today={today}
+          onClose={() => setCopying(false)}
+          onCopied={(message) => setToast({ tone: 'success', message })}
+          onError={(message) => setToast({ tone: 'error', message })}
+        />
+      ) : null}
     </View>
   );
 }

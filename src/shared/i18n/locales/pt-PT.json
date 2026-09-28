@@ -267,5 +267,15 @@
     "empty": "Nenhum alimento registado nesta refeição.",
     "totalA11y": "Total, {{value}} {{unit}}",
     "addFood": "Adicionar alimento"
+  },
+  "copyMeal": {
+    "title": "Copiar {{meal}} para",
+    "today": "Hoje · {{date}}",
+    "tomorrow": "Amanhã · {{date}}",
+    "chooseDate": "Escolher data…",
+    "dateTitle": "Copiar para a data",
+    "copied_one": "{{count}} item copiado para {{meal}}, {{date}}",
+    "copied_other": "{{count}} itens copiados para {{meal}}, {{date}}",
+    "error": "Não foi possível copiar. Tente novamente."
   }
 }

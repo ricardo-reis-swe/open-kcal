@@ -267,5 +267,15 @@
     "empty": "No foods logged for this meal.",
     "totalA11y": "Total, {{value}} {{unit}}",
     "addFood": "Add food"
+  },
+  "copyMeal": {
+    "title": "Copy {{meal}} to",
+    "today": "Today · {{date}}",
+    "tomorrow": "Tomorrow · {{date}}",
+    "chooseDate": "Choose date…",
+    "dateTitle": "Copy to date",
+    "copied_one": "Copied {{count}} item to {{meal}}, {{date}}",
+    "copied_other": "Copied {{count}} items to {{meal}}, {{date}}",
+    "error": "Couldn't copy. Try again."
   }
 }
