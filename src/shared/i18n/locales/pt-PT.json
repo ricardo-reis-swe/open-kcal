@@ -361,5 +361,29 @@
     "save": "Guardar",
     "error": "Introduza um peso entre {{min}} e {{max}} {{unit}}.",
     "saveError": "Não foi possível guardar. Tente novamente."
+  },
+  "weightEntry": {
+    "createTitle": "Atualizar peso",
+    "editTitle": "Editar peso",
+    "date": "Data",
+    "today": "Hoje, {{date}}",
+    "yesterday": "Ontem, {{date}}",
+    "field": "Peso",
+    "save": "Guardar",
+    "error": "Introduza um peso entre {{min}} e {{max}} {{unit}}.",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "delete": "Eliminar peso",
+    "deleteTitle": "Eliminar registo de peso?",
+    "deleteBody": "{{weight}} em {{date}}.",
+    "deleteConfirm": "Eliminar peso",
+    "deleteError": "Não foi possível eliminar. Tente novamente."
+  },
+  "weightHistory": {
+    "title": "Histórico de peso",
+    "add": "Atualizar peso",
+    "empty": "Ainda não há registos de peso.",
+    "dateTime": "{{date}}, {{time}}",
+    "row": "{{date}}, {{weight}}, {{change}}",
+    "rowFirst": "{{date}}, {{weight}}"
   }
 }

@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 
+import { WeightEntryProvider } from '@/features/profile/hooks/WeightEntryContext';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
 
 import { GlobalAddFlow } from '../components/GlobalAddFlow';
@@ -36,7 +37,9 @@ describe('UX-10: Meal Picker skip', () => {
     jest.useFakeTimers();
     await renderWithServices(
       <DiaryDateProvider>
-        <Harness />
+        <WeightEntryProvider>
+          <Harness />
+        </WeightEntryProvider>
       </DiaryDateProvider>,
       services,
     );

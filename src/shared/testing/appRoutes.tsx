@@ -19,6 +19,7 @@ import AddMealRoute from '@/app/(tabs)/profile/meals/new';
 import EditMealRoute from '@/app/(tabs)/profile/meals/[mealId]';
 import UnitsRoute from '@/app/(tabs)/profile/units';
 import WeightGoalRoute from '@/app/(tabs)/profile/weight-goal';
+import WeightHistoryRoute from '@/app/(tabs)/profile/weight-history';
 import RootLayout from '@/app/_layout';
 import Index from '@/app/index';
 
@@ -45,6 +46,7 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/profile/meals/[mealId]': EditMealRoute,
     '(tabs)/profile/units': UnitsRoute,
     '(tabs)/profile/weight-goal': WeightGoalRoute,
+    '(tabs)/profile/weight-history': WeightHistoryRoute,
     ...extra,
   };
 }

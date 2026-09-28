@@ -43,7 +43,7 @@ async function addQuickCalories(kcal: string, note?: string) {
 }
 
 describe('NAV-03 / UX-09: + Add Action Sheet', () => {
-  it('UX-09: rows are Add food, Quick calories and Update weight; M4 enables Add food', async () => {
+  it('UX-09: rows are Add food, Quick calories and Update weight; all enabled (M4 food, M8 weight)', async () => {
     await renderApp('/diary');
     await fireEvent.press(screen.getByRole('button', { name: 'Add' }));
     const sheet = screen.getByTestId('add-action-sheet');
@@ -53,7 +53,7 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
       .filter((label) => label !== 'Close');
     expect(rows).toEqual(['Add food', 'Quick calories', 'Update weight']);
     expect(within(sheet).getByRole('button', { name: 'Add food' })).toBeEnabled();
-    expect(within(sheet).getByRole('button', { name: 'Update weight' })).toBeDisabled();
+    expect(within(sheet).getByRole('button', { name: 'Update weight' })).toBeEnabled();
     expect(within(sheet).getByRole('button', { name: 'Quick calories' })).toBeEnabled();
     expect(within(sheet).queryByText(/barcode/i)).toBeNull();
   });

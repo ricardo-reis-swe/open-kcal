@@ -22,6 +22,8 @@ export type DatePickerProps = {
   today: LocalDate;
   /** `Choose date` by default; destination mode (Copy Meal, UX-12) only changes the title. */
   title?: string;
+  /** Latest selectable date, e.g. today for weight entries (DATA-13). Omitted = any date (NAV-05). */
+  maximumDate?: LocalDate;
   onConfirm: (date: LocalDate) => void;
   onCancel: () => void;
 };
@@ -33,7 +35,7 @@ export function DatePicker(props: DatePickerProps) {
   return Platform.OS === 'android' ? <AndroidDatePicker {...props} /> : <IosDatePicker {...props} />;
 }
 
-function AndroidDatePicker({ visible, value, today, onConfirm, onCancel }: DatePickerProps) {
+function AndroidDatePicker({ visible, value, today, maximumDate, onConfirm, onCancel }: DatePickerProps) {
   const { t } = useTranslation();
   // The dialog calls back once; keep the latest handlers without reopening it.
   const handlers = useRef({ onConfirm, onCancel, today });
@@ -45,6 +47,7 @@ function AndroidDatePicker({ visible, value, today, onConfirm, onCancel }: DateP
     DateTimePickerAndroid.open({
       value: toPickerDate(value),
       mode: 'date',
+      ...(maximumDate ? { maximumDate: toPickerDate(maximumDate) } : {}),
       positiveButton: { label: t('datePicker.done') },
       negativeButton: { label: t('common.cancel') },
       neutralButton: { label: t('datePicker.today') },
@@ -61,7 +64,7 @@ function AndroidDatePicker({ visible, value, today, onConfirm, onCancel }: DateP
   return null;
 }
 
-function IosDatePicker({ visible, value, today, title, onConfirm, onCancel }: DatePickerProps) {
+function IosDatePicker({ visible, value, today, title, maximumDate, onConfirm, onCancel }: DatePickerProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
@@ -96,6 +99,7 @@ function IosDatePicker({ visible, value, today, title, onConfirm, onCancel }: Da
             testID="date-picker-calendar"
             value={toPickerDate(draft)}
             mode="date"
+            maximumDate={maximumDate ? toPickerDate(maximumDate) : undefined}
             // The inline calendar has a native minimum width wider than a phone at the largest (AX) sizes; the native
             // wheel fits, so large text switches to it (DS-11).
             display={large ? 'spinner' : 'inline'}

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { AddActionSheet } from '@/shared/navigation/AddActionSheet';
 import { MealPicker } from '@/shared/navigation/MealPicker';
 import { routes } from '@/shared/navigation/routes';
+import { useOpenWeightEntry } from '@/features/profile/hooks/WeightEntryContext';
 
 import { useMeals } from '../diary.queries';
 import { useDiaryDate } from '../hooks/DiaryDateContext';
@@ -20,7 +21,8 @@ export function GlobalAddFlow({ open, onClose }: Props) {
   const meals = useMeals();
   const [picking, setPicking] = useState(false);
   // What to do once the current sheet has finished closing.
-  const next = useRef<'pickFoodMeal' | 'pickQuickMeal' | null>(null);
+  const next = useRef<'pickFoodMeal' | 'pickQuickMeal' | 'weight' | null>(null);
+  const openWeightEntry = useOpenWeightEntry();
   const pickedMeal = useRef<string | null>(null);
 
   // Push, never navigate: `+` over an open Quick Calories screen must start a fresh form for the picked meal, not
@@ -30,7 +32,7 @@ export function GlobalAddFlow({ open, onClose }: Props) {
   const openFoodSearch = (mealId: string) =>
     router.push(routes.foodSearch({ mealId, date, origin: pathname.startsWith('/profile') ? 'profile' : 'diary' }));
 
-  const beginMealFlow = (kind: 'pickFoodMeal' | 'pickQuickMeal') => {
+  const beginMealFlow = (kind: 'pickFoodMeal' | 'pickQuickMeal' | 'weight') => {
     next.current = kind;
     onClose();
   };
@@ -42,10 +44,16 @@ export function GlobalAddFlow({ open, onClose }: Props) {
         onClose={onClose}
         onAddFood={() => beginMealFlow('pickFoodMeal')}
         onQuickCalories={() => beginMealFlow('pickQuickMeal')}
+        // NAV-03: Update weight → Weight Entry Sheet, defaulting to today (not the diary date).
+        onUpdateWeight={() => beginMealFlow('weight')}
         onDismissed={() => {
           const kind = next.current;
           if (!kind) return;
           next.current = null;
+          if (kind === 'weight') {
+            openWeightEntry({ mode: 'create' });
+            return;
+          }
           const list = meals.data ?? [];
           if (list.length === 1) {
             if (kind === 'pickFoodMeal') openFoodSearch(list[0]!.id);

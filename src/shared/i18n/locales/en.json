@@ -361,5 +361,29 @@
     "save": "Save",
     "error": "Enter a weight from {{min}} to {{max}} {{unit}}.",
     "saveError": "Couldn't save. Try again."
+  },
+  "weightEntry": {
+    "createTitle": "Update weight",
+    "editTitle": "Edit weight",
+    "date": "Date",
+    "today": "Today, {{date}}",
+    "yesterday": "Yesterday, {{date}}",
+    "field": "Weight",
+    "save": "Save",
+    "error": "Enter a weight from {{min}} to {{max}} {{unit}}.",
+    "saveError": "Couldn't save. Try again.",
+    "delete": "Delete weight",
+    "deleteTitle": "Delete weight entry?",
+    "deleteBody": "{{weight}} on {{date}}.",
+    "deleteConfirm": "Delete weight",
+    "deleteError": "Couldn't delete. Try again."
+  },
+  "weightHistory": {
+    "title": "Weight history",
+    "add": "Update weight",
+    "empty": "No weight entries yet.",
+    "dateTime": "{{date}}, {{time}}",
+    "row": "{{date}}, {{weight}}, {{change}}",
+    "rowFirst": "{{date}}, {{weight}}"
   }
 }

@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import {
+  AccessibilityInfo,
+  KeyboardAvoidingView,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +29,8 @@ export type BottomSheetProps = {
   /** Called once the close animation has finished and the sheet is gone, e.g. to open the next sheet (NAV-03). */
   onDismissed?: () => void;
   children: ReactNode;
+  /** Sheets with a text field grow above the keyboard (UX-14). */
+  avoidKeyboard?: boolean;
   testID?: string;
 };
 
@@ -55,6 +65,7 @@ export function BottomSheet({
   accessibilityLabel,
   closeLabel,
   children,
+  avoidKeyboard = false,
   testID,
 }: BottomSheetProps) {
   const theme = useTheme();
@@ -147,7 +158,7 @@ export function BottomSheet({
             testID={testID ? `${testID}-backdrop` : undefined}
           />
         </Animated.View>
-        <View style={styles.bottom} pointerEvents="box-none">
+        <KeyboardAvoidingView style={styles.bottom} pointerEvents="box-none" behavior="padding" enabled={avoidKeyboard}>
           <GestureDetector gesture={pan}>
             <Animated.View
               testID={testID}
@@ -189,7 +200,7 @@ export function BottomSheet({
               {children}
             </Animated.View>
           </GestureDetector>
-        </View>
+        </KeyboardAvoidingView>
       </GestureHandlerRootView>
     </Modal>
   );
