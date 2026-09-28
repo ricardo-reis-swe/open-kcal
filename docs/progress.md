@@ -10,7 +10,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M3 Quick Calories | done |
 | M4 Custom foods + ruler | done |
 | M5 Search + Open Food Facts | done |
-| M6 USDA | awaiting user acceptance |
+| M6 USDA | done |
 | M7 Meal Detail + copy | not started |
 | M8 Profile | not started |
 | M9 Hardening | not started |
@@ -19,7 +19,7 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 
 ## M6 USDA
 
-Status: **awaiting user acceptance** · independent review passed (`docs/qa/M6/review.md`, reviewed HEAD `2282267`)
+Status: **done** (accepted by the user 2026-09-28) · independent review passed (`docs/qa/M6/review.md`, reviewed HEAD `2282267`)
 
 ### Tasks
 
@@ -56,4 +56,4 @@ Exit demo: add a key, search USDA, log a food (T5, Android live); rejected-key a
 
 ### Next unblocked task
 
-- User acceptance of M6; M7 or M8 may start (ROAD-03).
+- M7 T1 (Meal Detail + copy) or M8 (Profile); independent, either order (ROAD-03).
