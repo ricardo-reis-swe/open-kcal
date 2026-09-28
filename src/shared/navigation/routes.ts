@@ -27,6 +27,7 @@ export type RouteParams = {
   mealEdit: { mode: 'create' } | { mode: 'edit'; mealId: Uuid };
   weightEntry: { mode: 'create'; date?: LocalDate } | { mode: 'edit'; weightEntryId: Uuid; date?: LocalDate };
   foodDatabases: undefined;
+  caloriesMacros: undefined;
 };
 
 export type RouteName = keyof RouteParams;
@@ -79,6 +80,8 @@ export const routes = {
   diary: (): Href => '/diary',
   profile: (): Href => '/profile',
   foodDatabases: (): Href => '/profile/food-databases' as Href,
+  /** NAV-06 / UX-16 (also the Diary's UX-01 `Set goals`, pushed `withAnchor` so the Profile hub sits under it). */
+  caloriesMacros: (): Href => '/profile/calories-macros' as Href,
   /** NAV-04: Meal Detail by `mealId` (never by name) on a diary date. */
   mealDetail: (p: RouteParams['mealDetail']): Href =>
     ({ pathname: '/diary/meal/[mealId]', params: { mealId: p.mealId, date: p.date } }) as unknown as Href,

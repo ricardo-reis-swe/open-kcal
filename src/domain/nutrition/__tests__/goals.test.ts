@@ -1,5 +1,8 @@
 import {
   PROVISIONAL_TARGETS,
+  goalCaloriesRange,
+  parseGoalCalories,
+  parseGoalMacro,
   invalidGoalFields,
   macroEnergyShare,
   planGoalSave,
@@ -71,5 +74,25 @@ describe('UX-16 / UX-00: goal helpers', () => {
       invalidGoalFields({ calorieTargetKcal: 499, carbohydrateTargetG: 1001, proteinTargetG: 0, fatTargetG: NaN }),
     ).toEqual(['calorieTargetKcal', 'carbohydrateTargetG', 'fatTargetG']);
     expect(invalidGoalFields({ ...PROVISIONAL_TARGETS, calorieTargetKcal: 10_000 })).toEqual([]);
+  });
+
+  it('UX-16: Calories parses whole numbers in the energy unit to kcal within 500–10,000 kcal', () => {
+    expect(goalCaloriesRange('kcal')).toEqual({ min: 500, max: 10_000 });
+    expect(goalCaloriesRange('kJ')).toEqual({ min: 2092, max: 41_840 });
+    expect(parseGoalCalories(' 1800 ', 'kcal')).toBe(1800);
+    expect(parseGoalCalories('499', 'kcal')).toBeNull();
+    expect(parseGoalCalories('10001', 'kcal')).toBeNull();
+    expect(parseGoalCalories('1800.5', 'kcal')).toBeNull();
+    expect(parseGoalCalories('', 'kcal')).toBeNull();
+    expect(parseGoalCalories('8368', 'kJ')).toBeCloseTo(2000);
+    expect(parseGoalCalories('2091', 'kJ')).toBeNull();
+  });
+
+  it('UX-16: macro goals are whole grams from 0 to 1,000', () => {
+    expect(parseGoalMacro('0')).toBe(0);
+    expect(parseGoalMacro('1000')).toBe(1000);
+    expect(parseGoalMacro('1001')).toBeNull();
+    expect(parseGoalMacro('-1')).toBeNull();
+    expect(parseGoalMacro('')).toBeNull();
   });
 });

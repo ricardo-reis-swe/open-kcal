@@ -103,9 +103,17 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
         />
       </View>
       {provisional ? (
-        // UX-01: shown while goals are provisional; no dismiss. `Set goals` → Calories & Macros arrives with M8.
+        // UX-01: shown while goals are provisional; no dismiss. `Set goals` → Calories & Macros (UX-16).
         <View style={{ paddingHorizontal: theme.spacing[4], paddingBottom: theme.spacing[3] }}>
-          <InlineStatus tone="info" message={t('diary.defaultGoals.message')} testID="diary-default-goals" />
+          <InlineStatus
+            tone="info"
+            message={t('diary.defaultGoals.message')}
+            action={{
+              label: t('diary.defaultGoals.action'),
+              onPress: () => router.push(routes.caloriesMacros(), { withAnchor: true }),
+            }}
+            testID="diary-default-goals"
+          />
         </View>
       ) : null}
     </View>

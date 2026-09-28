@@ -103,6 +103,25 @@
     "usdaOff": "USDA off",
     "valueWithUnit": "{{value}} {{unit}}"
   },
+  "caloriesMacros": {
+    "title": "Calories & macros",
+    "calories": "Calories",
+    "carbs": "Carbs",
+    "protein": "Protein",
+    "fat": "Fat",
+    "helper": "≈ {{energy}} {{unit}} · {{percent}}%",
+    "helperNoPercent": "≈ {{energy}} {{unit}}",
+    "footnote": "Changes apply from today. Past days keep their goals.",
+    "save": "Save",
+    "saveError": "Couldn't save. Try again.",
+    "discardTitle": "Discard changes?",
+    "discard": "Discard",
+    "keepEditing": "Keep editing",
+    "errors": {
+      "calories": "Enter calories from {{min}} to {{max}} {{unit}}.",
+      "macro": "Enter a whole number from 0 to {{max}} g."
+    }
+  },
   "foodDatabases": {
     "title": "Food Databases",
     "openFoodFacts": "Open Food Facts",

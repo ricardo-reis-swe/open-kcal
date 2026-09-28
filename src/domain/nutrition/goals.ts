@@ -1,4 +1,5 @@
 // Effective-dated nutrition goals (DATA-09, UX-01).
+import { energyFromKcal, energyToKcal, type EnergyUnit } from '@/domain/units/units';
 import type { LocalDate } from '@/shared/dates';
 
 export type NutritionTargets = {
@@ -85,4 +86,30 @@ export function invalidGoalFields(targets: NutritionTargets): GoalFieldKey[] {
     if (!(Number.isFinite(g) && g >= 0 && g <= GOAL_MACRO_MAX_G)) bad.push(key);
   }
   return bad;
+}
+
+/** UX-16 Calories field: the valid whole-number range in the user's energy unit (500–10,000 kcal or 2,092–41,840 kJ). */
+export function goalCaloriesRange(unit: EnergyUnit): { min: number; max: number } {
+  // The epsilon keeps float noise from dropping an exact bound (see quickCaloriesRange).
+  return {
+    min: Math.ceil(energyFromKcal(GOAL_CALORIES_MIN_KCAL, unit) - 1e-9),
+    max: Math.floor(energyFromKcal(GOAL_CALORIES_MAX_KCAL, unit) + 1e-9),
+  };
+}
+
+/** UX-16: parses the Calories field (integer, energy unit) to canonical kcal; `null` when outside UX-00 ranges. */
+export function parseGoalCalories(text: string, unit: EnergyUnit): number | null {
+  const trimmed = text.trim();
+  if (!/^\d{1,6}$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  const { min, max } = goalCaloriesRange(unit);
+  return value >= min && value <= max ? energyToKcal(value, unit) : null;
+}
+
+/** UX-16: parses a macro goal field (integer grams, 0–1,000); `null` when invalid. */
+export function parseGoalMacro(text: string): number | null {
+  const trimmed = text.trim();
+  if (!/^\d{1,4}$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  return value <= GOAL_MACRO_MAX_G ? value : null;
 }

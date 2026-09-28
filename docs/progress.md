@@ -25,7 +25,7 @@ Status: **in progress** · Start commit: `58b4d18`
 
 - [x] T1 Data/services: repositories existed from M1; added `weight.history()`, UX-00 ranges in repos (meal name ≤40, weight/goal weight 20–500 kg, goals 500–10,000 kcal / 0–1,000 g), domain helpers (`macroEnergyShare`, `invalidGoalFields` in `src/domain/nutrition/goals.ts`; `weightHistoryRows`, `isValidWeightKg` in `src/domain/weight/weight.ts`; `src/domain/meals/meals.ts` duplicate-name/move), hooks `src/features/profile/profile.queries.ts`; tests `src/features/profile/__tests__/profile.queries.test.tsx`, `src/domain/meals/__tests__/meals.test.ts`, rollback incl. recents in `src/data/db/repositories/__tests__/meals.test.ts`. iOS dev build rebuilt (netinfo crash fixed).
 - [x] T2 Profile hub `src/features/profile/screens/ProfileScreen.tsx`: weight summary, rows with values (goal kcal/kJ, goal weight, meal count, units, USDA on/off); rows navigate only once wired (T3–T6 wire theirs; Food databases wired); `formatWeight` 1 decimal; tests `ProfileScreen.test.tsx`, `format.test.ts`; Android hand check (values + Food databases row).
-- [ ] T3 Calories & Macros with the UX-01 first save (UX-16)
+- [x] T3 Calories & Macros `src/features/profile/screens/CaloriesMacrosScreen.tsx` + route `profile/calories-macros` (Profile row + Diary `Set goals` pushed `withAnchor`; Save → Profile; dirty back/system back → Discard; provisional save allowed unchanged, confirms in place); parsers in `goals.ts`; tests `CaloriesMacrosScreen.test.tsx`, `calories-macros.nav.test.tsx`, `goals.test.ts`; Android hand check (helpers, Discard, save → Profile, Diary row gone).
 - [ ] T4 Meals + Add/Edit Meal: reorder, add, edit, delete + reassign (UX-17, UX-19)
 - [ ] T5 Units + Weight Goal (UX-18), unit changes showing everywhere
 - [ ] T6 Weight Entry Sheet + Weight History (UX-14, UX-18)
@@ -47,7 +47,7 @@ Food Databases (UX-18) already exists from M6.
 
 ### Known gaps
 
-- None yet.
+- Android: after any `ConfirmationDialog` closes, hardware back stops working on that screen (pre-existing, also Edit Quick Calories); app bar Back works. Spun off as a separate task.
 
 ### Open questions
 

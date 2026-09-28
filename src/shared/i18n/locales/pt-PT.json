@@ -103,6 +103,25 @@
     "usdaOff": "USDA inativo",
     "valueWithUnit": "{{value}} {{unit}}"
   },
+  "caloriesMacros": {
+    "title": "Calorias e macros",
+    "calories": "Calorias",
+    "carbs": "Hidratos",
+    "protein": "Proteína",
+    "fat": "Gordura",
+    "helper": "≈ {{energy}} {{unit}} · {{percent}} %",
+    "helperNoPercent": "≈ {{energy}} {{unit}}",
+    "footnote": "As alterações aplicam-se a partir de hoje. Os dias anteriores mantêm os seus objetivos.",
+    "save": "Guardar",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "discardTitle": "Descartar alterações?",
+    "discard": "Descartar",
+    "keepEditing": "Continuar a editar",
+    "errors": {
+      "calories": "Introduza calorias de {{min}} a {{max}} {{unit}}.",
+      "macro": "Introduza um número inteiro de 0 a {{max}} g."
+    }
+  },
   "foodDatabases": {
     "title": "Bases de dados de alimentos",
     "openFoodFacts": "Open Food Facts",
