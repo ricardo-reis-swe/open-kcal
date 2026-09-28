@@ -14,7 +14,7 @@ Read when: deciding what to build next. Milestones are vertical slices, done in 
 | M6 | USDA | USDA adapter, Food Databases screen, key check + `Test key`, generic-before-Branded, fibre subtraction. | UX-18 (Food Databases), PROV-02/05/06/11 (USDA) | Add a key, search USDA, log a food. Rejected-key and missing-key paths work. |
 | M7 | Meal Detail + copy | Meal Detail, Copy Meal Sheet, copy transaction. | UX-03/12, NAV-07, DATA-16 | Copy a meal to tomorrow and to a picked date; return rules hold. |
 | M8 | Profile | Profile, Calories & Macros (with the UX-01 first save), Meals (reorder, add, edit, delete + reassign), Units, Weight Goal, Weight Entry Sheet, Weight History. | UX-14–17/18, NAV-06, DATA-09/10/13 | Every Profile screen works. Deleting a meal reassigns its entries. Unit changes show everywhere. |
-| M9 | Hardening | Complete pt-PT translations, accessibility pass, DS-13 QA, Maestro E2E suite, performance checks, release-config local build. | DS-11/13, ARCH-18/19, ROAD-04 | Every ARCH-18 E2E flow is green on both platforms. A release-config build passes the ROAD-04 smoke test on a real phone. |
+| M9 | Hardening | Complete pt-PT translations, accessibility pass, DS-13 QA, Maestro E2E suite, performance checks, release-config local build. Food Search section order + visibility. | DS-11/13, ARCH-18/19, ROAD-04, UX-18 (`Search results`), DATA-19 | Every ARCH-18 E2E flow is green on both platforms. A release-config build passes the ROAD-04 smoke test on a real phone. |
 
 **Order rationale**
 - Data before UI, so screens never mock the DB.
@@ -55,7 +55,7 @@ A milestone is done only when **all** of these hold. They are cumulative: earlie
 | M5 | PROV-13 OFF fixtures. Limiter and cooldown tests with fake timers. Fast typing never exceeds the budget (test). |
 | M6 | PROV-13 USDA fixtures. A test asserts the key never reaches the logger, errors or query keys. |
 | M8 | The meal delete + reassign transaction rolls back fully on failure (test). |
-| M9 | The DS-13 MVP check passes. The user reviews the pt-PT copy. ARCH-19 performance checks run. The release-config build passes the ROAD-04 smoke test. |
+| M9 | The DS-13 MVP check passes. The user reviews the pt-PT copy. ARCH-19 performance checks run. The release-config build passes the ROAD-04 smoke test. Hidden remote Food Search sections send no requests, and sections render in the saved order (test). |
 
 ## ROAD-03 Agent workflow
 **Progress log.** `docs/progress.md` is created at the start of M0 and is the single place for status. Per milestone it holds:

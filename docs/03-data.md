@@ -106,3 +106,8 @@ FROM diary_entries WHERE diary_date = ?;
 ## DATA-18 Access boundary
 - Screens/components MUST NOT run SQL. The data layer owns queries, transactions, row↔domain mapping, unit-independent (canonical) values, migrations and cache upserts. A separate credentials service owns secure storage.
 - The application layer coordinates workflows (copy meal, delete meal). Presentation gets domain values + formatted data.
+
+## DATA-19 Food Search sections setting
+- UX-18 `Search results` is stored in `app_settings.food_search_sections TEXT NOT NULL DEFAULT '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]'`: a JSON array, in display order, of all 4 section ids, each with its visibility.
+- Added by migration 2 (DATA-17), which updates `schema.sql` in the same change. Existing rows get the default.
+- Read through Zod: exactly the 4 ids, each once, ≥1 visible. Invalid or unparseable data → the default (never a crash). The repository MUST reject writes that break these rules.

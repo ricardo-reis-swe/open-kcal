@@ -77,7 +77,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Opens with the field focused. `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
 - **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 400 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). Stale requests are cancelled.
-- Section order with sticky labels: `My foods` (custom) → `Saved` (cached external) → `Open Food Facts` → `USDA`. Each remote section shows the first page (10, PROV-08) + a `Show more` row for the next page.
+- Sections with sticky labels: `My foods` (custom), `Saved` (cached external), `Open Food Facts`, `USDA`, in the order and visibility set in UX-18 `Search results`. Each remote section shows the first page (10, PROV-08) + a `Show more` row for the next page.
 - Result row (DS-09): name · brand or basis (`per 100 g`) · kcal · source label.
 - Inline section status in place of that section's results:
 
@@ -211,6 +211,13 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - **Food Databases**: `Open Food Facts · Always on`. USDA status is one of `Not set up`, `Active`, `Saved · will check when online`, `Key rejected`. The saved key shows masked with its last 4 characters (`••••3f9a`). Actions: `Add key` / `Replace key` / `Test key` / `Remove key` (UX-19). Test behavior: PROV-11.
   - Key input: secure entry, no autocorrect/autocap, paste allowed, with a link to the USDA key signup page.
   - On save when online: a test request runs. On 401/403 the key is not saved and shows an inline error. When offline the key is saved as `will check`.
+  - **`Search results` group**: the 4 Food Search (UX-04) sections in their current order. Row = section name · visibility switch · drag handle. Reorder as UX-17 Meals (handle drag, a11y `Move up` / `Move down`). Every switch change or drop saves immediately, as Units; no Save button. Default: `My foods` → `Saved` → `Open Food Facts` → `USDA`, all visible. Storage: DATA-19.
+  - At least one section MUST stay visible: the last visible row's switch is disabled, with helper `At least one section must be shown.`
+  - The `USDA` row works without a key. Its key-missing status (UX-04) shows only while `USDA` is visible.
+  - Effects on Food Search with a query (Recent, the no-query state, is unaffected):
+    - Visible sections render in the set order. A hidden section renders nothing, and a hidden remote section MUST NOT send requests (saves the OFF budget, PROV-04).
+    - `No foods found` considers visible sections only. The offline row shows only while a remote section is visible, once, above the first visible remote section.
+    - While `Saved` is hidden, the PROV-08 Saved dedupe doesn't apply: remote hits already cached show in their remote section. Tapping one still upserts or opens the cached copy (DATA-15).
 
 ## UX-19 Dialogs (DS-09: explicit verb, two actions)
 | Trigger | Title | Body | Destructive button |

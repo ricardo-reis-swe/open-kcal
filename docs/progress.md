@@ -19,6 +19,12 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 
 2026-09-28 (user-approved, commit "feat(food-search): separate provider sections, 10 per page") UX-04/PROV-08: reverted the merged `Online` list (4a3df52) to separate `Open Food Facts` and `USDA` sections, each with its own `Show more` and inline status (OFF now also shows its busy state); remote page size 10 (cap 5 pages = 50 per section); kept `keyboardShouldPersistTaps`, the `food-search-create-custom` testID and the m4 top-action tap (`FoodSearchScreen.tsx`, `usda/client.ts`, `open-food-facts/client.ts`; tests `FoodSearchScreen.test.tsx`, client tests); live Android `egg` checked.
 
+2026-09-28 (user-approved, commit "docs(spec): Food Search section order and visibility") SCOPE-01/UX-18/UX-04/DATA-19/ROAD-01/ROAD-02: new MVP feature for M9, reorder and show/hide the 4 Food Search sections on Food Databases (spec only; migration 2 + `schema.sql` change come with the code).
+
+## M9 Hardening
+
+Status: planned. Scope also includes Food Search section order + visibility (UX-18 `Search results`, DATA-19). Task list is created at M9 start.
+
 ## M8 Profile
 
 Status: **done** (accepted by the user 2026-09-28) · Start commit: `58b4d18`

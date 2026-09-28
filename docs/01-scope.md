@@ -14,6 +14,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Meal Detail with copy meal.
 - Body weight: current, goal, history.
 - Unit preferences (SCOPE-08).
+- Food Search sections: reorder and show/hide `My foods`, `Saved`, `Open Food Facts`, `USDA` (UX-18, DATA-19).
 
 ## SCOPE-02 Configurable meals
 - Defaults: Breakfast, Lunch, Dinner, Snacks.
