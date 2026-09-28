@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import { BackHandler } from 'react-native';
 
 import { renderApp } from '@/shared/testing/appRoutes';
 
@@ -17,7 +18,23 @@ const activeDay = () => within(screen.getByTestId('diary-page-active'));
 
 afterEach(() => {
   jest.useRealTimers();
+  jest.restoreAllMocks();
 });
+
+/** Android hardware back: `hardwareBackPress` listeners run newest first until one handles it (RN BackHandler). */
+function mockHardwareBack() {
+  const handlers: Parameters<typeof BackHandler.addEventListener>[1][] = [];
+  jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, handler) => {
+    handlers.push(handler);
+    return { remove: () => void handlers.splice(handlers.lastIndexOf(handler), 1) };
+  });
+  return async () => {
+    await act(async () => {
+      [...handlers].reverse().some((h) => h({ type: 'hardwareBackPress', timeStamp: Date.now() }));
+    });
+    await flush();
+  };
+}
 
 describe('UX-16 / NAV-06 / UX-01: Calories & Macros routes', () => {
   it('UX-01: Diary `Set goals` → Calories & Macros; the first save → Profile and the default-goals row is gone', async () => {
@@ -56,6 +73,25 @@ describe('UX-16 / NAV-06 / UX-01: Calories & Macros routes', () => {
     await act(async () => router.back());
     await flush();
     expect(app.getPathname()).toBe('/profile/calories-macros');
+    await fireEvent.press(screen.getByRole('button', { name: 'Discard' }));
+    await flush();
+    expect(app.getPathname()).toBe('/profile');
+  });
+
+  it('NAV-01 / UX-00: hardware back still works after a ConfirmationDialog opened and closed', async () => {
+    const pressBack = mockHardwareBack();
+    const app = await renderApp('/profile');
+    await fireEvent.press(await screen.findByTestId('profile-calories-macros'));
+    await flush();
+    await fireEvent.changeText(await screen.findByLabelText('Fat, g'), '70');
+    for (let round = 0; round < 2; round += 1) {
+      await pressBack();
+      expect(app.getPathname()).toBe('/profile/calories-macros');
+      await fireEvent.press(screen.getByRole('button', { name: 'Keep editing' }));
+      await flush();
+      expect(screen.queryByText('Discard changes?')).toBeNull();
+    }
+    await pressBack();
     await fireEvent.press(screen.getByRole('button', { name: 'Discard' }));
     await flush();
     expect(app.getPathname()).toBe('/profile');
