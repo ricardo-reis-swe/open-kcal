@@ -19,6 +19,7 @@ import {
 } from '@/shared/components';
 import { useOnlineStatus } from '@/features/food-search/food-search.queries';
 import { credentialKeys } from '@/features/profile/profile.queries';
+import { SearchResultsGroup } from '@/features/profile/components/SearchResultsGroup';
 import { useTheme } from '@/shared/theme';
 
 type Status = 'notSet' | 'saved' | 'active' | 'rejected';
@@ -214,6 +215,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
         ) : (
           <TextAction icon="add" label={t('foodDatabases.addKey')} onPress={() => setEditing(true)} />
         )}
+        <SearchResultsGroup />
       </ScrollView>
       <ConfirmationDialog
         visible={confirmRemove}

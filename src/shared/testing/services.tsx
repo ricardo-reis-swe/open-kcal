@@ -37,6 +37,9 @@ export async function createTestServices(options: { now?: string } = {}) {
 /** Renders a screen with theme/i18n + services + a fresh query client. */
 export function renderWithServices(ui: ReactElement, services: AppServices, options: ProviderOptions = {}) {
   const client = createQueryClient();
+  // Finished mutations keep a 5-minute cleanup timer that `clear()` doesn't cancel; drop them at once in tests.
+  const defaults = client.getDefaultOptions();
+  client.setDefaultOptions({ ...defaults, mutations: { ...defaults.mutations, gcTime: 0 } });
   clients.push(client);
   return renderWithProviders(
     <ServicesProvider services={services}>

@@ -28,7 +28,7 @@ async function setup(options: { key?: string | null } = {}) {
     .mockResolvedValue({ candidates: [], page: 1, pageCount: 1 });
   const onBack = jest.fn();
   await renderWithServices(<FoodDatabasesScreen onBack={onBack} />, services);
-  return { credentials, searchSpy, onBack, value: () => stored };
+  return { credentials, searchSpy, onBack, services, value: () => stored };
 }
 
 afterEach(async () => {
@@ -113,5 +113,52 @@ describe('UX-18 / UX-19: Food Databases', () => {
     await fireEvent.press(screen.getAllByRole('button', { name: 'Remove key' }).at(-1)!);
     await waitFor(() => expect(value()).toBeNull());
     expect(await screen.findByText('Not set up')).toBeTruthy();
+  });
+});
+
+describe('UX-18 `Search results` (DATA-19)', () => {
+  const order = async (services: Awaited<ReturnType<typeof setup>>['services']) =>
+    (await services.settings.getFoodSearchSections()).map((s) => `${s.id}:${s.visible ? 'on' : 'off'}`);
+
+  it('lists the 4 sections in the default order, all visible', async () => {
+    await setup();
+    expect(await screen.findByText('Search results')).toBeTruthy();
+    for (const id of ['custom', 'saved', 'open_food_facts', 'usda']) {
+      expect(screen.getByTestId(`search-section-switch-${id}`).props.value).toBe(true);
+    }
+  });
+
+  it('saves a switch change immediately', async () => {
+    const { services } = await setup();
+    await fireEvent(await screen.findByTestId('search-section-switch-usda'), 'valueChange', false);
+    await waitFor(async () =>
+      expect(await order(services)).toEqual(['custom:on', 'saved:on', 'open_food_facts:on', 'usda:off']),
+    );
+  });
+
+  it('reorders with the Move down accessibility action and saves', async () => {
+    const { services } = await setup();
+    await fireEvent(await screen.findByTestId('search-section-row-custom'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'moveDown' },
+    });
+    await waitFor(async () =>
+      expect(await order(services)).toEqual(['saved:on', 'custom:on', 'open_food_facts:on', 'usda:on']),
+    );
+  });
+
+  it('disables the last visible switch with the helper text', async () => {
+    const { services } = await setup();
+    await services.settings.setFoodSearchSections([
+      { id: 'custom', visible: false },
+      { id: 'saved', visible: false },
+      { id: 'open_food_facts', visible: true },
+      { id: 'usda', visible: false },
+    ]);
+    await cleanup();
+    await renderWithServices(<FoodDatabasesScreen onBack={jest.fn()} />, services);
+    const last = await screen.findByTestId('search-section-switch-open_food_facts');
+    expect(last.props.disabled).toBe(true);
+    expect(screen.getByText('At least one section must be shown.')).toBeTruthy();
+    expect(screen.getByTestId('search-section-switch-usda').props.disabled).toBe(false);
   });
 });

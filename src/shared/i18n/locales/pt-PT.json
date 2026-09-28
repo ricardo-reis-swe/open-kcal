@@ -146,7 +146,10 @@
     "testFailed": "Não foi possível contactar a USDA. Tente novamente.",
     "connectToTest": "Ligue-se à internet para testar.",
     "removeTitle": "Remover a chave da API USDA?",
-    "removeBody": "A pesquisa USDA vai parar. Os alimentos guardados permanecem."
+    "removeBody": "A pesquisa USDA vai parar. Os alimentos guardados permanecem.",
+    "searchResults": "Resultados da pesquisa",
+    "lastVisible": "Tem de mostrar pelo menos uma secção.",
+    "sectionsSaveError": "Não foi possível guardar a alteração. Tente novamente."
   },
   "addActions": {
     "sheetLabel": "Ações de adicionar",
