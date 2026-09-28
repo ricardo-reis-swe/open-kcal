@@ -84,7 +84,24 @@
   },
   "profile": {
     "title": "Profile",
-    "foodDatabases": "Food Databases"
+    "current": "Current",
+    "goal": "Goal",
+    "noWeight": "No weight logged yet",
+    "updateWeight": "Update weight",
+    "weightHistory": "Weight history",
+    "goalsSection": "Goals",
+    "caloriesMacros": "Calories & macros",
+    "weightGoal": "Weight goal",
+    "diarySection": "Diary",
+    "meals": "Meals",
+    "mealCount_one": "{{count}} meal",
+    "mealCount_other": "{{count}} meals",
+    "units": "Units",
+    "foodDataSection": "Food data",
+    "foodDatabases": "Food databases",
+    "usdaOn": "USDA on",
+    "usdaOff": "USDA off",
+    "valueWithUnit": "{{value}} {{unit}}"
   },
   "foodDatabases": {
     "title": "Food Databases",
@@ -277,5 +294,15 @@
     "copied_one": "Copied {{count}} item to {{meal}}, {{date}}",
     "copied_other": "Copied {{count}} items to {{meal}}, {{date}}",
     "error": "Couldn't copy. Try again."
+  },
+  "units": {
+    "kg": "kg",
+    "lb": "lb",
+    "g": "g",
+    "oz": "oz",
+    "kcal": "kcal",
+    "kJ": "kJ",
+    "ml": "ml",
+    "fl_oz": "fl oz"
   }
 }

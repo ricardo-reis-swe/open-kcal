@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Linking, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +18,7 @@ import {
   TextAction,
 } from '@/shared/components';
 import { useOnlineStatus } from '@/features/food-search/food-search.queries';
+import { credentialKeys } from '@/features/profile/profile.queries';
 import { useTheme } from '@/shared/theme';
 
 type Status = 'notSet' | 'saved' | 'active' | 'rejected';
@@ -27,6 +29,9 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
   const theme = useTheme();
   const services = useServices();
   const online = useOnlineStatus();
+  const client = useQueryClient();
+  // UX-15: the Profile row shows whether a key is saved.
+  const refreshProfile = () => client.invalidateQueries({ queryKey: credentialKeys.usdaConfigured });
   const [hint, setHint] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('notSet');
   const [editing, setEditing] = useState(false);
@@ -82,6 +87,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
         return;
       }
       await services.credentials.saveUsdaApiKey(candidate);
+      void refreshProfile();
       setHint(await services.credentials.getUsdaApiKeyHint());
       setStatus(outcome === 'rateLimited' ? 'active' : outcome);
       setEditing(false);
@@ -124,6 +130,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
     setBusy(true);
     try {
       await services.credentials.removeUsdaApiKey();
+      void refreshProfile();
       setHint(null);
       setStatus('notSet');
       setMessage(null);

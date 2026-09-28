@@ -1,4 +1,4 @@
-import { formatEnergy, formatGrams, formatShortDate, relativeDay } from '../format';
+import { formatEnergy, formatGrams, formatShortDate, formatWeight, relativeDay } from '../format';
 
 describe('UX-00 number display', () => {
   it('UX-00: energy is a grouped integer in the locale', () => {
@@ -17,6 +17,12 @@ describe('UX-00 number display', () => {
     expect(formatGrams(9.96, 'en-GB')).toBe('10');
     expect(formatGrams(0, 'en-GB')).toBe('0');
     expect(formatGrams(-0.01, 'en-GB')).toBe('0');
+  });
+
+  it('UX-00 / DATA-04: body weight has 1 decimal in the weight unit', () => {
+    expect(formatWeight(75, 'kg', 'en-GB')).toBe('75.0');
+    expect(formatWeight(82.44, 'kg', 'pt-PT')).toBe('82,4');
+    expect(formatWeight(75, 'lb', 'en-GB')).toBe('165.3');
   });
 });
 

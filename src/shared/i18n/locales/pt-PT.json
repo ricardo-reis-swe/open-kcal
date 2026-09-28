@@ -84,7 +84,24 @@
   },
   "profile": {
     "title": "Perfil",
-    "foodDatabases": "Bases de dados de alimentos"
+    "current": "Atual",
+    "goal": "Objetivo",
+    "noWeight": "Ainda sem peso registado",
+    "updateWeight": "Atualizar peso",
+    "weightHistory": "Histórico de peso",
+    "goalsSection": "Objetivos",
+    "caloriesMacros": "Calorias e macros",
+    "weightGoal": "Objetivo de peso",
+    "diarySection": "Diário",
+    "meals": "Refeições",
+    "mealCount_one": "{{count}} refeição",
+    "mealCount_other": "{{count}} refeições",
+    "units": "Unidades",
+    "foodDataSection": "Dados de alimentos",
+    "foodDatabases": "Bases de dados de alimentos",
+    "usdaOn": "USDA ativo",
+    "usdaOff": "USDA inativo",
+    "valueWithUnit": "{{value}} {{unit}}"
   },
   "foodDatabases": {
     "title": "Bases de dados de alimentos",
@@ -277,5 +294,15 @@
     "copied_one": "{{count}} item copiado para {{meal}}, {{date}}",
     "copied_other": "{{count}} itens copiados para {{meal}}, {{date}}",
     "error": "Não foi possível copiar. Tente novamente."
+  },
+  "units": {
+    "kg": "kg",
+    "lb": "lb",
+    "g": "g",
+    "oz": "oz",
+    "kcal": "kcal",
+    "kJ": "kJ",
+    "ml": "ml",
+    "fl_oz": "fl oz"
   }
 }

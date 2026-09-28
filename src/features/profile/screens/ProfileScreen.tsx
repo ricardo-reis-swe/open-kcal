@@ -1,17 +1,117 @@
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
 
-import { AppBar, ListRow } from '@/shared/components';
+import type { AppSettings } from '@/data/db/repositories/settingsRepository';
+import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
+import { useCurrentGoal, useCurrentWeight, useUsdaKeyConfigured } from '@/features/profile/profile.queries';
+import { AppBar, AppText, ListRow, PrimaryButton, SectionHeader } from '@/shared/components';
+import { formatEnergy, formatWeight } from '@/shared/i18n/format';
+import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme } from '@/shared/theme';
 
-/** Profile root. M0 shell: app bar only; weight summary and settings rows arrive in M8 (UX-14). */
-export function ProfileScreen({ onFoodDatabases }: { onFoodDatabases?: () => void }) {
+/**
+ * NAV-06 destinations. A row only navigates (chevron + press) when its handler is wired, so a sub-screen that
+ * doesn't exist yet is never reachable as a placeholder.
+ */
+export type ProfileNavigation = {
+  onUpdateWeight?: () => void;
+  onWeightHistory?: () => void;
+  onCaloriesMacros?: () => void;
+  onWeightGoal?: () => void;
+  onMeals?: () => void;
+  onUnits?: () => void;
+  onFoodDatabases?: () => void;
+};
+
+/** UX-15 Profile hub: weight summary, Update weight, and the settings rows with their current values (DS-09). */
+export function ProfileScreen(nav: ProfileNavigation) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const locale = useFormattingLocale();
+  const settings = useAppSettings().data;
+  const goal = useCurrentGoal().data;
+  const weight = useCurrentWeight();
+  const meals = useMeals().data;
+  const usda = useUsdaKeyConfigured().data;
+
+  const unitLabel = (unit: string) => t(`units.${unit}` as 'units.kg');
+  const withUnit = (value: string, unit: string) => t('profile.valueWithUnit', { value, unit: unitLabel(unit) });
+  const weightText = (kg: number, s: AppSettings) => withUnit(formatWeight(kg, s.weightUnit, locale), s.weightUnit);
+
+  const goalWeight = settings?.goalWeightKg != null ? weightText(settings.goalWeightKg, settings) : null;
+  const calories =
+    settings && goal
+      ? withUnit(formatEnergy(goal.calorieTargetKcal, settings.energyUnit, locale), settings.energyUnit)
+      : undefined;
+  const units = settings
+    ? [settings.weightUnit, settings.foodWeightUnit, settings.energyUnit, settings.volumeUnit]
+        .map(unitLabel)
+        .join(' · ')
+    : undefined;
+
+  const row = (label: string, value: string | undefined, onPress: (() => void) | undefined, testID: string) => (
+    <ListRow label={label} value={value} navigates={!!onPress} onPress={onPress} testID={testID} />
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
       <AppBar title={t('profile.title')} />
-      <ListRow label={t('profile.foodDatabases')} navigates onPress={onFoodDatabases} testID="profile-food-databases" />
+      <ScrollView contentContainerStyle={{ paddingBottom: theme.spacing[8] }}>
+        <View
+          style={{ backgroundColor: theme.colors.surface, padding: theme.spacing[4], gap: theme.spacing[4] }}
+          testID="profile-weight-summary"
+        >
+          {weight.isSuccess && settings ? (
+            <View style={[styles.summary, { gap: theme.spacing[4] }]}>
+              {weight.data ? (
+                <AppText variant="bodyStrong" tabular testID="profile-current-weight">
+                  {`${t('profile.current')} ${weightText(weight.data.weightKg, settings)}`}
+                </AppText>
+              ) : (
+                <AppText variant="body" color="textSecondary" testID="profile-current-weight">
+                  {t('profile.noWeight')}
+                </AppText>
+              )}
+              <AppText variant="body" color="textSecondary" tabular testID="profile-goal-weight">
+                {`${t('profile.goal')} ${goalWeight ?? '—'}`}
+              </AppText>
+            </View>
+          ) : null}
+          {nav.onUpdateWeight ? (
+            <PrimaryButton
+              label={t('profile.updateWeight')}
+              onPress={nav.onUpdateWeight}
+              testID="profile-update-weight"
+            />
+          ) : null}
+        </View>
+        {row(t('profile.weightHistory'), undefined, nav.onWeightHistory, 'profile-weight-history')}
+
+        <SectionHeader label={t('profile.goalsSection')} uppercase />
+        {row(t('profile.caloriesMacros'), calories, nav.onCaloriesMacros, 'profile-calories-macros')}
+        {row(t('profile.weightGoal'), goalWeight ?? '—', nav.onWeightGoal, 'profile-weight-goal')}
+
+        <SectionHeader label={t('profile.diarySection')} uppercase />
+        {row(
+          t('profile.meals'),
+          meals ? t('profile.mealCount', { count: meals.length }) : undefined,
+          nav.onMeals,
+          'profile-meals',
+        )}
+        {row(t('profile.units'), units, nav.onUnits, 'profile-units')}
+
+        <SectionHeader label={t('profile.foodDataSection')} uppercase />
+        {row(
+          t('profile.foodDatabases'),
+          usda === undefined ? undefined : t(usda ? 'profile.usdaOn' : 'profile.usdaOff'),
+          nav.onFoodDatabases,
+          'profile-food-databases',
+        )}
+      </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  summary: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+});

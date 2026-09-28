@@ -22,6 +22,14 @@ export const weightKeys = {
   entry: (id: string) => ['weight', 'entry', id] as const,
 };
 
+export const credentialKeys = { usdaConfigured: ['credentials', 'usdaConfigured'] as const };
+
+/** UX-15 Food databases row: whether a USDA key is saved (never the key itself, PROV-11). */
+export function useUsdaKeyConfigured() {
+  const { credentials } = useServices();
+  return useQuery({ queryKey: credentialKeys.usdaConfigured, queryFn: () => credentials.hasUsdaApiKey() });
+}
+
 export const mealDetailKeys = {
   meal: (id: string) => ['meals', 'one', id] as const,
   entryCount: (id: string) => ['meals', 'entryCount', id] as const,

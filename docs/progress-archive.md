@@ -375,3 +375,39 @@ Exit demo: add a key, search USDA, log a food (T5, Android live); rejected-key a
 ### Next unblocked task
 
 - M7 T1 (Meal Detail + copy) or M8 (Profile); independent, either order (ROAD-03).
+
+## M7 Meal Detail + copy
+
+Status: **done (accepted by the user 2026-09-28)** · Start commit: `6c78c1a` · independent review passed (`docs/qa/M7/review.md`, reviewed HEAD `9060795`)
+
+### Tasks
+
+- [x] T1 Copy meal transaction + Meal Detail model: `diaryRepository.copyMeal` (DATA-16), `useDiaryMeal` + `useDiaryWrites().copyMeal` in `src/features/diary/diary.queries.ts`; tests `src/data/db/repositories/__tests__/copy-meal.test.ts` (exact snapshots, order, append, same-date duplicates, independence, rollback).
+- [x] T2 Meal Detail screen (UX-03, NAV-04): `src/features/diary/screens/MealDetailScreen.tsx` at `/diary/meal/[mealId]` (`routes.mealDetail`), Diary header tap → Meal Detail and header `+` → Food Search; entries return with `origin: mealDetail`; `Copy meal` opens sheet state for T3 (no sheet yet); tests `src/features/diary/__tests__/meal-detail.nav.test.tsx`.
+- [x] T3 Copy Meal Sheet + copy flow (UX-12, UX-13, NAV-07): `src/features/diary/components/CopyMealFlow.tsx` (absolute Today/Tomorrow, `Choose date…` → Date Picker `Copy to date`), rendered by `MealDetailScreen.tsx`, which stays on the source and shows an `InlineStatus` toast (success/error, 4 s); en + pt-PT `copyMeal.*`; Android checked by hand (tomorrow + picked date → `Copied 1 item to Breakfast, …`).
+- [x] T4 Focused tests (navigation + return rules): `src/features/diary/__tests__/meal-detail.nav.test.tsx` (sheet close, tomorrow, absolute shortcuts from tomorrow + same-date duplicates, picked date, picker cancel) and `CopyMealFlow.test.tsx` (labels, pt-PT smoke, failed copy → error); no Maestro flow (ARCH-18 table).
+
+### Acceptance report (ROAD-03)
+
+Built: Meal Detail (UX-03) from the Diary meal header, Copy Meal Sheet with Today/Tomorrow/`Choose date…` (UX-12), Date Picker in `Copy to date` mode (UX-13), transactional `copyMeal` snapshot copy (DATA-16), stay-on-source + toast return rule (NAV-07).
+
+ROAD-02 checklist:
+- [x] Main specs implemented (UX-03/12/13, NAV-04/07, DATA-16).
+- [x] `npm run check` green at the milestone boundary (exit 0; 63 suites / 429 tests).
+- [x] Focused tests for changed data/navigation logic (`copy-meal.test.ts`, `meal-detail.nav.test.tsx`, `CopyMealFlow.test.tsx`, `food-routes.test.ts`).
+- [x] Android Maestro flow: n/a (M7 adds none, ARCH-18 table).
+- [x] Every string in `en` + `pt-PT` (`mealDetail.*`, `copyMeal.*`; locale parity test).
+- [x] No placeholder UI for in-scope behavior.
+- [x] Known gaps listed below.
+- [x] Nothing sensitive in logs (ARCH-15; no new logging).
+
+Exit demo (Android emulator, review §Manual exit demo in `docs/qa/M7/review.md`): Diary → Breakfast header → Meal Detail → `Copy meal` → Tomorrow → toast, source unchanged, copy on tomorrow; `Copy meal` → `Choose date…` → pick Sep 5 → Done → toast, copy on Sep 5; Back → Diary on the source date.
+
+### Known gaps
+
+- PROV-12 dev-build diagnostic logging in the USDA/OFF adapters (carried from M6).
+- Short dates in `en` follow the device `Intl` format (`Fri, Sep 25`), not the UX-02/UX-12 example `Fri 25 Sep` (`src/shared/i18n/format.ts` `formatShortDate`, since M2; review finding 1, minor).
+
+### Open questions
+
+- None.

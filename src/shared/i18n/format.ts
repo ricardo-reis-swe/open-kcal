@@ -1,9 +1,10 @@
 // Locale number and date display (UX-00 number display, ARCH-22). Pure: callers pass the formatting locale.
-import { energyFromKcal, type EnergyUnit } from '@/domain/units/units';
+import { energyFromKcal, weightFromKg, type EnergyUnit, type WeightUnit } from '@/domain/units/units';
 import { daysBetween, type LocalDate } from '@/shared/dates';
 
 const integerFormats = new Map<string, Intl.NumberFormat>();
 const decimalFormats = new Map<string, Intl.NumberFormat>();
+const oneDecimalFormats = new Map<string, Intl.NumberFormat>();
 
 function integerFormat(locale: string): Intl.NumberFormat {
   let format = integerFormats.get(locale);
@@ -37,6 +38,16 @@ export function formatEnergy(kcal: number, unit: EnergyUnit, locale: string): st
 export function formatGrams(grams: number, locale: string): string {
   const tenths = Math.round(grams * 10) / 10;
   return Math.abs(tenths) >= 10 ? formatInteger(grams, locale) : decimalFormat(locale).format(tenths + 0);
+}
+
+/** UX-00: body weight with exactly 1 decimal, converted from canonical kg (DATA-04). */
+export function formatWeight(kg: number, unit: WeightUnit, locale: string): string {
+  let format = oneDecimalFormats.get(locale);
+  if (!format) {
+    format = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: true });
+    oneDecimalFormats.set(locale, format);
+  }
+  return format.format(Math.round(weightFromKg(kg, unit) * 10) / 10 + 0);
 }
 
 export type RelativeDay = 'yesterday' | 'today' | 'tomorrow';
