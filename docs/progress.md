@@ -12,14 +12,14 @@ Single place for implementation status. Updated in the same commit as the work i
 | M5 Search + Open Food Facts | done |
 | M6 USDA | done |
 | M7 Meal Detail + copy | done |
-| M8 Profile | awaiting user acceptance |
+| M8 Profile | done |
 | M9 Hardening | not started |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived.
 
 ## M8 Profile
 
-Status: **awaiting user acceptance** · Start commit: `58b4d18`
+Status: **done** (accepted by the user 2026-09-28) · Start commit: `58b4d18`
 
 ### Tasks
 
