@@ -19,7 +19,7 @@ export type DiaryPagerProps = {
 /**
  * UX-02 swipe: a native paging scroll view holding [previous, selected, next]. The adjacent days are pre-rendered
  * (pages are keyed by date, so a day keeps its loaded content), and after a swipe the pager re-centers on the
- * new selection. The prev/next buttons in the date strip are the gesture alternative (DS-11).
+ * new selection. The date strip's neighbouring days are the gesture alternative (DS-11).
  */
 export function DiaryPager({ date, onChange, renderDay }: DiaryPagerProps) {
   const ref = useRef<ScrollView>(null);

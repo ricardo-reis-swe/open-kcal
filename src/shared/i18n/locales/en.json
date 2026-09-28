@@ -78,9 +78,7 @@
     "loadError": {
       "title": "Couldn't load this day.",
       "retry": "Retry"
-    },
-    "prevLabel": "‹ {{label}}",
-    "nextLabel": "{{label}} ›"
+    }
   },
   "profile": {
     "title": "Profile",

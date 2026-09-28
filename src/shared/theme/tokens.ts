@@ -83,6 +83,7 @@ export const radii = { small: 6, medium: 10, large: 16, pill: 999 } as const;
 export const sizes = {
   appBar: 52,
   dateStrip: 42,
+  dateStripItem: 104, // fixed width of one scrollable date-strip day (UX-02)
   diaryOverview: [210, 224], // ring + macros
   calorieRing: { diameter: [136, 148], stroke: [8, 10] },
   macroTrack: 4,

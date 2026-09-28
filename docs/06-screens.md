@@ -35,7 +35,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 ## UX-02 Diary
 ```text
 [Diary                                   📅]
-[‹ Yesterday    TODAY    Tomorrow ›  Today ]   ← "Today" only when not on today
+[‹ Yesterday    TODAY    Tomorrow ›  Today ]   ← days scroll sideways; "Today" only when not on today
 [        ◯ 1,731 kcal left / 669 eaten      ]
 [ Carbs 82/250 g │ Protein 41/150 g │ Fat 25/80 g ]
 [ Using default goals · Set goals           ]   ← UX-01 only
@@ -46,13 +46,15 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [◦ Lunch …                                  ]
 ```
 - Trailing calendar icon (label "Choose date") → Date Picker.
-- Date labels: Yesterday/Today/Tomorrow within ±1 day of today, otherwise a locale short date (`Mon 28 Sep`; year added when not the current year). Prev/next labels are buttons that move one day (the gesture alternative).
+- Date strip: a horizontally scrollable, windowed row of day buttons (no date bounds; the window extends as the user scrolls). Labels: Yesterday/Today/Tomorrow within ±1 day of today, otherwise a locale short date (`Mon 28 Sep`; year added when not the current year). Selected day = DS-07 marking.
+- Scrolling the strip MUST NOT change the day; tapping a day selects it. Whenever the selected day changes (swipe, tap, Today, Date Picker) the strip animates to center it, even if the user had scrolled it away. **Why:** the strip browses, the page swipe decides the day.
+- Gesture alternative: the selected day's neighbours are labelled prev/next day buttons, and the selected day has increment/decrement accessibility actions. The strip's own sideways scroll never swipes the page.
 - Swipe horizontally anywhere except the ruler (none on this screen) → adjacent day. Adjacent days are pre-rendered. A new day opens scrolled to top.
 - Meal header tap → Meal Detail. Header `+` and the `+ Add food` row → Food Search (meal, date). Row tap → matching edit screen. No long-press actions.
 - Empty meal = header (0 kcal) + `+ Add food` row only (no empty text on Diary, to protect density).
 - Over goal and unknown macros: DS-08.
 - Error: a DB load failure is full-screen with Retry. Never an offline banner.
-- Focus order: app bar → prev, selected, next, Today → ring (one element) → carbs, protein, fat → each meal (header, header +, entries, Add food).
+- Focus order: app bar → strip days left to right (rendered ones; prev, selected, next among them) → Today → ring (one element) → carbs, protein, fat → each meal (header, header +, entries, Add food).
 
 ## UX-03 Meal Detail
 ```text

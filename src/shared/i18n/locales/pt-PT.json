@@ -78,9 +78,7 @@
     "loadError": {
       "title": "Não foi possível carregar este dia.",
       "retry": "Tentar novamente"
-    },
-    "prevLabel": "‹ {{label}}",
-    "nextLabel": "{{label}} ›"
+    }
   },
   "profile": {
     "title": "Perfil",
