@@ -12,14 +12,14 @@ Single place for implementation status. Updated in the same commit as the work i
 | M5 Search + Open Food Facts | done |
 | M6 USDA | done |
 | M7 Meal Detail + copy | done |
-| M8 Profile | in progress |
+| M8 Profile | awaiting user acceptance |
 | M9 Hardening | not started |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived.
 
 ## M8 Profile
 
-Status: **in progress** · Start commit: `58b4d18`
+Status: **awaiting user acceptance** · Start commit: `58b4d18`
 
 ### Tasks
 
@@ -30,20 +30,26 @@ Status: **in progress** · Start commit: `58b4d18`
 - [x] T5 Units + Weight Goal: `UnitsScreen.tsx` (4 segmented `TextAction` groups, save on tap), `WeightGoalScreen.tsx` (display-unit field, UX-00 20–500 kg range via `weightInputRange`/`parseWeightInput`/`weightInputText` in `weight.ts`, `Clear goal`, Save → Profile), routes `profile/units`, `profile/weight-goal`, Profile rows wired; every unit consumer (Diary day, Meal Detail, Quick Calories, Food Search/Detail/entry edit, Create Custom Food, Calories & Macros, Profile) reads `useAppSettings`; tests `units-weight-goal.nav.test.tsx` (kJ change → Profile + Diary ring), `UnitsScreen.test.tsx`, `WeightGoalScreen.test.tsx`, `weight.test.ts`.
 - [x] T6 Weight Entry Sheet + Weight History: app-level `WeightEntrySheet.tsx` via `WeightEntryProvider` (tabs layout; opened from `+` Update weight, Profile, Weight History), date ≤ today (`DatePicker` `maximumDate`), display-unit input, Save disabled until valid/changed, confirmed delete; `BottomSheet` `avoidKeyboard`; `WeightHistoryScreen.tsx` + route `profile/weight-history` (newest first, time when same day, `−0.4 kg` change, `+`, empty state); testIDs `profile-update-weight`, `profile-weight-history`, `add-action-update-weight`, `weight-entry-{sheet,date,input,save,delete}`, `weight-entry-delete-dialog-confirm`, `weight-history-{add,empty-add,row-<i>}`; tests `weight.nav.test.tsx`.
 - [x] T7 Maestro flows `.maestro/m8-reorder-meals.yaml` (handle drag first→last, persists after reopening, drag back) and `.maestro/m8-weight.yaml` (add from Profile → summary, edit from Weight History row, confirmed delete; whole-number input so any locale decimal works) pass on Android + iOS (`scripts/e2e.sh android|ios <flow>`); fixed iOS Hermes crash opening the weight sheet (`Intl.NumberFormat#formatToParts` missing) in `src/domain/food/customFood.ts` + test in `customFood.test.ts`; `avoidKeyboard` keeps Save above the keypad on iOS.
+- [x] T8 Review fix (ARCH-22): one pt-PT smoke render per M8 screen in `src/features/profile/screens/__tests__/*.test.tsx`, new `WeightHistoryScreen.test.tsx`; review `docs/qa/M8/review.md` (pass).
 
 Food Databases (UX-18) already exists from M6.
 
-### ROAD-02 checklist
+### Acceptance report (ROAD-03)
 
+Built: Profile hub (UX-15), Calories & Macros with the UX-01 first save (UX-16, DATA-09), Meals reorder + Add/Edit Meal with delete + reassign (UX-17, DATA-10), Units, Weight Goal, Weight Entry Sheet, Weight History (UX-18, DATA-13); units apply everywhere.
+
+ROAD-02 checklist:
 - [x] Main specs implemented (UX-14–18, NAV-06, DATA-09/10/13).
-- [x] `npm run check` green at the milestone boundary (T7 commit).
-- [x] Focused tests for changed data/domain logic (T1).
+- [x] `npm run check` green at the milestone boundary (T8 commit, exit 0).
+- [x] Focused tests for changed data/domain/navigation logic (T1–T6), pt-PT smoke render per screen (ARCH-22, T8).
 - [x] M8 extra: meal delete + reassign rolls back fully on failure (`meals.test.ts` `ROAD-02 M8` case: meals, entries and recents unchanged).
 - [x] Maestro flows: reorder meals · add and edit weight (ARCH-18): `m8-reorder-meals.yaml`, `m8-weight.yaml`, both platforms (T7).
 - [x] Every string in `en` + `pt-PT` (`locales.test.ts` parity).
 - [x] No placeholder UI for in-scope behavior (every Profile row wired).
 - [x] Known gaps listed below.
 - [x] Nothing sensitive in logs (ARCH-15: no weights; no logging in profile/weight code).
+
+Exit demo: `scripts/e2e.sh` PASS for `m8-reorder-meals` and `m8-weight` on Android (`emulator-5554`) and iOS (`iPhone 17e`), 4 runs; reviewer drove meal delete + reassign by hand on Android (Lunch's 3 entries moved to Dinner, order compacted). Review: `docs/qa/M8/review.md` (pass, no blockers or majors).
 
 ### Known gaps
 

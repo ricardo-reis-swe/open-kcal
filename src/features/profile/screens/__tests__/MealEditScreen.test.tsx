@@ -116,4 +116,22 @@ describe('UX-17 / NAV-06: Add / Edit Meal', () => {
     await setup(() => ({ mode: 'edit', mealId: 'missing' }));
     expect(await screen.findByTestId('not-found')).toBeOnTheScreen();
   });
+
+  it('ARCH-22: pt-PT smoke render', async () => {
+    const { services } = await createTestServices();
+    const meal = await mealNamed(services, 'Dinner');
+    await renderWithServices(
+      <MealEditScreen
+        params={{ mode: 'edit', mealId: meal.id }}
+        onDone={jest.fn()}
+        onBack={jest.fn()}
+        onNotFound={jest.fn()}
+      />,
+      services,
+      { language: 'pt-PT' },
+    );
+    expect(await screen.findByRole('header', { name: 'Editar refeição' })).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Nome')).toBeOnTheScreen();
+    expect(screen.getByTestId('meal-delete')).toHaveAccessibleName('Eliminar refeição');
+  });
 });

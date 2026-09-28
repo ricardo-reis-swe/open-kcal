@@ -38,4 +38,14 @@ describe('UX-18 Weight Goal', () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     expect((await services.settings.get()).goalWeightKg).toBeNull();
   });
+
+  it('ARCH-22: pt-PT smoke render', async () => {
+    const { services } = await createTestServices();
+    await renderWithServices(<WeightGoalScreen onSaved={jest.fn()} onBack={jest.fn()} />, services, {
+      language: 'pt-PT',
+    });
+    expect(await screen.findByRole('header', { name: 'Objetivo de peso' })).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Peso objetivo, kg')).toBeOnTheScreen();
+    expect(screen.getByTestId('weight-goal-save')).toHaveAccessibleName('Guardar');
+  });
 });

@@ -119,4 +119,14 @@ describe('UX-16 / NAV-06: Calories & Macros', () => {
     expect(onSaved).not.toHaveBeenCalled();
     expect(input('Carbs, g').props.value).toBe('230');
   });
+
+  it('ARCH-22: pt-PT smoke render', async () => {
+    const { services } = await createTestServices();
+    await renderWithServices(<CaloriesMacrosScreen onSaved={jest.fn()} onCancel={jest.fn()} />, services, {
+      language: 'pt-PT',
+    });
+    expect(await screen.findByRole('header', { name: 'Calorias e macros' })).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Hidratos, g')).toBeOnTheScreen();
+    expect(screen.getByTestId('goals-save')).toHaveAccessibleName('Guardar');
+  });
 });

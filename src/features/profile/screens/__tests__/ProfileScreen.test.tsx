@@ -67,4 +67,12 @@ describe('UX-15 / NAV-06: Profile hub', () => {
     expect(screen.queryByTestId('profile-update-weight')).toBeNull();
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
+
+  it('ARCH-22: pt-PT smoke render', async () => {
+    const services = await setup();
+    await renderWithServices(<ProfileScreen />, services, { language: 'pt-PT' });
+    expect(await screen.findByText('Ainda sem peso registado')).toBeOnTheScreen();
+    expect(screen.getByText('Calorias e macros')).toBeOnTheScreen();
+    expect(await screen.findByText('USDA inativo')).toBeOnTheScreen();
+  });
 });

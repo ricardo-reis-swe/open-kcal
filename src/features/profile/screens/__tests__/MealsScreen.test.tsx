@@ -71,4 +71,18 @@ describe('UX-17 / NAV-06: Meals', () => {
     await waitFor(async () => expect(await names(services)).toEqual(['Snacks', 'Breakfast', 'Lunch', 'Dinner']));
     expect(onEditMeal).not.toHaveBeenCalled();
   });
+
+  it('ARCH-22: pt-PT smoke render', async () => {
+    const { services } = await createTestServices();
+    await renderWithServices(
+      <MealsScreen onBack={jest.fn()} onAddMeal={jest.fn()} onEditMeal={jest.fn()} />,
+      services,
+      {
+        language: 'pt-PT',
+      },
+    );
+    expect(await screen.findByRole('header', { name: 'Refeições' })).toBeOnTheScreen();
+    expect(await screen.findByTestId('meals-row-3')).toBeOnTheScreen();
+    expect(screen.getByTestId('meals-add')).toHaveTextContent(/Adicionar refeição/);
+  });
 });

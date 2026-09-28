@@ -20,4 +20,12 @@ describe('UX-18 Units', () => {
     expect(await services.settings.get()).toMatchObject({ foodWeightUnit: 'oz', volumeUnit: 'fl_oz' });
     expect(screen.queryByText('Save')).toBeNull();
   });
+
+  it('ARCH-22: pt-PT smoke render', async () => {
+    const { services } = await createTestServices();
+    await renderWithServices(<UnitsScreen onBack={jest.fn()} />, services, { language: 'pt-PT' });
+    expect(await screen.findByRole('header', { name: 'Unidades' })).toBeOnTheScreen();
+    expect(await screen.findByText('Peso corporal')).toBeOnTheScreen();
+    expect(screen.getByText('Peso dos alimentos')).toBeOnTheScreen();
+  });
 });
