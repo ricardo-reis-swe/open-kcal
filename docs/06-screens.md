@@ -72,22 +72,30 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [‹ [🔍 Search foods             ✕]        ]
 [Adding to Lunch · Today                  ]
 [⚡ Quick calories    ＋ Create custom food ]
-[RECENT / results by section…             ]
+[RECENT  — or, with a query:              ]
+[MY FOODS · SAVED   (local, instant)      ]
+[ONLINE                                   ]
+[ Chicken, breast, raw     120 kcal  USDA ]
+[ Chicken breast fillets   110 kcal  Open Food Facts ]
+[ Show more                               ]
+[ one compact status row (see table)      ]
 ```
 - Opens with the field focused. `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
 - **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 400 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). Stale requests are cancelled.
-- Section order with sticky labels: `My foods` (custom) → `Saved` (cached external) → `Open Food Facts` → `USDA`. Each remote section shows the first page (20) + a `Show more` row for the next page.
-- Result row (DS-09): name · brand or basis (`per 100 g`) · kcal · source label.
-- Inline section status in place of that section's results:
+- Section order with sticky labels: `My foods` (custom) → `Saved` (cached external) → `Online` (USDA + Open Food Facts merged, PROV-08). `My foods` and `Saved` keep their own labels and PROV-08 local rules. `Online` shows from 2 characters.
+- `Online`: one list ranked and interleaved per PROV-08; the first render waits ≤1.5 s for the other provider, and late items are appended, never reordering visible rows (PROV-08). One `Show more` row fetches the next page from each provider that has one.
+- Result row (DS-09): name · brand or basis (`per 100 g`) · kcal · source label (`USDA` / `Open Food Facts`).
+- One compact status row under the `Online` list merges both providers' states (nothing when both are fine; one line per affected provider):
 
 | Condition | Text |
 |---|---|
-| Loading | spinner row |
-| Offline | `Offline. Showing saved foods only.` (once, above the remote sections) |
+| Loading | spinner row `Searching…` |
+| Offline | `Offline. Showing saved foods only.` (replaces the other states) |
 | USDA key missing | `Add a USDA API key to search USDA` → switches to Profile tab › Food Databases (Diary stack kept) |
-| Error / timeout | `USDA search failed.` + `Retry` |
-| Rate limited | `USDA is busy. Try again later.` |
+| Error / timeout | `USDA search failed.` / `Open Food Facts search failed.` + `Retry <provider>` |
+| Rate limited | `USDA is busy. Try again later.` / `Open Food Facts is busy. Try again later.` |
+| Searched, no online hits | `No online results.` |
 
 - Nothing anywhere: `No foods found for "<q>".` + `Create custom food`.
 - Tapping a remote result: row spinner → upsert (DATA-15) → Food Detail. Failure → inline row error `Couldn't load this food.`

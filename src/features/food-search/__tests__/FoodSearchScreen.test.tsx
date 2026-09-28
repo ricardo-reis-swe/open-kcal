@@ -29,6 +29,11 @@ async function setup(
     usdaCandidates?: { externalId: string; input: CustomFoodInput }[];
     usdaDetail?: { externalId: string; input: CustomFoodInput } | null;
     onFoodDatabases?: () => void;
+    offSearch?: () => Promise<{
+      candidates: { externalId: string; input: CustomFoodInput }[];
+      page: number;
+      pageCount: number;
+    }>;
   } = {},
 ) {
   const { services } = await createTestServices();
@@ -89,6 +94,7 @@ async function setup(
     jest
       .spyOn(services.usda, 'search')
       .mockResolvedValue({ candidates: options.usdaCandidates, page: 1, pageCount: 1 });
+  if (options.offSearch) jest.spyOn(services.openFoodFacts, 'search').mockImplementation(options.offSearch);
   if (options.usdaDetail !== undefined) jest.spyOn(services.usda, 'getFood').mockResolvedValue(options.usdaDetail);
   if (options.throttledOffProduct) {
     jest.spyOn(services.openFoodFacts, 'search').mockResolvedValue({
@@ -260,7 +266,7 @@ describe('UX-04: local Food Search screen', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Food Databases' }));
       expect(onFoodDatabases).toHaveBeenCalledTimes(1);
     }
-    if (_kind === 'timeout') expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+    if (_kind === 'timeout') expect(screen.getByRole('button', { name: 'Retry USDA' })).toBeTruthy();
   });
 
   it('PROV-08 / DATA-15: shows generic USDA hits in supplied order and upserts selected detail before navigation', async () => {
@@ -289,11 +295,45 @@ describe('UX-04: local Food Search screen', () => {
     await setup({ initialQuery: 'al', localPaging: true });
     expect(await screen.findByTestId('food-search-custom-show-more')).toBeTruthy();
     expect(screen.getByTestId('food-search-saved-show-more')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('food-search-custom-show-more'));
-    fireEvent.press(screen.getByTestId('food-search-saved-show-more'));
+    await fireEvent.press(screen.getByTestId('food-search-custom-show-more'));
+    await fireEvent.press(screen.getByTestId('food-search-saved-show-more'));
     await waitFor(() => expect(screen.getByText('Al custom 19')).toBeTruthy());
-    expect(screen.getByText('Al saved 20')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('Al saved 20')).toBeTruthy());
     expect(screen.queryByTestId('food-search-custom-show-more')).toBeNull();
     expect(screen.queryByTestId('food-search-saved-show-more')).toBeNull();
+  });
+
+  const hit = (externalId: string, name: string) => ({ externalId, input: { ...almonds, name, brand: null } });
+  const rowOrder = () =>
+    screen
+      .getAllByTestId(/^food-result-(usda|off)-/)
+      .map((row) => String(row.props.testID).replace('food-result-', ''));
+
+  it('UX-04 / PROV-08: shows one Online list, ranked by tier and interleaved across providers', async () => {
+    await setup({
+      initialQuery: 'egg',
+      usdaCandidates: [hit('u1', 'Egg, whole, raw'), hit('u2', 'Scrambled egg')],
+      offSearch: async () => ({ candidates: [hit('o1', 'Egg noodles'), hit('o2', 'Egg')], page: 1, pageCount: 1 }),
+    });
+    await waitFor(() => expect(rowOrder()).toEqual(['off-o2', 'usda-u1', 'off-o1', 'usda-u2']));
+    expect(screen.getByText('Online')).toBeTruthy();
+    expect(screen.queryByText('Open Food Facts')).toBeNull();
+    expect(screen.queryByText('USDA')).toBeNull();
+  });
+
+  it('PROV-08: a provider arriving after the 1.5 s wait is appended without reordering visible rows', async () => {
+    let resolveOff: (() => void) | undefined;
+    await setup({
+      initialQuery: 'egg',
+      usdaCandidates: [hit('u1', 'Scrambled egg')],
+      offSearch: () =>
+        new Promise((resolve) => {
+          resolveOff = () => resolve({ candidates: [hit('o1', 'Egg')], page: 1, pageCount: 1 });
+        }),
+    });
+    expect(await screen.findByText('Scrambled egg', {}, { timeout: 3_000 })).toBeTruthy();
+    expect(screen.getByText('Searching…')).toBeTruthy();
+    resolveOff?.();
+    await waitFor(() => expect(rowOrder()).toEqual(['usda-u1', 'off-o1']));
   });
 });

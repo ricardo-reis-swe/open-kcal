@@ -1,12 +1,22 @@
-// Local Food Search screen models (ARCH-07, UX-04). Remote sections arrive in M5/M6.
-import { onlineManager, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+// Food Search screen models (ARCH-07, UX-04, PROV-08).
+import {
+  onlineManager,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+} from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 
 import { useServices, type AppServices } from '@/bootstrap/services';
 import type { RecentFood } from '@/data/db/repositories/diaryRepository';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
 import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
+import type { FoodCandidate } from '@/data/api/usda/mapper';
 import { nowUtcIso } from '@/shared/dates';
+
+import type { OnlineProvider } from './online-results';
 
 export type RecentFoodResult = RecentFood & { food: Food };
 
@@ -20,8 +30,27 @@ export const foodSearchKeys = {
   food: (id: string) => ['foodSearch', 'food', id] as const,
 };
 
+/** PROV-08: one provider's page queries for the merged `Online` list (see useOnlineResults). */
+export type ProviderPages = {
+  provider: OnlineProvider;
+  /** The provider's debounced query; its pages belong to this query only. */
+  query: string;
+  /** PROV-04 threshold: USDA ≥2, OFF ≥3 characters. */
+  minLength: number;
+  results: UseQueryResult<FoodSearchPage>[];
+  /** Another page exists and the 5-page cap isn't reached (PROV-08). */
+  hasMore: boolean;
+};
+
+type FoodSearchPage = { candidates: FoodCandidate[]; page: number; pageCount: number };
+
+const hasMorePages = (results: UseQueryResult<FoodSearchPage>[]) => {
+  const last = results.at(-1)?.data;
+  return last ? last.page < last.pageCount && results.length < 5 : false;
+};
+
 /** UX-04 / PROV-04: USDA starts after 400 ms with two characters; credentials never enter this key. */
-export function useUsdaSearch(query: string, pages = 1) {
+export function useUsdaSearch(query: string, pages = 1): ProviderPages {
   const { usda } = useServices();
   const normalized = query.trim();
   const results = useQueries({
@@ -36,15 +65,7 @@ export function useUsdaSearch(query: string, pages = 1) {
       };
     }),
   });
-  return {
-    data: results.flatMap((result) => result.data?.candidates ?? []),
-    isLoading: results.some((result) => result.isLoading),
-    isError: results.some((result) => result.isError),
-    error: results.find((result) => result.error)?.error,
-    isSuccess: results.length > 0 && results.every((result) => result.isSuccess),
-    hasMore: results.at(-1)?.data ? results.at(-1)!.data!.page < results.at(-1)!.data!.pageCount && pages < 5 : false,
-    refetch: () => Promise.all(results.map((result) => result.refetch())),
-  };
+  return { provider: 'usda', query: normalized, minLength: 2, results, hasMore: hasMorePages(results) };
 }
 
 /** UX-04 / DATA-14: hydrate the newest ≤20 recent records with their selectable food and servings. */
@@ -117,7 +138,7 @@ export async function refreshSavedOpenFoodFacts(services: AppServices, food: Foo
 }
 
 /** UX-04 / PROV-04: OFF starts after 800 ms and at least three typed characters. */
-export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en') {
+export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en'): ProviderPages {
   const { openFoodFacts } = useServices();
   const normalized = query.trim();
   const results = useQueries({
@@ -132,14 +153,7 @@ export function useOpenFoodFactsSearch(query: string, pages = 1, language = 'en'
       };
     }),
   });
-  return {
-    data: results.flatMap((result) => result.data?.candidates ?? []),
-    isLoading: results.some((result) => result.isLoading),
-    isError: results.some((result) => result.isError),
-    isSuccess: results.length > 0 && results.every((result) => result.isSuccess),
-    hasMore: results.at(-1)?.data ? results.at(-1)!.data!.page < results.at(-1)!.data!.pageCount && pages < 5 : false,
-    refetch: () => Promise.all(results.map((result) => result.refetch())),
-  };
+  return { provider: 'open_food_facts', query: normalized, minLength: 3, results, hasMore: hasMorePages(results) };
 }
 
 /** ARCH-12: local sections remain usable while remote-provider sections are paused offline. */

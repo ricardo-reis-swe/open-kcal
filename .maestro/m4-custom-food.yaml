@@ -20,9 +20,10 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: android:id/closeButton
     optional: true
-- hideKeyboard
+# UX-04: fuzzy Online hits can fill the list, so use the always-present top action (same initialName). It sits
+# above the keyboard; no hideKeyboard, which presses Back on Android when the keyboard is already down.
 - tapOn:
-    id: food-create-custom
+    id: food-search-create-custom
 - extendedWaitUntil:
     visible: New food
     timeout: 5000
