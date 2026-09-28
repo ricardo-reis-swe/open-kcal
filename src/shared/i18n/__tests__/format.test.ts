@@ -34,10 +34,22 @@ describe('UX-02 date labels', () => {
     expect(relativeDay('2026-09-27', '2026-09-25')).toBeNull();
   });
 
-  // ICU versions differ on commas and `Sep`/`Sept`, so the checks allow both.
-  it('UX-02: short date, with the year only outside the current year', () => {
-    expect(formatShortDate('2026-09-28', '2026-09-25', 'en-GB')).toMatch(/^Mon,? 28 Sept?$/);
-    expect(formatShortDate('2025-09-28', '2026-09-25', 'en-GB')).toMatch(/^Sun,? 28 Sept? 2025$/);
+  // ICU versions differ on `Sep`/`Sept` in en-GB, so that check allows both.
+  it('UX-02 / UX-12: short date `Fri 25 Sep` in every en locale, with the year only outside the current year', () => {
+    expect(formatShortDate('2026-09-25', '2026-09-25', 'en')).toBe('Fri 25 Sep');
+    expect(formatShortDate('2026-09-25', '2026-09-25', 'en-US')).toBe('Fri 25 Sep');
+    expect(formatShortDate('2026-09-28', '2026-09-25', 'en-GB')).toMatch(/^Mon 28 Sept?$/);
+    expect(formatShortDate('2025-09-28', '2026-09-25', 'en-US')).toBe('Sun 28 Sep 2025');
+  });
+
+  it('ARCH-22: pt-PT keeps its own day-first Intl pattern', () => {
+    const expected = new Intl.DateTimeFormat('pt-PT', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'UTC',
+    }).format(new Date(Date.UTC(2026, 8, 28)));
+    expect(formatShortDate('2026-09-28', '2026-09-25', 'pt-PT')).toBe(expected);
     expect(formatShortDate('2026-09-28', '2026-09-25', 'pt-PT')).toMatch(/28/);
   });
 });

@@ -66,17 +66,43 @@ export function relativeDay(date: LocalDate, today: LocalDate): RelativeDay | nu
   }
 }
 
-/** UX-02: locale short date (`Mon 28 Sep`), with the year only when it isn't the current year. */
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
+function dateFormat(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const cacheKey = `${locale}|${JSON.stringify(options)}`;
+  let format = dateFormats.get(cacheKey);
+  if (!format) {
+    format = new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' });
+    dateFormats.set(cacheKey, format);
+  }
+  return format;
+}
+
+/**
+ * UX-02 / UX-12: short date (`Fri 25 Sep`), with the year only when it isn't the current year. English is
+ * composed from separate weekday/day/month/year formats so every `en-*` locale gets the spec's day-first order
+ * (the device `en-US` pattern would give `Fri, Sep 25`); this avoids `formatToParts`, which Hermes lacks on some
+ * `Intl` types. Other languages (pt-PT) use their own `Intl` pattern (ARCH-22).
+ */
 export function formatShortDate(date: LocalDate, today: LocalDate, locale: string): string {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number];
   const sameYear = date.slice(0, 4) === today.slice(0, 4);
-  return new Intl.DateTimeFormat(locale, {
+  const instant = new Date(Date.UTC(y, m - 1, d));
+  if (locale.split('-')[0]?.toLowerCase() === 'en') {
+    const parts = [
+      dateFormat(locale, { weekday: 'short' }).format(instant),
+      dateFormat(locale, { day: 'numeric' }).format(instant),
+      dateFormat(locale, { month: 'short' }).format(instant),
+    ];
+    if (!sameYear) parts.push(dateFormat(locale, { year: 'numeric' }).format(instant));
+    return parts.join(' ');
+  }
+  return dateFormat(locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     ...(sameYear ? {} : { year: 'numeric' }),
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(y, m - 1, d)));
+  }).format(instant);
 }
 
 /** UX-03: locale long date (`Friday, 25 September`), with the year only when it isn't the current year. */

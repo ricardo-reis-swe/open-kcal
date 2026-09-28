@@ -1,6 +1,8 @@
 // OFF transport boundary (PROV-01/03/10/12). It deliberately exposes no URL, query, headers, or body in errors.
+import { logProviderFailure, withStatus, type ProviderEndpoint } from '@/data/api/diagnostics';
 import type { AppConfig } from '@/shared/config/env';
 import { NotFoundError, ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
+import { logger, type Logger } from '@/shared/logging/logger';
 
 import { mapOpenFoodFactsProduct, mapOpenFoodFactsSearch, type FoodCandidate, type FoodSearchPage } from './mapper';
 import { RequestLimiter } from './limiter';
@@ -18,6 +20,7 @@ export class OpenFoodFactsClient {
     >,
     private readonly request: Fetch = fetch,
     limiters: { search?: RequestLimiter; product?: RequestLimiter } = {},
+    private readonly log: Logger = logger,
   ) {
     this.searchLimiter = limiters.search ?? new RequestLimiter(8, 60_000);
     this.productLimiter = limiters.product ?? new RequestLimiter(12, 60_000);
@@ -46,6 +49,16 @@ export class OpenFoodFactsClient {
     }
   }
 
+  /** PROV-12: one diagnostic record per failure; aborted requests are ignored silently. */
+  private async diagnosed<T>(endpoint: ProviderEndpoint, signal: AbortSignal, operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!signal.aborted) logProviderFailure(error, 'openFoodFacts', endpoint, this.log);
+      throw error;
+    }
+  }
+
   private async json(url: string, signal: AbortSignal, timeoutMs: number): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -62,11 +75,15 @@ export class OpenFoodFactsClient {
       clearTimeout(timeout);
       signal.removeEventListener('abort', abort);
     }
-    if (response.status === 429 || response.status === 503) {
-      throw new RateLimitError('Open Food Facts is rate limited', retryAfter(response.headers.get('Retry-After')));
+    const { status } = response;
+    if (status === 429 || status === 503) {
+      throw withStatus(
+        new RateLimitError('Open Food Facts is rate limited', retryAfter(response.headers.get('Retry-After'))),
+        status,
+      );
     }
-    if (response.status === 404) throw new NotFoundError('Open Food Facts product not found');
-    if (!response.ok) throw new ProviderResponseError('Open Food Facts response failed');
+    if (status === 404) throw withStatus(new NotFoundError('Open Food Facts product not found'), status);
+    if (!response.ok) throw withStatus(new ProviderResponseError('Open Food Facts response failed'), status);
     try {
       return await response.json();
     } catch (cause) {
@@ -84,12 +101,18 @@ export class OpenFoodFactsClient {
       page: String(page),
       fields: 'code,product_name,brands,nutriments',
     }).toString();
-    return this.throttled(this.searchLimiter, signal, async () =>
-      mapOpenFoodFactsSearch(await this.json(url.toString(), signal, 8_000)),
+    return this.diagnosed('search', signal, () =>
+      this.throttled(this.searchLimiter, signal, async () =>
+        mapOpenFoodFactsSearch(await this.json(url.toString(), signal, 8_000)),
+      ),
     );
   }
 
-  async getFood(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
+  getFood(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
+    return this.diagnosed('detail', signal, () => this.product(externalId, signal));
+  }
+
+  private async product(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
     const url = new URL(`/api/v2/product/${encodeURIComponent(externalId)}`, this.config.offProductBaseUrl);
     url.search = new URLSearchParams({
       fields:

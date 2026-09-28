@@ -89,10 +89,12 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
       },
     );
     const request = jest.fn().mockRejectedValue(unsafeTransportError);
+    const diagnostics: LogRecord[] = [];
     const client = new UsdaClient(
       config,
       { getUsdaApiKeyForRequest: jest.fn().mockResolvedValue(credential) },
       request,
+      createLogger({ isDev: true, sink: (record) => diagnostics.push(record) }),
     );
 
     let received: unknown;
@@ -112,8 +114,54 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
     expect(allOwnPropertyValues(records)).not.toContain(credential);
     expect(allOwnPropertyValues(records)).not.toContain(privateTerm);
 
+    // PROV-12: the adapter's own dev diagnostic carries provider + endpoint, never key, terms or URL.
+    expect(diagnostics.map((record) => record.context)).toEqual([
+      { provider: 'usda' },
+      { provider: 'usda', endpoint: 'search', status: undefined, issuePath: undefined },
+    ]);
+    expect(allOwnPropertyValues(diagnostics)).not.toContain(credential);
+    expect(allOwnPropertyValues(diagnostics)).not.toContain(privateTerm);
+    expect(allOwnPropertyValues(diagnostics)).not.toContain('api.nal.usda.gov');
+
     expect(foodSearchKeys.usda(privateTerm, 1)).not.toContain(credential);
     expect(foodSearchKeys.usda(privateTerm, 1)).toEqual(['foodSearch', 'usda', privateTerm, 1]);
+  });
+
+  it('PROV-12 / ARCH-15: dev logs provider, endpoint, status and Zod issue path; release only type + provider', async () => {
+    const credential = 'usda-key-for-diagnostics-test';
+    const privateTerm = 'private diagnostics term';
+    const keyed = { getUsdaApiKeyForRequest: jest.fn().mockResolvedValue(credential) };
+    const dev: LogRecord[] = [];
+    const devLog = createLogger({ isDev: true, sink: (record) => dev.push(record) });
+    const failing = jest.fn().mockResolvedValue(new Response(`{"echo":"${privateTerm}"}`, { status: 500 }));
+    await expect(
+      new UsdaClient(config, keyed, failing, devLog).search(privateTerm, 1, new AbortController().signal),
+    ).rejects.toBeInstanceOf(ProviderResponseError);
+    const malformed = jest
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ description: privateTerm, foodNutrients: 'x' })));
+    await expect(
+      new UsdaClient(config, keyed, malformed, devLog).getFood('1', new AbortController().signal),
+    ).rejects.toBeInstanceOf(ProviderResponseError);
+    expect(dev.filter((record) => record.level === 'debug').map((record) => record.context)).toEqual([
+      { provider: 'usda', endpoint: 'search', status: 500, issuePath: undefined },
+      { provider: 'usda', endpoint: 'detail', status: undefined, issuePath: 'fdcId' },
+    ]);
+    expect(allOwnPropertyValues(dev)).not.toContain(credential);
+    expect(allOwnPropertyValues(dev)).not.toContain(privateTerm);
+
+    const release: LogRecord[] = [];
+    const releaseLog = createLogger({ isDev: false, sink: (record) => release.push(record) });
+    const logged = new UsdaClient(config, keyed, failing, releaseLog);
+    await expect(logged.search(privateTerm, 1, new AbortController().signal)).rejects.toBeDefined();
+    expect(release).toEqual([
+      {
+        level: 'error',
+        message: 'Provider request failed',
+        context: { provider: 'usda' },
+        error: { name: 'ProviderResponseError' },
+      },
+    ]);
   });
 
   it('ARCH-13 / PROV-12: keeps timeout and malformed JSON errors typed without transport causes', async () => {

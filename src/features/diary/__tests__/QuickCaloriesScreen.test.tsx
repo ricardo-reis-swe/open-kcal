@@ -51,7 +51,7 @@ describe('UX-07: Quick Calories form', () => {
     expect(screen.getByLabelText('Calories, kcal').props.autoFocus).toBe(true);
     expect(screen.getByLabelText('Calories, kcal').props.keyboardType).toBe('number-pad');
     expect(screen.getByLabelText('Note').props.maxLength).toBe(80);
-    expect(screen.getByLabelText('Date, Fri, Sep 25')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Date, Fri 25 Sep')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Delete entry' })).toBeNull();
   });
 
@@ -118,7 +118,7 @@ describe('UX-07: Edit quick calories', () => {
     expect(await screen.findByRole('button', { name: 'Meal, Lunch' })).toBeOnTheScreen();
     expect(screen.getByLabelText('Calories, kcal').props.value).toBe('450');
     expect(screen.getByLabelText('Note').props.value).toBe('Canteen');
-    expect(screen.getByLabelText('Date, Fri, Sep 25')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Date, Fri 25 Sep')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Delete entry' })).toBeOnTheScreen();
     expect(screen.getByTestId('quick-calories-submit')).toBeDisabled();
     expect(screen.getByTestId('quick-calories-submit')).toHaveAccessibleName('Save');

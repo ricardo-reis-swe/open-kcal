@@ -134,7 +134,7 @@ describe('UX-02 Diary', () => {
     expect(await active().findByRole('header', { name: 'Lunch, 100 kilocalories' })).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole('button', { name: /^Next day, / }));
-    expect(screen.getByLabelText(/^Showing Sun,? (27 Sep|Sep 27)/)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/^Showing Sun 27 Sep/)).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Go to today' }));
     expect(screen.getByLabelText('Showing Today')).toBeOnTheScreen();

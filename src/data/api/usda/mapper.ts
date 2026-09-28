@@ -1,6 +1,7 @@
 // USDA normalization (PROV-05/06/07/08). Payloads never leave this adapter.
 import { z } from 'zod';
 
+import { schemaError } from '@/data/api/diagnostics';
 import type { FoodInput, ServingInput } from '@/data/db/repositories/foodsRepository';
 import { ProviderResponseError } from '@/shared/errors';
 
@@ -232,7 +233,7 @@ export function mapUsdaSearchFood(payload: unknown): FoodCandidate | null {
 
 export function mapUsdaFood(payload: unknown): FoodCandidate | null {
   const parsed = detailFoodSchema.safeParse(payload);
-  if (!parsed.success) throw new ProviderResponseError('USDA detail schema error');
+  if (!parsed.success) throw schemaError('USDA detail schema error', parsed.error);
   return candidate(
     parsed.data,
     parsed.data.foodNutrients.flatMap((n) =>
@@ -250,7 +251,7 @@ export function mapUsdaSearch(payload: unknown): FoodSearchPage {
       totalPages: z.number().int().nonnegative(),
     })
     .safeParse(payload);
-  if (!parsed.success) throw new ProviderResponseError('USDA search schema error');
+  if (!parsed.success) throw schemaError('USDA search schema error', parsed.error);
   const candidates = parsed.data.foods.flatMap((food) => {
     try {
       const result = mapUsdaSearchFood(food);

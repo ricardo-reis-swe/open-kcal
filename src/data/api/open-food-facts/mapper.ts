@@ -1,6 +1,7 @@
 // Open Food Facts normalization (PROV-05/06/07). Payloads stay inside the adapter.
 import { z } from 'zod';
 
+import { schemaError } from '@/data/api/diagnostics';
 import type { FoodInput, ServingInput } from '@/data/db/repositories/foodsRepository';
 import { ProviderResponseError } from '@/shared/errors';
 
@@ -109,7 +110,7 @@ function hintedServing(product: OpenFoodFactsProduct, unit: 'g' | 'ml'): Serving
 /** Returns null for a single unusable hit: dropping it is not a provider-wide error (PROV-07). */
 export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null {
   const parsed = productSchema.safeParse(payload);
-  if (!parsed.success) throw new ProviderResponseError('Open Food Facts schema error');
+  if (!parsed.success) throw schemaError('Open Food Facts schema error', parsed.error);
   const product = parsed.data;
   const name = sentenceCase(product.product_name ?? '');
   const externalId = product.code;
@@ -188,7 +189,7 @@ export function mapOpenFoodFactsSearch(payload: unknown): FoodSearchPage {
       page_count: z.number().int().nonnegative().default(0),
     })
     .safeParse(payload);
-  if (!response.success) throw new ProviderResponseError('Open Food Facts search schema error');
+  if (!response.success) throw schemaError('Open Food Facts search schema error', response.error);
   return {
     candidates: response.data.hits.flatMap((hit) => {
       try {

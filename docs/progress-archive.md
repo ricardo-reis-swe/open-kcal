@@ -365,7 +365,7 @@ Exit demo: add a key, search USDA, log a food (T5, Android live); rejected-key a
 
 ### Known gaps
 
-- PROV-12 dev-build diagnostic logging (provider, endpoint, status, Zod issue path) is not implemented in the USDA or OFF adapters (pre-existing since M5; review finding 3).
+- PROV-12 dev-build diagnostic logging (provider, endpoint, status, Zod issue path) is not implemented in the USDA or OFF adapters (pre-existing since M5; review finding 3). Fixed after the M8 review.
 - Android E2E for M5 has no passing Maestro result (waived by the user for M5; not an M6 gate).
 
 ### Open questions
@@ -405,8 +405,7 @@ Exit demo (Android emulator, review §Manual exit demo in `docs/qa/M7/review.md`
 
 ### Known gaps
 
-- PROV-12 dev-build diagnostic logging in the USDA/OFF adapters (carried from M6).
-- Short dates in `en` follow the device `Intl` format (`Fri, Sep 25`), not the UX-02/UX-12 example `Fri 25 Sep` (`src/shared/i18n/format.ts` `formatShortDate`, since M2; review finding 1, minor).
+- None (PROV-12 logging and `en` short dates fixed after the M8 review; see M8 in progress.md).
 
 ### Open questions
 

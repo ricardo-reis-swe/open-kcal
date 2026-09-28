@@ -37,8 +37,8 @@ describe('UX-12 Copy Meal Sheet', () => {
   it('UX-12: absolute Today / Tomorrow rows with short dates', async () => {
     await setup('en');
     expect(await screen.findByRole('header', { name: 'Copy Lunch to' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Today · Fri, Sep 25' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Tomorrow · Sat, Sep 26' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Today · Fri 25 Sep' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Tomorrow · Sat 26 Sep' })).toBeOnTheScreen();
   });
 
   it('ARCH-22: pt-PT smoke render', async () => {

@@ -54,7 +54,7 @@ describe('UX-02 / NAV-05: today follows the real date', () => {
     await act(async () => onChange?.('background'));
     expect(screen.getByLabelText('Showing Today')).toBeOnTheScreen();
     await act(async () => onChange?.('active'));
-    expect(screen.getByLabelText(/^Showing Fri,? (25 Sep|Sep 25)$/)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/^Showing Fri 25 Sep$/)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Go to today' })).toBeOnTheScreen();
   });
 });

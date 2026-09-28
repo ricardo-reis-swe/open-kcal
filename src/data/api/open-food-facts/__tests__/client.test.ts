@@ -1,4 +1,5 @@
 import { NotFoundError, RateLimitError } from '@/shared/errors';
+import { createLogger, type LogRecord } from '@/shared/logging/logger';
 
 import { OpenFoodFactsClient } from '../client';
 import { RequestLimiter } from '../limiter';
@@ -38,6 +39,40 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
     await expect(client.search('iogurte', 1, new AbortController().signal, 'pt-PT')).rejects.toMatchObject({
       category: 'provider_response',
     });
+  });
+
+  it('PROV-12 / ARCH-15: dev diagnostics carry provider, endpoint, status and Zod issue path, never terms or URL', async () => {
+    const privateTerm = 'private off search term';
+    const records: LogRecord[] = [];
+    const log = createLogger({ isDev: true, sink: (record) => records.push(record) });
+    const failing = new OpenFoodFactsClient(
+      config,
+      jest.fn().mockResolvedValue(new Response(`{"echo":"${privateTerm}"}`, { status: 500 })),
+      {},
+      log,
+    );
+    await expect(failing.search(privateTerm, 1, new AbortController().signal)).rejects.toMatchObject({
+      category: 'provider_response',
+    });
+    const malformed = new OpenFoodFactsClient(
+      config,
+      jest.fn().mockResolvedValue(new Response(JSON.stringify({ hits: privateTerm }), { status: 200 })),
+      {},
+      log,
+    );
+    await expect(malformed.search(privateTerm, 1, new AbortController().signal)).rejects.toMatchObject({
+      category: 'provider_response',
+    });
+    expect(records.map((record) => [record.level, record.context])).toEqual([
+      ['error', { provider: 'openFoodFacts' }],
+      ['debug', { provider: 'openFoodFacts', endpoint: 'search', status: 500, issuePath: undefined }],
+      ['error', { provider: 'openFoodFacts' }],
+      ['debug', { provider: 'openFoodFacts', endpoint: 'search', status: undefined, issuePath: 'hits' }],
+    ]);
+    const logged = JSON.stringify(records);
+    expect(logged).not.toContain(privateTerm);
+    expect(logged).not.toContain('openfoodfacts.org');
+    expect(logged).not.toContain(config.offContactEmail);
   });
 
   it('maps OFF 503/429 to a cooldown and status 0 to not found', async () => {
