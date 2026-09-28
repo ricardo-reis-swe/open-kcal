@@ -28,6 +28,8 @@ export type RouteParams = {
   weightEntry: { mode: 'create'; date?: LocalDate } | { mode: 'edit'; weightEntryId: Uuid; date?: LocalDate };
   foodDatabases: undefined;
   caloriesMacros: undefined;
+  units: undefined;
+  weightGoal: undefined;
 };
 
 export type RouteName = keyof RouteParams;
@@ -84,6 +86,10 @@ export const routes = {
   foodDatabases: (): Href => '/profile/food-databases' as Href,
   /** NAV-06 / UX-16 (also the Diary's UX-01 `Set goals`, pushed `withAnchor` so the Profile hub sits under it). */
   caloriesMacros: (): Href => '/profile/calories-macros' as Href,
+  /** NAV-06 / UX-18 Units. */
+  units: (): Href => '/profile/units' as Href,
+  /** NAV-06 / UX-18 Weight Goal. */
+  weightGoal: (): Href => '/profile/weight-goal' as Href,
   /** NAV-06 / UX-17 Meals list. */
   meals: (): Href => '/profile/meals' as Href,
   /** NAV-06 Add / Edit Meal: create mode, or edit by `mealId`. */

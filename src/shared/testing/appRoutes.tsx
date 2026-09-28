@@ -17,6 +17,8 @@ import CaloriesMacrosRoute from '@/app/(tabs)/profile/calories-macros';
 import MealsRoute from '@/app/(tabs)/profile/meals/index';
 import AddMealRoute from '@/app/(tabs)/profile/meals/new';
 import EditMealRoute from '@/app/(tabs)/profile/meals/[mealId]';
+import UnitsRoute from '@/app/(tabs)/profile/units';
+import WeightGoalRoute from '@/app/(tabs)/profile/weight-goal';
 import RootLayout from '@/app/_layout';
 import Index from '@/app/index';
 
@@ -41,6 +43,8 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/profile/meals/index': MealsRoute,
     '(tabs)/profile/meals/new': AddMealRoute,
     '(tabs)/profile/meals/[mealId]': EditMealRoute,
+    '(tabs)/profile/units': UnitsRoute,
+    '(tabs)/profile/weight-goal': WeightGoalRoute,
     ...extra,
   };
 }

@@ -322,7 +322,13 @@
     "kcal": "kcal",
     "kJ": "kJ",
     "ml": "ml",
-    "fl_oz": "fl oz"
+    "fl_oz": "fl oz",
+    "title": "Units",
+    "weight": "Body weight",
+    "foodWeight": "Food weight",
+    "energy": "Energy",
+    "volume": "Volume",
+    "saveError": "Couldn't save. Try again."
   },
   "meals": {
     "title": "Meals",
@@ -347,5 +353,13 @@
     "moveTitle_other": "Delete {{name}}? It has {{count}} entries. Move them to:",
     "moveConfirm": "Delete and move entries",
     "deleteError": "Couldn't delete. Try again."
+  },
+  "weightGoal": {
+    "title": "Weight goal",
+    "field": "Goal weight",
+    "clear": "Clear goal",
+    "save": "Save",
+    "error": "Enter a weight from {{min}} to {{max}} {{unit}}.",
+    "saveError": "Couldn't save. Try again."
   }
 }

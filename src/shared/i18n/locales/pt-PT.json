@@ -322,7 +322,13 @@
     "kcal": "kcal",
     "kJ": "kJ",
     "ml": "ml",
-    "fl_oz": "fl oz"
+    "fl_oz": "fl oz",
+    "title": "Unidades",
+    "weight": "Peso corporal",
+    "foodWeight": "Peso dos alimentos",
+    "energy": "Energia",
+    "volume": "Volume",
+    "saveError": "Não foi possível guardar. Tente novamente."
   },
   "meals": {
     "title": "Refeições",
@@ -347,5 +353,13 @@
     "moveTitle_other": "Eliminar {{name}}? Tem {{count}} registos. Movê-los para:",
     "moveConfirm": "Eliminar e mover registos",
     "deleteError": "Não foi possível eliminar. Tente novamente."
+  },
+  "weightGoal": {
+    "title": "Objetivo de peso",
+    "field": "Peso objetivo",
+    "clear": "Limpar objetivo",
+    "save": "Guardar",
+    "error": "Introduza um peso entre {{min}} e {{max}} {{unit}}.",
+    "saveError": "Não foi possível guardar. Tente novamente."
   }
 }

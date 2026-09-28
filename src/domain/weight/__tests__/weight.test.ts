@@ -1,6 +1,15 @@
 import { toLocalDate } from '@/shared/dates';
 
-import { currentWeight, isAllowedWeightDate, isValidWeightKg, measuredAtForDate, weightHistoryRows } from '../weight';
+import {
+  currentWeight,
+  isAllowedWeightDate,
+  isValidWeightKg,
+  measuredAtForDate,
+  parseWeightInput,
+  weightHistoryRows,
+  weightInputRange,
+  weightInputText,
+} from '../weight';
 
 describe('DATA-13: weight', () => {
   it('current weight = latest measured_at, tie-break created_at', () => {
@@ -55,5 +64,28 @@ describe('UX-18: weight history rows', () => {
 
   it('UX-00: body and goal weight must be 20–500 kg', () => {
     expect([19.9, 20, 500, 500.1, NaN].map(isValidWeightKg)).toEqual([false, true, true, false, false]);
+  });
+});
+
+describe('UX-00 / DATA-13 weight input in the display unit', () => {
+  it('range is 20–500 kg rounded inward to 1 decimal', () => {
+    expect(weightInputRange('kg')).toEqual({ min: 20, max: 500 });
+    expect(weightInputRange('lb')).toEqual({ min: 44.1, max: 1102.3 });
+  });
+
+  it('parses the locale decimal to kg and rejects out-of-range values', () => {
+    expect(parseWeightInput('72,5', 'kg', 'pt-PT')).toBe(72.5);
+    expect(parseWeightInput('165', 'lb', 'en-GB')).toBeCloseTo(74.84274, 4);
+    expect(['44', '1102.4', 'abc', ''].map((v) => parseWeightInput(v, 'lb', 'en-GB'))).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
+  });
+
+  it('field text is 1 decimal, ungrouped, in the locale separator', () => {
+    expect(weightInputText(72.5, 'kg', 'pt-PT')).toBe('72,5');
+    expect(weightInputText(500, 'lb', 'en-GB')).toBe('1102.3');
   });
 });

@@ -1,4 +1,6 @@
 // Body weight rules (DATA-13). Canonical kg; conversions live in domain/units.
+import { parseLocalizedDecimal } from '@/domain/food/customFood';
+import { weightFromKg, weightToKg, type WeightUnit } from '@/domain/units/units';
 import { localDateTime, toLocalDate, type LocalDate, type UtcIso } from '@/shared/dates';
 
 export type WeightEntry = {
@@ -49,6 +51,29 @@ export const WEIGHT_MAX_KG = 500;
 
 export function isValidWeightKg(kg: number): boolean {
   return Number.isFinite(kg) && kg >= WEIGHT_MIN_KG && kg <= WEIGHT_MAX_KG;
+}
+
+/** UX-00 weight range in the display unit, 1 decimal, rounded inward so both ends are valid. */
+export function weightInputRange(unit: WeightUnit): { min: number; max: number } {
+  return {
+    min: Math.ceil(weightFromKg(WEIGHT_MIN_KG, unit) * 10 - 1e-9) / 10,
+    max: Math.floor(weightFromKg(WEIGHT_MAX_KG, unit) * 10 + 1e-9) / 10,
+  };
+}
+
+/** DATA-13 input: display-unit text (locale decimal) → canonical kg; `null` when unparsable or outside UX-00. */
+export function parseWeightInput(text: string, unit: WeightUnit, locale: string): number | null {
+  const value = parseLocalizedDecimal(text, locale);
+  if (value === null) return null;
+  const kg = weightToKg(value, unit);
+  return isValidWeightKg(kg) ? kg : null;
+}
+
+/** Editable field text for a stored kg value: display unit, 1 decimal, locale separator, no grouping. */
+export function weightInputText(kg: number, unit: WeightUnit, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: false }).format(
+    Math.round(weightFromKg(kg, unit) * 10) / 10,
+  );
 }
 
 export type WeightHistoryRow<T extends WeightEntry = WeightEntry> = {
