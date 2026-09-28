@@ -1,6 +1,9 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PanResponder, ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import {
@@ -9,12 +12,18 @@ import {
   type FoodSearchSectionId,
 } from '@/domain/food/searchSections';
 import { useServices } from '@/bootstrap/services';
-import { nowUtcIso } from '@/shared/dates';
-import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
-import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
 import { ProviderConfigurationError, RateLimitError } from '@/shared/errors';
 import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
-import { AppBar, AppText, InlineStatus, PressableIcon, SectionHeader, TextAction } from '@/shared/components';
+import {
+  AppBar,
+  AppIcon,
+  AppText,
+  InlineStatus,
+  PressableIcon,
+  SectionHeader,
+  TextAction,
+  UndoToast,
+} from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
 import { formatEnergy, formatShortDate, relativeDay } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
@@ -36,9 +45,10 @@ import {
 const LOCAL_DEBOUNCE_MS = 150;
 const OFF_DEBOUNCE_MS = 800;
 const USDA_DEBOUNCE_MS = 400;
-const DELETE_REVEAL_WIDTH = 88;
+const DELETE_SWIPE_LIMIT = 120;
+const DELETE_EXIT_OFFSET = 500;
 
-export const shouldRevealFoodDelete = (dx: number) => dx <= -40;
+export const shouldCommitFoodDelete = (dx: number) => dx <= -72;
 
 type Props = {
   mealId: string;
@@ -50,6 +60,7 @@ type Props = {
   onCreateCustom: (initialName: string) => void;
   onFoodDatabases?: () => void;
   onSelectFood: (food: Food) => void;
+  onSelectExternal: (source: 'usda' | 'open_food_facts', externalId: string) => void;
 };
 
 /** UX-04 M4 subset: focused search, Recents without a query, and local custom-food results after 150 ms. */
@@ -62,6 +73,7 @@ export function FoodSearchScreen({
   onQuickCalories,
   onCreateCustom,
   onSelectFood,
+  onSelectExternal,
   onFoodDatabases,
 }: Props) {
   const { t, i18n } = useTranslation();
@@ -73,10 +85,7 @@ export function FoodSearchScreen({
   const writes = useLocalFoodWrites();
   const services = useServices();
   const [deleteFailed, setDeleteFailed] = useState(false);
-  const [externalLoadError, setExternalLoadError] = useState<string | null>(null);
-  const [selectingExternalId, setSelectingExternalId] = useState<string | null>(null);
-  const offDetailController = useRef<AbortController | null>(null);
-  const mounted = useRef(true);
+  const [deletedFood, setDeletedFood] = useState<Food | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [offQuery, setOffQuery] = useState(initialQuery.trim());
@@ -85,13 +94,6 @@ export function FoodSearchScreen({
   const [customPages, setCustomPages] = useState(1);
   const [savedPages, setSavedPages] = useState(1);
   const [usdaPages, setUsdaPages] = useState(1);
-  useEffect(
-    () => () => {
-      mounted.current = false;
-      offDetailController.current?.abort();
-    },
-    [],
-  );
   useEffect(() => {
     if (query.trim() === debouncedQuery) return;
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), LOCAL_DEBOUNCE_MS);
@@ -148,74 +150,28 @@ export function FoodSearchScreen({
     }
     setQuery(value);
   };
-  const selectUsda = async (externalId: string) => {
-    setExternalLoadError(null);
-    setSelectingExternalId(externalId);
-    const controller = new AbortController();
-    offDetailController.current?.abort();
-    offDetailController.current = controller;
-    try {
-      const detail = await services.usda.getFood(externalId, controller.signal);
-      if (!detail || controller.signal.aborted || !mounted.current) throw new Error('USDA detail unavailable');
-      const fetchedAt = nowUtcIso(services.clock);
-      const expiresAt = new Date(
-        services.clock.now().getTime() + 90 * 24 * 60 * 60_000,
-      ).toISOString() as typeof fetchedAt;
-      const saved = await services.foods.upsertExternal('usda', detail.externalId, detail.input, {
-        fetchedAt,
-        expiresAt,
-        rawPayloadJson: null,
-        schemaVersion: USDA_PARSER_VERSION,
-      });
-      if (!controller.signal.aborted && mounted.current) onSelectFood(saved);
-    } catch {
-      if (!controller.signal.aborted && mounted.current) setExternalLoadError(externalId);
-    } finally {
-      if (mounted.current) setSelectingExternalId(null);
-    }
-  };
   const leaveSearch = () => {
-    offDetailController.current?.abort();
     onBack();
   };
-  const deleteFood = async (foodId: string) => {
+  const deleteFood = async (food: Food) => {
     setDeleteFailed(false);
     try {
-      await writes.deleteCustom.mutateAsync(foodId);
+      await writes.deleteCustom.mutateAsync(food.id);
+      setDeletedFood(food);
     } catch {
       setDeleteFailed(true);
     }
   };
-  const selectOff = async (externalId: string) => {
-    setExternalLoadError(null);
-    setSelectingExternalId(externalId);
-    offDetailController.current?.abort();
-    const controller = new AbortController();
-    offDetailController.current = controller;
+  const undoDelete = async () => {
+    if (!deletedFood) return;
     try {
-      const detail = await services.openFoodFacts.getFood(externalId, controller.signal);
-      if (controller.signal.aborted || !mounted.current) return;
-      if (!detail) throw new Error('Open Food Facts returned insufficient data');
-      const fetchedAt = nowUtcIso(services.clock);
-      const expiresAt = new Date(
-        services.clock.now().getTime() + 30 * 24 * 60 * 60_000,
-      ).toISOString() as typeof fetchedAt;
-      const saved = await services.foods.upsertExternal('open_food_facts', detail.externalId, detail.input, {
-        fetchedAt,
-        expiresAt,
-        rawPayloadJson: null,
-        schemaVersion: PARSER_VERSION,
-      });
-      if (controller.signal.aborted || !mounted.current) return;
-      onSelectFood(saved);
+      await writes.restoreCustom.mutateAsync(deletedFood.id);
+      setDeletedFood(null);
     } catch {
-      if (!controller.signal.aborted && mounted.current) setExternalLoadError(externalId);
-    } finally {
-      if (offDetailController.current === controller) offDetailController.current = null;
-      if (mounted.current) setSelectingExternalId(null);
+      setDeletedFood(null);
+      setDeleteFailed(true);
     }
   };
-
   // UX-18: the offline row shows once, above the first visible remote section, only while one is visible.
   const firstVisibleRemote = visibleSections.find((id) => REMOTE_FOOD_SEARCH_SECTIONS.includes(id));
   const remoteLoading = (shows('open_food_facts') && off.isLoading) || (shows('usda') && usda.isLoading);
@@ -230,7 +186,7 @@ export function FoodSearchScreen({
             locale={locale}
             energyUnit={settings.data.energyUnit}
             onPress={() => onSelectFood(food)}
-            onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
+            onDelete={food.source === 'custom' ? () => void deleteFood(food) : undefined}
           />
         ))}
         {customFoods.length === customPages * 20 ? (
@@ -298,10 +254,7 @@ export function FoodSearchScreen({
             }}
             locale={locale}
             energyUnit={settings.data.energyUnit}
-            onPress={() => void selectOff(candidate.externalId)}
-            disabled={selectingExternalId !== null}
-            loading={selectingExternalId === candidate.externalId}
-            error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
+            onPress={() => onSelectExternal('open_food_facts', candidate.externalId)}
           />
         ))}
         {off.hasMore && query.trim() === offQuery ? (
@@ -354,10 +307,7 @@ export function FoodSearchScreen({
             }}
             locale={locale}
             energyUnit={settings.data.energyUnit}
-            onPress={() => void selectUsda(candidate.externalId)}
-            disabled={selectingExternalId !== null}
-            loading={selectingExternalId === candidate.externalId}
-            error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
+            onPress={() => onSelectExternal('usda', candidate.externalId)}
           />
         ))}
         {usda.hasMore && usdaQuery === query.trim() ? (
@@ -507,7 +457,7 @@ export function FoodSearchScreen({
                   locale={locale}
                   energyUnit={settings.data.energyUnit}
                   onPress={() => onSelectFood(food)}
-                  onDelete={food.source === 'custom' ? () => void deleteFood(food.id) : undefined}
+                  onDelete={food.source === 'custom' ? () => void deleteFood(food) : undefined}
                 />
               ))
             ) : (
@@ -518,6 +468,15 @@ export function FoodSearchScreen({
           </>
         )}
       </ScrollView>
+      {deletedFood ? (
+        <UndoToast
+          message={t('foodSearch.deleted', { name: deletedFood.name })}
+          undoLabel={t('common.undo')}
+          onUndo={() => void undoDelete()}
+          onDismiss={() => setDeletedFood(null)}
+          testID="food-delete-undo"
+        />
+      ) : null}
     </View>
   );
 }
@@ -529,8 +488,6 @@ function FoodResultRow({
   onPress,
   onDelete,
   disabled = false,
-  loading = false,
-  error,
 }: {
   food: Food;
   locale: string;
@@ -538,8 +495,6 @@ function FoodResultRow({
   onPress: () => void;
   onDelete?: () => void;
   disabled?: boolean;
-  loading?: boolean;
-  error?: string;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -550,88 +505,85 @@ function FoodResultRow({
   });
   const energyValue = formatEnergy(food.nutrients.energyKcal, energyUnit, locale);
   const energyUnitLabel = t(`diary.units.${energyUnit}`);
-  const [revealed, setRevealed] = useState(false);
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gesture) => Boolean(onDelete) && gesture.dx < -10,
-        onPanResponderRelease: (_event, gesture) => setRevealed(shouldRevealFoodDelete(gesture.dx)),
-        onPanResponderTerminate: () => setRevealed(false),
-      }),
-    [onDelete],
-  );
+  const translateX = useSharedValue(0);
+  const commitDelete = () => onDelete?.();
+  const pan = Gesture.Pan()
+    .withTestId(`food-swipe-${food.id}-pan`)
+    .enabled(Boolean(onDelete))
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-10, 10])
+    .onUpdate((event) => translateX.set(Math.max(-DELETE_SWIPE_LIMIT, Math.min(0, event.translationX))))
+    .onFinalize((event) => {
+      const committed = event.velocityX < -700 || shouldCommitFoodDelete(translateX.get());
+      if (!committed) {
+        translateX.set(withTiming(0, { duration: 160 }));
+        return;
+      }
+      translateX.set(
+        withTiming(-DELETE_EXIT_OFFSET, { duration: 180 }, (finished) => {
+          if (finished) scheduleOnRN(commitDelete);
+        }),
+      );
+    });
+  const animatedRow = useAnimatedStyle(() => ({ transform: [{ translateX: translateX.get() }] }));
   return (
     <View style={{ overflow: 'hidden', backgroundColor: theme.colors.danger }}>
-      <View
-        {...pan.panHandlers}
-        testID={`food-swipe-${food.id}`}
-        pointerEvents={revealed ? 'none' : 'auto'}
-        style={{ transform: [{ translateX: revealed ? -DELETE_REVEAL_WIDTH : 0 }] }}
-      >
-        <FocusablePressable
-          accessibilityRole="button"
-          accessibilityLabel={`${food.name}, ${basis}, ${energy}`}
-          accessibilityActions={onDelete ? [{ name: 'delete', label: t('foodSearch.deleteFood') }] : undefined}
-          onAccessibilityAction={(event) => {
-            if (event.nativeEvent.actionName === 'delete') onDelete?.();
-          }}
-          disabled={disabled}
-          onPress={() => {
-            if (revealed) setRevealed(false);
-            else onPress();
-          }}
-          testID={`food-result-${food.id}`}
-          style={({ pressed }) => ({
-            minHeight: 60,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing[3],
-            paddingHorizontal: theme.spacing[4],
-            paddingVertical: theme.spacing[2],
-            backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
-          })}
-        >
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText numberOfLines={1}>{loading ? t('foodSearch.loadingFood') : food.name}</AppText>
-            <AppText variant="compact" color="textSecondary" numberOfLines={1}>
-              {basis} · {t(`foodSearch.sources.${food.source}`)}
-            </AppText>
-            {error ? <InlineStatus tone="error" message={error} /> : null}
-          </View>
-          <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
-            <AppText variant="compact" numberOfLines={1} tabular align="right">
-              {energyValue}
-            </AppText>
-            <AppText variant="compact" numberOfLines={1} align="right">
-              {energyUnitLabel}
-            </AppText>
-          </View>
-        </FocusablePressable>
-      </View>
       {onDelete ? (
-        <FocusablePressable
-          accessibilityRole="button"
-          accessibilityLabel={t('foodSearch.delete')}
-          accessible={revealed}
-          accessibilityElementsHidden={!revealed}
-          importantForAccessibility={revealed ? 'auto' : 'no-hide-descendants'}
-          onPress={onDelete}
-          testID={`food-delete-${food.id}`}
+        <View
+          pointerEvents="none"
+          testID={`food-delete-icon-${food.id}`}
           style={{
             position: 'absolute',
             right: 0,
             top: 0,
             bottom: 0,
-            width: DELETE_REVEAL_WIDTH,
+            width: 88,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <AppText variant="compactStrong" color="onPrimary">
-            {t('foodSearch.delete')}
-          </AppText>
-        </FocusablePressable>
+          <AppIcon name="trash-outline" color="onPrimary" />
+        </View>
       ) : null}
+      <GestureDetector gesture={pan}>
+        <Animated.View testID={`food-swipe-${food.id}`} style={animatedRow}>
+          <FocusablePressable
+            accessibilityRole="button"
+            accessibilityLabel={`${food.name}, ${basis}, ${energy}`}
+            accessibilityActions={onDelete ? [{ name: 'delete', label: t('foodSearch.deleteFood') }] : undefined}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === 'delete') onDelete?.();
+            }}
+            disabled={disabled}
+            onPress={onPress}
+            testID={`food-result-${food.id}`}
+            style={({ pressed }) => ({
+              minHeight: 60,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: theme.spacing[3],
+              paddingHorizontal: theme.spacing[4],
+              paddingVertical: theme.spacing[2],
+              backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
+            })}
+          >
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText numberOfLines={1}>{food.name}</AppText>
+              <AppText variant="compact" color="textSecondary" numberOfLines={1}>
+                {basis} · {t(`foodSearch.sources.${food.source}`)}
+              </AppText>
+            </View>
+            <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
+              <AppText variant="compact" numberOfLines={1} tabular align="right">
+                {energyValue}
+              </AppText>
+              <AppText variant="compact" numberOfLines={1} align="right">
+                {energyUnitLabel}
+              </AppText>
+            </View>
+          </FocusablePressable>
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }

@@ -55,6 +55,7 @@ jest.mock('@/features/diary/diary.queries', () => ({
 }));
 jest.mock('../food-search.queries', () => ({
   useFood: (id: string) => ({ data: id ? mockFood : undefined, isError: false }),
+  useExternalFood: () => ({ data: undefined, isError: false }),
   useRecentFoods: () => ({
     data: [{ foodId: mockFood.id, lastServingId: mockFood.servings[0]!.id, lastServingQuantity: 50 }],
   }),
@@ -82,11 +83,11 @@ describe('UX-05: Food Detail / Add Entry', () => {
     );
 
     expect(screen.getByRole('header', { name: 'Add food' })).toBeTruthy();
-    expect(screen.getByLabelText('Enter serving value, current value 50')).toBeTruthy();
+    expect(screen.getByLabelText('Enter serving value, current value 50 g')).toBeTruthy();
     const ruler = screen.getByTestId('serving-ruler');
     expect(ruler.props.accessibilityRole).toBe('adjustable');
     fireEvent(ruler, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
-    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 51')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 51 g')).toBeTruthy());
 
     fireEvent.press(screen.getByTestId('food-detail-add'));
     await waitFor(() =>
@@ -116,27 +117,7 @@ describe('UX-05: Food Detail / Add Entry', () => {
       { language: 'pt-PT' },
     );
     expect(screen.getByRole('header', { name: 'Adicionar alimento' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Adicionar a Breakfast' })).toBeTruthy();
-  });
-
-  it('NAV-04: a meal-specific add returns past Food Search to Meal Detail', async () => {
-    mockAddFoodEntry.mockResolvedValue({ id: 'entry-1' });
-    await renderWithProviders(
-      <FoodDetailScreen
-        mode={{
-          kind: 'add',
-          foodId: mockFood.id,
-          foodSource: 'custom',
-          mealId: 'meal-1',
-          date: '2026-09-25',
-          origin: 'mealDetail',
-        }}
-      />,
-    );
-
-    fireEvent.press(screen.getByTestId('food-detail-add'));
-    await waitFor(() => expect(router.dismiss).toHaveBeenCalledWith(2));
-    expect(router.dismissTo).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeTruthy();
   });
 
   it('UX-00 / UX-05: submits a direct numeric serving from the keyboard', async () => {
@@ -160,7 +141,7 @@ describe('UX-05: Food Detail / Add Entry', () => {
     fireEvent.changeText(input, '75');
     await waitFor(() => expect(input.props.value).toBe('75'));
     fireEvent(input, 'submitEditing');
-    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 75')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 75 g')).toBeTruthy());
   });
 
   it('UX-06: snapshot-only edit scales quantity, hides unit choices, saves, and confirms delete', async () => {
@@ -187,7 +168,7 @@ describe('UX-05: Food Detail / Add Entry', () => {
     fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
       nativeEvent: { actionName: 'increment' },
     });
-    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 51')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 51 g')).toBeTruthy());
     fireEvent.press(screen.getByTestId('food-entry-save'));
     await waitFor(() =>
       expect(mockEditFoodEntry).toHaveBeenCalledWith({ id: 'entry-1', mealId: 'meal-1', quantity: 51 }),

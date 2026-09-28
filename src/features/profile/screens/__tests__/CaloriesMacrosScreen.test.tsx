@@ -80,6 +80,33 @@ describe('UX-16 / NAV-06: Calories & Macros', () => {
     expect(screen.getByTestId('goals-save')).toBeEnabled();
   });
 
+  it('UX-16: toggles to percentages, derives grams from calories, and requires a 100% total', async () => {
+    const { services, onSaved } = await setup();
+    await fireEvent.press(screen.getByTestId('goals-mode-percent'));
+    expect(input('Carbs, %').props.value).toBe('50');
+    expect(input('Protein, %').props.value).toBe('20');
+    expect(input('Fat, %').props.value).toBe('30');
+    expect(screen.getByTestId('goals-percent-total')).toHaveTextContent('Total 100%');
+
+    await fireEvent.changeText(input('Calories, kcal'), '2400');
+    expect(screen.getByText('≈ 300 g · 1,200 kcal')).toBeOnTheScreen();
+    await fireEvent.changeText(input('Fat, %'), '29');
+    expect(screen.getByText('Percentages must add up to 100% (currently 99%).')).toBeOnTheScreen();
+    expect(screen.getByTestId('goals-save')).toBeDisabled();
+    await fireEvent.changeText(input('Fat, %'), '30');
+    await fireEvent.press(screen.getByTestId('goals-save'));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(await services.goals.goalFor('2026-09-25')).toMatchObject({
+      macroTargetMode: 'percent',
+      carbohydrateTargetPercent: 50,
+      proteinTargetPercent: 20,
+      fatTargetPercent: 30,
+      carbohydrateTargetG: 300,
+      proteinTargetG: 120,
+      fatTargetG: 80,
+    });
+  });
+
   it('UX-00: energy follows energy_unit (kJ); an untouched Calories field keeps the stored kcal', async () => {
     const { services, onSaved } = await setup({ confirmed: true, kJ: true });
     expect(input('Calories, kJ').props.value).toBe('7531');

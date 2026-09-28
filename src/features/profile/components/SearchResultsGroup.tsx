@@ -32,7 +32,7 @@ type DragState = { active: SharedValue<number>; hover: SharedValue<number>; rowH
  * immediately, as Units. Reorder as UX-17 Meals: handle drag, a11y `Move up` / `Move down` (DS-05). The last visible
  * section's switch is disabled.
  */
-export function SearchResultsGroup() {
+export function SearchResultsGroup({ usdaAvailable = true }: { usdaAvailable?: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const sections = useFoodSearchSections().data;
@@ -63,6 +63,7 @@ export function SearchResultsGroup() {
           section={section}
           index={index}
           drag={drag}
+          available={section.id !== 'usda' || usdaAvailable}
           onToggle={(visible) => commit(setFoodSearchSectionVisible(sections, section.id, visible))}
           onMove={(delta) => commit(moveFoodSearchSection(sections, section.id, index + delta))}
           onDrop={(to) => commit(moveFoodSearchSection(sections, section.id, to))}
@@ -82,12 +83,13 @@ type RowProps = {
   section: FoodSearchSection;
   index: number;
   drag: DragState;
+  available: boolean;
   onToggle: (visible: boolean) => void;
   onMove: (delta: -1 | 1) => void;
   onDrop: (toIndex: number) => void;
 };
 
-function SectionRow({ sections, section, index, drag, onToggle, onMove, onDrop }: RowProps) {
+function SectionRow({ sections, section, index, drag, available, onToggle, onMove, onDrop }: RowProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const count = sections.length;
@@ -95,6 +97,7 @@ function SectionRow({ sections, section, index, drag, onToggle, onMove, onDrop }
   const height = useSharedValue<number>(theme.sizes.settingsRow[0]);
   const label = t(LABEL_KEYS[section.id]);
   const locked = section.visible && !canHideFoodSearchSection(sections, section.id);
+  const disabled = locked || !available;
 
   const pan = Gesture.Pan()
     .withTestId(`search-section-handle-pan-${index}`)
@@ -160,11 +163,13 @@ function SectionRow({ sections, section, index, drag, onToggle, onMove, onDrop }
           <AppText variant="body">{label}</AppText>
         </View>
         <Switch
-          value={section.visible}
-          disabled={locked}
+          value={available && section.visible}
+          disabled={disabled}
           onValueChange={onToggle}
           accessibilityLabel={label}
-          accessibilityHint={locked ? t('foodDatabases.lastVisible') : undefined}
+          accessibilityHint={
+            !available ? t('foodDatabases.usdaRequiresKey') : locked ? t('foodDatabases.lastVisible') : undefined
+          }
           trackColor={{ true: theme.colors.primary, false: theme.colors.divider }}
           testID={`search-section-switch-${section.id}`}
         />

@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { EnergyUnit } from '@/domain/units/units';
-import { AppText } from '@/shared/components';
+import { AppText, FocusablePressable } from '@/shared/components';
 import { formatEnergy } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme, type Colors } from '@/shared/theme';
@@ -15,10 +16,11 @@ export type CalorieRingProps = {
 };
 
 /**
- * DS-08 calorie ring: remaining value, unit-aware `kcal left`, consumed below. Over goal → the amount over,
- * `kcal over` and the warning color, never an unexplained red ring (DS-03). One screen-reader element (UX-02).
+ * DS-08 calorie ring: remaining value and unit-aware `kcal left`. Pressing it reveals consumed/goal inside the
+ * ring. Over goal → the amount over + `kcal over` and the warning color, never an unexplained red ring (DS-03).
  */
 export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
+  const [showConsumed, setShowConsumed] = useState(false);
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
@@ -37,7 +39,6 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
 
   let value: string;
   let caption: string;
-  let detail: string | null;
   let a11y: string;
   let tone: keyof Colors = 'textPrimary';
   let progress = 0;
@@ -45,13 +46,11 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
   if (goalKcal === null) {
     value = eaten;
     caption = t('diary.ring.eatenNoGoal', { unit: unitLabel });
-    detail = t('diary.ring.noGoal');
     a11y = t('diary.ring.a11yNoGoal', { eaten, unit: unitSpoken });
   } else if (eatenKcal > goalKcal) {
     const over = fmt(eatenKcal - goalKcal);
     value = over;
     caption = t('diary.ring.over', { unit: unitLabel });
-    detail = t('diary.ring.eaten', { value: eaten });
     a11y = t('diary.ring.a11yOver', { over, goal: fmt(goalKcal), eaten, unit: unitSpoken });
     tone = 'warning';
     ringColor = 'warning';
@@ -60,17 +59,19 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
     const remaining = fmt(goalKcal - eatenKcal);
     value = remaining;
     caption = t('diary.ring.left', { unit: unitLabel });
-    detail = t('diary.ring.eaten', { value: eaten });
     a11y = t('diary.ring.a11yLeft', { remaining, goal: fmt(goalKcal), eaten, unit: unitSpoken });
     progress = goalKcal > 0 ? eatenKcal / goalKcal : 0;
   }
 
   return (
-    <View
+    <FocusablePressable
       testID="calorie-ring"
       accessible
-      accessibilityRole="text"
+      accessibilityRole={goalKcal === null ? 'text' : 'button'}
       accessibilityLabel={a11y}
+      accessibilityHint={goalKcal === null ? undefined : t('diary.ring.consumedHint')}
+      accessibilityState={goalKcal === null ? undefined : { expanded: showConsumed }}
+      onPress={goalKcal === null ? undefined : () => setShowConsumed((shown) => !shown)}
       style={{ width: diameter, height: diameter }}
     >
       <RingArc
@@ -87,32 +88,44 @@ export function CalorieRing({ eatenKcal, goalKcal, unit }: CalorieRingProps) {
           { padding: large ? diameter * 0.15 + stroke : stroke + theme.spacing[1] },
         ]}
       >
-        <AppText variant="displayNumber" tabular color={tone} numberOfLines={1} adjustsFontSizeToFit>
-          {value}
-        </AppText>
-        <AppText
-          variant="compact"
-          color={tone === 'warning' ? 'warning' : 'textSecondary'}
-          align="center"
-          numberOfLines={1}
-          adjustsFontSizeToFit={large}
-        >
-          {caption}
-        </AppText>
-        {detail ? (
-          <AppText
-            variant="compact"
-            color="textSecondary"
-            tabular
-            align="center"
-            numberOfLines={1}
-            adjustsFontSizeToFit={large}
+        {showConsumed && goalKcal !== null ? (
+          <View
+            testID="calorie-ring-consumed"
+            style={[
+              styles.tooltip,
+              {
+                backgroundColor: theme.colors.surfaceSubtle,
+                borderColor: theme.colors.divider,
+                paddingHorizontal: theme.spacing[2],
+                paddingVertical: theme.spacing[1],
+              },
+            ]}
           >
-            {detail}
-          </AppText>
-        ) : null}
+            <AppText variant="label" color="textSecondary" align="center">
+              {t('diary.ring.consumed')}
+            </AppText>
+            <AppText variant="compactStrong" tabular align="center" numberOfLines={1} adjustsFontSizeToFit>
+              {t('diary.ring.consumedValue', { eaten, goal: fmt(goalKcal), unit: unitLabel })}
+            </AppText>
+          </View>
+        ) : (
+          <>
+            <AppText variant="displayNumber" tabular color={tone} numberOfLines={1} adjustsFontSizeToFit>
+              {value}
+            </AppText>
+            <AppText
+              variant="compact"
+              color={tone === 'warning' ? 'warning' : 'textSecondary'}
+              align="center"
+              numberOfLines={1}
+              adjustsFontSizeToFit={large}
+            >
+              {caption}
+            </AppText>
+          </>
+        )}
       </View>
-    </View>
+    </FocusablePressable>
   );
 }
 
@@ -196,4 +209,5 @@ function RingArc({
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
   clip: { position: 'absolute', top: 0, overflow: 'hidden' },
+  tooltip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, maxWidth: '100%' },
 });

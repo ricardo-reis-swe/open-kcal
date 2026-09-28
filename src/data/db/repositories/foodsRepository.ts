@@ -312,6 +312,15 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       if (changes === 0) throw new NotFoundError('Custom food not found');
     },
 
+    /** DATA-11: Undo reactivates a soft-deleted custom food without changing its servings or history. */
+    async restoreCustom(id: string): Promise<void> {
+      const { changes } = await db.run(
+        "UPDATE foods SET is_deleted = 0, updated_at = ? WHERE id = ? AND source = 'custom' AND is_deleted = 1",
+        [nowUtcIso(clock), id],
+      );
+      if (changes === 0) throw new NotFoundError('Deleted custom food not found');
+    },
+
     /**
      * DATA-15: upsert a remote food + servings + cache metadata before logging, keyed on (source, external_id),
      * so it gets a stable local id and offline reuse. Servings are merged by `(label, unit)` (PROV-09).

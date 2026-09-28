@@ -14,9 +14,14 @@ type GoalRow = {
   carbohydrate_target_g: number;
   protein_target_g: number;
   fat_target_g: number;
+  macro_target_mode: 'grams' | 'percent';
+  carbohydrate_target_percent: number | null;
+  protein_target_percent: number | null;
+  fat_target_percent: number | null;
 };
 
-const COLUMNS = 'id, effective_from, calorie_target_kcal, carbohydrate_target_g, protein_target_g, fat_target_g';
+const COLUMNS = `id, effective_from, calorie_target_kcal, carbohydrate_target_g, protein_target_g, fat_target_g,
+  macro_target_mode, carbohydrate_target_percent, protein_target_percent, fat_target_percent`;
 
 const toGoal = (r: GoalRow): NutritionGoal => ({
   id: r.id,
@@ -25,10 +30,25 @@ const toGoal = (r: GoalRow): NutritionGoal => ({
   carbohydrateTargetG: r.carbohydrate_target_g,
   proteinTargetG: r.protein_target_g,
   fatTargetG: r.fat_target_g,
+  macroTargetMode: r.macro_target_mode,
+  carbohydrateTargetPercent: r.carbohydrate_target_percent,
+  proteinTargetPercent: r.protein_target_percent,
+  fatTargetPercent: r.fat_target_percent,
 });
 
+function normalizedTargets(targets: NutritionTargets) {
+  const mode = targets.macroTargetMode ?? 'grams';
+  return {
+    ...targets,
+    macroTargetMode: mode,
+    carbohydrateTargetPercent: mode === 'percent' ? (targets.carbohydrateTargetPercent ?? null) : null,
+    proteinTargetPercent: mode === 'percent' ? (targets.proteinTargetPercent ?? null) : null,
+    fatTargetPercent: mode === 'percent' ? (targets.fatTargetPercent ?? null) : null,
+  };
+}
+
 function validateTargets(t: NutritionTargets): void {
-  const bad = invalidGoalFields(t); // UX-00 ranges
+  const bad = invalidGoalFields(normalizedTargets(t)); // UX-00 ranges
   if (bad.length > 0) throw new ValidationError('Invalid goal targets', bad);
 }
 
@@ -59,7 +79,8 @@ export function createGoalsRepository({ db, clock, ids }: RepositoryDeps) {
      * updates the provisional row in place (keeping its `effective_from`) and confirms goals.
      */
     async save(targets: NutritionTargets): Promise<NutritionGoal> {
-      validateTargets(targets);
+      const normalized = normalizedTargets(targets);
+      validateTargets(normalized);
       return db.transaction(async (tx) => {
         const now = nowUtcIso(clock);
         const today = todayLocal(clock);
@@ -67,25 +88,34 @@ export function createGoalsRepository({ db, clock, ids }: RepositoryDeps) {
         const goals = (await tx.getAll<GoalRow>(`SELECT ${COLUMNS} FROM nutrition_goals`)).map(toGoal);
         const plan = planGoalSave(goals, today, settings.goalsConfirmedAt !== null);
         const values = [
-          targets.calorieTargetKcal,
-          targets.carbohydrateTargetG,
-          targets.proteinTargetG,
-          targets.fatTargetG,
+          normalized.calorieTargetKcal,
+          normalized.carbohydrateTargetG,
+          normalized.proteinTargetG,
+          normalized.fatTargetG,
+          normalized.macroTargetMode,
+          normalized.carbohydrateTargetPercent,
+          normalized.proteinTargetPercent,
+          normalized.fatTargetPercent,
         ];
         switch (plan.kind) {
           case 'updateInPlace':
             await tx.run(
               `UPDATE nutrition_goals SET calorie_target_kcal = ?, carbohydrate_target_g = ?, protein_target_g = ?,
-                 fat_target_g = ?, updated_at = ? WHERE id = ?`,
+                 fat_target_g = ?, macro_target_mode = ?, carbohydrate_target_percent = ?,
+                 protein_target_percent = ?, fat_target_percent = ?, updated_at = ? WHERE id = ?`,
               [...values, now, plan.goalId],
             );
             break;
           case 'upsertEffectiveToday':
             await tx.run(
-              `INSERT INTO nutrition_goals (${COLUMNS}, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              `INSERT INTO nutrition_goals (${COLUMNS}, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT (effective_from) DO UPDATE SET calorie_target_kcal = excluded.calorie_target_kcal,
                  carbohydrate_target_g = excluded.carbohydrate_target_g, protein_target_g = excluded.protein_target_g,
-                 fat_target_g = excluded.fat_target_g, updated_at = excluded.updated_at`,
+                 fat_target_g = excluded.fat_target_g, macro_target_mode = excluded.macro_target_mode,
+                 carbohydrate_target_percent = excluded.carbohydrate_target_percent,
+                 protein_target_percent = excluded.protein_target_percent,
+                 fat_target_percent = excluded.fat_target_percent, updated_at = excluded.updated_at`,
               [ids.newId(), plan.effectiveFrom, ...values, now, now],
             );
             break;

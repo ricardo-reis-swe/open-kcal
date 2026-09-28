@@ -118,7 +118,7 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
     jest.useRealTimers();
   });
 
-  it('PROV-04 / UX-04: a throttled product read reaches the row error within five seconds', async () => {
+  it('PROV-04 / UX-04: a throttled product read reaches the detail error within five seconds', async () => {
     jest.useFakeTimers();
     let time = 0;
     const productLimiter = new RequestLimiter(1, 60_000, () => time);

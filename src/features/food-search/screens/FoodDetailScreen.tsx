@@ -15,10 +15,10 @@ import {
   BottomSheet,
   ConfirmationDialog,
   FormField,
+  HeaderAction,
   InlineStatus,
   ListRow,
   NotFoundState,
-  PrimaryButton,
   TextAction,
 } from '@/shared/components';
 import { formatEnergy, formatGrams, formatShortDate, relativeDay } from '@/shared/i18n/format';
@@ -28,10 +28,18 @@ import { routes, type FoodSource, type Origin } from '@/shared/navigation/routes
 import { useTheme } from '@/shared/theme';
 
 import { ServingRuler } from '../components/ServingRuler';
-import { useFood, useRecentFoods } from '../food-search.queries';
+import { useExternalFood, useFood, useRecentFoods } from '../food-search.queries';
 
 export type FoodDetailMode =
-  | { kind: 'add'; foodId: string; foodSource: FoodSource; mealId: string; date: string; origin: Origin }
+  | {
+      kind: 'add';
+      foodId: string;
+      foodSource: FoodSource;
+      externalId?: string;
+      mealId: string;
+      date: string;
+      origin: Origin;
+    }
   | { kind: 'edit'; entryId: string; origin: Origin }
   | null;
 
@@ -42,7 +50,14 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   const editing = mode?.kind === 'edit';
   const entry = useDiaryEntry(editing ? mode.entryId : '', editing);
   const foodId = mode?.kind === 'add' ? mode.foodId : (entry.data?.foodId ?? '');
-  const food = useFood(foodId, Boolean(foodId));
+  const externalId = mode?.kind === 'add' ? mode.externalId : undefined;
+  const storedFood = useFood(foodId, Boolean(foodId) && !externalId);
+  const externalFood = useExternalFood(
+    mode?.kind === 'add' && mode.foodSource !== 'custom' ? mode.foodSource : 'usda',
+    externalId ?? '',
+    Boolean(externalId),
+  );
+  const food = externalId ? externalFood : storedFood;
   const recents = useRecentFoods();
   const meals = useMeals();
   const settings = useAppSettings();
@@ -50,6 +65,7 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
     <NotFoundState actionLabel={t('common.backToDiary')} onAction={() => router.dismissTo(routes.diary())} />
   );
   let body: React.ReactNode = null;
+  let formRendered = false;
 
   if (!mode || (editing && entry.data && entry.data.kind !== 'food')) body = notFound;
   else if (mode.kind === 'add' && food.data && (food.data.isDeleted || food.data.source !== mode.foodSource)) {
@@ -65,6 +81,7 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
       : null;
     if (!initial || !meals.data.some((meal) => meal.id === mode.mealId)) body = notFound;
     else {
+      formRendered = true;
       body = (
         <FoodDetailForm
           key={food.data.id}
@@ -93,6 +110,7 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
           )
         : undefined;
     const resolvedFood = resolvedServing ? food.data! : snapshotFood(entry.data);
+    formRendered = true;
     body = (
       <FoodDetailForm
         key={entry.data.id}
@@ -121,11 +139,17 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
-      <AppBar
-        title={t(editing ? 'foodDetail.editTitle' : 'foodDetail.title')}
-        back={{ label: t('common.back'), onPress: () => router.back() }}
-      />
-      {body}
+      {formRendered ? (
+        body
+      ) : body ? (
+        <>
+          <AppBar
+            title={t(editing ? 'foodDetail.editTitle' : 'foodDetail.title')}
+            back={{ label: t('common.back'), onPress: () => router.back() }}
+          />
+          {body}
+        </>
+      ) : null}
     </View>
   );
 }
@@ -236,10 +260,8 @@ function FoodDetailForm({
           quantity,
         });
         setDate(mode.date);
-        // NAV-04: a meal-specific add returns past Food Search to its Meal Detail.
-        // Global and Diary flows end on the target Diary date (NAV-03).
-        if (mode.origin === 'mealDetail') router.dismiss(2);
-        else router.dismissTo(routes.diary());
+        // NAV-03/04: every add flow ends on the target Diary date.
+        router.dismissTo(routes.diary());
       } else {
         await writes.editFoodEntry.mutateAsync({
           id: mode.entryId,
@@ -247,8 +269,7 @@ function FoodDetailForm({
           quantity,
           ...(allowServingChange ? { servingId: serving.id } : {}),
         });
-        if (mode.origin === 'mealDetail' && mealId !== mode.mealId) router.dismissTo(routes.diary());
-        else router.back();
+        router.back();
       }
     } catch {
       setSaveFailed(true);
@@ -266,13 +287,30 @@ function FoodDetailForm({
   };
   const applyNumeric = () => {
     const parsed = Number(valueText.trim().replace(',', '.'));
-    if (!(parsed > 0) || !Number.isFinite(parsed) || !/^\d+(?:[.,]\d{1,2})?$/.test(valueText.trim())) return;
+    if (!numericValueValid) return;
     setQuantity(parsed);
     setEditingValue(false);
   };
+  const numericValueValid =
+    Number(valueText.trim().replace(',', '.')) > 0 &&
+    Number.isFinite(Number(valueText.trim().replace(',', '.'))) &&
+    /^\d+(?:[.,]\d{1,2})?$/.test(valueText.trim());
 
   return (
     <>
+      <AppBar
+        title={t(mode.kind === 'edit' ? 'foodDetail.editTitle' : 'foodDetail.title')}
+        back={{ label: t('common.back'), onPress: () => router.back() }}
+        actions={
+          <HeaderAction
+            label={mode.kind === 'add' ? t('common.add') : t('foodDetail.save')}
+            onPress={() => void save()}
+            loading={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
+            disabled={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
+            testID={mode.kind === 'add' ? 'food-detail-add' : 'food-entry-save'}
+          />
+        }
+      />
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingVertical: theme.spacing[4], gap: theme.spacing[4] }}>
           <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[1] }}>
@@ -335,19 +373,13 @@ function FoodDetailForm({
               />
             </View>
           ) : null}
+          {saveFailed || deleteFailed ? (
+            <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
+              {saveFailed ? <InlineStatus tone="error" message={t('foodDetail.saveError')} /> : null}
+              {deleteFailed ? <InlineStatus tone="error" message={t('foodDetail.deleteError')} /> : null}
+            </View>
+          ) : null}
         </ScrollView>
-        <View style={{ padding: theme.spacing[4], gap: theme.spacing[2], backgroundColor: theme.colors.canvas }}>
-          {saveFailed ? <InlineStatus tone="error" message={t('foodDetail.saveError')} /> : null}
-          {deleteFailed ? <InlineStatus tone="error" message={t('foodDetail.deleteError')} /> : null}
-          <PrimaryButton
-            label={mode.kind === 'add' ? t('foodDetail.addTo', { meal: mealName }) : t('foodDetail.save')}
-            onPress={() => void save()}
-            loading={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
-            disabled={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
-            fullWidth
-            testID={mode.kind === 'add' ? 'food-detail-add' : 'food-entry-save'}
-          />
-        </View>
       </View>
       <MealPicker
         visible={pickingMeal}
@@ -385,6 +417,18 @@ function FoodDetailForm({
         testID="serving-value-sheet"
       >
         <View style={{ paddingHorizontal: theme.spacing[4], paddingBottom: theme.spacing[4], gap: theme.spacing[3] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: -theme.spacing[3] }}>
+            <AppText variant="bodyStrong" accessibilityRole="header" numberOfLines={1} style={{ flex: 1 }}>
+              {t('foodDetail.enterServing')}
+            </AppText>
+            <HeaderAction
+              label={t('foodDetail.done')}
+              onPress={applyNumeric}
+              disabled={!numericValueValid}
+              placement="surface"
+              testID="serving-value-confirm"
+            />
+          </View>
           <FormField
             label={t('foodDetail.serving')}
             value={valueText}
@@ -396,7 +440,6 @@ function FoodDetailForm({
             autoFocus
             testID="serving-value-input"
           />
-          <PrimaryButton label={t('foodDetail.done')} onPress={applyNumeric} fullWidth testID="serving-value-confirm" />
         </View>
       </BottomSheet>
       {mode.kind === 'edit' ? (

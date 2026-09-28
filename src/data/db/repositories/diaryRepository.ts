@@ -167,9 +167,52 @@ export type AddFoodEntryInput = {
 /** The serving currently chosen in the editor (optional); the repository decides whether it changed. */
 export type EditFoodEntryInput = { mealId: string; quantity: number; servingId?: string };
 export type QuickCaloriesInput = { diaryDate: LocalDate; mealId: string; energyKcal: number; note?: string | null };
-export type CopyMealInput = { mealId: string; sourceDate: LocalDate; destinationDate: LocalDate };
+export type CopyMealInput = {
+  mealId: string;
+  sourceDate: LocalDate;
+  destinationDate: LocalDate;
+  destinationMealId: string;
+};
+export type CopyEntryInput = { entryId: string; destinationDate: LocalDate; destinationMealId: string };
 
 export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
+  const copyRows = async (
+    tx: SqlExecutor,
+    rows: EntryRow[],
+    destinationDate: LocalDate,
+    destinationMealId: string,
+  ): Promise<void> => {
+    const base = await nextSortOrder(tx, destinationDate, destinationMealId);
+    const now = nowUtcIso(clock);
+    for (const [i, r] of rows.entries()) {
+      await tx.run(
+        `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
+           serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
+           created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          ids.newId(),
+          r.entry_kind,
+          destinationDate,
+          destinationMealId,
+          r.food_id,
+          r.food_name_snapshot,
+          r.brand_snapshot,
+          r.serving_quantity,
+          r.serving_unit_snapshot,
+          r.energy_kcal,
+          r.protein_g,
+          r.carbohydrate_g,
+          r.fat_g,
+          r.note,
+          base + i,
+          now,
+          now,
+        ],
+      );
+    }
+  };
+
   return {
     getEntry: (id: string) => readEntry(db, id),
 
@@ -363,48 +406,32 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
 
     /**
      * DATA-16 Copy meal, one transaction: source entries in order → new IDs → snapshots copied exactly (incl. food_id
-     * and note) → same `meal_id` on the destination date, appended after its existing entries. The source date may
-     * equal the destination (UX-12 appends duplicates). Recents are not touched. Returns the number of copied entries.
+     * and note) → the explicitly selected destination meal/date, appended after its existing entries. The source
+     * date/meal may equal the destination (duplicates are appended). Recents are not touched.
      */
     async copyMeal(input: CopyMealInput): Promise<{ copiedCount: number }> {
       assertDate(input.sourceDate);
       assertDate(input.destinationDate);
       return db.transaction(async (tx) => {
         await assertMeal(tx, input.mealId);
+        await assertMeal(tx, input.destinationMealId);
         const rows = await tx.getAll<EntryRow>(
           'SELECT * FROM diary_entries WHERE diary_date = ? AND meal_id = ? ORDER BY sort_order, created_at',
           [input.sourceDate, input.mealId],
         );
-        const base = await nextSortOrder(tx, input.destinationDate, input.mealId);
-        const now = nowUtcIso(clock);
-        for (const [i, r] of rows.entries()) {
-          await tx.run(
-            `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
-               serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
-               created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              ids.newId(),
-              r.entry_kind,
-              input.destinationDate,
-              input.mealId,
-              r.food_id,
-              r.food_name_snapshot,
-              r.brand_snapshot,
-              r.serving_quantity,
-              r.serving_unit_snapshot,
-              r.energy_kcal,
-              r.protein_g,
-              r.carbohydrate_g,
-              r.fat_g,
-              r.note,
-              base + i,
-              now,
-              now,
-            ],
-          );
-        }
+        await copyRows(tx, rows, input.destinationDate, input.destinationMealId);
         return { copiedCount: rows.length };
+      });
+    },
+
+    /** Copy one immutable entry snapshot into the selected meal/date. Recents are not touched. */
+    async copyEntry(input: CopyEntryInput): Promise<void> {
+      assertDate(input.destinationDate);
+      return db.transaction(async (tx) => {
+        await assertMeal(tx, input.destinationMealId);
+        const row = await tx.getFirst<EntryRow>('SELECT * FROM diary_entries WHERE id = ?', [input.entryId]);
+        if (!row) throw new NotFoundError('Entry not found');
+        await copyRows(tx, [row], input.destinationDate, input.destinationMealId);
       });
     },
 
@@ -412,6 +439,40 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
     async deleteEntry(id: string): Promise<void> {
       const { changes } = await db.run('DELETE FROM diary_entries WHERE id = ?', [id]);
       if (changes === 0) throw new NotFoundError('Entry not found');
+    },
+
+    /** DATA-12: Undo restores the exact deleted snapshot and its original position; recents stay unchanged. */
+    async restoreEntry(entry: DiaryEntry): Promise<void> {
+      assertDate(entry.diaryDate);
+      await db.transaction(async (tx) => {
+        await assertMeal(tx, entry.mealId);
+        const now = nowUtcIso(clock);
+        await tx.run(
+          `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
+             serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
+             created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            entry.id,
+            entry.kind,
+            entry.diaryDate,
+            entry.mealId,
+            entry.foodId,
+            entry.name,
+            entry.brand,
+            entry.servingQuantity,
+            entry.servingUnit,
+            entry.nutrients.energyKcal,
+            entry.nutrients.proteinG,
+            entry.nutrients.carbohydrateG,
+            entry.nutrients.fatG,
+            entry.note,
+            entry.sortOrder,
+            now,
+            now,
+          ],
+        );
+      });
     },
   };
 }

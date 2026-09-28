@@ -10,9 +10,9 @@ import {
   BottomSheet,
   ConfirmationDialog,
   FormField,
+  HeaderAction,
   InlineStatus,
   ListRow,
-  PrimaryButton,
   TextAction,
 } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
@@ -97,26 +97,26 @@ function SheetContent({
   }
   if (!settings || !current.isSuccess || (target.mode === 'edit' && !entry)) return heading;
   return (
-    <>
-      {heading}
-      <WeightForm
-        entry={entry}
-        placeholderKg={current.data?.weightKg ?? null}
-        unit={settings.weightUnit}
-        today={today}
-        onDone={onDone}
-      />
-    </>
+    <WeightForm
+      title={title}
+      entry={entry}
+      placeholderKg={current.data?.weightKg ?? null}
+      unit={settings.weightUnit}
+      today={today}
+      onDone={onDone}
+    />
   );
 }
 
 function WeightForm({
+  title,
   entry,
   placeholderKg,
   unit,
   today,
   onDone,
 }: {
+  title: string;
   entry: WeightEntry | null;
   placeholderKg: number | null;
   unit: WeightUnit;
@@ -189,6 +189,27 @@ function WeightForm({
 
   return (
     <View style={{ gap: theme.spacing[3], paddingBottom: theme.spacing[2] }}>
+      <View
+        style={{
+          minHeight: theme.touchMin,
+          paddingLeft: theme.spacing[4],
+          paddingRight: theme.spacing[1],
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}
+      >
+        <AppText variant="bodyStrong" accessibilityRole="header" numberOfLines={1} style={{ flex: 1 }}>
+          {title}
+        </AppText>
+        <HeaderAction
+          label={t('weightEntry.save')}
+          onPress={() => void submit()}
+          disabled={!canSave}
+          loading={add.isPending || update.isPending}
+          placement="surface"
+          testID="weight-entry-save"
+        />
+      </View>
       <ListRow
         label={t('weightEntry.date')}
         value={dateLabel}
@@ -216,14 +237,6 @@ function WeightForm({
       </View>
       <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
         {status ? <InlineStatus tone="error" message={t(`weightEntry.${status}`)} /> : null}
-        <PrimaryButton
-          label={t('weightEntry.save')}
-          onPress={() => void submit()}
-          disabled={!canSave}
-          loading={add.isPending || update.isPending}
-          fullWidth
-          testID="weight-entry-save"
-        />
       </View>
       {entry ? (
         <View style={{ alignItems: 'center' }}>

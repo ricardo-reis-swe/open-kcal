@@ -15,6 +15,8 @@ export type ListRowProps = {
   onPress?: () => void;
   /** Shows a chevron. Only for rows that open another screen (DS-09). */
   navigates?: boolean;
+  /** Marks a row as an inline disclosure and shows its current direction. */
+  expanded?: boolean;
   disabled?: boolean;
   accessibilityHint?: string;
   testID?: string;
@@ -27,6 +29,7 @@ export function ListRow({
   icon,
   onPress,
   navigates = false,
+  expanded,
   disabled = false,
   accessibilityHint,
   testID,
@@ -46,6 +49,9 @@ export function ListRow({
         </AppText>
       ) : null}
       {navigates ? <AppIcon name="chevron-forward" size="inline" color="textSecondary" /> : null}
+      {expanded !== undefined ? (
+        <AppIcon name={expanded ? 'chevron-up' : 'chevron-down'} size="inline" color="textSecondary" />
+      ) : null}
     </>
   );
   const rowStyle = [
@@ -75,7 +81,7 @@ export function ListRow({
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, expanded }}
       style={({ pressed }) => [rowStyle, pressed && { backgroundColor: theme.colors.primaryTint }]}
     >
       {content}

@@ -27,7 +27,7 @@ Read when: touching SQLite, repositories, migrations, nutrition math, dates or s
 - The entry must stay fully usable if `food_id` later becomes NULL.
 
 ## DATA-06 Unknown ≠ zero
-- NULL nutrient = unknown; 0 = known zero. MUST NOT coerce NULL to 0 anywhere (API mapping, aggregation, UI).
+- NULL nutrient = unknown; 0 = known zero. MUST NOT coerce NULL to 0 in API mapping or aggregation. The Diary UI shows the known sum (including `0`) plus an unknown indicator when `unknown count > 0`.
 - Quick Calories: macros and serving columns always NULL. Use one consistent display name such as `Quick Calories`; user text goes in `note` (trimmed; empty → NULL).
 - Per macro, aggregates return **known sum + unknown count**:
 ```sql
@@ -49,6 +49,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Goal for date D = the row with the greatest `effective_from ≤ D`.
 - Saving goals upserts the row effective **today** (updates it if it already exists). Older rows are never changed, so past days keep their targets.
 - **Exception (UX-01):** while `app_settings.goals_confirmed_at` is NULL, the first save updates the provisional row in place (keeping its `effective_from`) and sets `goals_confirmed_at`.
+- Macro targets persist both their entry mode (`grams` or `percent`) and canonical gram targets. Percentage mode also persists the three percentages, which MUST total 100; canonical grams are derived from the calorie target using 4/4/9 kcal per gram.
 - The schema supports other effective dates. A later section may add a UI for choosing one; it is not required in the first release.
 
 ## DATA-10 Meals
@@ -60,13 +61,13 @@ FROM diary_entries WHERE diary_date = ?;
 ## DATA-11 Foods and servings
 - Custom foods: all macros required by app validation (non-null in practice). External foods may have NULL macros.
 - `(source, external_id)` is unique. Re-fetching updates the existing row + cache metadata; never duplicate.
-- Delete custom food = `is_deleted = 1`. It disappears from search and recents; entries keep their snapshots. Unreferenced soft-deleted foods may be purged in later maintenance; not required for the MVP.
+- Delete custom food = `is_deleted = 1`. It disappears from search and recents; entries keep their snapshots. Undo sets `is_deleted = 0` without changing servings or history. Unreferenced soft-deleted foods may be purged in later maintenance; not required for the MVP.
 - A serving is selectable only with full conversion data; a label alone is not enough. Formula: `nutrient = basis nutrient × basis_multiplier × ruler value`.
 
 ## DATA-12 Diary entries
 - Food entries require name snapshot, `serving_quantity` and `serving_unit_snapshot`.
 - Moving an entry to another meal changes only `meal_id` + `updated_at`; nutrition is not recalculated.
-- Delete removes the row physically (after UI confirmation). Totals are derived; recent `use_count` is not decremented.
+- Delete removes the row physically after a committed swipe. Totals are derived; recent `use_count` is not decremented. While the Undo toast is visible, Undo reinserts the exact entry snapshot with its original ID and `sort_order`; it does not update recents.
 
 ## DATA-13 Weight
 - Multiple measurements per day. Current weight = latest `measured_at`, tie-break `created_at`.
@@ -92,7 +93,7 @@ FROM diary_entries WHERE diary_date = ?;
 | Add food entry | Tx: validate meal/date/food/serving/qty → compute unrounded nutrition → insert snapshot → upsert recent. UI reloads after commit. |
 | Edit food entry | Load by ID → validate serving/meal → recompute snapshot only if serving changed → upsert recent after save. |
 | Add/edit Quick Calories | Validate meal, date, kcal ≥ 0 (the UI requires ≥ 1, UX-07). Macros + serving NULL. Trim note. |
-| Copy meal | Tx: read source meal + date entries in order → new UUIDs → copy snapshots exactly → destination date, same `meal_id` → append after existing `sort_order`. Copies are independent of the originals. |
+| Copy item / meal | Tx: read the source entry or source meal/date entries in order → new UUID(s) → copy snapshots exactly → chosen destination date + meal → append after existing `sort_order`. Copies are independent of the originals. |
 | Delete custom food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
 | Update goals | DATA-09. |
@@ -100,6 +101,7 @@ FROM diary_entries WHERE diary_date = ?;
 ## DATA-17 Initialization and migrations
 - First launch, one idempotent transaction: schema + indexes → settings row (locale-informed unit defaults, predictable fallback) → 4 default meals in display order → provisional goal row (UX-01; `goals_confirmed_at` NULL) → schema version. Repeated or interrupted launches MUST NOT duplicate anything.
 - Migrations: numbered, forward-only, stored with the code. Each has an increasing integer version, runs in a transaction where possible, records its version only after all steps succeed, detects whether it already ran, and preserves user data.
+- Migration 3 adds the macro target mode and percentage columns; existing goals remain fixed-gram goals.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.
 

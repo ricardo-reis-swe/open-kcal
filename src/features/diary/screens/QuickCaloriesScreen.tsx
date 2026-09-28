@@ -17,10 +17,10 @@ import {
   AppBar,
   ConfirmationDialog,
   FormField,
+  HeaderAction,
   InlineStatus,
   ListRow,
   NotFoundState,
-  PrimaryButton,
   TextAction,
 } from '@/shared/components';
 import type { LocalDate } from '@/shared/dates';
@@ -42,8 +42,8 @@ const toDiaryRoot = () => router.dismissTo(routes.diary());
 
 /**
  * Quick Calories and Edit Quick Calories (UX-07, NAV-04). `mode` is `null` when the route params were invalid.
- * Add ends on the Diary on the target date (NAV-03); edit returns to its exact origin, except a meal change from
- * Meal Detail, which lands on the Diary (NAV-04). Delete is confirmed (NAV-08, UX-19).
+ * Add ends on the Diary on the target date (NAV-03); edit returns to its origin. Delete is confirmed (NAV-08,
+ * UX-19).
  */
 export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }) {
   const { t } = useTranslation();
@@ -60,6 +60,7 @@ export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }
   };
 
   let body: React.ReactNode = null;
+  let formRendered = false;
   const notFound = <NotFoundState actionLabel={t('common.backToDiary')} onAction={toDiaryRoot} />;
   if (!mode) {
     body = notFound;
@@ -72,6 +73,7 @@ export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }
     if (!meals.data.some((m) => m.id === initialMeal)) {
       body = notFound;
     } else {
+      formRendered = true;
       body = (
         <QuickCaloriesForm
           // A different entry (or a refetch after save) must not reset what the user is typing.
@@ -81,6 +83,8 @@ export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }
           unit={settings.data.energyUnit}
           meals={meals.data}
           initialMealId={initialMeal}
+          title={title}
+          onBack={goBack}
         />
       );
     }
@@ -91,8 +95,14 @@ export function QuickCaloriesScreen({ mode }: { mode: QuickCaloriesMode | null }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
-      <AppBar title={title} back={{ label: t('common.back'), onPress: goBack }} />
-      {body}
+      {formRendered ? (
+        body
+      ) : body ? (
+        <>
+          <AppBar title={title} back={{ label: t('common.back'), onPress: goBack }} />
+          {body}
+        </>
+      ) : null}
     </View>
   );
 }
@@ -103,9 +113,11 @@ type FormProps = {
   unit: EnergyUnit;
   meals: readonly { id: string; name: string }[];
   initialMealId: string;
+  title?: string;
+  onBack?: () => void;
 };
 
-function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProps) {
+function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId, title = '', onBack = toDiaryRoot }: FormProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
@@ -184,9 +196,7 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
           energyKcal,
           note: values.note,
         });
-        // NAV-04: exact origin, except a meal change from Meal Detail lands on the Diary.
-        if (mode.origin === 'mealDetail' && values.mealId !== initialMealId) toDiaryRoot();
-        else router.back();
+        router.back();
       }
     } catch {
       // UX-00: stay, keep the input, inline error above the primary action.
@@ -209,6 +219,19 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
 
   return (
     <>
+      <AppBar
+        title={title}
+        back={{ label: t('common.back'), onPress: onBack }}
+        actions={
+          <HeaderAction
+            label={mode.kind === 'add' ? t('quickCalories.add') : t('quickCalories.save')}
+            onPress={() => void handleSubmit(submit)()}
+            disabled={!canSubmit}
+            loading={isSubmitting || busy}
+            testID="quick-calories-submit"
+          />
+        }
+      />
       {/* DS-09: the keyboard never covers the primary action. Android is edge-to-edge, so the window doesn't resize
           and both platforms need padding. */}
       <KeyboardAvoidingView style={styles.fill} behavior="padding">
@@ -285,31 +308,16 @@ function QuickCaloriesForm({ mode, entry, unit, meals, initialMealId }: FormProp
               />
             </View>
           ) : null}
-        </ScrollView>
-        <View
-          style={{
-            paddingHorizontal: theme.spacing[4],
-            paddingVertical: theme.spacing[3],
-            gap: theme.spacing[2],
-            backgroundColor: theme.colors.canvas,
-          }}
-        >
           {failure ? (
-            <InlineStatus
-              tone="error"
-              message={failure === 'save' ? t('quickCalories.saveError') : t('quickCalories.deleteError')}
-              testID="quick-calories-failure"
-            />
+            <View style={{ paddingHorizontal: theme.spacing[4] }}>
+              <InlineStatus
+                tone="error"
+                message={failure === 'save' ? t('quickCalories.saveError') : t('quickCalories.deleteError')}
+                testID="quick-calories-failure"
+              />
+            </View>
           ) : null}
-          <PrimaryButton
-            label={mode.kind === 'add' ? t('quickCalories.add') : t('quickCalories.save')}
-            onPress={() => void handleSubmit(submit)()}
-            disabled={!canSubmit}
-            loading={isSubmitting || busy}
-            fullWidth
-            testID="quick-calories-submit"
-          />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
       <MealPicker
         visible={pickingMeal}

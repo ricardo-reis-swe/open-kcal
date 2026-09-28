@@ -1,7 +1,9 @@
 {
   "common": {
+    "add": "Adicionar",
     "cancel": "Cancelar",
     "close": "Fechar",
+    "undo": "Anular",
     "back": "Voltar",
     "notFound": "Este item já não existe.",
     "backToDiary": "Voltar ao diário"
@@ -21,6 +23,8 @@
     "goToTodayLabel": "Ir para hoje",
     "previousDay": "Dia anterior, {{label}}",
     "nextDay": "Dia seguinte, {{label}}",
+    "overviewPreviousDay": "Mostrar dia anterior, {{label}}",
+    "overviewNextDay": "Mostrar dia seguinte, {{label}}",
     "selectedDay": "A mostrar {{label}}",
     "units": {
       "kcal": "kcal",
@@ -34,10 +38,12 @@
       "over": "{{unit}} a mais",
       "eaten": "{{value}} consumidas",
       "eatenNoGoal": "{{unit}} consumidas",
-      "noGoal": "Sem objetivo para esta data",
+      "consumed": "Consumidas",
+      "consumedValue": "{{eaten}}/{{goal}} {{unit}}",
+      "consumedHint": "Mostra as calorias consumidas e o objetivo",
       "a11yLeft": "Calorias restantes, {{remaining}} de {{goal}} {{unit}}. {{eaten}} consumidas.",
       "a11yOver": "Acima do objetivo de calorias em {{over}} {{unit}}. Objetivo {{goal}}, {{eaten}} consumidas.",
-      "a11yNoGoal": "Calorias consumidas, {{eaten}} {{unit}}. Sem objetivo para esta data."
+      "a11yNoGoal": "Calorias consumidas, {{eaten}} {{unit}}."
     },
     "macros": {
       "carbs": "Hidratos",
@@ -61,7 +67,7 @@
       "a11y": "{{meal}}, {{value}} {{unit}}",
       "addFood": "Adicionar alimento",
       "addFoodTo": "Adicionar alimento a {{meal}}",
-      "openHint": "Abre os detalhes da refeição"
+      "menu": "Mais opções para {{meal}}"
     },
     "entry": {
       "serving": "{{quantity}} {{unit}}",
@@ -69,7 +75,16 @@
       "a11y": "{{name}}, {{serving}}, {{value}} {{unit}}",
       "quickCalories": "Calorias rápidas",
       "quickA11y": "{{name}}, {{value}} {{unit}}. Macronutrientes desconhecidos.",
-      "quickNoteA11y": "{{note}}, Calorias rápidas, {{value}} {{unit}}. Macronutrientes desconhecidos."
+      "quickNoteA11y": "{{note}}, Calorias rápidas, {{value}} {{unit}}. Macronutrientes desconhecidos.",
+      "menu": "Mais opções para {{name}}",
+      "delete": "Eliminar",
+      "deleted": "{{name}} eliminado",
+      "deleteError": "Não foi possível eliminar. Tente novamente."
+    },
+    "actions": {
+      "title": "Opções para {{name}}",
+      "copyItem": "Copiar item",
+      "copyMeal": "Copiar refeição"
     },
     "defaultGoals": {
       "message": "A usar objetivos predefinidos",
@@ -107,8 +122,13 @@
     "carbs": "Hidratos",
     "protein": "Proteína",
     "fat": "Gordura",
+    "modeLabel": "Definir macros por",
+    "modeGrams": "Gramas fixos",
+    "modePercent": "Percentagens",
     "helper": "≈ {{energy}} {{unit}} · {{percent}} %",
     "helperNoPercent": "≈ {{energy}} {{unit}}",
+    "helperPercent": "≈ {{grams}} g · {{energy}} {{unit}}",
+    "percentTotal": "Total {{total}} %",
     "footnote": "As alterações aplicam-se a partir de hoje. Os dias anteriores mantêm os seus objetivos.",
     "save": "Guardar",
     "saveError": "Não foi possível guardar. Tente novamente.",
@@ -117,7 +137,9 @@
     "keepEditing": "Continuar a editar",
     "errors": {
       "calories": "Introduza calorias de {{min}} a {{max}} {{unit}}.",
-      "macro": "Introduza um número inteiro de 0 a {{max}} g."
+      "macro": "Introduza um número inteiro de 0 a {{max}} g.",
+      "percent": "Introduza um número inteiro de 0 a {{max}} %.",
+      "percentTotal": "As percentagens devem somar 100 % (atualmente {{total}} %)."
     }
   },
   "foodDatabases": {
@@ -149,7 +171,8 @@
     "removeBody": "A pesquisa USDA vai parar. Os alimentos guardados permanecem.",
     "searchResults": "Resultados da pesquisa",
     "lastVisible": "Tem de mostrar pelo menos uma secção.",
-    "sectionsSaveError": "Não foi possível guardar a alteração. Tente novamente."
+    "sectionsSaveError": "Não foi possível guardar a alteração. Tente novamente.",
+    "usdaRequiresKey": "Configure uma chave API USDA antes de ativar os resultados USDA."
   },
   "addActions": {
     "sheetLabel": "Ações de adicionar",
@@ -222,7 +245,6 @@
     "offFailed": "A pesquisa no Open Food Facts falhou.",
     "offLoadFailed": "Não foi possível carregar este alimento.",
     "offline": "Sem ligação. A mostrar apenas alimentos guardados.",
-    "loadingFood": "A carregar alimento…",
     "offBusy": "O Open Food Facts está ocupado. Tente novamente mais tarde.",
     "providerNoResults": "Sem resultados no {{provider}}.",
     "retry": "Tentar novamente",
@@ -239,6 +261,7 @@
     },
     "delete": "Eliminar",
     "deleteFood": "Eliminar alimento",
+    "deleted": "{{name}} eliminado",
     "deleteError": "Não foi possível eliminar este alimento. Tente novamente."
   },
   "customFood": {
@@ -300,14 +323,9 @@
     "deleteBody": "{{name}}, {{quantity}} {{unit}}, de {{meal}} em {{date}}.",
     "deleteError": "Não foi possível eliminar. Tente novamente."
   },
-  "mealDetail": {
-    "copyMeal": "Copiar refeição",
-    "empty": "Nenhum alimento registado nesta refeição.",
-    "totalA11y": "Total, {{value}} {{unit}}",
-    "addFood": "Adicionar alimento"
-  },
-  "copyMeal": {
-    "title": "Copiar {{meal}} para",
+  "copyFlow": {
+    "mealTitle": "Copiar {{name}} para",
+    "itemTitle": "Copiar {{name}} para",
     "today": "Hoje · {{date}}",
     "tomorrow": "Amanhã · {{date}}",
     "chooseDate": "Escolher data…",

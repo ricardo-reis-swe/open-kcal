@@ -7,9 +7,22 @@ export type NutritionTargets = {
   carbohydrateTargetG: number;
   proteinTargetG: number;
   fatTargetG: number;
+  macroTargetMode?: MacroTargetMode;
+  carbohydrateTargetPercent?: number | null;
+  proteinTargetPercent?: number | null;
+  fatTargetPercent?: number | null;
 };
 
-export type NutritionGoal = NutritionTargets & { id: string; effectiveFrom: LocalDate };
+export type MacroTargetMode = 'grams' | 'percent';
+
+export type NutritionGoal = NutritionTargets & {
+  id: string;
+  effectiveFrom: LocalDate;
+  macroTargetMode: MacroTargetMode;
+  carbohydrateTargetPercent: number | null;
+  proteinTargetPercent: number | null;
+  fatTargetPercent: number | null;
+};
 
 /** UX-01 provisional goal: a fixed 50/20/30 split of 2,000 kcal, not a calculation (SCOPE-10). */
 export const PROVISIONAL_TARGETS: NutritionTargets = {
@@ -49,11 +62,34 @@ export function planGoalSave(goals: readonly NutritionGoal[], today: LocalDate, 
 export const GOAL_CALORIES_MIN_KCAL = 500;
 export const GOAL_CALORIES_MAX_KCAL = 10_000;
 export const GOAL_MACRO_MAX_G = 1_000;
+export const GOAL_MACRO_MAX_PERCENT = 100;
 
 /** UX-16 helper energy factors (4/4/9 kcal per g). */
 export const KCAL_PER_GRAM = { carbohydrateG: 4, proteinG: 4, fatG: 9 } as const;
 
 export type GoalMacroKey = keyof typeof KCAL_PER_GRAM;
+
+export type MacroPercentages = { carbohydrateG: number; proteinG: number; fatG: number };
+
+/** UX-16 percentage mode: each share of the calorie target becomes grams using the macro's 4/4/9 factor. */
+export function gramsFromMacroPercent(calorieTargetKcal: number, percent: number, macro: GoalMacroKey): number {
+  return (calorieTargetKcal * (percent / 100)) / KCAL_PER_GRAM[macro];
+}
+
+/** Switching from fixed grams normalizes their macro energy to a whole-number split that totals exactly 100%. */
+export function percentagesFromMacroGrams(carbohydrateG: number, proteinG: number, fatG: number): MacroPercentages {
+  const energies = [carbohydrateG * 4, proteinG * 4, fatG * 9];
+  const total = energies.reduce((sum, value) => sum + value, 0);
+  if (!(total > 0)) return { carbohydrateG: 0, proteinG: 0, fatG: 100 };
+  const exact = energies.map((value) => (value / total) * 100);
+  const base = exact.map(Math.floor);
+  let remaining = 100 - base.reduce((sum, value) => sum + value, 0);
+  const order = exact
+    .map((value, index) => ({ index, remainder: value - base[index]! }))
+    .sort((a, b) => b.remainder - a.remainder);
+  for (let index = 0; index < remaining; index += 1) base[order[index]!.index]! += 1;
+  return { carbohydrateG: base[0]!, proteinG: base[1]!, fatG: base[2]! };
+}
 
 /**
  * UX-16 read-only helper under each macro (`≈ 1,000 kcal · 50%`): the macro's energy and its share of the calorie
@@ -85,6 +121,17 @@ export function invalidGoalFields(targets: NutritionTargets): GoalFieldKey[] {
     const g = targets[key];
     if (!(Number.isFinite(g) && g >= 0 && g <= GOAL_MACRO_MAX_G)) bad.push(key);
   }
+  if (targets.macroTargetMode === 'percent') {
+    const percentages = [targets.carbohydrateTargetPercent, targets.proteinTargetPercent, targets.fatTargetPercent];
+    if (
+      percentages.some(
+        (value) => value === null || value === undefined || !Number.isFinite(value) || value < 0 || value > 100,
+      ) ||
+      Math.abs(percentages.reduce<number>((sum, value) => sum + (value ?? 0), 0) - 100) > 1e-7
+    ) {
+      bad.push('carbohydrateTargetG', 'proteinTargetG', 'fatTargetG');
+    }
+  }
   return bad;
 }
 
@@ -112,4 +159,12 @@ export function parseGoalMacro(text: string): number | null {
   if (!/^\d{1,4}$/.test(trimmed)) return null;
   const value = Number(trimmed);
   return value <= GOAL_MACRO_MAX_G ? value : null;
+}
+
+/** UX-16 percentage mode: whole-number percentage from 0 to 100. */
+export function parseGoalMacroPercent(text: string): number | null {
+  const trimmed = text.trim();
+  if (!/^\d{1,3}$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  return value <= GOAL_MACRO_MAX_PERCENT ? value : null;
 }

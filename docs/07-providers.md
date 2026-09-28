@@ -42,7 +42,7 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 - When the search budget is spent: run only the **latest** pending query once a slot frees up, and drop the rest. The OFF section shows its loading row meanwhile.
 - OFF search starts at **≥3 characters after 800 ms idle** (USDA keeps UX-04's ≥2 characters and 400 ms).
 - TanStack Query caches each `(provider, query, page)` for 10 min, so backspacing or retyping doesn't spend budget.
-- If a product read is throttled, the tapped row keeps its spinner until a slot frees (at most ~5 s), then shows the UX-04 row error.
+- If a product read is throttled, Food Detail waits for a slot for at most ~5 s, then shows its unavailable state.
 
 ## PROV-05 Nutrient mapping
 Output per food: `energy_kcal` (required) and `protein_g`, `carbohydrate_g`, `fat_g` (each nullable, DATA-06), all per the food's basis (PROV-06). A missing or invalid value → `null`, never 0. A present 0 stays 0.
@@ -125,7 +125,7 @@ Applied in `mapToCandidate` (ARCH-11) to search hits and again to detail respons
 
 **Keep:** foods with some or all macros unknown (they show `—`, DATA-06); true zero foods (energy 0 with macros known and ≈ 0, e.g. water).
 
-**Detail responses:** if the detail fails the rules above, don't upsert; show the UX-04 row error `Couldn't load this food.` Where search and detail disagree, the detail wins.
+**Detail responses:** if the detail fails the rules above, don't upsert; Food Detail shows its unavailable state. Where search and detail disagree, the detail wins.
 
 **Normalization:**
 | Field | Rule |
@@ -209,7 +209,7 @@ Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in 
 
 **Offline:** don't send remote requests while connectivity reports offline. They resume through `onlineManager` (ARCH-12).
 
-**Cancellation:** a new query aborts the previous one's requests (ARCH-11). Leaving Food Search aborts its in-flight searches. Leaving while a tapped row loads aborts that detail call; nothing is upserted.
+**Cancellation:** a new query aborts the previous one's requests (ARCH-11). Leaving Food Search aborts its in-flight searches. Leaving Food Detail while a selected remote food loads aborts that detail call; nothing is upserted.
 
 ## PROV-11 USDA key check
 Implements UX-18 (Food Databases). Only `CredentialsService` touches the key (ARCH-10).
@@ -252,8 +252,8 @@ Every failure (after PROV-10 retries) becomes an ARCH-13 typed error before it l
 | USDA 401/403 | `ProviderConfigurationError` (`usda_key_rejected`) | `USDA rejected your key.` → Food Databases |
 | Whole response fails its Zod schema | `ProviderResponseError` (`schema`) | `<Provider> search failed.` + `Retry` |
 | Single hit fails PROV-07 | not an error; dropped | nothing |
-| Detail 404 / OFF `status: 0` | `NotFoundError` | row error `Couldn't load this food.` |
-| Detail fails PROV-07 | `ProviderResponseError` (`insufficient_data`) | row error `Couldn't load this food.` |
+| Detail 404 / OFF `status: 0` | `NotFoundError` | Food Detail unavailable state |
+| Detail fails PROV-07 | `ProviderResponseError` (`insufficient_data`) | Food Detail unavailable state |
 | Anything else | `UnexpectedError` | `<Provider> search failed.` + `Retry` |
 - The UX-04 status texts generalize to `<Provider>` (`Open Food Facts` / `USDA`). One provider failing never hides the other sections (ARCH-12).
 - Dev builds log provider, endpoint, status and Zod issue path. Release builds log only the error type and provider.

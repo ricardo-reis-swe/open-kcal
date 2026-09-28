@@ -1,6 +1,6 @@
 // NAV-05 / ARCH-06: the selected diary date lives in one Diary-scoped context above the Diary stack (in the tabs layout,
 // so the global `+` flows use it too, NAV-03). It survives
-// Meal Detail, search, add/edit and tab switches. Screens never keep competing date state.
+// Search, add/edit and tab switches share this date. Screens never keep competing date state.
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 

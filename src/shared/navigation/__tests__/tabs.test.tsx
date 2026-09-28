@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { router, type Href } from 'expo-router';
+import { Keyboard, Platform } from 'react-native';
 import { MockDeepScreen, renderApp } from '@/shared/testing/appRoutes';
 
 // Test-only route, so it isn't in the generated typed-route union.
@@ -44,6 +45,32 @@ describe('NAV-01 / NAV-02: tabs', () => {
     expect(screen.getByRole('header', { name: 'Profile' })).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Profile' })).toBeSelected();
     expect(screen.getByRole('tab', { name: 'Diary' })).not.toBeSelected();
+  });
+
+  it('DS-07: hides the bottom bar while the keyboard is open and restores it after close', async () => {
+    const listeners = new Map<string, (() => void)[]>();
+    const isVisibleSpy = jest.spyOn(Keyboard, 'isVisible').mockReturnValue(false);
+    const addListenerSpy = jest.spyOn(Keyboard, 'addListener').mockImplementation((event, listener) => {
+      listeners.set(event, [...(listeners.get(event) ?? []), listener as () => void]);
+      return { remove: jest.fn() } as unknown as ReturnType<typeof Keyboard.addListener>;
+    });
+
+    try {
+      await render('/diary');
+      expect(screen.getByTestId('tab-bar')).toBeOnTheScreen();
+
+      const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+      const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+      await act(async () => listeners.get(showEvent)?.forEach((listener) => listener()));
+      expect(screen.queryByTestId('tab-bar')).toBeNull();
+
+      await act(async () => listeners.get(hideEvent)?.forEach((listener) => listener()));
+      expect(screen.getByTestId('tab-bar')).toBeOnTheScreen();
+    } finally {
+      isVisibleSpy.mockRestore();
+      addListenerSpy.mockRestore();
+    }
   });
 
   it('NAV-02: each tab keeps its own stack when switching tabs', async () => {

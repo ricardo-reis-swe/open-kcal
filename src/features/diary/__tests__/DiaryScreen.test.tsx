@@ -1,4 +1,6 @@
-import { fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import type { AppServices } from '@/bootstrap/services';
 import { addDays, localDateTime } from '@/shared/dates';
@@ -6,6 +8,7 @@ import { createTestServices, renderWithServices } from '@/shared/testing/service
 
 import { DiaryDateProvider } from '../hooks/DiaryDateContext';
 import { DiaryScreen } from '../screens/DiaryScreen';
+import { shouldCommitEntryDelete } from '../components/DiaryEntryRow';
 
 // Component tests render the screen without a navigator; tab presses are covered by diary-date.nav.test.tsx.
 jest.mock('expo-router', () => {
@@ -60,13 +63,69 @@ describe('UX-02 Diary', () => {
     }
     expect(active().getAllByRole('button', { name: 'Add food' })).toHaveLength(4);
     expect(active().getByLabelText('Calories remaining, 2,000 of 2,000 kilocalories. 0 eaten.')).toBeOnTheScreen();
+    expect(active().queryByText('0 eaten')).toBeNull();
+    await fireEvent.press(active().getByTestId('calorie-ring'));
+    expect(active().getByText('Consumed')).toBeOnTheScreen();
+    expect(active().getByText('0/2,000 kcal')).toBeOnTheScreen();
   });
 
   it('UX-02 / DS-08: entries render under their meal with one coherent label', async () => {
-    await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
     expect(await active().findByLabelText('Scrambled eggs, 2 × egg, 200 kilocalories')).toBeOnTheScreen();
     expect(active().getByRole('header', { name: 'Breakfast, 200 kilocalories' })).toBeOnTheScreen();
-    expect(active().getByText('2 × egg')).toBeOnTheScreen();
+    expect(active().getByTestId(`diary-entry-${entry.id}-details`)).toHaveTextContent('2 × egg200 kcal');
+  });
+
+  it('DS-08: commits swipe-delete only after the horizontal threshold', () => {
+    expect(shouldCommitEntryDelete(-71)).toBe(false);
+    expect(shouldCommitEntryDelete(-72)).toBe(true);
+  });
+
+  it('UX-02: a committed swipe shows only the trash affordance and deletes without a second tap', async () => {
+    const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
+    expect(await active().findByTestId(`diary-entry-${entry.id}-delete-icon`)).toBeOnTheScreen();
+    expect(active().queryByTestId(`diary-entry-${entry.id}-delete`)).toBeNull();
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId(`diary-entry-${entry.id}-pan`), [
+        { state: State.BEGAN, translationX: 0, velocityX: 0 },
+        { state: State.ACTIVE, translationX: -80, velocityX: -200 },
+        { state: State.END, translationX: -80, velocityX: -800 },
+      ]);
+    });
+    await waitFor(() => expect(screen.queryByTestId(`diary-entry-${entry.id}`)).toBeNull());
+    expect(screen.getByTestId('diary-delete-undo')).toBeOnTheScreen();
+  });
+
+  it('UX-02: the delete accessibility action deletes immediately and offers Undo', async () => {
+    const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
+    const row = await active().findByTestId(`diary-entry-${entry.id}`);
+    await fireEvent.press(active().getByTestId(`diary-entry-${entry.id}-menu`));
+    expect(await screen.findByRole('button', { name: 'Copy item' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByTestId('diary-actions-sheet')).toBeNull());
+
+    await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    await waitFor(() => expect(screen.queryByTestId(`diary-entry-${entry.id}`)).toBeNull());
+    expect(screen.getByTestId('diary-delete-undo')).toHaveTextContent('Scrambled eggs deletedUndo');
+    await fireEvent.press(screen.getByRole('button', { name: 'Undo' }));
+    expect(await active().findByTestId(`diary-entry-${entry.id}`)).toBeOnTheScreen();
+  });
+
+  it('UX-12: Copy item selects the date and then the destination meal', async () => {
+    const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
+    await fireEvent.press(await active().findByTestId(`diary-entry-${entry.id}-menu`));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Copy item' }));
+    expect(await screen.findByRole('header', { name: 'Copy Scrambled eggs to' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: /^Tomorrow ·/ }));
+    const mealPicker = await screen.findByTestId('meal-picker');
+    await fireEvent.press(within(mealPicker).getByRole('button', { name: 'Lunch' }));
+    expect(await screen.findByText(/^Copied 1 item to Lunch/)).toBeOnTheScreen();
+    const tomorrow = await services.diary.loadDay(addDays(TODAY, 1));
+    expect(tomorrow.meals[1]!.entries).toEqual([expect.objectContaining({ name: 'Scrambled eggs' })]);
   });
 
   it('DS-08: Quick Calories rows show the note first and state unknown macros', async () => {
@@ -77,9 +136,9 @@ describe('UX-02 Diary', () => {
     expect(
       await active().findByLabelText('Canteen lunch, Quick Calories, 650 kilocalories. Macros unknown.'),
     ).toBeOnTheScreen();
-    // UX-00 / DATA-06: no entry knows its macros, so each total is unknown (`—`), never 0.
-    expect(active().getByLabelText('Protein, unknown, target 100 grams.')).toBeOnTheScreen();
-    expect(active().getByText('—/100 g')).toBeOnTheScreen();
+    // Product choice: show the known sum as 0 while retaining the incomplete-data explanation.
+    expect(active().getByLabelText('Protein, 0 of 100 grams. Some entries have unknown protein.')).toBeOnTheScreen();
+    expect(active().getByText('0/100 g')).toBeOnTheScreen();
   });
 
   it('DATA-06: a mix of known and unknown macros is a partial total, stated in the label', async () => {
@@ -120,7 +179,8 @@ describe('UX-02 Diary', () => {
   it('DATA-09: a date before any goal shows eaten calories and no target', async () => {
     await setup();
     await fireEvent.press(screen.getByRole('button', { name: 'Previous day, Yesterday' }));
-    expect(await active().findByLabelText('Calories eaten, 0 kilocalories. No goal for this date.')).toBeOnTheScreen();
+    expect(await active().findByLabelText('Calories eaten, 0 kilocalories.')).toBeOnTheScreen();
+    expect(active().queryByText('No goal for this date')).toBeNull();
     expect(active().getByLabelText('Carbs, 0 grams.')).toBeOnTheScreen();
   });
 
@@ -141,16 +201,17 @@ describe('UX-02 Diary', () => {
     expect(screen.queryByRole('button', { name: 'Go to today' })).toBeNull();
   });
 
-  it('UX-02: adjacent days are pre-rendered', async () => {
+  it('UX-02: the overview chevrons select adjacent days without a swipe pager', async () => {
     await setup(async (s) => void (await addEggs(s, addDays(TODAY, -1), 0, 1)));
-    // The previous page is mounted (with its data) before any swipe.
+    expect(screen.queryByLabelText('Scrambled eggs, 1 × egg, 100 kilocalories')).toBeNull();
+    await fireEvent.press(await active().findByTestId('diary-overview-previous'));
     expect(await screen.findByLabelText('Scrambled eggs, 1 × egg, 100 kilocalories')).toBeOnTheScreen();
   });
 
   it('UX-02: a DB load failure is full-screen with Retry', async () => {
     const services = await setup(async (s) => {
       const loadDay = s.diary.loadDay.bind(s.diary);
-      let failures = 3; // the selected day and both pre-rendered neighbours
+      let failures = 1;
       s.diary.loadDay = async (date) => {
         if (failures > 0) {
           failures -= 1;

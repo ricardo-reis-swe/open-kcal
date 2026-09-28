@@ -1,7 +1,9 @@
 {
   "common": {
+    "add": "Add",
     "cancel": "Cancel",
     "close": "Close",
+    "undo": "Undo",
     "back": "Back",
     "notFound": "This item no longer exists.",
     "backToDiary": "Back to Diary"
@@ -21,6 +23,8 @@
     "goToTodayLabel": "Go to today",
     "previousDay": "Previous day, {{label}}",
     "nextDay": "Next day, {{label}}",
+    "overviewPreviousDay": "Show previous day, {{label}}",
+    "overviewNextDay": "Show next day, {{label}}",
     "selectedDay": "Showing {{label}}",
     "units": {
       "kcal": "kcal",
@@ -34,10 +38,12 @@
       "over": "{{unit}} over",
       "eaten": "{{value}} eaten",
       "eatenNoGoal": "{{unit}} eaten",
-      "noGoal": "No goal for this date",
+      "consumed": "Consumed",
+      "consumedValue": "{{eaten}}/{{goal}} {{unit}}",
+      "consumedHint": "Shows consumed calories and goal",
       "a11yLeft": "Calories remaining, {{remaining}} of {{goal}} {{unit}}. {{eaten}} eaten.",
       "a11yOver": "Over calorie goal by {{over}} {{unit}}. Goal {{goal}}, {{eaten}} eaten.",
-      "a11yNoGoal": "Calories eaten, {{eaten}} {{unit}}. No goal for this date."
+      "a11yNoGoal": "Calories eaten, {{eaten}} {{unit}}."
     },
     "macros": {
       "carbs": "Carbs",
@@ -61,7 +67,7 @@
       "a11y": "{{meal}}, {{value}} {{unit}}",
       "addFood": "Add food",
       "addFoodTo": "Add food to {{meal}}",
-      "openHint": "Opens meal details"
+      "menu": "More options for {{meal}}"
     },
     "entry": {
       "serving": "{{quantity}} {{unit}}",
@@ -69,7 +75,16 @@
       "a11y": "{{name}}, {{serving}}, {{value}} {{unit}}",
       "quickCalories": "Quick Calories",
       "quickA11y": "{{name}}, {{value}} {{unit}}. Macros unknown.",
-      "quickNoteA11y": "{{note}}, Quick Calories, {{value}} {{unit}}. Macros unknown."
+      "quickNoteA11y": "{{note}}, Quick Calories, {{value}} {{unit}}. Macros unknown.",
+      "menu": "More options for {{name}}",
+      "delete": "Delete",
+      "deleted": "{{name}} deleted",
+      "deleteError": "Couldn't delete. Try again."
+    },
+    "actions": {
+      "title": "Options for {{name}}",
+      "copyItem": "Copy item",
+      "copyMeal": "Copy meal"
     },
     "defaultGoals": {
       "message": "Using default goals",
@@ -107,8 +122,13 @@
     "carbs": "Carbs",
     "protein": "Protein",
     "fat": "Fat",
+    "modeLabel": "Set macros by",
+    "modeGrams": "Fixed grams",
+    "modePercent": "Percentages",
     "helper": "≈ {{energy}} {{unit}} · {{percent}}%",
     "helperNoPercent": "≈ {{energy}} {{unit}}",
+    "helperPercent": "≈ {{grams}} g · {{energy}} {{unit}}",
+    "percentTotal": "Total {{total}}%",
     "footnote": "Changes apply from today. Past days keep their goals.",
     "save": "Save",
     "saveError": "Couldn't save. Try again.",
@@ -117,7 +137,9 @@
     "keepEditing": "Keep editing",
     "errors": {
       "calories": "Enter calories from {{min}} to {{max}} {{unit}}.",
-      "macro": "Enter a whole number from 0 to {{max}} g."
+      "macro": "Enter a whole number from 0 to {{max}} g.",
+      "percent": "Enter a whole number from 0 to {{max}}%.",
+      "percentTotal": "Percentages must add up to 100% (currently {{total}}%)."
     }
   },
   "foodDatabases": {
@@ -149,7 +171,8 @@
     "removeBody": "USDA search will stop. Saved foods stay.",
     "searchResults": "Search results",
     "lastVisible": "At least one section must be shown.",
-    "sectionsSaveError": "Couldn't save the change. Try again."
+    "sectionsSaveError": "Couldn't save the change. Try again.",
+    "usdaRequiresKey": "Set up a USDA API key before enabling USDA results."
   },
   "addActions": {
     "sheetLabel": "Add actions",
@@ -222,7 +245,6 @@
     "offFailed": "Open Food Facts search failed.",
     "offLoadFailed": "Couldn't load this food.",
     "offline": "Offline. Showing saved foods only.",
-    "loadingFood": "Loading food…",
     "offBusy": "Open Food Facts is busy. Try again later.",
     "providerNoResults": "No results from {{provider}}.",
     "retry": "Retry",
@@ -239,6 +261,7 @@
     },
     "delete": "Delete",
     "deleteFood": "Delete food",
+    "deleted": "{{name}} deleted",
     "deleteError": "Couldn't delete this food. Try again."
   },
   "customFood": {
@@ -300,14 +323,9 @@
     "deleteBody": "{{name}}, {{quantity}} {{unit}}, from {{meal}} on {{date}}.",
     "deleteError": "Couldn't delete. Try again."
   },
-  "mealDetail": {
-    "copyMeal": "Copy meal",
-    "empty": "No foods logged for this meal.",
-    "totalA11y": "Total, {{value}} {{unit}}",
-    "addFood": "Add food"
-  },
-  "copyMeal": {
-    "title": "Copy {{meal}} to",
+  "copyFlow": {
+    "mealTitle": "Copy {{name}} to",
+    "itemTitle": "Copy {{name}} to",
     "today": "Today · {{date}}",
     "tomorrow": "Tomorrow · {{date}}",
     "chooseDate": "Choose date…",

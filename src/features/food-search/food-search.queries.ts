@@ -8,6 +8,7 @@ import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { settingsKeys } from '@/features/diary/diary.queries';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
 import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
+import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
 import { nowUtcIso } from '@/shared/dates';
 
 export type RecentFoodResult = RecentFood & { food: Food };
@@ -180,6 +181,32 @@ export function useFood(foodId: string, enabled = true) {
   return useQuery({ queryKey: foodSearchKeys.food(foodId), queryFn: () => foods.get(foodId), enabled });
 }
 
+/** A remote search hit opens Food Detail immediately; that screen owns the provider detail read and cache upsert. */
+export function useExternalFood(source: 'usda' | 'open_food_facts', externalId: string, enabled = true) {
+  const services = useServices();
+  return useQuery({
+    queryKey: [...foodSearchKeys.food(`external:${source}`), externalId],
+    queryFn: async ({ signal }) => {
+      const candidate =
+        source === 'usda'
+          ? await services.usda.getFood(externalId, signal)
+          : await services.openFoodFacts.getFood(externalId, signal);
+      if (!candidate) throw new Error('External food detail unavailable');
+      const fetchedAt = nowUtcIso(services.clock);
+      const expiresAt = new Date(
+        services.clock.now().getTime() + (source === 'usda' ? 90 : 30) * 24 * 60 * 60_000,
+      ).toISOString() as typeof fetchedAt;
+      return services.foods.upsertExternal(source, candidate.externalId, candidate.input, {
+        fetchedAt,
+        expiresAt,
+        rawPayloadJson: null,
+        schemaVersion: source === 'usda' ? USDA_PARSER_VERSION : PARSER_VERSION,
+      });
+    },
+    enabled: enabled && externalId.length > 0,
+  });
+}
+
 /** Local-food writes refresh every local Food Search section after the transaction commits (ARCH-08). */
 export function useLocalFoodWrites() {
   const { foods } = useServices();
@@ -190,5 +217,6 @@ export function useLocalFoodWrites() {
     onSuccess: refresh,
   });
   const deleteCustom = useMutation({ mutationFn: (id: string) => foods.deleteCustom(id), onSuccess: refresh });
-  return { createCustom, deleteCustom };
+  const restoreCustom = useMutation({ mutationFn: (id: string) => foods.restoreCustom(id), onSuccess: refresh });
+  return { createCustom, deleteCustom, restoreCustom };
 }

@@ -13,9 +13,9 @@ import {
   ConfirmationDialog,
   FocusablePressable,
   FormField,
+  HeaderAction,
   InlineStatus,
   NotFoundState,
-  PrimaryButton,
   TextAction,
 } from '@/shared/components';
 import { NotFoundError } from '@/shared/errors';
@@ -144,7 +144,19 @@ function MealForm({
 
   return (
     <View style={{ flex: 1 }}>
-      <AppBar title={title} back={{ label: t('common.back'), onPress: onBack }} />
+      <AppBar
+        title={title}
+        back={{ label: t('common.back'), onPress: onBack }}
+        actions={
+          <HeaderAction
+            label={t('mealEdit.save')}
+            onPress={() => void submit()}
+            disabled={!canSave}
+            loading={writes.create.isPending || writes.rename.isPending}
+            testID="meal-save"
+          />
+        }
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           style={{ flex: 1 }}
@@ -172,6 +184,7 @@ function MealForm({
               testID="meal-duplicate"
             />
           ) : null}
+          {saveFailed ? <InlineStatus tone="error" message={t('mealEdit.saveError')} /> : null}
           {meal ? (
             <View style={{ gap: theme.spacing[1], marginTop: theme.spacing[4] }}>
               <TextAction
@@ -191,17 +204,6 @@ function MealForm({
             </View>
           ) : null}
         </ScrollView>
-        <View style={{ padding: theme.spacing[4], gap: theme.spacing[2], backgroundColor: theme.colors.canvas }}>
-          {saveFailed ? <InlineStatus tone="error" message={t('mealEdit.saveError')} /> : null}
-          <PrimaryButton
-            label={t('mealEdit.save')}
-            onPress={() => void submit()}
-            disabled={!canSave}
-            loading={writes.create.isPending || writes.rename.isPending}
-            fullWidth
-            testID="meal-save"
-          />
-        </View>
       </KeyboardAvoidingView>
       {meal ? (
         <>

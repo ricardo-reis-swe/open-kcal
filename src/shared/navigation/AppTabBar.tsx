@@ -1,6 +1,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, AppText, FocusablePressable, type IconName } from '@/shared/components';
@@ -26,6 +27,19 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const [keyboardVisible, setKeyboardVisible] = useState(() => Keyboard.isVisible());
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSubscription = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const renderTab = (routeName: TabRoute) => {
     const index = state.routes.findIndex((r) => r.name === routeName);
@@ -68,6 +82,9 @@ export function AppTabBar({ state, navigation, onAddPress }: Props) {
       </FocusablePressable>
     );
   };
+
+  // Expo Router's tabBarHideOnKeyboard is applied by its built-in bar only. This custom bar must hide itself (DS-07).
+  if (keyboardVisible) return null;
 
   const addSize = theme.sizes.centerAction;
   return (

@@ -9,9 +9,9 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Quick Calories: calories without a food (SCOPE-05).
 - Custom foods (SCOPE-06).
 - Ruler serving selector with live kcal/macro updates (SCOPE-07).
-- Diary per date: swipe between days, Today action, calendar jump. Past, today and future dates all editable.
-- Entries shown directly under their meal; tap any entry on the Diary to edit it (no need to open Meal Detail).
-- Meal Detail with copy meal.
+- Diary per date: date-strip or large overview chevrons change days; Today action and calendar jump. Past, today and future dates all editable.
+- Entries shown directly under their meal; tap any entry on the Diary to edit it.
+- Dashboard entry/meal menus copy an item or whole meal to a chosen date and meal; swipe an entry left to delete it.
 - Body weight: current, goal, history.
 - Unit preferences (SCOPE-08).
 - Food Search sections: reorder and show/hide `My foods`, `Saved`, `Open Food Facts`, `USDA` (UX-18, DATA-19).
@@ -27,7 +27,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Visible **Today** action whenever the selected date ≠ today. Calendar picker for any date.
 - Future dates behave like normal days (no separate planning mode).
 - Overview: calorie goal, consumed, remaining, circular calorie progress, carbs/protein/fat consumed vs target.
-- Each meal: name, meal kcal total, entries (name, serving, kcal), Add Food. Tapping the header opens Meal Detail.
+- Each meal: name, meal kcal total, entries (name, serving, kcal), Add Food, and a copy menu.
 
 ```text
 BREAKFAST                         700 kcal
@@ -38,7 +38,7 @@ Scrambled eggs
 
 ## SCOPE-04 Food logging and editing
 - Flow: choose meal → search → pick result → ruler → save.
-- Edit paths: `Diary → tap entry → Edit` and `Diary → meal header → Meal Detail → tap entry → Edit`.
+- Edit path: `Diary → tap entry → Edit`.
 - Editing a food entry can change: amount (ruler), unit (when supported), meal; can also delete and save.
 - Quick Calories entries open their own edit screen the same way.
 

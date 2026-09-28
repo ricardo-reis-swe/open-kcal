@@ -57,12 +57,46 @@ async function setup() {
 }
 
 describe('DATA-16 Copy meal', () => {
+  it('copies a meal into the explicitly selected destination meal', async () => {
+    const { diary, breakfast, lunch } = await setup();
+    await diary.copyMeal({
+      mealId: breakfast,
+      sourceDate: SOURCE,
+      destinationDate: TOMORROW,
+      destinationMealId: lunch,
+    });
+    const day = await diary.loadDay(TOMORROW);
+    expect(day.meals[0]!.entries).toHaveLength(0);
+    expect(day.meals[1]!.entries.map((entry) => entry.nutrients.energyKcal)).toEqual([130, 120]);
+  });
+
+  it('copies one entry snapshot into the explicitly selected meal and date', async () => {
+    const { diary, first, lunch } = await setup();
+    await diary.copyEntry({ entryId: first.id, destinationDate: TOMORROW, destinationMealId: lunch });
+    expect((await diary.loadDay(TOMORROW)).meals[1]!.entries).toEqual([
+      expect.objectContaining({
+        kind: first.kind,
+        mealId: lunch,
+        name: first.name,
+        foodId: first.foodId,
+        servingQuantity: first.servingQuantity,
+        servingUnit: first.servingUnit,
+        nutrients: first.nutrients,
+      }),
+    ]);
+  });
+
   it('copies snapshots exactly, in order, to the same meal on the destination date with new IDs', async () => {
     const { deps, diary, breakfast, lunch, first, second, snapshots } = await setup();
     deps.clock.advance(60_000);
-    await expect(diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: TOMORROW })).resolves.toEqual(
-      { copiedCount: 2 },
-    );
+    await expect(
+      diary.copyMeal({
+        mealId: breakfast,
+        sourceDate: SOURCE,
+        destinationDate: TOMORROW,
+        destinationMealId: breakfast,
+      }),
+    ).resolves.toEqual({ copiedCount: 2 });
     expect(await snapshots(TOMORROW, breakfast)).toEqual(await snapshots(SOURCE, breakfast));
     const day = await diary.loadDay(TOMORROW);
     const copied = day.meals[0]!.entries;
@@ -86,7 +120,12 @@ describe('DATA-16 Copy meal', () => {
   it('appends after the destination meal’s existing entries; copying onto the source date duplicates (UX-12)', async () => {
     const { diary, breakfast } = await setup();
     await diary.addQuickCalories({ diaryDate: TOMORROW, mealId: breakfast, energyKcal: 10 });
-    await diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: TOMORROW });
+    await diary.copyMeal({
+      mealId: breakfast,
+      sourceDate: SOURCE,
+      destinationDate: TOMORROW,
+      destinationMealId: breakfast,
+    });
     expect((await diary.loadDay(TOMORROW)).meals[0]!.entries.map((e) => [e.nutrients.energyKcal, e.sortOrder])).toEqual(
       [
         [10, 0],
@@ -94,7 +133,12 @@ describe('DATA-16 Copy meal', () => {
         [120, 2],
       ],
     );
-    await diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: SOURCE });
+    await diary.copyMeal({
+      mealId: breakfast,
+      sourceDate: SOURCE,
+      destinationDate: SOURCE,
+      destinationMealId: breakfast,
+    });
     expect((await diary.loadDay(SOURCE)).meals[0]!.entries.map((e) => [e.nutrients.energyKcal, e.sortOrder])).toEqual([
       [130, 0],
       [120, 1],
@@ -105,7 +149,12 @@ describe('DATA-16 Copy meal', () => {
 
   it('copies are independent of the originals', async () => {
     const { diary, breakfast, first, second } = await setup();
-    await diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: TOMORROW });
+    await diary.copyMeal({
+      mealId: breakfast,
+      sourceDate: SOURCE,
+      destinationDate: TOMORROW,
+      destinationMealId: breakfast,
+    });
     await diary.editFoodEntry(first.id, { mealId: breakfast, quantity: 3 });
     await diary.deleteEntry(second.id);
     expect((await diary.loadDay(TOMORROW)).meals[0]!.entries.map((e) => e.nutrients.energyKcal)).toEqual([130, 120]);
@@ -115,7 +164,12 @@ describe('DATA-16 Copy meal', () => {
     const { deps, foods, diary, recents, breakfast, food } = await setup();
     await foods.deleteCustom(food.id);
     const recentRows = await deps.db.getAll('SELECT * FROM recent_foods');
-    await diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: TOMORROW });
+    await diary.copyMeal({
+      mealId: breakfast,
+      sourceDate: SOURCE,
+      destinationDate: TOMORROW,
+      destinationMealId: breakfast,
+    });
     expect((await diary.loadDay(TOMORROW)).meals[0]!.entries[0]).toMatchObject({ foodId: food.id, name: 'Toast' });
     expect(await deps.db.getAll('SELECT * FROM recent_foods')).toEqual(recentRows);
     expect(await recents.list()).toEqual([]);
@@ -123,7 +177,9 @@ describe('DATA-16 Copy meal', () => {
 
   it('an empty source meal copies nothing', async () => {
     const { diary, lunch } = await setup();
-    await expect(diary.copyMeal({ mealId: lunch, sourceDate: TOMORROW, destinationDate: SOURCE })).resolves.toEqual({
+    await expect(
+      diary.copyMeal({ mealId: lunch, sourceDate: TOMORROW, destinationDate: SOURCE, destinationMealId: lunch }),
+    ).resolves.toEqual({
       copiedCount: 0,
     });
     expect((await diary.loadDay(SOURCE)).meals[1]!.entries).toHaveLength(1);
@@ -133,10 +189,20 @@ describe('DATA-16 Copy meal', () => {
     const { deps, diary, breakfast } = await setup();
     const count = async () => (await deps.db.getFirst<{ n: number }>('SELECT COUNT(*) AS n FROM diary_entries'))!.n;
     await expect(
-      diary.copyMeal({ mealId: 'gone', sourceDate: SOURCE, destinationDate: TOMORROW }),
+      diary.copyMeal({
+        mealId: 'gone',
+        sourceDate: SOURCE,
+        destinationDate: TOMORROW,
+        destinationMealId: breakfast,
+      }),
     ).rejects.toMatchObject({ category: 'not_found' });
     await expect(
-      diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: '2026-02-30' }),
+      diary.copyMeal({
+        mealId: breakfast,
+        sourceDate: SOURCE,
+        destinationDate: '2026-02-30',
+        destinationMealId: breakfast,
+      }),
     ).rejects.toMatchObject({ category: 'validation' });
     expect(await count()).toBe(3);
   });
@@ -150,7 +216,12 @@ describe('DATA-16 Copy meal', () => {
        WHEN NEW.diary_date = '${TOMORROW}' AND NEW.sort_order = 1 BEGIN SELECT RAISE(ABORT, 'boom'); END`,
     );
     await expect(
-      diary.copyMeal({ mealId: breakfast, sourceDate: SOURCE, destinationDate: TOMORROW }),
+      diary.copyMeal({
+        mealId: breakfast,
+        sourceDate: SOURCE,
+        destinationDate: TOMORROW,
+        destinationMealId: breakfast,
+      }),
     ).rejects.toMatchObject({ category: 'database' });
     await deps.db.exec('DROP TRIGGER fail_second_copy');
     expect(await deps.db.getAll('SELECT * FROM diary_entries ORDER BY id')).toEqual(before);

@@ -12,14 +12,20 @@ export type LocalDate = string;
 /** Application-generated UUID string (DATA-03). */
 export type Uuid = string;
 
-export type Origin = 'diary' | 'mealDetail' | 'profile' | 'weightHistory';
+export type Origin = 'diary' | 'profile' | 'weightHistory';
 export type FoodSource = 'custom' | 'usda' | 'open_food_facts';
 
 export type RouteParams = {
   diary: { date?: LocalDate };
-  mealDetail: { mealId: Uuid; date: LocalDate };
   foodSearch: { mealId: Uuid; date: LocalDate; initialQuery?: string; origin?: Origin };
-  foodDetail: { foodId: Uuid; foodSource: FoodSource; mealId: Uuid; date: LocalDate; origin?: Origin };
+  foodDetail: {
+    foodId: Uuid;
+    foodSource: FoodSource;
+    externalId?: string;
+    mealId: Uuid;
+    date: LocalDate;
+    origin?: Origin;
+  };
   editFoodEntry: { entryId: Uuid; origin?: Origin };
   quickCalories: { mealId: Uuid; date: LocalDate; origin?: Origin };
   editQuickCalories: { entryId: Uuid; origin?: Origin };
@@ -36,7 +42,7 @@ export type RouteName = keyof RouteParams;
 
 // ---- Typed route builders (ARCH-06) and param parsers (ARCH-03) ----
 
-const originSchema = z.enum(['diary', 'mealDetail', 'profile', 'weightHistory']);
+const originSchema = z.enum(['diary', 'profile', 'weightHistory']);
 const idSchema = z.string().min(1);
 const dateSchema = z.string().refine(isLocalDate);
 
@@ -44,7 +50,6 @@ const dateSchema = z.string().refine(isLocalDate);
 type RawParams = Record<string, string | string[] | undefined>;
 
 const paramSchemas = {
-  mealDetail: z.object({ mealId: idSchema, date: dateSchema }),
   foodSearch: z.object({
     mealId: idSchema,
     date: dateSchema,
@@ -54,6 +59,7 @@ const paramSchemas = {
   foodDetail: z.object({
     foodId: idSchema,
     foodSource: z.enum(['custom', 'usda', 'open_food_facts']),
+    externalId: idSchema.optional(),
     mealId: idSchema,
     date: dateSchema,
     origin: originSchema.default('diary'),
@@ -99,9 +105,6 @@ export const routes = {
     (p.mode === 'create'
       ? '/profile/meals/new'
       : { pathname: '/profile/meals/[mealId]', params: { mealId: p.mealId } }) as unknown as Href,
-  /** NAV-04: Meal Detail by `mealId` (never by name) on a diary date. */
-  mealDetail: (p: RouteParams['mealDetail']): Href =>
-    ({ pathname: '/diary/meal/[mealId]', params: { mealId: p.mealId, date: p.date } }) as unknown as Href,
   foodSearch: (p: RouteParams['foodSearch']): Href => ({
     pathname: '/diary/food-search',
     params: {
@@ -116,6 +119,7 @@ export const routes = {
     params: {
       foodId: p.foodId,
       foodSource: p.foodSource,
+      ...(p.externalId ? { externalId: p.externalId } : {}),
       mealId: p.mealId,
       date: p.date,
       origin: p.origin ?? 'diary',

@@ -106,6 +106,29 @@ describe('DATA-09 / UX-01: goals repository', () => {
     expect(await goals.goalFor('2026-10-03')).toMatchObject({ calorieTargetKcal: 2200 });
   });
 
+  it('UX-16: persists percentage mode, its exact split, and the derived canonical grams', async () => {
+    const goals = createGoalsRepository(await openSeededTestDatabase());
+    const saved = await goals.save({
+      calorieTargetKcal: 2400,
+      carbohydrateTargetG: 300,
+      proteinTargetG: 120,
+      fatTargetG: 80,
+      macroTargetMode: 'percent',
+      carbohydrateTargetPercent: 50,
+      proteinTargetPercent: 20,
+      fatTargetPercent: 30,
+    });
+    expect(saved).toMatchObject({
+      macroTargetMode: 'percent',
+      carbohydrateTargetPercent: 50,
+      proteinTargetPercent: 20,
+      fatTargetPercent: 30,
+      carbohydrateTargetG: 300,
+      proteinTargetG: 120,
+      fatTargetG: 80,
+    });
+  });
+
   it('rejects invalid targets without writing', async () => {
     const deps = await openSeededTestDatabase();
     const goals = createGoalsRepository(deps);

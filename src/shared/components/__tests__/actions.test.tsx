@@ -3,9 +3,10 @@ import { StyleSheet } from 'react-native';
 
 import { i18next } from '@/shared/i18n/i18n';
 import { renderWithProviders } from '@/shared/testing/render';
+import { lightTheme } from '@/shared/theme';
 import { lightColors } from '@/shared/theme/tokens';
 
-import { AppBar, ListRow, PressableIcon, PrimaryButton, TextAction } from '..';
+import { AppBar, HeaderAction, ListRow, PressableIcon, PrimaryButton, TextAction, UndoToast } from '..';
 
 describe('DS-12: PrimaryButton', () => {
   it('DS-09: is a labelled button that calls onPress', async () => {
@@ -60,6 +61,36 @@ describe('DS-12: TextAction', () => {
   it('UX-00: danger tone for destructive text actions', async () => {
     await renderWithProviders(<TextAction label="Delete entry" tone="danger" onPress={jest.fn()} />);
     expect(StyleSheet.flatten(screen.getByText('Delete entry').props.style).color).toBe(lightColors.danger);
+  });
+});
+
+describe('DS-12: HeaderAction', () => {
+  it('UX-00: is a labelled trailing text action with disabled and busy states', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(
+      <AppBar title="Edit" actions={<HeaderAction label="Save" onPress={onPress} disabled testID="save" />} />,
+    );
+    const action = screen.getByRole('button', { name: 'Save' });
+    expect(action).toBeDisabled();
+    await fireEvent.press(action);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('DS-07: uses high-contrast text in an app bar', async () => {
+    await renderWithProviders(<AppBar title="Edit" actions={<HeaderAction label="Save" onPress={jest.fn()} />} />);
+    expect(StyleSheet.flatten(screen.getByText('Save').props.style).color).toBe(lightTheme.colors.onAppBar);
+  });
+});
+
+describe('DS-10: UndoToast', () => {
+  it('announces the deletion and exposes a labelled Undo action', async () => {
+    const onUndo = jest.fn();
+    await renderWithProviders(
+      <UndoToast message="Eggs deleted" undoLabel="Undo" onUndo={onUndo} onDismiss={jest.fn()} />,
+    );
+    expect(screen.getByText('Eggs deleted')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Undo' }));
+    expect(onUndo).toHaveBeenCalledTimes(1);
   });
 });
 

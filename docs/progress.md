@@ -11,11 +11,13 @@ Single place for implementation status. Updated in the same commit as the work i
 | M4 Custom foods + ruler | done |
 | M5 Search + Open Food Facts | done |
 | M6 USDA | done |
-| M7 Meal Detail + copy | done |
+| M7 Dashboard copy | done |
 | M8 Profile | done |
 | M9 Hardening | awaiting user acceptance |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
+
+2026-09-28 (user-requested): removed Diary page swiping and Meal Detail; added overview previous/next chevrons, Dashboard entry/meal `…` actions, swipe-delete entries, date-then-meal item/meal copy, USDA Search results gating until a key exists, and keyboard-hidden bottom navigation. Meal headers no longer have leading circle markers.
 
 2026-09-28 E2E flow fixes (ARCH-18): `m2-launch-today` independent of meal state; `m4-custom-food` no `hideKeyboard` (Serving sheet `avoidKeyboard` keeps Done above the iOS decimal pad); `m5-offline-foods` seeds its own data; `m5-offline-local-foods` uses a dev-only seed deep link (`devSeedLink.ts`, `+native-intent.tsx`) with the normal Metro, replacing `scripts/e2e-m5-offline-android.sh`; USDA key-missing no longer logged as a provider failure (PROV-12); Meals drop index clamped to the list when a drag ends over the app bar (UX-17). `npm run check` green (79 suites / 515 tests). **Not yet run on devices**: those 4 flows (Android) + `m4-custom-food` (iOS); verify in M9. Known gap: `m8-weight` native SIGSEGV on Android launch seen once, not reproduced.
 
@@ -48,7 +50,7 @@ Status: **awaiting user acceptance** (agent work done; T5 phone smoke test and t
 
 ### Changelog (M9 finish checklist step 2)
 
-- MVP feature-complete: Diary with a scrollable date strip, Quick Calories, custom foods + ruler, Food Search (My foods, Saved, Open Food Facts, USDA; 10 per page; section order and visibility set on Food Databases), USDA key flow, Meal Detail + copy, Profile (goals, meals, units, weight goal, weight history), en + pt-PT.
+- MVP feature-complete: Diary with a scrollable date strip and overview day chevrons, swipe-delete entries, dashboard item/meal copy, Quick Calories, custom foods + ruler, Food Search (My foods, Saved, Open Food Facts, USDA; 10 per page; section order and visibility set on Food Databases), USDA key flow, Profile (goals, meals, units, weight goal, weight history), en + pt-PT.
 
 ### Acceptance report (ROAD-03)
 
@@ -67,4 +69,3 @@ Left for the user:
 ### Open questions
 
 - None.
-

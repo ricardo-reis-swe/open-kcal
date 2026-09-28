@@ -1,7 +1,8 @@
+import { LegendList, type LegendListRef } from '@legendapp/list';
 import * as Haptics from 'expo-haptics';
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PanResponder, View } from 'react-native';
+import { Platform, type NativeScrollEvent, type NativeSyntheticEvent, useWindowDimensions, View } from 'react-native';
 
 import type { FoodServing } from '@/data/db/repositories/foodsRepository';
 import { adjustRulerQuantity, rulerSpec, snapRulerQuantity } from '@/domain/food/servings';
@@ -12,8 +13,10 @@ import { formatEnergy } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme } from '@/shared/theme';
 
-const PIXELS_PER_STEP = 18;
-const TICK_OFFSETS = [-8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
+const STEP_WIDTH = 2;
+const STEP_GAP = 16;
+const STEP_SIZE = STEP_WIDTH + STEP_GAP;
+const MINIMUM_STEPS = 2_000;
 
 type Props = {
   quantity: number;
@@ -26,15 +29,32 @@ type Props = {
   onHaptic?: () => void;
 };
 
-const nativeSelectionHaptic = () => {
-  void Haptics.selectionAsync();
+const nativeTickHaptic = () => {
+  void (Platform.OS === 'android'
+    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Segment_Frequent_Tick)
+    : Haptics.selectionAsync());
 };
+
+/** Changes value only when the next tick crosses the fixed pointer, rather than halfway between ticks. */
+export function rulerIndexForOffset(offset: number, previousOffset: number, maximumIndex: number): number {
+  const rawIndex = Math.max(0, offset) / STEP_SIZE;
+  const index = offset >= previousOffset ? Math.floor(rawIndex + 1e-7) : Math.ceil(rawIndex - 1e-7);
+  return Math.max(0, Math.min(maximumIndex, index));
+}
 
 function displayQuantity(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 2, useGrouping: false }).format(value);
 }
 
-/** DS-09 / UX-05: fixed-pointer serving ruler with snapped pan and adjustable accessibility actions. */
+function displaySelectedQuantity(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(value);
+}
+
+/** DS-09 / UX-05: native-momentum serving ruler with a fixed pointer and accessible alternatives. */
 export function ServingRuler({
   quantity,
   serving,
@@ -42,15 +62,24 @@ export function ServingRuler({
   energyUnit,
   onChange,
   onOpenNumeric,
-  onHaptic = nativeSelectionHaptic,
+  onHaptic = nativeTickHaptic,
 }: Props) {
   const { t } = useTranslation();
   const locale = useFormattingLocale();
   const theme = useTheme();
-  const start = useRef(quantity);
+  const { width: windowWidth } = useWindowDimensions();
+  const listRef = useRef<LegendListRef>(null);
   const last = useRef(quantity);
+  const lastOffset = useRef(0);
+  const scrolling = useRef(false);
+  const scrollEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHapticAt = useRef(0);
   const { step, majorStep } = rulerSpec(serving);
+  const minimum = step;
+  const initialIndex = Math.max(0, Math.round((quantity - minimum) / step));
+  const maximumIndex = Math.max(MINIMUM_STEPS, initialIndex + 1_000);
+  const data = useMemo(() => Array.from({ length: maximumIndex + 1 }, (_, index) => index), [maximumIndex]);
+  const rulerWidth = Math.max(1, windowWidth - theme.spacing[8]);
   const energy = formatEnergy(energyKcal, energyUnit, locale);
   const spokenUnit = t(`diary.units.${energyUnit}Spoken`);
   const label = t('servingRuler.a11y', {
@@ -60,64 +89,106 @@ export function ServingRuler({
     unit: spokenUnit,
   });
 
-  const emit = (next: number) => {
-    if (next === last.current) return;
-    last.current = next;
-    onChange(next);
-    // This runs only from gesture/a11y event handlers, never while React renders.
-    // eslint-disable-next-line react-hooks/purity
-    const now = Date.now();
-    // ROAD-02 M4: tests never produce device haptics. Runtime feedback is throttled during a drag.
-    if (process.env.NODE_ENV !== 'test' && now - lastHapticAt.current >= 50) {
-      lastHapticAt.current = now;
-      onHaptic?.();
-    }
-  };
-
-  // The responder callbacks read refs only after native gesture events; the useMemo factory itself does not.
-  /* eslint-disable react-hooks/refs */
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 2,
-        onPanResponderGrant: () => {
-          start.current = quantity;
-          last.current = quantity;
-        },
-        onPanResponderMove: (_event, gesture) => {
-          const steps = Math.round(-gesture.dx / PIXELS_PER_STEP);
-          emit(snapRulerQuantity(start.current + steps * step, serving));
-        },
-      }),
-    // A new responder must capture the quantity/unit shown when the drag begins.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [quantity, serving.id, step, onHaptic],
+  const offsetForQuantity = useCallback(
+    (value: number) => Math.max(0, Math.round((value - minimum) / step)) * STEP_SIZE,
+    [minimum, step],
   );
-  /* eslint-enable react-hooks/refs */
 
+  const scrollToQuantity = useCallback(
+    (value: number, animated: boolean) => {
+      const offset = offsetForQuantity(value);
+      lastOffset.current = offset;
+      listRef.current?.scrollToOffset({ offset, animated });
+    },
+    [offsetForQuantity],
+  );
+
+  useEffect(() => {
+    last.current = quantity;
+    if (!scrolling.current) scrollToQuantity(quantity, false);
+  }, [quantity, scrollToQuantity]);
+
+  useEffect(
+    () => () => {
+      if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current);
+    },
+    [],
+  );
+
+  const emit = useCallback(
+    (next: number) => {
+      if (next === last.current) return;
+      last.current = next;
+      onChange(next);
+      const now = Date.now();
+      if (process.env.NODE_ENV !== 'test' && now - lastHapticAt.current >= 50) {
+        lastHapticAt.current = now;
+        onHaptic?.();
+      }
+    },
+    [onChange, onHaptic],
+  );
+
+  const valueAtOffset = useCallback(
+    (offset: number) => {
+      const index = rulerIndexForOffset(offset, lastOffset.current, maximumIndex);
+      lastOffset.current = offset;
+      return snapRulerQuantity(minimum + index * step, serving);
+    },
+    [maximumIndex, minimum, serving, step],
+  );
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      emit(valueAtOffset(event.nativeEvent.contentOffset.x));
+    },
+    [emit, valueAtOffset],
+  );
+
+  const settle = useCallback(
+    (offset: number) => {
+      const index = Math.max(0, Math.min(maximumIndex, Math.round(offset / STEP_SIZE)));
+      lastOffset.current = index * STEP_SIZE;
+      emit(snapRulerQuantity(minimum + index * step, serving));
+      scrolling.current = false;
+    },
+    [emit, maximumIndex, minimum, serving, step],
+  );
+
+  const sidePadding = <View style={{ width: rulerWidth / 2 - STEP_WIDTH / 2 }} />;
   const isMajor = (value: number) => Math.abs(value / majorStep - Math.round(value / majorStep)) < 1e-7;
+
   return (
-    <View style={{ gap: theme.spacing[2] }}>
+    <View style={{ gap: theme.spacing[4] }}>
       <FocusablePressable
         accessibilityRole="button"
-        accessibilityLabel={t('servingRuler.editValue', { value: displayQuantity(quantity, locale) })}
+        accessibilityLabel={t('servingRuler.editValue', {
+          value: `${displayQuantity(quantity, locale)} ${serving.label}`,
+        })}
         onPress={onOpenNumeric}
         testID="serving-ruler-value"
         style={{
           alignSelf: 'center',
-          borderRadius: theme.radii.pill,
-          backgroundColor: theme.colors.surfaceSubtle,
+          minWidth: 100,
+          alignItems: 'center',
+          borderWidth: 1,
+          borderColor: theme.colors.primary,
+          borderRadius: theme.radii.small,
+          backgroundColor: theme.colors.canvas,
           paddingHorizontal: theme.spacing[4],
           paddingVertical: theme.spacing[2],
         }}
       >
-        <AppText variant="sectionTitle" tabular>
-          {displayQuantity(quantity, locale)}
-        </AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing[1] }}>
+          <AppText variant="displayNumber" tabular align="right" style={{ minWidth: 80 }}>
+            {displaySelectedQuantity(quantity, locale)}
+          </AppText>
+          <AppText variant="compact" color="textSecondary">
+            {serving.label}
+          </AppText>
+        </View>
       </FocusablePressable>
       <View
-        {...pan.panHandlers}
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel={label}
@@ -126,56 +197,99 @@ export function ServingRuler({
         onAccessibilityAction={(event) => {
           const action = event.nativeEvent.actionName;
           if (action === 'increment' || action === 'decrement') {
-            emit(adjustRulerQuantity(quantity, action, serving));
+            const next = adjustRulerQuantity(quantity, action, serving);
+            emit(next);
+            scrollToQuantity(next, true);
           }
         }}
         testID="serving-ruler"
-        style={{
-          height: 104,
-          overflow: 'hidden',
-          justifyContent: 'flex-end',
-          backgroundColor: theme.colors.primary,
-          borderRadius: theme.radii.medium,
-          paddingHorizontal: theme.spacing[2],
-        }}
+        style={{ height: 80, overflow: 'hidden', backgroundColor: theme.colors.primary }}
       >
-        <View style={{ flexDirection: 'row', flex: 1, alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          {TICK_OFFSETS.map((offset) => {
-            const value = snapRulerQuantity(quantity + offset * step, serving);
+        <LegendList
+          key={serving.id}
+          testID="serving-ruler-list"
+          ref={listRef}
+          data={data}
+          horizontal
+          recycleItems
+          estimatedItemSize={STEP_SIZE}
+          getFixedItemSize={() => STEP_SIZE}
+          drawDistance={rulerWidth}
+          keyExtractor={(index) => String(index)}
+          ListHeaderComponent={sidePadding}
+          ListFooterComponent={sidePadding}
+          renderItem={({ item: index }) => {
+            const value = snapRulerQuantity(minimum + index * step, serving);
             const major = isMajor(value);
             return (
-              <View key={offset} style={{ width: 16, alignItems: 'center', justifyContent: 'flex-end' }}>
+              <View style={{ width: STEP_WIDTH, height: 80, marginRight: STEP_GAP, alignItems: 'center' }}>
+                <View
+                  style={{
+                    width: STEP_WIDTH,
+                    height: major ? 35 : 12,
+                    backgroundColor: theme.colors.onPrimary,
+                  }}
+                />
                 {major ? (
                   <AppText
-                    variant="label"
+                    variant="body"
                     numberOfLines={1}
+                    tabular
+                    align="center"
                     style={{
                       position: 'absolute',
-                      bottom: 32,
-                      left: -16,
+                      top: 44,
+                      left: -23,
                       width: 48,
                       color: theme.colors.onPrimary,
                     }}
-                    tabular
-                    align="center"
                   >
                     {displayQuantity(value, locale)}
                   </AppText>
                 ) : null}
-                <View style={{ width: 2, height: major ? 32 : 18, backgroundColor: theme.colors.onPrimary }} />
               </View>
             );
-          })}
-        </View>
+          }}
+          onScrollBeginDrag={() => {
+            if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current);
+            scrolling.current = true;
+          }}
+          onMomentumScrollBegin={() => {
+            if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current);
+            scrolling.current = true;
+          }}
+          onScroll={handleScroll}
+          onScrollEndDrag={(event) => {
+            const offset = event.nativeEvent.contentOffset.x;
+            if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current);
+            scrollEndTimer.current = setTimeout(() => settle(offset), 150);
+          }}
+          onMomentumScrollEnd={(event) => {
+            if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current);
+            settle(event.nativeEvent.contentOffset.x);
+          }}
+          onContentSizeChange={() => scrollToQuantity(quantity, false)}
+          snapToInterval={STEP_SIZE}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          scrollEventThrottle={16}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+        />
         <View
           pointerEvents="none"
           style={{
             position: 'absolute',
             alignSelf: 'center',
-            bottom: 0,
-            width: 3,
-            height: 50,
-            backgroundColor: theme.colors.onPrimary,
+            top: 0,
+            width: 0,
+            height: 0,
+            borderLeftWidth: 8,
+            borderRightWidth: 8,
+            borderTopWidth: 9,
+            borderLeftColor: 'transparent',
+            borderRightColor: 'transparent',
+            borderTopColor: theme.colors.canvas,
           }}
         />
       </View>

@@ -21,8 +21,8 @@ import {
   AppText,
   ConfirmationDialog,
   FormField,
+  HeaderAction,
   InlineStatus,
-  PrimaryButton,
   SectionHeader,
 } from '@/shared/components';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
@@ -141,7 +141,19 @@ function CustomFoodForm({
 
   return (
     <View style={{ flex: 1 }}>
-      <AppBar title={t('customFood.title')} back={{ label: t('common.back'), onPress: requestCancel }} />
+      <AppBar
+        title={t('customFood.title')}
+        back={{ label: t('common.back'), onPress: requestCancel }}
+        actions={
+          <HeaderAction
+            label={t('customFood.save')}
+            onPress={() => void handleSubmit(submit)()}
+            disabled={!isValid || isSubmitting}
+            loading={isSubmitting}
+            testID="custom-food-save"
+          />
+        }
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           style={{ flex: 1 }}
@@ -257,19 +269,9 @@ function CustomFoodForm({
                 )}
               />
             ))}
+            {saveFailed ? <InlineStatus tone="error" message={t('customFood.saveError')} /> : null}
           </View>
         </ScrollView>
-        <View style={{ padding: theme.spacing[4], gap: theme.spacing[2], backgroundColor: theme.colors.canvas }}>
-          {saveFailed ? <InlineStatus tone="error" message={t('customFood.saveError')} /> : null}
-          <PrimaryButton
-            label={t('customFood.save')}
-            onPress={() => void handleSubmit(submit)()}
-            disabled={!isValid || isSubmitting}
-            loading={isSubmitting}
-            fullWidth
-            testID="custom-food-save"
-          />
-        </View>
       </KeyboardAvoidingView>
       <ConfirmationDialog
         visible={discarding}

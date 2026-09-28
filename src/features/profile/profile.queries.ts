@@ -151,7 +151,12 @@ export function useWeightEntry(id: string, enabled = true) {
 export function useWeightWrites() {
   const { weight } = useServices();
   const client = useQueryClient();
-  const refresh = () => client.invalidateQueries({ queryKey: weightKeys.all });
+  // A committed local write is a successful save even if a mounted view fails while refetching. Do not let a
+  // refresh rejection turn that success into the sheet's "Couldn't save" state; affected queries retain their own
+  // error/retry state and remain invalidated for the next render.
+  const refresh = () => {
+    void client.invalidateQueries({ queryKey: weightKeys.all }).catch(() => undefined);
+  };
   const add = useMutation({ mutationFn: (input: WeightInput) => weight.add(input), onSuccess: refresh });
   const update = useMutation({
     mutationFn: ({ id, ...input }: WeightInput & { id: string }) => weight.update(id, input),

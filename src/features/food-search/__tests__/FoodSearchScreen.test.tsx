@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
@@ -6,7 +6,7 @@ import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
 import { ProviderConfigurationError, RateLimitError, TimeoutError } from '@/shared/errors';
 
-import { FoodSearchScreen, shouldRevealFoodDelete } from '../screens/FoodSearchScreen';
+import { FoodSearchScreen, shouldCommitFoodDelete } from '../screens/FoodSearchScreen';
 
 const almonds: CustomFoodInput = {
   name: 'Almond oats',
@@ -92,6 +92,7 @@ async function setup(
     );
   }
   const onSelectFood = jest.fn();
+  const onSelectExternal = jest.fn();
   const onCreateCustom = jest.fn();
   if (options.usdaError) jest.spyOn(services.usda, 'search').mockRejectedValue(options.usdaError);
   else if (options.usdaCandidates)
@@ -158,6 +159,7 @@ async function setup(
       onQuickCalories={jest.fn()}
       onCreateCustom={onCreateCustom}
       onSelectFood={onSelectFood}
+      onSelectExternal={onSelectExternal}
       onFoodDatabases={options.onFoodDatabases}
     />,
     services,
@@ -167,6 +169,7 @@ async function setup(
     services,
     food,
     onSelectFood,
+    onSelectExternal,
     onCreateCustom,
     view,
     productSignal: () => productSignal,
@@ -203,14 +206,21 @@ describe('UX-04: local Food Search screen', () => {
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
   });
 
-  it('UX-04: custom foods expose the swipe threshold and Delete food accessibility action', async () => {
+  it('UX-04: custom-food deletion commits at the swipe threshold and offers Undo', async () => {
     const { food, services } = await setup({ initialQuery: 'almond' });
     const row = await screen.findByTestId(`food-result-${food.id}`);
-    expect(shouldRevealFoodDelete(-39)).toBe(false);
-    expect(shouldRevealFoodDelete(-40)).toBe(true);
+    expect(shouldCommitFoodDelete(-71)).toBe(false);
+    expect(shouldCommitFoodDelete(-72)).toBe(true);
     expect(row.props.accessibilityActions).toEqual([{ name: 'delete', label: 'Delete food' }]);
     fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
     await waitFor(async () => expect(await services.foods.searchCustom('almond')).toEqual([]));
+    expect(screen.getByTestId('food-delete-undo')).toHaveTextContent('Almond oats deletedUndo');
+    fireEvent.press(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(async () =>
+      expect(await services.foods.searchCustom('almond')).toEqual([
+        expect.objectContaining({ id: food.id, name: 'Almond oats' }),
+      ]),
+    );
   });
 
   it('forwards the current no-results query when creating a custom food', async () => {
@@ -224,22 +234,19 @@ describe('UX-04: local Food Search screen', () => {
     onlineManager.setOnline(false);
     const { food } = await setup({ initialQuery: 'almond', withCachedExternal: true });
     expect(await screen.findByText('Offline. Showing saved foods only.')).toBeTruthy();
-    expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy();
-    expect(screen.getByText('Cached almond yoghurt')).toBeTruthy();
+    expect(await screen.findByTestId(`food-result-${food.id}`)).toBeTruthy();
+    expect(await screen.findByText('Cached almond yoghurt')).toBeTruthy();
   });
 
-  it('PROV-10 / UX-04: aborts a selected OFF detail on unmount and never upserts or navigates', async () => {
-    const { services, onSelectFood, productSignal, view, resolvePendingProduct } = await setup({
+  it('UX-04: opens OFF detail immediately without loading the product in the search row', async () => {
+    const { services, onSelectExternal, productSignal } = await setup({
       initialQuery: 'yoghurt',
       pendingOffProduct: true,
     });
     fireEvent.press(await screen.findByText('Pending OFF yoghurt'));
-    await waitFor(() => expect(productSignal()).toBeDefined());
-    view.unmount();
-    await waitFor(() => expect(productSignal()!.aborted).toBe(true));
-    resolvePendingProduct?.();
-    await Promise.resolve();
-    expect(onSelectFood).not.toHaveBeenCalled();
+    expect(onSelectExternal).toHaveBeenCalledWith('open_food_facts', 'pending-off-product');
+    expect(productSignal()).toBeUndefined();
+    expect(screen.queryByText('Loading food…')).toBeNull();
     expect(await services.foods.searchExternal('pending')).toEqual([]);
   });
 
@@ -250,11 +257,11 @@ describe('UX-04: local Food Search screen', () => {
     expect(screen.getByText('Pesquise um alimento para o adicionar.')).toBeTruthy();
   });
 
-  it('PROV-04 / UX-04: shows the row error when a throttled OFF product read reaches its five-second bound', async () => {
-    await setup({ initialQuery: 'yoghurt', throttledOffProduct: true });
+  it('UX-04: leaves provider detail errors to the detail screen', async () => {
+    const { onSelectExternal } = await setup({ initialQuery: 'yoghurt', throttledOffProduct: true });
     fireEvent.press(await screen.findByText('Throttled OFF yoghurt'));
-    const row = await screen.findByTestId('food-result-off-throttled-off-product');
-    expect(await within(row).findByText("Couldn't load this food.")).toBeTruthy();
+    expect(onSelectExternal).toHaveBeenCalledWith('open_food_facts', 'throttled-off-product');
+    expect(screen.queryByText("Couldn't load this food.")).toBeNull();
   });
 
   it.each([
@@ -273,10 +280,10 @@ describe('UX-04: local Food Search screen', () => {
     if (_kind === 'timeout') expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 
-  it('PROV-08 / DATA-15: shows generic USDA hits in supplied order and upserts selected detail before navigation', async () => {
+  it('PROV-08 / UX-04: shows generic USDA hits in supplied order and opens detail immediately', async () => {
     const generic: CustomFoodInput = { ...almonds, name: 'Egg, whole, raw', brand: null };
     const branded: CustomFoodInput = { ...almonds, name: 'Eggs brand', brand: 'Brand' };
-    const { services, onSelectFood } = await setup({
+    const { services, onSelectExternal } = await setup({
       initialQuery: 'eg',
       usdaCandidates: [
         { externalId: 'generic', input: generic },
@@ -287,12 +294,8 @@ describe('UX-04: local Food Search screen', () => {
     expect(await screen.findByText('Egg, whole, raw')).toBeTruthy();
     expect(screen.getByText('Eggs brand')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('food-result-usda-generic'));
-    await waitFor(() =>
-      expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ source: 'usda', externalId: 'generic' })),
-    );
-    expect(await services.foods.searchExternal('egg')).toEqual([
-      expect.objectContaining({ source: 'usda', externalId: 'generic', name: 'Egg, whole, raw' }),
-    ]);
+    expect(onSelectExternal).toHaveBeenCalledWith('usda', 'generic');
+    expect(await services.foods.searchExternal('egg')).toEqual([]);
   });
 
   it('PROV-08 / UX-04: pages each local section in twenty-row increments', async () => {

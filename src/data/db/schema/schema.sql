@@ -31,7 +31,11 @@ CREATE TABLE nutrition_goals (
   protein_target_g      REAL NOT NULL CHECK (protein_target_g >= 0),
   fat_target_g          REAL NOT NULL CHECK (fat_target_g >= 0),
   created_at            TEXT NOT NULL,
-  updated_at            TEXT NOT NULL
+  updated_at            TEXT NOT NULL,
+  macro_target_mode     TEXT NOT NULL DEFAULT 'grams' CHECK (macro_target_mode IN ('grams', 'percent')),
+  carbohydrate_target_percent REAL CHECK (carbohydrate_target_percent IS NULL OR (carbohydrate_target_percent >= 0 AND carbohydrate_target_percent <= 100)),
+  protein_target_percent REAL CHECK (protein_target_percent IS NULL OR (protein_target_percent >= 0 AND protein_target_percent <= 100)),
+  fat_target_percent    REAL CHECK (fat_target_percent IS NULL OR (fat_target_percent >= 0 AND fat_target_percent <= 100))
 );
 CREATE INDEX idx_nutrition_goals_effective ON nutrition_goals (effective_from DESC);
 

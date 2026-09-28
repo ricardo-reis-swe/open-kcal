@@ -9,10 +9,9 @@ import { useTheme } from '@/shared/theme';
 
 import { DiaryDateStrip } from '../components/DiaryDateStrip';
 import { DiaryDay } from '../components/DiaryDay';
-import { DiaryPager } from '../components/DiaryPager';
 import { useDiaryDate } from '../hooks/DiaryDateContext';
 
-/** Diary root (UX-02, NAV-04): app bar + date strip, then the swipeable day. Past/today/future are identical. */
+/** Diary root: the date strip stays horizontally scrollable while the day content itself is not swipeable. */
 export function DiaryScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -43,11 +42,9 @@ export function DiaryScreen() {
         }
         bottom={<DiaryDateStrip date={date} today={today} onChange={setDate} />}
       />
-      <DiaryPager
-        date={date}
-        onChange={setDate}
-        renderDay={(day, active) => <DiaryDay date={day} active={active} scrollToTop={scrollToTop} />}
-      />
+      <View style={{ flex: 1 }} testID="diary-page-active">
+        <DiaryDay date={date} active scrollToTop={scrollToTop} />
+      </View>
       {/* NAV-05: opens on the active date; Done → Diary on that date; Cancel → no change; Today = the Today action. */}
       <DatePicker
         visible={pickingDate}

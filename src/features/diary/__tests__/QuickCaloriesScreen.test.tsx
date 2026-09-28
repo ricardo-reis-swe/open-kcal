@@ -20,7 +20,7 @@ type SetupOptions = {
   prepare?: (s: AppServices) => Promise<void>;
   /** Edit mode for the entry this returns; add mode on Lunch when omitted. */
   editEntry?: (s: AppServices, lunchId: string) => Promise<string>;
-  origin?: 'diary' | 'mealDetail';
+  origin?: 'diary';
 };
 
 async function setup(options: SetupOptions = {}) {
@@ -137,16 +137,6 @@ describe('UX-07: Edit quick calories', () => {
     const entry = (await services.diary.loadDay(TODAY)).meals.flatMap((m) => m.entries)[0]!;
     expect(entry.nutrients.energyKcal).toBe(450);
     expect(entry.note).toBe('Soup');
-  });
-
-  it('NAV-04: a meal change from Meal Detail lands on the Diary instead of going back', async () => {
-    await setup({ editEntry: addLunchEntry(450), origin: 'mealDetail' });
-    await fireEvent.press(await screen.findByRole('button', { name: 'Meal, Lunch' }));
-    await fireEvent.press(within(await screen.findByTestId('meal-picker')).getByRole('button', { name: 'Dinner' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Meal, Dinner' })).toBeOnTheScreen());
-    await fireEvent.press(screen.getByTestId('quick-calories-submit'));
-    await waitFor(() => expect(router.dismissTo).toHaveBeenCalledWith('/diary'));
-    expect(router.back).not.toHaveBeenCalled();
   });
 
   it('UX-00 / NAV-08: a delete failure stays on the screen and shows the inline error', async () => {

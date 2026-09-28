@@ -4,18 +4,31 @@ import { KeyboardAvoidingView, ScrollView, View, type TextInput } from 'react-na
 
 import {
   GOAL_MACRO_MAX_G,
+  GOAL_MACRO_MAX_PERCENT,
+  gramsFromMacroPercent,
   goalCaloriesRange,
   macroEnergyShare,
   parseGoalCalories,
   parseGoalMacro,
+  parseGoalMacroPercent,
+  percentagesFromMacroGrams,
   type GoalMacroKey,
+  type MacroTargetMode,
   type NutritionGoal,
   type NutritionTargets,
 } from '@/domain/nutrition/goals';
 import { energyFromKcal, type EnergyUnit } from '@/domain/units/units';
 import { useAppSettings } from '@/features/diary/diary.queries';
-import { AppBar, AppText, ConfirmationDialog, FormField, InlineStatus, PrimaryButton } from '@/shared/components';
-import { formatInteger } from '@/shared/i18n/format';
+import {
+  AppBar,
+  AppText,
+  ConfirmationDialog,
+  FormField,
+  HeaderAction,
+  InlineStatus,
+  TextAction,
+} from '@/shared/components';
+import { formatGrams, formatInteger } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme } from '@/shared/theme';
 
@@ -65,13 +78,28 @@ export function CaloriesMacrosScreen(props: Props) {
   );
 }
 
-function initialValues(goal: NutritionGoal | null, unit: EnergyUnit): Values {
-  if (!goal) return { calories: '', carbs: '', protein: '', fat: '' };
+function initialForm(goal: NutritionGoal | null, unit: EnergyUnit): { mode: MacroTargetMode; values: Values } {
+  if (!goal) return { mode: 'grams', values: { calories: '', carbs: '', protein: '', fat: '' } };
+  const mode = goal.macroTargetMode;
+  const percentages =
+    mode === 'percent' &&
+    goal.carbohydrateTargetPercent !== null &&
+    goal.proteinTargetPercent !== null &&
+    goal.fatTargetPercent !== null
+      ? {
+          carbohydrateG: goal.carbohydrateTargetPercent,
+          proteinG: goal.proteinTargetPercent,
+          fatG: goal.fatTargetPercent,
+        }
+      : percentagesFromMacroGrams(goal.carbohydrateTargetG, goal.proteinTargetG, goal.fatTargetG);
   return {
-    calories: String(Math.round(energyFromKcal(goal.calorieTargetKcal, unit))),
-    carbs: String(Math.round(goal.carbohydrateTargetG)),
-    protein: String(Math.round(goal.proteinTargetG)),
-    fat: String(Math.round(goal.fatTargetG)),
+    mode,
+    values: {
+      calories: String(Math.round(energyFromKcal(goal.calorieTargetKcal, unit))),
+      carbs: String(Math.round(mode === 'percent' ? percentages.carbohydrateG : goal.carbohydrateTargetG)),
+      protein: String(Math.round(mode === 'percent' ? percentages.proteinG : goal.proteinTargetG)),
+      fat: String(Math.round(mode === 'percent' ? percentages.fatG : goal.fatTargetG)),
+    },
   };
 }
 
@@ -87,8 +115,9 @@ function GoalsForm({
   const theme = useTheme();
   const locale = useFormattingLocale();
   const save = useSaveGoals();
-  const [initial] = useState(() => initialValues(goal, energyUnit));
-  const [values, setValues] = useState<Values>(initial);
+  const [initial] = useState(() => initialForm(goal, energyUnit));
+  const [mode, setMode] = useState<MacroTargetMode>(initial.mode);
+  const [values, setValues] = useState<Values>(initial.values);
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -98,13 +127,37 @@ function GoalsForm({
   const refs = useRef<Partial<Record<FieldKey, TextInput | null>>>({});
 
   const calorieKcal = parseGoalCalories(values.calories, energyUnit);
-  const macroG = {
-    carbs: parseGoalMacro(values.carbs),
-    protein: parseGoalMacro(values.protein),
-    fat: parseGoalMacro(values.fat),
+  const macroInput = {
+    carbs: mode === 'grams' ? parseGoalMacro(values.carbs) : parseGoalMacroPercent(values.carbs),
+    protein: mode === 'grams' ? parseGoalMacro(values.protein) : parseGoalMacroPercent(values.protein),
+    fat: mode === 'grams' ? parseGoalMacro(values.fat) : parseGoalMacroPercent(values.fat),
   };
-  const valid = calorieKcal !== null && macroG.carbs !== null && macroG.protein !== null && macroG.fat !== null;
-  const dirty = FIELDS.some((field) => values[field] !== initial[field]);
+  const percentTotal =
+    mode === 'percent' ? Object.values(macroInput).reduce<number>((sum, value) => sum + (value ?? 0), 0) : null;
+  const percentagesValid = mode === 'grams' || percentTotal === 100;
+  const macroG = {
+    carbs:
+      macroInput.carbs === null || calorieKcal === null
+        ? null
+        : mode === 'grams'
+          ? macroInput.carbs
+          : gramsFromMacroPercent(calorieKcal, macroInput.carbs, 'carbohydrateG'),
+    protein:
+      macroInput.protein === null || calorieKcal === null
+        ? null
+        : mode === 'grams'
+          ? macroInput.protein
+          : gramsFromMacroPercent(calorieKcal, macroInput.protein, 'proteinG'),
+    fat:
+      macroInput.fat === null || calorieKcal === null
+        ? null
+        : mode === 'grams'
+          ? macroInput.fat
+          : gramsFromMacroPercent(calorieKcal, macroInput.fat, 'fatG'),
+  };
+  const valid =
+    calorieKcal !== null && macroG.carbs !== null && macroG.protein !== null && macroG.fat !== null && percentagesValid;
+  const dirty = mode !== initial.mode || FIELDS.some((field) => values[field] !== initial.values[field]);
   // UX-00: in edit mode Save waits for a change. UX-01: while goals are provisional, saving them unchanged is the
   // user confirming the defaults, so it is allowed.
   const canSave = valid && (dirty || provisional) && !save.isPending;
@@ -138,10 +191,14 @@ function GoalsForm({
     }
     // An untouched Calories field keeps the stored kcal, so a kJ round trip can't drift it.
     const targets: NutritionTargets = {
-      calorieTargetKcal: values.calories === initial.calories && goal ? goal.calorieTargetKcal : calorieKcal,
+      calorieTargetKcal: values.calories === initial.values.calories && goal ? goal.calorieTargetKcal : calorieKcal,
+      macroTargetMode: mode,
       carbohydrateTargetG: macroG.carbs,
       proteinTargetG: macroG.protein,
       fatTargetG: macroG.fat,
+      carbohydrateTargetPercent: mode === 'percent' ? macroInput.carbs : null,
+      proteinTargetPercent: mode === 'percent' ? macroInput.protein : null,
+      fatTargetPercent: mode === 'percent' ? macroInput.fat : null,
     };
     setSaveFailed(false);
     try {
@@ -154,9 +211,9 @@ function GoalsForm({
 
   const invalid: Record<FieldKey, boolean> = {
     calories: calorieKcal === null,
-    carbs: macroG.carbs === null,
-    protein: macroG.protein === null,
-    fat: macroG.fat === null,
+    carbs: macroInput.carbs === null,
+    protein: macroInput.protein === null,
+    fat: macroInput.fat === null,
   };
   const showError = (field: FieldKey) => invalid[field] && (touched[field] || submitted);
   const range = goalCaloriesRange(energyUnit);
@@ -167,12 +224,16 @@ function GoalsForm({
     unit: unitLabel,
   });
   const macroError = t('caloriesMacros.errors.macro', { max: formatInteger(GOAL_MACRO_MAX_G, locale) });
+  const percentError = t('caloriesMacros.errors.percent', { max: GOAL_MACRO_MAX_PERCENT });
 
   const helper = (field: Exclude<FieldKey, 'calories'>, macro: GoalMacroKey) => {
     const grams = macroG[field];
     if (grams === null) return undefined;
     const share = macroEnergyShare(grams, macro, calorieKcal);
     const energy = formatInteger(Math.round(energyFromKcal(share.kcal, energyUnit)), locale);
+    if (mode === 'percent') {
+      return t('caloriesMacros.helperPercent', { grams: formatGrams(grams, locale), energy, unit: unitLabel });
+    }
     return share.percent === null
       ? t('caloriesMacros.helperNoPercent', { energy, unit: unitLabel })
       : t('caloriesMacros.helper', {
@@ -180,6 +241,37 @@ function GoalsForm({
           unit: unitLabel,
           percent: formatInteger(Math.round(share.percent), locale),
         });
+  };
+
+  const chooseMode = (next: MacroTargetMode) => {
+    if (next === mode) return;
+    if (next === 'percent') {
+      const percentages = percentagesFromMacroGrams(
+        parseGoalMacro(values.carbs) ?? 0,
+        parseGoalMacro(values.protein) ?? 0,
+        parseGoalMacro(values.fat) ?? 0,
+      );
+      setValues((current) => ({
+        ...current,
+        carbs: String(percentages.carbohydrateG),
+        protein: String(percentages.proteinG),
+        fat: String(percentages.fatG),
+      }));
+    } else {
+      const kcal = parseGoalCalories(values.calories, energyUnit);
+      setValues((current) => ({
+        ...current,
+        carbs: String(
+          Math.round(gramsFromMacroPercent(kcal ?? 0, parseGoalMacroPercent(values.carbs) ?? 0, 'carbohydrateG')),
+        ),
+        protein: String(
+          Math.round(gramsFromMacroPercent(kcal ?? 0, parseGoalMacroPercent(values.protein) ?? 0, 'proteinG')),
+        ),
+        fat: String(Math.round(gramsFromMacroPercent(kcal ?? 0, parseGoalMacroPercent(values.fat) ?? 0, 'fatG'))),
+      }));
+    }
+    setMode(next);
+    setTouched({});
   };
 
   const field = (key: FieldKey, label: string, unit: string, error: string, helperText?: string, next?: FieldKey) => (
@@ -205,7 +297,19 @@ function GoalsForm({
 
   return (
     <View style={{ flex: 1 }}>
-      <AppBar title={t('caloriesMacros.title')} back={{ label: t('common.back'), onPress: requestCancel }} />
+      <AppBar
+        title={t('caloriesMacros.title')}
+        back={{ label: t('common.back'), onPress: requestCancel }}
+        actions={
+          <HeaderAction
+            label={t('caloriesMacros.save')}
+            onPress={() => void submit()}
+            disabled={!canSave}
+            loading={save.isPending}
+            testID="goals-save"
+          />
+        }
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           style={{ flex: 1 }}
@@ -214,27 +318,59 @@ function GoalsForm({
           contentContainerStyle={{ padding: theme.spacing[4], gap: theme.spacing[4] }}
         >
           {field('calories', t('caloriesMacros.calories'), unitLabel, caloriesError, undefined, 'carbs')}
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel={t('caloriesMacros.modeLabel')}
+            style={{ gap: theme.spacing[1] }}
+          >
+            <AppText variant="label" color="textSecondary">
+              {t('caloriesMacros.modeLabel')}
+            </AppText>
+            <View style={{ flexDirection: 'row', gap: theme.spacing[4] }}>
+              <TextAction
+                label={t('caloriesMacros.modeGrams')}
+                selected={mode === 'grams'}
+                onPress={() => chooseMode('grams')}
+                testID="goals-mode-grams"
+              />
+              <TextAction
+                label={t('caloriesMacros.modePercent')}
+                selected={mode === 'percent'}
+                onPress={() => chooseMode('percent')}
+                testID="goals-mode-percent"
+              />
+            </View>
+          </View>
           {MACROS.map(({ field: key, macro }, i) =>
-            field(key, t(`caloriesMacros.${key}`), t('units.g'), macroError, helper(key, macro), MACROS[i + 1]?.field),
+            field(
+              key,
+              t(`caloriesMacros.${key}`),
+              mode === 'grams' ? t('units.g') : '%',
+              mode === 'grams' ? macroError : percentError,
+              helper(key, macro),
+              MACROS[i + 1]?.field,
+            ),
           )}
+          {mode === 'percent' ? (
+            <AppText
+              variant="compact"
+              color={percentagesValid ? 'textSecondary' : 'danger'}
+              accessibilityLiveRegion="polite"
+              testID="goals-percent-total"
+            >
+              {percentagesValid
+                ? t('caloriesMacros.percentTotal', { total: percentTotal })
+                : t('caloriesMacros.errors.percentTotal', { total: percentTotal })}
+            </AppText>
+          ) : null}
           {/* DATA-09 footnote; while provisional the first save applies from day one instead (UX-01). */}
           {provisional ? null : (
             <AppText variant="compact" color="textSecondary" testID="goals-footnote">
               {t('caloriesMacros.footnote')}
             </AppText>
           )}
-        </ScrollView>
-        <View style={{ padding: theme.spacing[4], gap: theme.spacing[2], backgroundColor: theme.colors.canvas }}>
           {saveFailed ? <InlineStatus tone="error" message={t('caloriesMacros.saveError')} /> : null}
-          <PrimaryButton
-            label={t('caloriesMacros.save')}
-            onPress={() => void submit()}
-            disabled={!canSave}
-            loading={save.isPending}
-            fullWidth
-            testID="goals-save"
-          />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
       <ConfirmationDialog
         visible={discard !== null}

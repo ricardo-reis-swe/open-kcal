@@ -4,9 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServices } from '@/bootstrap/services';
 import type {
   AddFoodEntryInput,
+  CopyEntryInput,
   CopyMealInput,
-  DiaryDay,
-  DiaryMeal,
+  DiaryEntry,
   EditFoodEntryInput,
   QuickCaloriesInput,
 } from '@/data/db/repositories/diaryRepository';
@@ -24,20 +24,6 @@ export const mealKeys = { all: ['meals'] as const };
 export function useDiaryDay(date: LocalDate) {
   const { diary } = useServices();
   return useQuery({ queryKey: diaryKeys.day(date), queryFn: () => diary.loadDay(date) });
-}
-
-/**
- * Meal Detail model (UX-03): one meal of the day with its entries and totals, derived from the cached day so both
- * screens share one query and refresh together. `null` = the meal no longer exists (deleted in Profile → UX-00).
- */
-export function useDiaryMeal(date: LocalDate, mealId: string, enabled = true) {
-  const { diary } = useServices();
-  return useQuery({
-    queryKey: diaryKeys.day(date),
-    enabled,
-    queryFn: () => diary.loadDay(date),
-    select: (day: DiaryDay): DiaryMeal | null => day.meals.find((m) => m.meal.id === mealId) ?? null,
-  });
 }
 
 export function useAppSettings() {
@@ -90,10 +76,27 @@ export function useDiaryWrites() {
       return refresh();
     },
   });
+  const restoreEntry = useMutation({
+    mutationFn: (entry: DiaryEntry) => diary.restoreEntry(entry),
+    onSuccess: refresh,
+  });
   /** DATA-16 / NAV-07 Copy meal: resolves with `copiedCount` for the UX-12 success toast. */
   const copyMeal = useMutation({
     mutationFn: (input: CopyMealInput) => diary.copyMeal(input),
     onSuccess: refresh,
   });
-  return { addFoodEntry, editFoodEntry, addQuickCalories, editQuickCalories, deleteEntry, copyMeal };
+  const copyEntry = useMutation({
+    mutationFn: (input: CopyEntryInput) => diary.copyEntry(input),
+    onSuccess: refresh,
+  });
+  return {
+    addFoodEntry,
+    editFoodEntry,
+    addQuickCalories,
+    editQuickCalories,
+    deleteEntry,
+    restoreEntry,
+    copyMeal,
+    copyEntry,
+  };
 }

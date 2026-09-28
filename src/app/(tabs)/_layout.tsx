@@ -15,7 +15,7 @@ export default function TabsLayout() {
     <DiaryDateProvider>
       <WeightEntryProvider>
         <Tabs
-          screenOptions={{ headerShown: false }}
+          screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
           tabBar={(props) => <AppTabBar {...props} onAddPress={() => setAddOpen(true)} />}
         >
           <Tabs.Screen name="diary" />

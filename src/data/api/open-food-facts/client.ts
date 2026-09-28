@@ -118,7 +118,7 @@ export class OpenFoodFactsClient {
       fields:
         'code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments',
     }).toString();
-    // PROV-04: a tapped row may wait briefly for a product-read slot, never for the full one-minute window.
+    // PROV-04: Food Detail may wait briefly for a product-read slot, never for the full one-minute window.
     const payload = await this.throttled(
       this.productLimiter,
       signal,

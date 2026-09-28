@@ -36,9 +36,9 @@ export function useDiaryDateLabel() {
 
 /**
  * DS-07 date strip (42) under the Diary title: a horizontally scrollable row of days (UX-02). Scrolling the strip
- * never changes the day; tapping one selects it. Whenever the selected day changes (swipe, tap, Today, Date Picker)
- * the strip animates to center it, even after the user scrolled it away. The neighbours are the prev/next day
- * buttons and the selected day has increment/decrement actions: the gesture alternative (DS-11).
+ * never changes the day; tapping one selects it. Whenever the selected day changes (strip/overview button, Today,
+ * Date Picker), the strip animates to center it, even after the user scrolled it away. The selected day also has
+ * increment/decrement accessibility actions (DS-11).
  */
 export function DiaryDateStrip({ date, today, onChange }: DiaryDateStripProps) {
   const { t } = useTranslation();

@@ -66,7 +66,7 @@ export const darkColors: ThemeColors = {
 export const typography = {
   displayNumber: { fontSize: 32, lineHeight: 36, fontWeight: '400' }, // kcal remaining, current weight
   screenTitle: { fontSize: 21, lineHeight: 26, fontWeight: '600' }, // screen title
-  sectionTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600' }, // Meal Detail, major section headings
+  sectionTitle: { fontSize: 17, lineHeight: 22, fontWeight: '600' }, // major section headings
   body: { fontSize: 16, lineHeight: 21, fontWeight: '400' }, // primary rows, form values
   bodyStrong: { fontSize: 16, lineHeight: 21, fontWeight: '600' }, // meal names, emphasized values
   compact: { fontSize: 14, lineHeight: 18, fontWeight: '400' }, // servings, secondary values

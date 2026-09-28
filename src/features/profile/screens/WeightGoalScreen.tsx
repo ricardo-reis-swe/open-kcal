@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
 import { parseWeightInput, weightInputRange, weightInputText } from '@/domain/weight/weight';
 import type { WeightUnit } from '@/domain/units/units';
 import { useAppSettings } from '@/features/diary/diary.queries';
-import { AppBar, FormField, InlineStatus, PrimaryButton, TextAction } from '@/shared/components';
+import { AppBar, FormField, HeaderAction, InlineStatus, TextAction } from '@/shared/components';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme } from '@/shared/theme';
 
@@ -78,7 +78,19 @@ function GoalForm({ goalKg, unit, onSaved, onBack }: Props & { goalKg: number | 
 
   return (
     <View style={{ flex: 1 }}>
-      <AppBar title={t('weightGoal.title')} back={{ label: t('common.back'), onPress: onBack }} />
+      <AppBar
+        title={t('weightGoal.title')}
+        back={{ label: t('common.back'), onPress: onBack }}
+        actions={
+          <HeaderAction
+            label={t('weightGoal.save')}
+            onPress={submit}
+            disabled={!canSave}
+            loading={save.isPending}
+            testID="weight-goal-save"
+          />
+        }
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           style={{ flex: 1 }}
@@ -106,18 +118,8 @@ function GoalForm({ goalKg, unit, onSaved, onBack }: Props & { goalKg: number | 
               testID="weight-goal-clear"
             />
           ) : null}
-        </ScrollView>
-        <View style={{ padding: theme.spacing[4], gap: theme.spacing[2], backgroundColor: theme.colors.canvas }}>
           {saveFailed ? <InlineStatus tone="error" message={t('weightGoal.saveError')} /> : null}
-          <PrimaryButton
-            label={t('weightGoal.save')}
-            onPress={submit}
-            disabled={!canSave}
-            loading={save.isPending}
-            fullWidth
-            testID="weight-goal-save"
-          />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );

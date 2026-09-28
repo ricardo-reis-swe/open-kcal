@@ -1,17 +1,29 @@
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import type { DiaryDay as DiaryDayModel, DiaryMeal } from '@/data/db/repositories/diaryRepository';
 import type { EnergyUnit } from '@/domain/units/units';
-import { AppText, InlineStatus, PrimaryButton, TextAction } from '@/shared/components';
-import type { LocalDate } from '@/shared/dates';
+import {
+  AppIcon,
+  AppText,
+  BottomSheet,
+  FocusablePressable,
+  InlineStatus,
+  PrimaryButton,
+  TextAction,
+  UndoToast,
+} from '@/shared/components';
+import { addDays, type LocalDate } from '@/shared/dates';
 import { routes } from '@/shared/navigation/routes';
 import { useTheme } from '@/shared/theme';
 
-import { useAppSettings, useDiaryDay } from '../diary.queries';
+import { useAppSettings, useDiaryDay, useDiaryWrites } from '../diary.queries';
+import { useDiaryDate } from '../hooks/DiaryDateContext';
 import { CalorieRing } from './CalorieRing';
+import { CopyFlow, type CopyTarget } from './CopyFlow';
+import { useDiaryDateLabel } from './DiaryDateStrip';
 import { MealEntries } from './DiaryEntryRow';
 import { MacroStrip } from './MacroStrip';
 import { MealHeader } from './MealHeader';
@@ -30,7 +42,28 @@ export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
   const theme = useTheme();
   const day = useDiaryDay(date);
   const settings = useAppSettings();
+  const { deleteEntry, restoreEntry } = useDiaryWrites();
   const list = useRef<FlatList<DiaryMeal>>(null);
+  const [deletedEntry, setDeletedEntry] = useState<DiaryMeal['entries'][number] | null>(null);
+  const [deleteError, setDeleteError] = useState(false);
+
+  const removeEntry = (entry: DiaryMeal['entries'][number]) => {
+    setDeleteError(false);
+    deleteEntry.mutate(entry.id, {
+      onSuccess: () => setDeletedEntry(entry),
+      onError: () => setDeleteError(true),
+    });
+  };
+  const undoDelete = () => {
+    if (!deletedEntry) return;
+    restoreEntry.mutate(deletedEntry, {
+      onSuccess: () => setDeletedEntry(null),
+      onError: () => {
+        setDeletedEntry(null);
+        setDeleteError(true);
+      },
+    });
+  };
 
   useEffect(() => {
     if (!active) list.current?.scrollToOffset({ offset: 0, animated: false });
@@ -65,24 +98,44 @@ export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
   const unit = settings.data.energyUnit;
   const provisional = settings.data.goalsConfirmedAt === null;
   return (
-    <FlatList
-      ref={list}
-      testID={active ? 'diary-day-list' : undefined}
-      data={day.data.meals}
-      keyExtractor={(meal) => meal.meal.id}
-      ListHeaderComponent={<Overview day={day.data} unit={unit} provisional={provisional} />}
-      renderItem={({ item }) => <MealSection meal={item} unit={unit} date={date} />}
-      contentContainerStyle={{ paddingBottom: theme.spacing[6], backgroundColor: theme.colors.surface }}
-      style={{ backgroundColor: theme.colors.canvas }}
-      keyboardDismissMode="on-drag"
-    />
+    <View style={{ flex: 1 }}>
+      {deleteError ? (
+        <View style={{ paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[2] }}>
+          <InlineStatus tone="error" message={t('diary.entry.deleteError')} />
+        </View>
+      ) : null}
+      <FlatList
+        ref={list}
+        testID={active ? 'diary-day-list' : undefined}
+        data={day.data.meals}
+        keyExtractor={(meal) => meal.meal.id}
+        ListHeaderComponent={<Overview day={day.data} unit={unit} provisional={provisional} />}
+        renderItem={({ item }) => <MealSection meal={item} unit={unit} date={date} onDelete={removeEntry} />}
+        contentContainerStyle={{ paddingBottom: theme.spacing[6], backgroundColor: theme.colors.surface }}
+        style={{ backgroundColor: theme.colors.canvas }}
+        keyboardDismissMode="on-drag"
+      />
+      {deletedEntry ? (
+        <UndoToast
+          message={t('diary.entry.deleted', { name: deletedEntry.note ?? deletedEntry.name })}
+          undoLabel={t('common.undo')}
+          onUndo={undoDelete}
+          onDismiss={() => setDeletedEntry(null)}
+          testID="diary-delete-undo"
+        />
+      ) : null}
+    </View>
   );
 }
 
 function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: EnergyUnit; provisional: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { today, setDate } = useDiaryDate();
+  const dateLabel = useDiaryDateLabel();
   const goal = day.goal;
+  const previous = addDays(day.date, -1);
+  const next = addDays(day.date, 1);
   return (
     <View style={{ backgroundColor: theme.colors.surface }}>
       <View
@@ -92,7 +145,23 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
           { gap: theme.spacing[3] },
         ]}
       >
-        <CalorieRing eatenKcal={day.totals.energyKcal} goalKcal={goal?.calorieTargetKcal ?? null} unit={unit} />
+        <View style={styles.ringNavigation}>
+          <View style={styles.chevronSlot}>
+            <DayChevron
+              direction="previous"
+              label={t('diary.overviewPreviousDay', { label: dateLabel(previous, today) })}
+              onPress={() => setDate(previous)}
+            />
+          </View>
+          <CalorieRing eatenKcal={day.totals.energyKcal} goalKcal={goal?.calorieTargetKcal ?? null} unit={unit} />
+          <View style={styles.chevronSlot}>
+            <DayChevron
+              direction="next"
+              label={t('diary.overviewNextDay', { label: dateLabel(next, today) })}
+              onPress={() => setDate(next)}
+            />
+          </View>
+        </View>
         <MacroStrip
           totals={day.totals}
           targets={
@@ -120,21 +189,81 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
   );
 }
 
-function MealSection({ meal, unit, date }: { meal: DiaryMeal; unit: EnergyUnit; date: LocalDate }) {
-  const { t } = useTranslation();
+function DayChevron({
+  direction,
+  label,
+  onPress,
+}: {
+  direction: 'previous' | 'next';
+  label: string;
+  onPress: () => void;
+}) {
   const theme = useTheme();
   return (
+    <FocusablePressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      testID={`diary-overview-${direction}`}
+      style={({ pressed }) => [
+        styles.dayChevron,
+        {
+          width: 52,
+          height: 52,
+          borderRadius: theme.radii.pill,
+          borderColor: theme.colors.divider,
+          backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surfaceSubtle,
+          opacity: pressed ? 0.8 : 1,
+        },
+      ]}
+    >
+      <AppIcon
+        name={direction === 'previous' ? 'chevron-back' : 'chevron-forward'}
+        size="centerAction"
+        color="primary"
+      />
+    </FocusablePressable>
+  );
+}
+
+function MealSection({
+  meal,
+  unit,
+  date,
+  onDelete,
+}: {
+  meal: DiaryMeal;
+  unit: EnergyUnit;
+  date: LocalDate;
+  onDelete: (entry: DiaryMeal['entries'][number]) => void;
+}) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { today } = useDiaryDate();
+  const [menuTarget, setMenuTarget] = useState<CopyTarget | null>(null);
+  const [queuedCopy, setQueuedCopy] = useState<CopyTarget | null>(null);
+  const [copyTarget, setCopyTarget] = useState<CopyTarget | null>(null);
+  const [copyVisible, setCopyVisible] = useState(false);
+  const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+
+  const openEntryMenu = (entry: DiaryMeal['entries'][number]) =>
+    setMenuTarget({ kind: 'entry', id: entry.id, name: entry.note ?? entry.name, sourceDate: date });
+  return (
     <View testID={`diary-meal-${meal.meal.id}`}>
-      {/* UX-02: header tap → Meal Detail (mealId, date); header `+` → Food Search (meal, date). */}
+      {status ? (
+        <View style={{ paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[2] }}>
+          <InlineStatus tone={status.tone} message={status.message} />
+        </View>
+      ) : null}
       <MealHeader
         name={meal.meal.name}
         energyKcal={meal.totals.energyKcal}
         unit={unit}
-        onPress={() => router.push(routes.mealDetail({ mealId: meal.meal.id, date }))}
         onAdd={() => router.push(routes.foodSearch({ mealId: meal.meal.id, date }))}
+        onMenu={() => setMenuTarget({ kind: 'meal', id: meal.meal.id, name: meal.meal.name, sourceDate: date })}
       />
       {/* UX-02: row tap → the matching edit screen; it returns here (NAV-04). */}
-      <MealEntries entries={meal.entries} unit={unit} origin="diary" />
+      <MealEntries entries={meal.entries} unit={unit} origin="diary" onDelete={onDelete} onMenu={openEntryMenu} />
       {/* DS-08 Add Food row (42–44): the last row per meal. */}
       <View
         style={{
@@ -150,11 +279,102 @@ function MealSection({ meal, unit, date }: { meal: DiaryMeal; unit: EnergyUnit; 
           onPress={() => router.push(routes.foodSearch({ mealId: meal.meal.id, date }))}
         />
       </View>
+      <DashboardActionMenu
+        target={menuTarget}
+        visible={menuTarget !== null}
+        copyDisabled={menuTarget?.kind === 'meal' && meal.entries.length === 0}
+        onClose={() => setMenuTarget(null)}
+        onCopy={() => {
+          setQueuedCopy(menuTarget);
+          setMenuTarget(null);
+        }}
+        onDismissed={() => {
+          if (!queuedCopy) return;
+          setCopyTarget(queuedCopy);
+          setQueuedCopy(null);
+          setCopyVisible(true);
+        }}
+      />
+      {copyTarget ? (
+        <CopyFlow
+          visible={copyVisible}
+          target={copyTarget}
+          today={today}
+          onClose={() => setCopyVisible(false)}
+          onCopied={(message) => {
+            setCopyTarget(null);
+            setStatus({ tone: 'success', message });
+          }}
+          onError={(message) => {
+            setCopyTarget(null);
+            setStatus({ tone: 'error', message });
+          }}
+        />
+      ) : null}
     </View>
+  );
+}
+
+function DashboardActionMenu({
+  target,
+  visible,
+  copyDisabled,
+  onClose,
+  onCopy,
+  onDismissed,
+}: {
+  target: CopyTarget | null;
+  visible: boolean;
+  copyDisabled: boolean;
+  onClose: () => void;
+  onCopy: () => void;
+  onDismissed: () => void;
+}) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const labelKey = target?.kind === 'meal' ? 'diary.actions.copyMeal' : 'diary.actions.copyItem';
+  return (
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      onDismissed={onDismissed}
+      accessibilityLabel={t('diary.actions.title', { name: target?.name ?? '' })}
+      closeLabel={t('common.close')}
+      testID="diary-actions-sheet"
+    >
+      <AppText
+        variant="bodyStrong"
+        accessibilityRole="header"
+        numberOfLines={2}
+        style={{ paddingHorizontal: theme.spacing[4], paddingBottom: theme.spacing[1] }}
+      >
+        {target?.name}
+      </AppText>
+      <FocusablePressable
+        accessibilityRole="button"
+        accessibilityLabel={t(labelKey)}
+        accessibilityState={{ disabled: copyDisabled }}
+        disabled={copyDisabled}
+        onPress={onCopy}
+        testID="diary-action-copy"
+        style={({ pressed }) => ({
+          minHeight: theme.sizes.settingsRow[0],
+          justifyContent: 'center',
+          paddingHorizontal: theme.spacing[4],
+          backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
+          opacity: copyDisabled ? 0.5 : 1,
+        })}
+      >
+        <AppText>{t(labelKey)}</AppText>
+      </FocusablePressable>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   overview: { alignItems: 'center' },
+  ringNavigation: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  chevronSlot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  dayChevron: { alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
 });

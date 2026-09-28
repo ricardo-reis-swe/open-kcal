@@ -218,6 +218,9 @@ describe('DATA-11 / DATA-16: foods repository', () => {
         quantity: 1,
       }),
     ).rejects.toMatchObject({ category: 'not_found' });
+    await foods.restoreCustom(food.id);
+    expect((await foods.get(food.id)).isDeleted).toBe(false);
+    expect(await recents.list()).toHaveLength(1);
   });
 });
 
@@ -434,6 +437,9 @@ describe('DATA-05 / DATA-06 / DATA-16: diary repository', () => {
     await diary.deleteEntry(entry.id);
     await expect(diary.getEntry(entry.id)).rejects.toMatchObject({ category: 'not_found' });
     await expect(diary.deleteEntry(entry.id)).rejects.toMatchObject({ category: 'not_found' });
+    expect((await recents.list())[0]).toMatchObject({ useCount: 1 });
+    await diary.restoreEntry(entry);
+    expect(await diary.getEntry(entry.id)).toEqual(entry);
     expect((await recents.list())[0]).toMatchObject({ useCount: 1 });
   });
 

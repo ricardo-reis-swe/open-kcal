@@ -4,7 +4,10 @@ import {
   parseGoalCalories,
   parseGoalMacro,
   invalidGoalFields,
+  gramsFromMacroPercent,
   macroEnergyShare,
+  parseGoalMacroPercent,
+  percentagesFromMacroGrams,
   planGoalSave,
   resolveGoal,
   type NutritionGoal,
@@ -17,6 +20,10 @@ const goal = (id: string, effectiveFrom: string, kcal = 2000): NutritionGoal => 
   carbohydrateTargetG: 250,
   proteinTargetG: 100,
   fatTargetG: 67,
+  macroTargetMode: 'grams',
+  carbohydrateTargetPercent: null,
+  proteinTargetPercent: null,
+  fatTargetPercent: null,
 });
 
 describe('DATA-09: effective goals', () => {
@@ -94,5 +101,19 @@ describe('UX-16 / UX-00: goal helpers', () => {
     expect(parseGoalMacro('1001')).toBeNull();
     expect(parseGoalMacro('-1')).toBeNull();
     expect(parseGoalMacro('')).toBeNull();
+  });
+
+  it('UX-16: converts a percentage split to grams with 4/4/9 and validates percentage input', () => {
+    expect(gramsFromMacroPercent(2400, 50, 'carbohydrateG')).toBe(300);
+    expect(gramsFromMacroPercent(2400, 20, 'proteinG')).toBe(120);
+    expect(gramsFromMacroPercent(2400, 30, 'fatG')).toBe(80);
+    expect(parseGoalMacroPercent('100')).toBe(100);
+    expect(parseGoalMacroPercent('101')).toBeNull();
+    expect(parseGoalMacroPercent('20.5')).toBeNull();
+  });
+
+  it('UX-16: switching fixed grams to percentages produces a whole split totaling 100', () => {
+    const percentages = percentagesFromMacroGrams(200, 120, 60);
+    expect(Object.values(percentages).reduce((sum, value) => sum + value, 0)).toBe(100);
   });
 });

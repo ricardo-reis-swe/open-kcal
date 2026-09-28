@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Linking, ScrollView, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useServices } from '@/bootstrap/services';
@@ -12,9 +12,9 @@ import {
   AppText,
   ConfirmationDialog,
   FormField,
+  HeaderAction,
   InlineStatus,
   ListRow,
-  PrimaryButton,
   TextAction,
 } from '@/shared/components';
 import { useOnlineStatus } from '@/features/food-search/food-search.queries';
@@ -35,6 +35,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
   const refreshProfile = () => client.invalidateQueries({ queryKey: credentialKeys.usdaConfigured });
   const [hint, setHint] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('notSet');
+  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [key, setKey] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +93,7 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
       setHint(await services.credentials.getUsdaApiKeyHint());
       setStatus(outcome === 'rateLimited' ? 'active' : outcome);
       setEditing(false);
+      setExpanded(false);
       setKey('');
       setMessage(
         outcome === 'active'
@@ -134,6 +136,9 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
       void refreshProfile();
       setHint(null);
       setStatus('notSet');
+      setExpanded(false);
+      setEditing(false);
+      setKey('');
       setMessage(null);
       setError(null);
     } finally {
@@ -150,72 +155,106 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
           : t('foodDatabases.saved');
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
-      <AppBar title={t('foodDatabases.title')} back={{ label: t('common.back'), onPress: onBack }} />
+      <AppBar
+        title={t('foodDatabases.title')}
+        back={{ label: t('common.back'), onPress: onBack }}
+        actions={
+          editing ? (
+            <HeaderAction
+              label={t('foodDatabases.saveKey')}
+              onPress={() => void save()}
+              disabled={busy}
+              loading={busy}
+              testID="usda-save-key"
+            />
+          ) : undefined
+        }
+      />
       <ScrollView
         contentContainerStyle={{ padding: theme.spacing[4], gap: theme.spacing[3] }}
         keyboardDismissMode="on-drag"
       >
         <ListRow label={t('foodDatabases.openFoodFacts')} value={t('foodDatabases.alwaysOn')} />
-        <ListRow label={t('foodDatabases.usda')} value={statusText} testID="usda-status" />
-        {hint ? <AppText color="textSecondary">{hint}</AppText> : null}
-        {error ? <InlineStatus tone="error" message={error} /> : null}
-        {message ? <InlineStatus tone="info" message={message} /> : null}
-        {editing ? (
-          <>
-            <FormField
-              label={t('foodDatabases.key')}
-              value={key}
-              onChangeText={setKey}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="password"
-              testID="usda-key-input"
-            />
-            <TextAction
-              icon="open-outline"
-              label={t('foodDatabases.signup')}
-              onPress={() => void Linking.openURL('https://api.data.gov/signup/')}
-            />
-            <PrimaryButton
-              label={busy ? t('foodDatabases.testing') : t('foodDatabases.saveKey')}
-              onPress={() => void save()}
-              disabled={busy}
-              testID="usda-save-key"
-            />
-          </>
-        ) : hint ? (
-          <>
-            <TextAction
-              icon="create-outline"
-              label={t('foodDatabases.replaceKey')}
-              onPress={() => {
-                setEditing(true);
-                setError(null);
-                setMessage(null);
-              }}
-            />
-            <TextAction
-              icon="refresh"
-              label={busy ? t('foodDatabases.testing') : t('foodDatabases.testKey')}
-              onPress={() => void test()}
-              disabled={!online || busy}
-            />
-            {!online ? (
-              <AppText variant="compact" color="textSecondary">
-                {t('foodDatabases.connectToTest')}
-              </AppText>
-            ) : null}
-            <TextAction
-              icon="trash-outline"
-              label={t('foodDatabases.removeKey')}
-              onPress={() => setConfirmRemove(true)}
-            />
-          </>
-        ) : (
-          <TextAction icon="add" label={t('foodDatabases.addKey')} onPress={() => setEditing(true)} />
-        )}
-        <SearchResultsGroup />
+        <View style={[styles.providerCard, { borderColor: theme.colors.divider, borderRadius: theme.radii.medium }]}>
+          <ListRow
+            label={t('foodDatabases.usda')}
+            value={statusText}
+            testID="usda-status"
+            expanded={expanded}
+            onPress={() => {
+              const next = !expanded;
+              setExpanded(next);
+              setEditing(next && !hint);
+              setError(null);
+              setMessage(null);
+            }}
+          />
+          {expanded ? (
+            <View
+              testID="usda-options"
+              style={[
+                styles.providerOptions,
+                {
+                  borderTopColor: theme.colors.divider,
+                  padding: theme.spacing[4],
+                  gap: theme.spacing[3],
+                },
+              ]}
+            >
+              {hint ? <AppText color="textSecondary">{hint}</AppText> : null}
+              {error ? <InlineStatus tone="error" message={error} /> : null}
+              {message ? <InlineStatus tone="info" message={message} /> : null}
+              {editing ? (
+                <>
+                  <FormField
+                    label={t('foodDatabases.key')}
+                    value={key}
+                    onChangeText={setKey}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="password"
+                    testID="usda-key-input"
+                  />
+                  <TextAction
+                    icon="open-outline"
+                    label={t('foodDatabases.signup')}
+                    onPress={() => void Linking.openURL('https://api.data.gov/signup/')}
+                  />
+                </>
+              ) : hint ? (
+                <>
+                  <TextAction
+                    icon="create-outline"
+                    label={t('foodDatabases.replaceKey')}
+                    onPress={() => {
+                      setEditing(true);
+                      setError(null);
+                      setMessage(null);
+                    }}
+                  />
+                  <TextAction
+                    icon="refresh"
+                    label={busy ? t('foodDatabases.testing') : t('foodDatabases.testKey')}
+                    onPress={() => void test()}
+                    disabled={!online || busy}
+                  />
+                  {!online ? (
+                    <AppText variant="compact" color="textSecondary">
+                      {t('foodDatabases.connectToTest')}
+                    </AppText>
+                  ) : null}
+                  <TextAction
+                    icon="trash-outline"
+                    label={t('foodDatabases.removeKey')}
+                    onPress={() => setConfirmRemove(true)}
+                  />
+                </>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+        <SearchResultsGroup usdaAvailable={hint !== null} />
       </ScrollView>
       <ConfirmationDialog
         visible={confirmRemove}
@@ -230,3 +269,8 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  providerCard: { overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth },
+  providerOptions: { borderTopWidth: StyleSheet.hairlineWidth },
+});

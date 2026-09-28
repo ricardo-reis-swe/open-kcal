@@ -37,6 +37,18 @@ export default function FoodSearchRoute() {
           }),
         )
       }
+      onSelectExternal={(foodSource, externalId) =>
+        router.push(
+          routes.foodDetail({
+            foodId: externalId,
+            externalId,
+            foodSource,
+            mealId: params.mealId,
+            date: params.date,
+            origin: params.origin,
+          }),
+        )
+      }
     />
   );
 }

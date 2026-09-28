@@ -18,7 +18,13 @@ const TEST_CONFIG = {
   devSeedFoodSearch: false,
 };
 
-const noCredentials = {} as CredentialsService;
+const noCredentials: CredentialsService = {
+  hasUsdaApiKey: async () => false,
+  getUsdaApiKeyForRequest: async () => null,
+  saveUsdaApiKey: async () => undefined,
+  removeUsdaApiKey: async () => undefined,
+  getUsdaApiKeyHint: async () => null,
+};
 
 // Query clients keep garbage-collection timers alive, which kept Jest from exiting; clear them after each test.
 const clients: ReturnType<typeof createQueryClient>[] = [];

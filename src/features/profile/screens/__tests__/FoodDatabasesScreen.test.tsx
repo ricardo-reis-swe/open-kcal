@@ -40,6 +40,8 @@ afterEach(async () => {
 describe('UX-18 / UX-19: Food Databases', () => {
   it('uses secure input, masks a saved key, and returns with the app-bar back action', async () => {
     const { onBack } = await setup({ key: 'abcd1234' });
+    await screen.findByText('Saved · will check when online');
+    await fireEvent.press(screen.getByTestId('usda-status'));
     expect(await screen.findByText('••••1234')).toBeTruthy();
     expect(screen.queryByText('abcd1234')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Back'));
@@ -53,7 +55,7 @@ describe('UX-18 / UX-19: Food Databases', () => {
 
   it('PROV-11: validates blank, whitespace, and DEMO_KEY locally without sending or saving them', async () => {
     const { searchSpy, value } = await setup();
-    await fireEvent.press(await screen.findByRole('button', { name: 'Add key' }));
+    await fireEvent.press(await screen.findByTestId('usda-status'));
     for (const candidate of ['', 'has spaces', 'DEMO_KEY']) {
       await fireEvent.changeText(screen.getByTestId('usda-key-input'), candidate);
       await fireEvent.press(screen.getByTestId('usda-save-key'));
@@ -67,6 +69,8 @@ describe('UX-18 / UX-19: Food Databases', () => {
 
   it('PROV-11: keeps an old key on a rejected replacement, saves only a successful replacement, and never puts it in the URL', async () => {
     const { searchSpy, value } = await setup({ key: 'old-key' });
+    await screen.findByText('Saved · will check when online');
+    await fireEvent.press(await screen.findByTestId('usda-status'));
     await fireEvent.press(await screen.findByRole('button', { name: 'Replace key' }));
     searchSpy.mockRejectedValueOnce(new ProviderConfigurationError('rejected', 'usda_key_rejected'));
     await fireEvent.changeText(screen.getByTestId('usda-key-input'), 'new-key');
@@ -76,11 +80,14 @@ describe('UX-18 / UX-19: Food Databases', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Save key' }));
     await waitFor(() => expect(value()).toBe('new-key'));
-    expect(await screen.findByText('••••-key')).toBeTruthy();
+    expect(screen.queryByTestId('usda-options')).toBeNull();
+    expect(screen.getByTestId('usda-status').props.accessibilityState.expanded).toBe(false);
   });
 
   it('PROV-11: Test key reports active/rejected/rate limited and preserves status on reachability failure', async () => {
     const { searchSpy } = await setup({ key: 'saved-key' });
+    await screen.findByText('Saved · will check when online');
+    await fireEvent.press(await screen.findByTestId('usda-status'));
     await screen.findByText('••••-key');
     await fireEvent.press(screen.getByRole('button', { name: 'Test key' }));
     expect(await screen.findByText('Key works.')).toBeTruthy();
@@ -105,6 +112,8 @@ describe('UX-18 / UX-19: Food Databases', () => {
   it('UX-18 / NAV-08: disables Test key offline and removes the key only after confirmation', async () => {
     onlineManager.setOnline(false);
     const { value } = await setup({ key: 'saved-key' });
+    await screen.findByText('Saved · will check when online');
+    await fireEvent.press(await screen.findByTestId('usda-status'));
     expect(await screen.findByText('Connect to the internet to test.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Test key' }).props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(screen.getByRole('button', { name: 'Remove key' }));
@@ -120,12 +129,21 @@ describe('UX-18 `Search results` (DATA-19)', () => {
   const order = async (services: Awaited<ReturnType<typeof setup>>['services']) =>
     (await services.settings.getFoodSearchSections()).map((s) => `${s.id}:${s.visible ? 'on' : 'off'}`);
 
-  it('lists the 4 sections in the default order, all visible', async () => {
+  it('lists the 4 sections in the default order and keeps USDA unavailable without a key', async () => {
     await setup();
     expect(await screen.findByText('Search results')).toBeTruthy();
-    for (const id of ['custom', 'saved', 'open_food_facts', 'usda']) {
+    for (const id of ['custom', 'saved', 'open_food_facts']) {
       expect(screen.getByTestId(`search-section-switch-${id}`).props.value).toBe(true);
     }
+    expect(screen.getByTestId('search-section-switch-usda').props.value).toBe(false);
+    expect(screen.getByTestId('search-section-switch-usda').props.disabled).toBe(true);
+  });
+
+  it('allows USDA results to be enabled once a key is configured', async () => {
+    await setup({ key: 'saved-key' });
+    await screen.findByText('Saved · will check when online');
+    expect(screen.getByTestId('search-section-switch-usda').props.value).toBe(true);
+    expect(screen.getByTestId('search-section-switch-usda').props.disabled).toBe(false);
   });
 
   it('saves a switch change immediately', async () => {
@@ -159,6 +177,6 @@ describe('UX-18 `Search results` (DATA-19)', () => {
     const last = await screen.findByTestId('search-section-switch-open_food_facts');
     expect(last.props.disabled).toBe(true);
     expect(screen.getByText('At least one section must be shown.')).toBeTruthy();
-    expect(screen.getByTestId('search-section-switch-usda').props.disabled).toBe(false);
+    expect(screen.getByTestId('search-section-switch-usda').props.disabled).toBe(true);
   });
 });
