@@ -1,4 +1,5 @@
 # ARCH-18 / ROAD-02 M2: launch to today's diary. Every meal shows, with the overview on top (UX-02, NAV-05).
+# Meal cards are matched by testID, not name, so renamed, reordered or deleted meals (M8) don't break the flow.
 appId: com.ricardoreis.calorietracker
 ---
 - runFlow: subflows/launch.yaml
@@ -11,5 +12,5 @@ appId: com.ricardoreis.calorietracker
     id: calorie-ring
 - assertVisible:
     id: macro-strip
-- assertVisible: 'Breakfast, .*'
-- assertVisible: 'Lunch, .*'
+- assertVisible:
+    id: 'diary-meal-.*'

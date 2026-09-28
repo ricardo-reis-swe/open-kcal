@@ -53,6 +53,17 @@ export function dropIndex(from: number, translationY: number, rowHeight: number,
 }
 
 /**
+ * UX-17 drop: the slot a drag commits to, from its last hovered slot clamped to the list, so a finger released over the
+ * app bar (or below the last row) still drops on the first (or last) row. Null when it ends where it started.
+ */
+export function dropTarget(from: number, hover: number, count: number): number | null {
+  'worklet';
+  if (from < 0 || count <= 0) return null;
+  const to = Math.max(0, Math.min(count - 1, hover));
+  return to === from ? null : to;
+}
+
+/**
  * UX-17 live drag preview: how far row `index` shifts while row `from` is dragged over slot `hover` (rows of
  * `rowHeight`). Rows between the two slots move one row toward `from` to open the drop slot; `from < 0` = no drag.
  * The dragged row itself follows the finger, so it gets 0 here. The order still commits only on drop (DATA-10).

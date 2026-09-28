@@ -76,7 +76,9 @@ describe('ARCH-18 M5 local Food Search seed', () => {
     expect((await services.foods.searchCustom('offline e2e')).map((food) => food.name)).toEqual([
       'Offline E2E custom oats',
     ]);
-    expect((await services.foods.searchExternal('offline e2e')).map((food) => food.name)).toEqual([
+    // The m5-offline-foods cached OFF food comes with it, so both offline flows need only the dev-seed link.
+    expect((await services.foods.searchExternal('offline e2e')).map((food) => food.name).sort()).toEqual([
+      'E2E Offline Oat Bar',
       'Offline E2E saved yoghurt',
     ]);
   });
@@ -84,7 +86,7 @@ describe('ARCH-18 M5 local Food Search seed', () => {
   it('ARCH-12 / UX-05: repairs the cached OFF fixture to its egg default and saves 2 × egg as 95 kcal', async () => {
     const { services } = await createTestServices();
     await seedDevFoodSearch(services);
-    const cached = (await services.foods.searchExternal('offline e2e'))[0]!;
+    const cached = (await services.foods.searchExternal('offline e2e')).find((food) => food.name.includes('yoghurt'))!;
     const egg = cached.servings.find((serving) => serving.label === 'egg')!;
     expect(egg.isDefault).toBe(true);
 

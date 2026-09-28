@@ -380,6 +380,8 @@ function FoodDetailForm({
         onClose={() => setEditingValue(false)}
         accessibilityLabel={t('foodDetail.enterServing')}
         closeLabel={t('common.close')}
+        // UX screens rule: the primary action (Done) stays above the keypad, never behind it (iOS decimal pad).
+        avoidKeyboard
         testID="serving-value-sheet"
       >
         <View style={{ paddingHorizontal: theme.spacing[4], paddingBottom: theme.spacing[4], gap: theme.spacing[3] }}>

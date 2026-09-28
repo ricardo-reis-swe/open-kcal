@@ -6,7 +6,7 @@ import Animated, { type SharedValue, useAnimatedStyle, useSharedValue, withTimin
 import { scheduleOnRN } from 'react-native-worklets';
 
 import type { Meal } from '@/data/db/repositories/mealsRepository';
-import { dragShift, dropIndex, moveMeal, moveMealToIndex } from '@/domain/meals/meals';
+import { dragShift, dropIndex, dropTarget, moveMeal, moveMealToIndex } from '@/domain/meals/meals';
 import { useMeals } from '@/features/diary/diary.queries';
 import { AppBar, AppIcon, AppText, FocusablePressable, InlineStatus, TextAction } from '@/shared/components';
 import { useTheme } from '@/shared/theme';
@@ -97,11 +97,6 @@ function MealRow({ meal, index, count, drag, onPress, onMove, onDrop }: RowProps
   // A long-press drag ends with a touch release on the row; that release must not also open Edit Meal.
   const dropped = useSharedValue(false);
 
-  const drop = (translationY: number) => {
-    const to = dropIndex(index, translationY, height.get(), count);
-    if (to !== index) onDrop(to);
-  };
-
   const pan = (testId: string, longPress: boolean) => {
     const gesture = Gesture.Pan()
       .withTestId(testId)
@@ -115,10 +110,11 @@ function MealRow({ meal, index, count, drag, onPress, onMove, onDrop }: RowProps
         dragY.set(event.translationY);
         drag.hover.set(dropIndex(index, event.translationY, height.get(), count));
       })
-      .onEnd((event) => {
-        scheduleOnRN(drop, event.translationY);
-      })
+      // Commit on finalize, not onEnd: a release outside the list (over the app bar) or a cancelled touch still
+      // drops on the last previewed slot, clamped to the list (UX-17, DATA-10).
       .onFinalize(() => {
+        const to = drag.active.get() === index ? dropTarget(index, drag.hover.get(), count) : null;
+        if (to !== null) scheduleOnRN(onDrop, to);
         drag.active.set(-1);
         drag.hover.set(-1);
         dragY.set(0);

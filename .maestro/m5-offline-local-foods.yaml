@@ -1,11 +1,14 @@
-# ARCH-18 / ROAD-02 M5: scripts/e2e-m5-offline-android.sh loads the cached dev bundle, disables Android networking,
-# then runs this flow. It proves custom and cached OFF results stay usable with the provider offline status in place.
+# ARCH-18 / ROAD-02 M5: custom and cached OFF results stay usable offline, with the provider offline status in place,
+# and a cached food can be added with a changed serving count. Seeds its own local data through the dev-only
+# `calorietracker://dev-seed` link (bootstrap/devSeedLink.ts). Android only: Maestro's airplane mode is Android-only.
 appId: com.ricardoreis.calorietracker
+tags:
+  - android-only
+onFlowComplete:
+  - setAirplaneMode: disabled # always restore networking, also after a failed step
 ---
-- extendedWaitUntil:
-    visible:
-      id: tab-add
-    timeout: 10000
+- runFlow: subflows/launch.yaml
+- openLink: calorietracker://dev-seed
 - tapOn:
     id: tab-add
 - tapOn: Add food
@@ -16,10 +19,10 @@ appId: com.ricardoreis.calorietracker
 - extendedWaitUntil:
     visible: Food search
     timeout: 5000
+- setAirplaneMode: enabled
 - tapOn:
     id: food-search-input
 - inputText: Offline E2E
-- hideKeyboard
 - extendedWaitUntil:
     visible: Offline. Showing saved foods only.
     timeout: 5000
@@ -35,9 +38,17 @@ appId: com.ricardoreis.calorietracker
     id: serving-value-input
 - eraseText: 1
 - inputText: '2'
-- tapOn: Done
+# Submit from the keypad (same as Done): the dev LogBox toast for the offline provider failure can cover Done.
+- pressKey: Enter
 - tapOn:
     id: food-detail-add
+# Meals can be reordered (M8), so the entry's meal may sit below the fold: scroll to it on the Diary.
 - extendedWaitUntil:
-    visible: Offline E2E saved yoghurt.*95.*
+    visible:
+      id: calorie-ring
+    timeout: 10000
+- scrollUntilVisible:
+    element: 'Offline E2E saved yoghurt.*95.*'
+    direction: DOWN
     timeout: 15000
+- setAirplaneMode: disabled

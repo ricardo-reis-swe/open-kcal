@@ -23,12 +23,17 @@ export class UsdaClient {
     private readonly log: Logger = logger,
   ) {}
 
-  /** PROV-12: one diagnostic record per failure; aborted requests are ignored silently. */
+  /**
+   * PROV-12: one diagnostic record per failure; aborted requests are ignored silently. A missing key is an expected
+   * state (no request is sent, the UI shows the key prompt), not a failure: logging it as an error would raise the
+   * dev-build error toast over the bottom actions on every search.
+   */
   private async diagnosed<T>(endpoint: ProviderEndpoint, signal: AbortSignal, operation: () => Promise<T>): Promise<T> {
     try {
       return await operation();
     } catch (error) {
-      if (!signal.aborted) logProviderFailure(error, 'usda', endpoint, this.log);
+      const keyMissing = error instanceof ProviderConfigurationError && error.code === 'usda_key_missing';
+      if (!signal.aborted && !keyMissing) logProviderFailure(error, 'usda', endpoint, this.log);
       throw error;
     }
   }

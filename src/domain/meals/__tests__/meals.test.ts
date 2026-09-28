@@ -1,4 +1,12 @@
-import { dragShift, dropIndex, duplicateMealName, isValidMealName, moveMeal, moveMealToIndex } from '../meals';
+import {
+  dragShift,
+  dropIndex,
+  dropTarget,
+  duplicateMealName,
+  isValidMealName,
+  moveMeal,
+  moveMealToIndex,
+} from '../meals';
 
 describe('UX-17: meal helpers', () => {
   const meals = [
@@ -36,6 +44,16 @@ describe('UX-17: meal helpers', () => {
     expect(moveMealToIndex(['a', 'b', 'c'], 'c', 0)).toEqual(['c', 'a', 'b']);
     expect(moveMealToIndex(['a', 'b', 'c'], 'b', 1)).toBeNull();
     expect(moveMealToIndex(['a', 'b', 'c'], 'x', 1)).toBeNull();
+  });
+
+  it('UX-17 drop: clamps the last hovered slot to the list; no move when it ends where it started', () => {
+    expect(dropTarget(1, -3, 4)).toBe(0); // released over the app bar
+    expect(dropTarget(1, 9, 4)).toBe(3); // released below the last row
+    expect(dropTarget(2, 0, 4)).toBe(0);
+    expect(dropTarget(2, 2, 4)).toBeNull();
+    expect(dropTarget(0, -1, 4)).toBeNull();
+    expect(dropTarget(-1, 1, 4)).toBeNull();
+    expect(dropTarget(0, 1, 0)).toBeNull();
   });
 
   it('UX-17 drag preview: rows between the dragged row and the hovered slot shift one row toward it', () => {

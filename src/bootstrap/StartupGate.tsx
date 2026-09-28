@@ -7,8 +7,11 @@ import { View } from 'react-native';
 
 import { LATEST_SCHEMA_VERSION } from '@/data/db/migrations';
 import { toAppError, type AppError } from '@/shared/errors';
+import { logger } from '@/shared/logging/logger';
 import { useTheme } from '@/shared/theme';
 
+import { seedDevFoodSearch } from './devSeed';
+import { onDevSeedRequest } from './devSeedLink';
 import { configureOnlineManager, createQueryClient } from './query-client';
 import { RecoveryScreen } from './RecoveryScreen';
 import { ServicesProvider, type AppServices } from './services';
@@ -50,6 +53,18 @@ export function StartupGate({ start, appVersion, copyText, children }: StartupGa
       cancelled = true;
     };
   }, [start, starting, attempt]);
+
+  // ARCH-18: the dev-only `calorietracker://dev-seed` link seeds the local Maestro fixtures once services are up.
+  const ready = state.status === 'ready' ? state.ready : undefined;
+  useEffect(() => {
+    if (!__DEV__ || !ready) return;
+    return onDevSeedRequest(() => {
+      seedDevFoodSearch(ready.services).then(
+        () => ready.queryClient.invalidateQueries(),
+        (error: unknown) => logger.warn('dev seed failed', { code: toAppError(error).category }),
+      );
+    });
+  }, [ready]);
 
   const retry = useCallback(() => setState({ status: 'starting', attempt: attempt + 1 }), [attempt]);
 

@@ -26,6 +26,16 @@ const mockFood: Food = {
   ],
 };
 
+// Host-only render tree (RNTL 14): expose KeyboardAvoidingView's `enabled` as a testID.
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const { createElement } = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    __esModule: true,
+    default: ({ enabled, ...props }: { enabled?: boolean }) =>
+      createElement(View, { ...props, testID: enabled ? 'kav-enabled' : 'kav-disabled' }),
+  };
+});
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
   router: { back: jest.fn(), dismiss: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), replace: jest.fn() },
@@ -145,6 +155,8 @@ describe('UX-05: Food Detail / Add Entry', () => {
 
     fireEvent.press(screen.getByTestId('serving-ruler-value'));
     const input = await screen.findByTestId('serving-value-input');
+    // Done stays above the keypad: the sheet's KeyboardAvoidingView is enabled (primary action above the keyboard).
+    expect(within(screen.getByTestId('kav-enabled')).getByTestId('serving-value-confirm')).toBeTruthy();
     fireEvent.changeText(input, '75');
     await waitFor(() => expect(input.props.value).toBe('75'));
     fireEvent(input, 'submitEditing');

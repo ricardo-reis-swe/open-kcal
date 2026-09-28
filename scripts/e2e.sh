@@ -3,6 +3,7 @@
 # Metro on localhost:8081 (`npx expo start --dev-client --port 8081`). Set METRO_PORT only when the host port
 # needs an emulator reverse override; the device deep link remains on localhost:8081.
 #   scripts/e2e.sh android|ios [flow.yaml ...]
+# Flows tagged `android-only` (Maestro airplane mode, M5 offline) are skipped on iOS.
 set -euo pipefail
 java_major() {
   "$1/bin/java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -1
@@ -42,11 +43,14 @@ case "$platform" in
     "$ADB" reverse tcp:8081 "tcp:$METRO_PORT" >/dev/null
     device=$("$ADB" devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')
     ;;
-  ios) device=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1) ;;
+  ios)
+    device=$(xcrun simctl list devices booted | grep -oE '[0-9A-F-]{36}' | head -1)
+    set -- --exclude-tags=android-only "$@"
+    ;;
   *) echo "unknown platform: $platform" >&2; exit 2 ;;
 esac
 [ -n "$device" ] || { echo "no booted $platform device" >&2; exit 1; }
-[ $# -gt 0 ] || set -- .maestro
+[ -n "$(printf '%s\n' "$@" | grep -v '^--')" ] || set -- "$@" .maestro
 # A final summary line that output filters can't hide; the exit code is Maestro's.
 start=$SECONDS
 status=0

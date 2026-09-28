@@ -39,29 +39,7 @@ export async function seedDevDiary(services: AppServices, today: LocalDate): Pro
     nutrients: { energyKcal: 97, carbohydrateG: 3.9, proteinG: 9, fatG: 5 },
     servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
   });
-  // ARCH-18 / ROAD-02 M5: deterministic cached OFF food for the Android offline flow. It is inserted directly
-  // through the repository, never fetched from a provider, and remains local data like a real selected OFF food.
-  await services.foods.upsertExternal(
-    'open_food_facts',
-    'e2e-offline-oat-bar',
-    {
-      name: 'E2E Offline Oat Bar',
-      brand: 'Local test fixture',
-      basisQuantity: 100,
-      basisUnit: 'g',
-      nutrients: { energyKcal: 380, carbohydrateG: 58, proteinG: 9, fatG: 12 },
-      servings: [
-        { label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 },
-        { label: 'bar', quantity: 1, unit: 'bar', basisMultiplier: 0.12, isDefault: true },
-      ],
-    },
-    {
-      fetchedAt: nowUtcIso(services.clock),
-      expiresAt: '9999-12-31T23:59:59.999Z',
-      rawPayloadJson: null,
-      schemaVersion: 1,
-    },
-  );
+  await seedOfflineOatBar(services);
   const serving = (food: typeof eggs, label: string) => food.servings.find((s) => s.label === label)!.id;
   const addFood = (date: LocalDate, mealId: string, food: typeof eggs, label: string, quantity: number) =>
     services.diary.addFoodEntry({
@@ -92,10 +70,42 @@ export async function seedDevDiary(services: AppServices, today: LocalDate): Pro
   return true;
 }
 
+/**
+ * ARCH-18 / ROAD-02 M5: deterministic cached OFF food for the Android offline flows. It is inserted directly through
+ * the repository, never fetched from a provider, and remains local data like a real selected OFF food. Idempotent.
+ */
+async function seedOfflineOatBar(services: AppServices): Promise<void> {
+  await services.foods.upsertExternal(
+    'open_food_facts',
+    'e2e-offline-oat-bar',
+    {
+      name: 'E2E Offline Oat Bar',
+      brand: 'Local test fixture',
+      basisQuantity: 100,
+      basisUnit: 'g',
+      nutrients: { energyKcal: 380, carbohydrateG: 58, proteinG: 9, fatG: 12 },
+      servings: [
+        { label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01 },
+        { label: 'bar', quantity: 1, unit: 'bar', basisMultiplier: 0.12, isDefault: true },
+      ],
+    },
+    {
+      fetchedAt: nowUtcIso(services.clock),
+      expiresAt: '9999-12-31T23:59:59.999Z',
+      rawPayloadJson: null,
+      schemaVersion: 1,
+    },
+  );
+}
+
 const FOOD_SEARCH_MARKER = 'Offline E2E custom oats';
 
-/** ARCH-18 / ROAD-02 M5: local-only data for the Android offline Maestro flow; never a DATA-17 default. */
+/**
+ * ARCH-18 / ROAD-02 M5: local-only data for the Android offline Maestro flows; never a DATA-17 default. Runs from
+ * EXPO_PUBLIC_DEV_SEED_FOOD_SEARCH=1 or the dev-only `calorietracker://dev-seed` link (devSeedLink.ts). Idempotent.
+ */
 export async function seedDevFoodSearch(services: AppServices): Promise<boolean> {
+  await seedOfflineOatBar(services);
   const custom = await services.db.getFirst<{ ok: number }>(
     "SELECT 1 AS ok FROM foods WHERE source = 'custom' AND name = ?",
     [FOOD_SEARCH_MARKER],

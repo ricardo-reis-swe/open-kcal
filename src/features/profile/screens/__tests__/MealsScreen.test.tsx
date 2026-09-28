@@ -65,6 +65,21 @@ describe('UX-17 / NAV-06: Meals', () => {
     await waitFor(async () => expect(await names(services)).toEqual(['Lunch', 'Dinner', 'Breakfast', 'Snacks']));
   });
 
+  it('UX-17: a drag released over the app bar (touch cancelled, far above the list) still drops on the first row', async () => {
+    const { services } = await setup();
+    const row = screen.getByTestId('meals-row-2').parent!.parent!;
+    await fireEvent(row, 'layout', { nativeEvent: { layout: { height: 52 } } });
+    await act(async () =>
+      fireGestureHandler(getByGestureTestId('meals-handle-pan-2'), [
+        { state: State.BEGAN, translationY: 0 },
+        { state: State.ACTIVE, translationY: -150 },
+        { state: State.ACTIVE, translationY: -600 },
+        { state: State.CANCELLED, translationY: -600 },
+      ]),
+    );
+    await waitFor(async () => expect(await names(services)).toEqual(['Dinner', 'Breakfast', 'Lunch', 'Snacks']));
+  });
+
   it('UX-17: a long-press drag on the row reorders and does not open Edit Meal', async () => {
     const { services, onEditMeal } = await setup();
     await act(async () => drag('meals-row-pan-3', -200));

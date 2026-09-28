@@ -1,4 +1,4 @@
-import { ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
+import { ProviderConfigurationError, ProviderResponseError, RateLimitError, TimeoutError } from '@/shared/errors';
 import { createLogger, type LogRecord } from '@/shared/logging/logger';
 import { foodSearchKeys } from '@/features/food-search/food-search.queries';
 
@@ -125,6 +125,22 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
 
     expect(foodSearchKeys.usda(privateTerm, 1)).not.toContain(credential);
     expect(foodSearchKeys.usda(privateTerm, 1)).toEqual(['foodSearch', 'usda', privateTerm, 1]);
+  });
+
+  it('PROV-12: a missing key sends no request and logs nothing (expected state, not a failure)', async () => {
+    const request = jest.fn();
+    const records: LogRecord[] = [];
+    const client = new UsdaClient(
+      config,
+      { getUsdaApiKeyForRequest: jest.fn().mockResolvedValue(null) },
+      request,
+      createLogger({ isDev: true, sink: (record) => records.push(record) }),
+    );
+    await expect(client.search('egg', 1, new AbortController().signal)).rejects.toBeInstanceOf(
+      ProviderConfigurationError,
+    );
+    expect(request).not.toHaveBeenCalled();
+    expect(records).toEqual([]);
   });
 
   it('PROV-12 / ARCH-15: dev logs provider, endpoint, status and Zod issue path; release only type + provider', async () => {

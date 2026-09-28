@@ -1,8 +1,14 @@
-# ARCH-12 / ARCH-18 / ROAD-02 M5: the dev seed supplies a cached OFF food and custom foods locally. This flow
-# deliberately goes offline after Metro has loaded; no provider request or live fixture is used.
+# ARCH-12 / ARCH-18 / ROAD-02 M5: a cached OFF food and a custom food stay searchable offline. The flow seeds its own
+# local data through the dev-only `calorietracker://dev-seed` link (bootstrap/devSeedLink.ts), then goes offline after
+# Metro has loaded; no provider request or live fixture is used. Android only: Maestro's airplane mode is Android-only.
 appId: com.ricardoreis.calorietracker
+tags:
+  - android-only
+onFlowComplete:
+  - setAirplaneMode: disabled # always restore networking, also after a failed step
 ---
 - runFlow: subflows/launch.yaml
+- openLink: calorietracker://dev-seed
 - tapOn:
     id: tab-add
 - tapOn: Add food
@@ -16,7 +22,8 @@ appId: com.ricardoreis.calorietracker
 - setAirplaneMode: enabled
 - tapOn:
     id: food-search-input
-- inputText: E2E Offline Oat Bar
+# Partial queries, so the full result name never matches the search field's own text.
+- inputText: E2E Offline Oat
 - extendedWaitUntil:
     visible: Offline. Showing saved foods only.
     timeout: 5000
@@ -28,9 +35,15 @@ appId: com.ricardoreis.calorietracker
     timeout: 5000
 - tapOn:
     id: food-detail-add
+# Meals can be reordered (M8), so the entry's meal may sit below the fold: scroll to it on the Diary.
 - extendedWaitUntil:
-    visible: E2E Offline Oat Bar
+    visible:
+      id: calorie-ring
     timeout: 10000
+- scrollUntilVisible:
+    element: E2E Offline Oat Bar
+    direction: DOWN
+    timeout: 15000
 - tapOn:
     text: Add food
     index: 1
@@ -39,10 +52,10 @@ appId: com.ricardoreis.calorietracker
     timeout: 5000
 - tapOn:
     id: food-search-input
-- inputText: Scrambled eggs sample
+- inputText: Offline E2E custom
 - extendedWaitUntil:
     visible: Offline. Showing saved foods only.
     timeout: 5000
 - assertVisible: MY FOODS
-- assertVisible: Scrambled eggs (sample)
+- assertVisible: Offline E2E custom oats
 - setAirplaneMode: disabled
