@@ -26,7 +26,7 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
     await client.search('  egg  ', 2, new AbortController().signal);
     const [url, init] = request.mock.calls[0]!;
     expect(String(url)).toContain(
-      '/fdc/v1/foods/search?query=egg&dataType=Foundation%2CSR+Legacy%2CSurvey+%28FNDDS%29%2CBranded&pageSize=20&pageNumber=2',
+      '/fdc/v1/foods/search?query=egg&dataType=Foundation%2CSR+Legacy%2CSurvey+%28FNDDS%29%2CBranded&pageSize=10&pageNumber=2',
     );
     expect(String(url)).not.toContain('api_key');
     expect(init.headers).toEqual({ 'X-Api-Key': 'test-usda-key' });

@@ -92,7 +92,7 @@ export class UsdaClient {
           {
             query: query.trim().replace(/\s+/g, ' '),
             dataType: 'Foundation,SR Legacy,Survey (FNDDS),Branded',
-            pageSize: '20',
+            pageSize: '10',
             pageNumber: String(page),
           },
           signal,

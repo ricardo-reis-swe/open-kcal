@@ -17,7 +17,7 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 ## PROV-02 USDA endpoints
 | Use | Call | Notes |
 |---|---|---|
-| Search | `GET /foods/search?query=&dataType=Foundation,SR Legacy,Survey (FNDDS),Branded&pageSize=20&pageNumber=` | Leave out `Experimental`. Nutrients in the results are per 100 g; there are no portions. |
+| Search | `GET /foods/search?query=&dataType=Foundation,SR Legacy,Survey (FNDDS),Branded&pageSize=10&pageNumber=` | Leave out `Experimental`. Nutrients in the results are per 100 g; there are no portions. |
 | Select a result | `GET /food/{fdcId}?format=full` | Called on tap before upsert (UX-04), because portions only come from here. |
 | Refresh cached | Same as select | Rules come in the cache step. |
 - Search fields used: `fdcId, description, dataType, brandOwner, brandName, servingSize, servingSizeUnit, householdServingFullText, foodNutrients[].{nutrientNumber, unitName, value}`, plus `totalHits, currentPage, totalPages` for paging.
@@ -27,19 +27,19 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 ## PROV-03 OFF endpoints
 | Use | Call | Notes |
 |---|---|---|
-| Search | `GET /search?q=<terms>&langs=<appLang>,en&page_size=20&page=&fields=code,product_name,brands,nutriments` (search host) | Search-a-licious. Response has `hits[]`, `count`, `page`, `page_count`, `is_count_exact`. `brands` is an array. `nutriments` holds only `*_100g` values. |
+| Search | `GET /search?q=<terms>&langs=<appLang>,en&page_size=10&page=&fields=code,product_name,brands,nutriments` (search host) | Search-a-licious. Response has `hits[]`, `count`, `page`, `page_count`, `is_count_exact`. `brands` is an array. `nutriments` holds only `*_100g` values. |
 | Select a result | `GET /api/v2/product/{code}?fields=code,product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutrition_data_per,nutriments` (product host) | Called on tap before upsert. It's the only source of serving data. `status: 1` means found. `brands` is a comma-separated string here. |
 | Refresh cached | Same as select | Rules come in the cache step. |
 - Use Search-a-licious for full-text search, as the OFF docs recommend. They mark `/cgi/search.pl` as legacy, and `/api/v2/search` only filters (no full-text search).
 - Limits per IP: **10 searches/min**, **15 product reads/min**. Going over repeatedly can get the IP banned. OFF also has global rate limits that answer **HTTP 503**: treat 503 as rate-limited and back off, not as "service down".
 - No region/country filter in the MVP (POST-01). Portuguese queries may also return Brazilian products; that's accepted.
-- `langs=<appLang>,en` (pt-PT → `pt,en`). OFF names come back in that language when available. USDA is English-only: Portuguese terms return 0 USDA hits (checked: `bacalhau`), so Portuguese queries usually show only OFF items in `Online`.
+- `langs=<appLang>,en` (pt-PT → `pt,en`). OFF names come back in that language when available. USDA is English-only: Portuguese terms return 0 USDA hits (checked: `bacalhau`), so the USDA section usually shows `No results` for Portuguese queries.
 - Search-a-licious is at version 0.1.0 (young). Keep it fully behind the OFF adapter so a switch touches one module.
 
 ## PROV-04 Request budget
 **Why:** at the UX-04 debounce, typing a query can fire several OFF searches, and 10/min runs out fast.
 - Each OFF endpoint gets its own client-side limiter, with a margin: **8 searches/min, 12 product reads/min**. USDA gets none (the 1,000/h budget is enough).
-- When the search budget is spent: run only the **latest** pending query once a slot frees up, and drop the rest. The `Online` status row shows loading meanwhile; OFF items that arrive late are appended (PROV-08).
+- When the search budget is spent: run only the **latest** pending query once a slot frees up, and drop the rest. The OFF section shows its loading row meanwhile.
 - OFF search starts at **≥3 characters after 800 ms idle** (USDA keeps UX-04's ≥2 characters and 400 ms).
 - TanStack Query caches each `(provider, query, page)` for 10 min, so backspacing or retyping doesn't spend budget.
 - If a product read is throttled, the tapped row keeps its spinner until a slot frees (at most ~5 s), then shows the UX-04 row error.
@@ -143,19 +143,16 @@ Section order and debounce: UX-04, PROV-04. Language: PROV-03.
 - Rank: name equals the query → name starts with the query → every token starts a word → any other match. Ties: `recent_foods.use_count` desc → `last_used_at` desc → shorter name.
 - 20 per section, plus `Show more` for the next 20.
 
-**Remote results (one merged `Online` section, UX-04)**
-- Each provider keeps its own relevance order; send no `sort_by`/`sortBy`.
+**Remote sections (`Open Food Facts`, `USDA`)**
+- Keep the provider's relevance order; send no `sort_by`/`sortBy`.
 - USDA: within each page, stably move Foundation / SR Legacy / Survey (FNDDS) above Branded. **Why:** for generic terms (`egg`, `rice`), branded products otherwise bury the generic reference foods.
-- Merge client-side: rank by the local name tiers above (equals → starts with → every token starts a word → other; case-insensitive, diacritics as typed). Within a tier, interleave providers round-robin (USDA first), each keeping its own order (so USDA's generic promotion holds). **Why:** the two APIs' scores aren't comparable; tiers + interleave stop one provider flooding the top.
 - Hide any remote hit whose `(source, external_id)` already appears in `Saved` (DATA-15 dedupe). The local copy shows instead.
-- Cross-provider dedupe: an OFF `code` and a USDA Branded `gtinUpc` that match (digits only, leading zeros stripped) are one product; keep the OFF item. An incoming duplicate of an already visible row is dropped.
-- No reshuffle: after the first remote response, wait up to **1.5 s** for the other provider's pending request before the first render of the list. Items arriving later (or from `Show more`) are ranked among themselves and appended at the end; visible rows are never reordered. A provider with no request (offline, USDA key missing, query below its PROV-04 threshold) or one that failed doesn't make the list wait. **Why:** providers arrive hundreds of ms apart (PROV-04 debounces, budget); re-ranking would move rows under the user's finger.
 - Query sent as typed: trimmed and whitespace collapsed, diacritics kept.
-- Page size 20 per provider. One `Show more` fetches the next page from each provider that still has one. A provider is done at its last page (USDA `currentPage ≥ totalPages`, OFF `page ≥ page_count`) or after **5 pages** (100 results) per provider per query; the row disappears when both are done. Each OFF page spends search budget (PROV-04).
-- Drops (PROV-07) can make a page shorter than 20. Never auto-fetch to refill it.
+- Page size 10 per section. **Why:** 10 per source is enough, and response time doesn't depend on it (measured 2026-09-28: OFF search ~0.18 s at 5, 10 and 20). `Show more` fetches the next page and appends it. The row disappears when the last page is reached (USDA `currentPage ≥ totalPages`, OFF `page ≥ page_count`) or after **5 pages** (50 results) per section per query. Each OFF page spends search budget (PROV-04).
+- Drops (PROV-07) can make a page shorter than 10. Never auto-fetch to refill it.
 - Ignore responses for a query that is no longer current (belt and braces on top of `AbortController`).
 
-**Empty sections:** an empty local section is hidden. An empty `Online` list that was searched shows one compact `No online results.` status row, so the user knows it was checked. UX-04's "Nothing anywhere" state still applies when every section is empty.
+**Empty sections:** an empty local section is hidden. An empty remote section that was searched shows one compact `No results` row, so the user knows it was checked. UX-04's "Nothing anywhere" state still applies when every section is empty.
 
 ## PROV-09 Cache freshness and refresh
 Rules for `food_cache_metadata` (DATA-15). Expiry controls refresh only. Expired foods stay searchable and loggable, online or offline.
@@ -208,7 +205,7 @@ Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in 
 **Rate-limited responses → provider cooldown**
 - OFF 429 or 503 (PROV-03), USDA 429.
 - Cooldown = `Retry-After` (seconds or HTTP date) if present, otherwise **60 s** for OFF and **10 min** for USDA.
-- During a cooldown, that provider sends nothing. The `Online` status row shows its busy line, and search and product-read budgets are both paused for OFF. Once the cooldown ends, the latest pending query runs (PROV-04).
+- During a cooldown, that provider sends nothing. Its section shows the busy status, and search and product-read budgets are both paused for OFF. Once the cooldown ends, the latest pending query runs (PROV-04).
 
 **Offline:** don't send remote requests while connectivity reports offline. They resume through `onlineManager` (ARCH-12).
 
@@ -236,7 +233,7 @@ Implements UX-18 (Food Databases). Only `CredentialsService` touches the key (AR
 | 429 | `Active` · `Key works, but it's over its hourly limit right now.` |
 | Timeout, network or 5xx | status unchanged · `Couldn't reach USDA. Try again.` |
 - Disabled while offline (helper `Connect to the internet to test.`) and while a test is running (inline spinner).
-- On a 401/403 during search, the `Online` status row shows `USDA rejected your key.` + a link to Food Databases. The key is **never** deleted automatically.
+- On a 401/403 during search, the USDA section shows `USDA rejected your key.` + a link to Food Databases. The key is **never** deleted automatically.
 - Replace: the old key stays until the new one passes the flow above. Remove: UX-19 dialog → delete from secure storage. Cached USDA foods and history stay (DATA-15).
 - Signup link: `https://api.data.gov/signup/`, opened in the system browser.
 - Never log the key or the test request's URL/headers; redact per ARCH-15.
@@ -258,7 +255,7 @@ Every failure (after PROV-10 retries) becomes an ARCH-13 typed error before it l
 | Detail 404 / OFF `status: 0` | `NotFoundError` | row error `Couldn't load this food.` |
 | Detail fails PROV-07 | `ProviderResponseError` (`insufficient_data`) | row error `Couldn't load this food.` |
 | Anything else | `UnexpectedError` | `<Provider> search failed.` + `Retry` |
-- The UX-04 status texts generalize to `<Provider>` (`Open Food Facts` / `USDA`). One provider failing never hides the other's items or the local sections (ARCH-12).
+- The UX-04 status texts generalize to `<Provider>` (`Open Food Facts` / `USDA`). One provider failing never hides the other sections (ARCH-12).
 - Dev builds log provider, endpoint, status and Zod issue path. Release builds log only the error type and provider.
 
 ## PROV-13 Fixtures and contract tests

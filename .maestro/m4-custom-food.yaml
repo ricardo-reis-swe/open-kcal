@@ -20,7 +20,7 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: android:id/closeButton
     optional: true
-# UX-04: fuzzy Online hits can fill the list, so use the always-present top action (same initialName). It sits
+# UX-04: fuzzy remote hits can fill the list, so use the always-present top action (same initialName). It sits
 # above the keyboard; no hideKeyboard, which presses Back on Android when the keyboard is already down.
 - tapOn:
     id: food-search-create-custom

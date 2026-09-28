@@ -26,8 +26,6 @@ import {
   useSavedFoodSearch,
   useUsdaSearch,
 } from '../food-search.queries';
-import { onlineItemKey, type OnlineItem, type OnlineProvider } from '../online-results';
-import { useOnlineResults } from '../useOnlineResults';
 
 const LOCAL_DEBOUNCE_MS = 150;
 const OFF_DEBOUNCE_MS = 800;
@@ -48,7 +46,7 @@ type Props = {
   onSelectFood: (food: Food) => void;
 };
 
-/** UX-04: focused search, Recents without a query, local sections after 150 ms and one merged `Online` list (PROV-08). */
+/** UX-04 M4 subset: focused search, Recents without a query, and local custom-food results after 150 ms. */
 export function FoodSearchScreen({
   mealId,
   date,
@@ -108,7 +106,6 @@ export function FoodSearchScreen({
   const off = useOpenFoodFactsSearch(offQuery, offPages, i18n.resolvedLanguage ?? i18n.language);
   const usda = useUsdaSearch(usdaQuery, usdaPages);
   const online = useOnlineStatus();
-  const remote = useOnlineResults(query, [usda, off], online);
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
   if (!meal || !settings.data) return null;
   const relative = relativeDay(date, today);
@@ -117,18 +114,13 @@ export function FoodSearchScreen({
   const searching = hasQuery && query.trim() !== debouncedQuery;
   const customFoods = custom.data ?? [];
   const savedFoods = saved.data ?? [];
-  // PROV-08 / DATA-15: a remote hit already in Saved shows as its local copy instead.
-  const savedKeys = new Set(
-    savedFoods
-      .filter((food) => food.source !== 'custom' && food.externalId)
-      .map((food) => onlineItemKey({ provider: food.source as OnlineProvider, externalId: food.externalId! })),
+  const savedExternalIds = new Set(
+    savedFoods.filter((food) => food.source === 'open_food_facts' && food.externalId).map((food) => food.externalId!),
   );
-  const onlineFoods = remote.items.filter((item) => !savedKeys.has(onlineItemKey(item)));
-  const remoteSearched = query.trim().length >= 2;
-  const showMoreOnline = () => {
-    if (usda.hasMore) setUsdaPages((current) => current + 1);
-    if (off.hasMore) setOffPages((current) => current + 1);
-  };
+  const offFoods = off.data.filter((candidate) => !savedExternalIds.has(candidate.externalId));
+  const usdaFoods = usda.data.filter(
+    (candidate) => !savedFoods.some((food) => food.source === 'usda' && food.externalId === candidate.externalId),
+  );
   const updateQuery = (value: string) => {
     if (value.trim() !== offQuery) {
       setOffPages(1);
@@ -339,41 +331,112 @@ export function FoodSearchScreen({
                     testID="food-search-saved-show-more"
                   />
                 ) : null}
-                {remoteSearched ? <SectionHeader label={t('foodSearch.online')} uppercase /> : null}
-                {onlineFoods.map((item) => (
-                  <OnlineResultRow
-                    key={onlineItemKey(item)}
-                    item={item}
+                {!online ? <InlineStatus tone="info" message={t('foodSearch.offline')} /> : null}
+                {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
+                {query.trim().length >= 3 && query.trim() !== offQuery ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
+                ) : null}
+                {online && off.isLoading && query.trim() === offQuery ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
+                ) : null}
+                {off.isError ? (
+                  <ProviderError provider="open_food_facts" error={off.error} onRetry={() => void off.refetch()} />
+                ) : null}
+                {offFoods.map((candidate) => (
+                  <FoodResultRow
+                    key={`off-${candidate.externalId}`}
+                    food={{
+                      ...candidate.input,
+                      brand: candidate.input.brand ?? null,
+                      id: `off-${candidate.externalId}`,
+                      source: 'open_food_facts',
+                      externalId: candidate.externalId,
+                      isDeleted: false,
+                      servings: [],
+                    }}
                     locale={locale}
                     energyUnit={settings.data.energyUnit}
-                    onPress={() =>
-                      void (item.provider === 'usda' ? selectUsda(item.externalId) : selectOff(item.externalId))
-                    }
+                    onPress={() => void selectOff(candidate.externalId)}
                     disabled={selectingExternalId !== null}
-                    loading={selectingExternalId === item.externalId}
-                    error={externalLoadError === item.externalId ? t('foodSearch.offLoadFailed') : undefined}
+                    loading={selectingExternalId === candidate.externalId}
+                    error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
                   />
                 ))}
-                {online && remote.hasMore && remote.settled ? (
+                {off.hasMore && query.trim() === offQuery ? (
                   <TextAction
                     icon="add"
                     label={t('foodSearch.showMore')}
-                    onPress={showMoreOnline}
-                    testID="food-search-online-show-more"
+                    onPress={() => setOffPages((current) => current + 1)}
+                    testID="food-search-off-show-more"
                   />
                 ) : null}
-                {remoteSearched ? (
-                  <OnlineStatusRow
-                    online={online}
-                    loading={remote.loading}
-                    errors={remote.errors}
-                    empty={
-                      remote.settled && onlineFoods.length === 0 && (customFoods.length > 0 || savedFoods.length > 0)
-                    }
+                {off.isSuccess && query.trim() === offQuery && offFoods.length === 0 ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
+                  </AppText>
+                ) : null}
+                {query.trim().length >= 2 ? <SectionHeader label={t('foodSearch.usda')} uppercase /> : null}
+                {query.trim().length >= 2 && usdaQuery !== query.trim() ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
+                ) : null}
+                {online && usda.isLoading ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.searching')}
+                  </AppText>
+                ) : null}
+                {usda.isError ? (
+                  <ProviderError
+                    provider="usda"
+                    error={usda.error}
+                    onRetry={() => void usda.refetch()}
                     onFoodDatabases={onFoodDatabases}
                   />
                 ) : null}
-                {customFoods.length === 0 && savedFoods.length === 0 && onlineFoods.length === 0 && !remote.loading ? (
+                {usdaFoods.map((candidate) => (
+                  <FoodResultRow
+                    key={`usda-${candidate.externalId}`}
+                    food={{
+                      ...candidate.input,
+                      brand: candidate.input.brand ?? null,
+                      id: `usda-${candidate.externalId}`,
+                      source: 'usda',
+                      externalId: candidate.externalId,
+                      isDeleted: false,
+                      servings: [],
+                    }}
+                    locale={locale}
+                    energyUnit={settings.data.energyUnit}
+                    onPress={() => void selectUsda(candidate.externalId)}
+                    disabled={selectingExternalId !== null}
+                    loading={selectingExternalId === candidate.externalId}
+                    error={externalLoadError === candidate.externalId ? t('foodSearch.offLoadFailed') : undefined}
+                  />
+                ))}
+                {usda.hasMore && usdaQuery === query.trim() ? (
+                  <TextAction
+                    icon="add"
+                    label={t('foodSearch.showMore')}
+                    onPress={() => setUsdaPages((current) => current + 1)}
+                    testID="food-search-usda-show-more"
+                  />
+                ) : null}
+                {usda.isSuccess && usdaQuery === query.trim() && usdaFoods.length === 0 ? (
+                  <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                    {t('foodSearch.providerNoResults', { provider: t('foodSearch.usda') })}
+                  </AppText>
+                ) : null}
+                {customFoods.length === 0 &&
+                savedFoods.length === 0 &&
+                offFoods.length === 0 &&
+                usdaFoods.length === 0 &&
+                !off.isLoading &&
+                !usda.isLoading ? (
                   <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
                     <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
                     <TextAction
@@ -413,17 +476,6 @@ export function FoodSearchScreen({
   );
 }
 
-type FoodRowProps = {
-  food: Food;
-  locale: string;
-  energyUnit: 'kcal' | 'kJ';
-  onPress: () => void;
-  onDelete?: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  error?: string;
-};
-
 function FoodResultRow({
   food,
   locale,
@@ -433,7 +485,16 @@ function FoodResultRow({
   disabled = false,
   loading = false,
   error,
-}: FoodRowProps) {
+}: {
+  food: Food;
+  locale: string;
+  energyUnit: 'kcal' | 'kJ';
+  onPress: () => void;
+  onDelete?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  error?: string;
+}) {
   const { t } = useTranslation();
   const theme = useTheme();
   const basis = food.brand || t('foodSearch.perBasis', { quantity: food.basisQuantity, unit: food.basisUnit });
@@ -529,74 +590,14 @@ function FoodResultRow({
   );
 }
 
-function OnlineResultRow({ item, ...props }: { item: OnlineItem } & Omit<FoodRowProps, 'food'>) {
-  return (
-    <FoodResultRow
-      {...props}
-      food={{
-        ...item.input,
-        brand: item.input.brand ?? null,
-        id: `${item.provider === 'usda' ? 'usda' : 'off'}-${item.externalId}`,
-        source: item.provider,
-        externalId: item.externalId,
-        isDeleted: false,
-        servings: [],
-      }}
-    />
-  );
-}
-
-/** UX-04: one compact status row under `Online`, merging both providers' states (nothing when all is fine). */
-function OnlineStatusRow({
-  online,
-  loading,
-  errors,
-  empty,
-  onFoodDatabases,
-}: {
-  online: boolean;
-  loading: boolean;
-  errors: { provider: OnlineProvider; error: unknown; retry: () => void }[];
-  empty: boolean;
-  onFoodDatabases?: () => void;
-}) {
-  const { t } = useTranslation();
-  const theme = useTheme();
-  const lines = !online
-    ? [<InlineStatus key="offline" tone="offline" message={t('foodSearch.offline')} />]
-    : [
-        ...(loading ? [<InlineStatus key="loading" tone="loading" message={t('foodSearch.searching')} />] : []),
-        ...errors.map(({ provider, error, retry }) => (
-          <ProviderError
-            key={provider}
-            provider={provider}
-            error={error}
-            onRetry={retry}
-            onFoodDatabases={onFoodDatabases}
-          />
-        )),
-        ...(empty && !loading && errors.length === 0
-          ? [<InlineStatus key="empty" tone="info" message={t('foodSearch.onlineNoResults')} />]
-          : []),
-      ];
-  if (lines.length === 0) return null;
-  return (
-    <View
-      testID="food-search-online-status"
-      style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[2], gap: theme.spacing[2] }}
-    >
-      {lines}
-    </View>
-  );
-}
-
+/** UX-04 / PROV-12: one provider section's inline error status (`<Provider>` texts). */
 function ProviderError({
   provider,
   error,
   onRetry,
   onFoodDatabases,
 }: {
-  provider: OnlineProvider;
+  provider: 'usda' | 'open_food_facts';
   error: unknown;
   onRetry: () => void;
   onFoodDatabases?: () => void;
@@ -607,7 +608,7 @@ function ProviderError({
   if (isUsda && error instanceof ProviderConfigurationError) {
     const missing = error.code === 'usda_key_missing'; // ARCH-13: branch on the typed code, never message text
     return (
-      <View style={{ gap: theme.spacing[2] }}>
+      <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
         <InlineStatus tone="error" message={t(missing ? 'foodSearch.usdaKeyMissing' : 'foodSearch.usdaKeyRejected')} />
         {onFoodDatabases ? (
           <TextAction icon="settings-outline" label={t('foodSearch.foodDatabases')} onPress={onFoodDatabases} />
@@ -618,13 +619,9 @@ function ProviderError({
   if (error instanceof RateLimitError)
     return <InlineStatus tone="info" message={t(isUsda ? 'foodSearch.usdaBusy' : 'foodSearch.offBusy')} />;
   return (
-    <View style={{ gap: theme.spacing[2] }}>
+    <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
       <InlineStatus tone="error" message={t(isUsda ? 'foodSearch.usdaFailed' : 'foodSearch.offFailed')} />
-      <TextAction
-        icon="refresh"
-        label={t('foodSearch.retryProvider', { provider: t(isUsda ? 'foodSearch.usda' : 'foodSearch.openFoodFacts') })}
-        onPress={onRetry}
-      />
+      <TextAction icon="refresh" label={t('foodSearch.retry')} onPress={onRetry} />
     </View>
   );
 }

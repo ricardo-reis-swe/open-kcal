@@ -97,7 +97,7 @@ export class OpenFoodFactsClient {
     url.search = new URLSearchParams({
       q: terms,
       langs: `${language.split('-')[0] ?? 'en'},en`,
-      page_size: '20',
+      page_size: '10',
       page: String(page),
       fields: 'code,product_name,brands,nutriments',
     }).toString();

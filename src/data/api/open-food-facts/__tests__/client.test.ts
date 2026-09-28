@@ -29,6 +29,7 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
     });
     expect(String(request.mock.calls[0]?.[0])).toContain('q=greek+yogurt');
     expect(String(request.mock.calls[0]?.[0])).toContain('langs=en%2Cen');
+    expect(String(request.mock.calls[0]?.[0])).toContain('page_size=10'); // PROV-08
     expect(request.mock.calls[0]?.[1]?.headers).toEqual({
       'User-Agent': 'CalorieTracker/1.2.3 (ricardo_reis@live.com)',
     });

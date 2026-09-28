@@ -28,12 +28,13 @@ async function setup(
     usdaError?: Error;
     usdaCandidates?: { externalId: string; input: CustomFoodInput }[];
     usdaDetail?: { externalId: string; input: CustomFoodInput } | null;
-    onFoodDatabases?: () => void;
+    usdaPageCount?: number;
     offSearch?: () => Promise<{
       candidates: { externalId: string; input: CustomFoodInput }[];
       page: number;
       pageCount: number;
     }>;
+    onFoodDatabases?: () => void;
   } = {},
 ) {
   const { services } = await createTestServices();
@@ -93,7 +94,7 @@ async function setup(
   else if (options.usdaCandidates)
     jest
       .spyOn(services.usda, 'search')
-      .mockResolvedValue({ candidates: options.usdaCandidates, page: 1, pageCount: 1 });
+      .mockResolvedValue({ candidates: options.usdaCandidates, page: 1, pageCount: options.usdaPageCount ?? 1 });
   if (options.offSearch) jest.spyOn(services.openFoodFacts, 'search').mockImplementation(options.offSearch);
   if (options.usdaDetail !== undefined) jest.spyOn(services.usda, 'getFood').mockResolvedValue(options.usdaDetail);
   if (options.throttledOffProduct) {
@@ -266,7 +267,7 @@ describe('UX-04: local Food Search screen', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Food Databases' }));
       expect(onFoodDatabases).toHaveBeenCalledTimes(1);
     }
-    if (_kind === 'timeout') expect(screen.getByRole('button', { name: 'Retry USDA' })).toBeTruthy();
+    if (_kind === 'timeout') expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 
   it('PROV-08 / DATA-15: shows generic USDA hits in supplied order and upserts selected detail before navigation', async () => {
@@ -304,36 +305,30 @@ describe('UX-04: local Food Search screen', () => {
   });
 
   const hit = (externalId: string, name: string) => ({ externalId, input: { ...almonds, name, brand: null } });
-  const rowOrder = () =>
-    screen
-      .getAllByTestId(/^food-result-(usda|off)-/)
-      .map((row) => String(row.props.testID).replace('food-result-', ''));
 
-  it('UX-04 / PROV-08: shows one Online list, ranked by tier and interleaved across providers', async () => {
+  it('UX-04 / PROV-08: shows Open Food Facts then USDA as separate sections, each with its own Show more', async () => {
+    const tenHits = (prefix: string) => Array.from({ length: 10 }, (_, i) => hit(`${prefix}${i}`, `Egg ${prefix}${i}`));
     await setup({
       initialQuery: 'egg',
-      usdaCandidates: [hit('u1', 'Egg, whole, raw'), hit('u2', 'Scrambled egg')],
-      offSearch: async () => ({ candidates: [hit('o1', 'Egg noodles'), hit('o2', 'Egg')], page: 1, pageCount: 1 }),
+      usdaCandidates: tenHits('u'),
+      usdaPageCount: 3,
+      offSearch: async () => ({ candidates: tenHits('o'), page: 1, pageCount: 2 }),
     });
-    await waitFor(() => expect(rowOrder()).toEqual(['off-o2', 'usda-u1', 'off-o1', 'usda-u2']));
-    expect(screen.getByText('Online')).toBeTruthy();
-    expect(screen.queryByText('Open Food Facts')).toBeNull();
-    expect(screen.queryByText('USDA')).toBeNull();
+    expect(await screen.findByTestId('food-search-off-show-more', {}, { timeout: 3_000 })).toBeTruthy();
+    expect(await screen.findByTestId('food-search-usda-show-more')).toBeTruthy();
+    const headers = screen.getAllByRole('header', { name: /^(My foods|Saved|Open Food Facts|USDA)$/ });
+    expect(headers.map((node) => node.props.children)).toEqual(['Open Food Facts', 'USDA']);
+    expect(screen.getAllByTestId(/^food-result-off-/)).toHaveLength(10);
+    expect(screen.getAllByTestId(/^food-result-usda-/)).toHaveLength(10);
   });
 
-  it('PROV-08: a provider arriving after the 1.5 s wait is appended without reordering visible rows', async () => {
-    let resolveOff: (() => void) | undefined;
+  it('PROV-11 / UX-04: a rate-limited OFF section shows its own busy status while USDA still lists hits', async () => {
     await setup({
       initialQuery: 'egg',
-      usdaCandidates: [hit('u1', 'Scrambled egg')],
-      offSearch: () =>
-        new Promise((resolve) => {
-          resolveOff = () => resolve({ candidates: [hit('o1', 'Egg')], page: 1, pageCount: 1 });
-        }),
+      usdaCandidates: [hit('u1', 'Egg, whole, raw')],
+      offSearch: () => Promise.reject(new RateLimitError('OFF is rate limited')),
     });
-    expect(await screen.findByText('Scrambled egg', {}, { timeout: 3_000 })).toBeTruthy();
-    expect(screen.getByText('Searching…')).toBeTruthy();
-    resolveOff?.();
-    await waitFor(() => expect(rowOrder()).toEqual(['usda-u1', 'off-o1']));
+    expect(await screen.findByText('Open Food Facts is busy. Try again later.', {}, { timeout: 3_000 })).toBeTruthy();
+    expect(screen.getByText('Egg, whole, raw')).toBeTruthy();
   });
 });

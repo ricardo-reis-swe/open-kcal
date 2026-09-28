@@ -38,7 +38,6 @@ const baseFoodSchema = z.object({
   dataType: z.string().optional(),
   brandOwner: z.string().optional(),
   brandName: z.string().optional(),
-  gtinUpc: z.union([z.string(), z.number()]).transform(String).optional(),
   servingSize: numberLike.optional(),
   servingSizeUnit: z.string().optional(),
   householdServingFullText: z.string().optional(),
@@ -61,8 +60,7 @@ const detailFoodSchema = baseFoodSchema.extend({
 type UsdaFood = z.infer<typeof baseFoodSchema>;
 type Nutrient = { number: string; unit: string; value: number };
 
-/** `barcode` = Branded `gtinUpc`, used only for the PROV-08 cross-provider dedupe. */
-export type FoodCandidate = { externalId: string; input: FoodInput; barcode?: string };
+export type FoodCandidate = { externalId: string; input: FoodInput };
 export type FoodSearchPage = { candidates: FoodCandidate[]; page: number; pageCount: number };
 
 const genericTypes = new Set(['Foundation', 'SR Legacy', 'Survey (FNDDS)']);
@@ -211,7 +209,6 @@ function candidate(food: UsdaFood, values: Nutrient[], servings: ServingInput[])
   const unit = basisUnit(food);
   return {
     externalId: food.fdcId,
-    ...(food.dataType === 'Branded' && food.gtinUpc ? { barcode: food.gtinUpc } : {}),
     input: {
       name,
       brand: sentenceCase(food.brandName ?? food.brandOwner ?? '') || null,

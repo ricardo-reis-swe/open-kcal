@@ -1,4 +1,4 @@
-import { mapUsdaFood, mapUsdaSearch, mapUsdaSearchFood } from '../mapper';
+import { mapUsdaFood, mapUsdaSearch } from '../mapper';
 
 import branded from '../__fixtures__/synthetic-detail-branded.json';
 import search from '../__fixtures__/synthetic-search-egg.json';
@@ -102,17 +102,5 @@ describe('PROV-05 / PROV-06 / PROV-07 / PROV-08: USDA mapping', () => {
       input: { basisUnit: 'ml', nutrients: { energyKcal: 40, carbohydrateG: 8, proteinG: null, fatG: null } },
     });
     expect(mapUsdaFood({ fdcId: 12, description: 'Empty', foodNutrients: [] })).toBeNull();
-  });
-
-  it('PROV-08: keeps a Branded gtinUpc as the dedupe barcode, never for generic foods', () => {
-    const hit = {
-      fdcId: 5,
-      description: 'Oat bar',
-      foodNutrients: [{ nutrientNumber: '208', unitName: 'KCAL', value: 400 }],
-    };
-    expect(mapUsdaSearchFood({ ...hit, dataType: 'Branded', gtinUpc: '00012345678905' })?.barcode).toBe(
-      '00012345678905',
-    );
-    expect(mapUsdaSearchFood({ ...hit, dataType: 'Foundation', gtinUpc: '1' })).not.toHaveProperty('barcode');
   });
 });
