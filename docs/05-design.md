@@ -89,4 +89,5 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 - Feature components build on them: `CalorieRing, MacroStrip, DiaryDateStrip, MealHeader, DiaryEntryRow, QuickCaloriesRow, ServingRuler, WeightSummary`. They don't re-implement primitive behavior.
 
 ## DS-13 Visual QA (per component, before done)
-Light theme · iOS + Android · small + large phone width · default + large text · empty/typical/long/loading/offline/error/disabled as applicable · increased contrast · reduced motion. Test Diary density with realistic long food and meal names. Screenshot tests may guard primitives and signature components, but also review on real devices.
+MVP: light theme · iOS + Android · one phone size · default text. Check the states that apply (empty/typical/long/loading/offline/error/disabled) through the Maestro flows and by hand on both platforms; screenshots aren't required.
+- The matrix (small + large width, large text, increased contrast, reduced motion, screenshot sets) is deferred (POST-13). DS-11 behavior still applies. **Why:** speed for the MVP proof of concept (user decision 2026-09-28).

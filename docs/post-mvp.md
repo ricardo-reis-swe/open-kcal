@@ -52,3 +52,6 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 - Versioning: semver `version` bumped per release; `buildNumber`/`versionCode` from EAS (`appVersionSource: remote`, `autoIncrement` on production).
 - Builds run manually or on a `v*` tag. `eas submit` to TestFlight (internal) and the Play internal testing track.
 - Accounts, all under ricardo_reis@live.com: Expo, Apple Developer Program, Google Play Console. Signing credentials EAS-managed; keep a backup of the Android upload key.
+
+## POST-13 Visual QA matrix
+- The full DS-13 matrix: small + large phone widths, large text, increased contrast, reduced motion, and screenshot sets per screen. The MVP runs the reduced DS-13 check only.
