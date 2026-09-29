@@ -326,19 +326,17 @@ function FoodDetailForm({
               {food.brand || t('foodSearch.perBasis', { quantity: food.basisQuantity, unit: food.basisUnit })}
             </AppText>
           </View>
-          <View style={{ paddingHorizontal: theme.spacing[4] }}>
-            <ServingRuler
-              quantity={quantity}
-              serving={serving}
-              energyKcal={nutrients.energyKcal}
-              energyUnit={energyUnit}
-              onChange={setQuantity}
-              onOpenNumeric={() => {
-                setValueText(String(quantity));
-                setEditingValue(true);
-              }}
-            />
-          </View>
+          <ServingRuler
+            quantity={quantity}
+            serving={serving}
+            energyKcal={nutrients.energyKcal}
+            energyUnit={energyUnit}
+            onChange={setQuantity}
+            onOpenNumeric={() => {
+              setValueText(String(quantity));
+              setEditingValue(true);
+            }}
+          />
           {allowServingChange ? (
             <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.spacing[3] }}>
               {visibleUnits.map((unit) => (

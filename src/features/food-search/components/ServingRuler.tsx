@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { RulerPicker } from 'react-native-legend-ruler-picker';
@@ -13,17 +13,19 @@ import { formatEnergy } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme } from '@/shared/theme';
 
-const RULER_HEIGHT = 80;
-const LONG_STEP_HEIGHT = 35;
+// DS-09 geometry, measured from the reference ruler (Runtastic Balance) on 2026-09-29.
+const RULER_HEIGHT = 90;
+const STEP_WIDTH = 1;
+const STEP_GAP = 23; // 24 between ticks
+const SHORT_STEP_HEIGHT = 13;
+const LONG_STEP_HEIGHT = 38;
+const STEP_LABEL_TOP = 46;
 const MINIMUM_STEPS = 2_000;
-/** The library always renders its own value label; this collapses it so the DS-09 value chip stays the only one. */
-const HIDDEN_LABEL = { fontSize: 1, color: 'transparent' } as const;
 /**
- * DS-09 fling weight: lighter friction than RN's `fast` preset (iOS 0.99, Android 0.9), so a flick carries about
- * twice as far before it snaps to a tick (user feedback 2026-09-29). Android sits above `normal` because a flick
- * there still felt dead at 0.96 (user feedback 2026-09-29). Tune here; `normal` is 0.998 / 0.985. Higher = more glide.
+ * DS-09 fling weight, measured from the reference ruler: its fling matches Android's OverScroller with friction
+ * 0.004 (RN Android uses friction = 1 - rate), and ~0.998 per ms on iOS. Higher = more glide.
  */
-export const RULER_DECELERATION_RATE = Platform.select({ ios: 0.995, default: 0.992 });
+export const RULER_DECELERATION_RATE = Platform.select({ ios: 0.998, default: 0.996 });
 
 type Props = {
   quantity: number;
@@ -80,12 +82,13 @@ export function ServingRuler({
   const last = useRef(quantity);
   const lastServingId = useRef(serving.id);
   const lastHapticAt = useRef(0);
-  const { step } = rulerSpec(serving);
+  const { step, majorStep } = rulerSpec(serving);
   const minimum = step;
+  const majorEvery = Math.max(1, Math.round(majorStep / step));
   // Fixed per mount: the picker only reads initialValue when it mounts.
   const [mount, setMount] = useState(() => ({ key: 0, index: rulerIndex(quantity, step) }));
   const maximumIndex = Math.max(MINIMUM_STEPS, mount.index + 1_000);
-  const rulerWidth = Math.max(1, windowWidth - theme.spacing[8]);
+  const rulerWidth = Math.max(1, windowWidth);
   const energy = formatEnergy(energyKcal, energyUnit, locale);
   const spokenUnit = t(`diary.units.${energyUnit}Spoken`);
   const label = t('servingRuler.a11y', {
@@ -114,6 +117,16 @@ export function ServingRuler({
       }
     },
     [onChange, onHaptic],
+  );
+
+  // Index i is (i + 1) steps, so majors land on whole multiples of majorStep.
+  const stepLabel = useCallback(
+    (index: number) => displayQuantity(snapRulerQuantity(minimum + index * step, serving), locale),
+    [locale, minimum, serving, step],
+  );
+  const stepLabelStyle = useMemo(
+    () => ({ ...theme.typography.body, color: theme.colors.onPrimary }),
+    [theme.colors.onPrimary, theme.typography.body],
   );
 
   const emitIndex = useCallback(
@@ -177,17 +190,21 @@ export function ServingRuler({
           step={1}
           initialValue={mount.index}
           fractionDigits={0}
-          unit=" "
-          valueTextStyle={HIDDEN_LABEL}
-          unitTextStyle={HIDDEN_LABEL}
-          stepWidth={2}
-          gapBetweenSteps={16}
-          shortStepHeight={12}
+          hideValue
+          listHeight={RULER_HEIGHT}
+          stepsAlign="top"
+          stepWidth={STEP_WIDTH}
+          gapBetweenSteps={STEP_GAP}
+          shortStepHeight={SHORT_STEP_HEIGHT}
           longStepHeight={LONG_STEP_HEIGHT}
+          longStepEvery={majorEvery}
+          longStepOffset={1}
           shortStepColor={theme.colors.onPrimary}
           longStepColor={theme.colors.onPrimary}
-          indicatorHeight={LONG_STEP_HEIGHT}
-          indicatorColor={theme.colors.canvas}
+          stepLabel={stepLabel}
+          stepLabelStyle={stepLabelStyle}
+          stepLabelTop={STEP_LABEL_TOP}
+          indicatorHeight={0}
           decelerationRate={RULER_DECELERATION_RATE}
           onValueChange={emitIndex}
           onValueChangeEnd={emitIndex}

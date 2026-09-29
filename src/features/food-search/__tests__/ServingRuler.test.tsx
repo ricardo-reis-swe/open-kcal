@@ -68,6 +68,24 @@ describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
     await waitFor(() => expect(picker().props.initialValue).toBe(19));
   });
 
+  it('puts labelled major ticks on whole majorStep values', async () => {
+    await renderWithProviders(
+      <ServingRuler
+        quantity={2}
+        serving={egg}
+        energyKcal={156}
+        energyUnit="kcal"
+        onChange={jest.fn()}
+        onOpenNumeric={jest.fn()}
+      />,
+    );
+    // Egg: step 0.25, majorStep 1, so every 4th index is major and index 3 is 1 egg.
+    expect(picker().props.longStepEvery).toBe(4);
+    expect(picker().props.longStepOffset).toBe(1);
+    expect(picker().props.stepLabel(3)).toBe('1');
+    expect(picker().props.stepLabel(7)).toBe('2');
+  });
+
   it('uses the tuned fling deceleration', async () => {
     await renderWithProviders(
       <ServingRuler

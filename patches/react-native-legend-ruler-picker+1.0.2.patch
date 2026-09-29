@@ -1,0 +1,222 @@
+diff --git a/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker-item.js b/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker-item.js
+index 8c71213..7537598 100644
+--- a/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker-item.js
++++ b/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker-item.js
+@@ -1,8 +1,9 @@
+ "use strict";
+ 
+ import React from 'react';
+-import { View } from 'react-native';
+-import { jsx as _jsx } from "react/jsx-runtime";
++import { Text, View } from 'react-native';
++import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
++const LABEL_WIDTH = 80;
+ export const RulerPickerItem = /*#__PURE__*/React.memo(({
+   isLast,
+   index,
+@@ -11,25 +12,43 @@ export const RulerPickerItem = /*#__PURE__*/React.memo(({
+   longStepHeight,
+   stepWidth,
+   shortStepColor,
+-  longStepColor
++  longStepColor,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'bottom',
++  itemHeight = longStepHeight,
++  label,
++  labelStyle,
++  labelTop = longStepHeight
+ }) => {
+-  const isLong = index % 10 === 0;
++  const isLong = (index + longStepOffset) % longStepEvery === 0;
+   const height = isLong ? longStepHeight : shortStepHeight;
+-  return /*#__PURE__*/_jsx(View, {
++  return /*#__PURE__*/_jsxs(View, {
+     style: {
+       width: stepWidth,
+-      height: longStepHeight,
++      height: itemHeight,
+       alignItems: 'center',
+-      justifyContent: 'flex-end',
+-      marginRight: isLast ? 0 : gapBetweenSteps
++      justifyContent: stepsAlign === 'top' ? 'flex-start' : 'flex-end',
++      marginRight: isLast ? 0 : gapBetweenSteps,
++      overflow: 'visible'
+     },
+-    children: /*#__PURE__*/_jsx(View, {
++    children: [/*#__PURE__*/_jsx(View, {
+       style: {
+         width: '100%',
+         height: height,
+         backgroundColor: isLong ? longStepColor : shortStepColor
+       }
+-    })
++    }), isLong && label ? /*#__PURE__*/_jsx(Text, {
++      numberOfLines: 1,
++      style: [{
++        position: 'absolute',
++        top: labelTop,
++        left: stepWidth / 2 - LABEL_WIDTH / 2,
++        width: LABEL_WIDTH,
++        textAlign: 'center'
++      }, labelStyle],
++      children: label
++    }) : null]
+   });
+ });
+ //# sourceMappingURL=ruler-picker-item.js.map
+diff --git a/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js b/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js
+index 5589f5d..c805d41 100644
+--- a/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js
++++ b/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js
+@@ -31,7 +31,15 @@ export const RulerPicker = ({
+   unitTextStyle,
+   decelerationRate = 'normal',
+   onValueChange,
+-  onValueChangeEnd
++  onValueChangeEnd,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'bottom',
++  listHeight = longStepHeight,
++  stepLabel,
++  stepLabelStyle,
++  stepLabelTop,
++  hideValue = false
+ }) => {
+   const itemAmount = (max - min) / step;
+   const arrData = Array.from({
+@@ -83,9 +91,16 @@ export const RulerPicker = ({
+       gapBetweenSteps: gapBetweenSteps,
+       stepWidth: stepWidth,
+       shortStepColor: shortStepColor,
+-      longStepColor: longStepColor
++      longStepColor: longStepColor,
++      longStepEvery: longStepEvery,
++      longStepOffset: longStepOffset,
++      stepsAlign: stepsAlign,
++      itemHeight: listHeight,
++      label: stepLabel?.(index),
++      labelStyle: stepLabelStyle,
++      labelTop: stepLabelTop
+     });
+-  }, [arrData.length, gapBetweenSteps, stepWidth, longStepColor, longStepHeight, shortStepColor, shortStepHeight]);
++  }, [arrData.length, gapBetweenSteps, stepWidth, longStepColor, longStepHeight, shortStepColor, shortStepHeight, longStepEvery, longStepOffset, stepsAlign, listHeight, stepLabel, stepLabelStyle, stepLabelTop]);
+   const scrollEndTimeout = useRef(null);
+   const isScrolling = useRef(false);
+   const handleScrollEnd = useCallback(offset => {
+@@ -160,7 +175,7 @@ export const RulerPicker = ({
+       justifyContent: 'center',
+       alignItems: 'center'
+     },
+-    children: [/*#__PURE__*/_jsxs(View, {
++    children: [hideValue ? null : /*#__PURE__*/_jsxs(View, {
+       style: styles.textContainer,
+       children: [/*#__PURE__*/_jsx(Text, {
+         style: [styles.valueText, valueTextStyle],
+@@ -173,7 +188,7 @@ export const RulerPicker = ({
+       style: {
+         width
+       },
+-      children: [/*#__PURE__*/_jsx(View, {
++      children: [indicatorHeight > 0 ? /*#__PURE__*/_jsx(View, {
+         pointerEvents: "none",
+         style: {
+           alignSelf: 'center',
+@@ -183,10 +198,10 @@ export const RulerPicker = ({
+           marginBottom: -longStepHeight,
+           zIndex: 10
+         }
+-      }), /*#__PURE__*/_jsx(View, {
++      }) : null, /*#__PURE__*/_jsx(View, {
+         style: {
+           width,
+-          height: longStepHeight
++          height: listHeight
+         },
+         children: /*#__PURE__*/_jsx(AnimatedLegendList, {
+           ref: listRef,
+diff --git a/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts b/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts
+index a73e8ef..a773525 100644
+--- a/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts
++++ b/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import type { TextStyle } from 'react-native';
+ export type RulerPickerItemProps = {
+     /**
+      * Gap between steps
+@@ -36,11 +37,31 @@ export type RulerPickerItemProps = {
+      * @default 'gray'
+      */
+     longStepColor: string;
++    /**
++     * A step is long when `(index + longStepOffset) % longStepEvery === 0`
++     *
++     * @default 10
++     */
++    longStepEvery: number;
++    /**
++     * @default 0
++     */
++    longStepOffset: number;
++    /**
++     * Steps hang from the top or stand on the bottom of the ruler row
++     *
++     * @default 'bottom'
++     */
++    stepsAlign: 'top' | 'bottom';
+ };
+ type Props = {
+     index: number;
+     isLast: boolean;
+-} & RulerPickerItemProps;
+-export declare const RulerPickerItem: React.MemoExoticComponent<({ isLast, index, gapBetweenSteps, shortStepHeight, longStepHeight, stepWidth, shortStepColor, longStepColor, }: Props) => import("react/jsx-runtime").JSX.Element>;
++    itemHeight?: number;
++    label?: string;
++    labelStyle?: TextStyle;
++    labelTop?: number;
++} & Partial<Pick<RulerPickerItemProps, 'longStepEvery' | 'longStepOffset' | 'stepsAlign'>> & Omit<RulerPickerItemProps, 'longStepEvery' | 'longStepOffset' | 'stepsAlign'>;
++export declare const RulerPickerItem: React.MemoExoticComponent<(props: Props) => import("react/jsx-runtime").JSX.Element>;
+ export {};
+ //# sourceMappingURL=ruler-picker-item.d.ts.map
+diff --git a/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker.d.ts b/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker.d.ts
+index bb50ba7..a236a1d 100644
+--- a/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker.d.ts
++++ b/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker.d.ts
+@@ -93,6 +93,32 @@ export type RulerPickerProps = {
+      * @param value
+      */
+     onValueChangeEnd?: (value: string) => void;
++    /**
++     * Height of the scrollable ruler row; steps and labels live inside it
++     *
++     * @default longStepHeight
++     */
++    listHeight?: number;
++    /**
++     * Text drawn under each long step; return undefined for none
++     */
++    stepLabel?: (index: number) => string | undefined;
++    /**
++     * Text style of the step labels
++     */
++    stepLabelStyle?: TextStyle;
++    /**
++     * Distance from the top of the ruler row to the step labels
++     *
++     * @default longStepHeight
++     */
++    stepLabelTop?: number;
++    /**
++     * Hides the built-in value and unit text above the ruler
++     *
++     * @default false
++     */
++    hideValue?: boolean;
+ } & Partial<RulerPickerItemProps>;
+-export declare const RulerPicker: ({ width, height, min, max, step, initialValue, fractionDigits, unit, indicatorHeight, gapBetweenSteps, shortStepHeight, longStepHeight, stepWidth, indicatorColor, shortStepColor, longStepColor, valueTextStyle, unitTextStyle, decelerationRate, onValueChange, onValueChangeEnd, }: RulerPickerProps) => import("react/jsx-runtime").JSX.Element;
++export declare const RulerPicker: ({ width, height, min, max, step, initialValue, fractionDigits, unit, indicatorHeight, gapBetweenSteps, shortStepHeight, longStepHeight, stepWidth, indicatorColor, shortStepColor, longStepColor, valueTextStyle, unitTextStyle, decelerationRate, onValueChange, onValueChangeEnd, longStepEvery, longStepOffset, stepsAlign, listHeight, stepLabel, stepLabelStyle, stepLabelTop, hideValue, }: RulerPickerProps) => import("react/jsx-runtime").JSX.Element;
+ //# sourceMappingURL=ruler-picker.d.ts.map
+\ No newline at end of file
