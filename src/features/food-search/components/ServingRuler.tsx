@@ -17,6 +17,11 @@ const STEP_WIDTH = 2;
 const STEP_GAP = 16;
 const STEP_SIZE = STEP_WIDTH + STEP_GAP;
 const MINIMUM_STEPS = 2_000;
+/**
+ * DS-09 fling weight: lighter friction than RN's `fast` preset (iOS 0.99, Android 0.9), so a flick carries about
+ * twice as far before it snaps to a tick (user feedback 2026-09-29). Tune here; `normal` is 0.998 / 0.985.
+ */
+export const RULER_DECELERATION_RATE = Platform.select({ ios: 0.995, default: 0.96 });
 
 type Props = {
   quantity: number;
@@ -271,7 +276,7 @@ export function ServingRuler({
           onContentSizeChange={() => scrollToQuantity(quantity, false)}
           snapToInterval={STEP_SIZE}
           snapToAlignment="start"
-          decelerationRate="fast"
+          decelerationRate={RULER_DECELERATION_RATE}
           scrollEventThrottle={16}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}

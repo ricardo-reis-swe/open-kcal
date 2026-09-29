@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { FoodServing } from '@/data/db/repositories/foodsRepository';
 import { renderWithProviders } from '@/shared/testing/render';
 
-import { rulerIndexForOffset, ServingRuler } from '../components/ServingRuler';
+import { RULER_DECELERATION_RATE, rulerIndexForOffset, ServingRuler } from '../components/ServingRuler';
 
 const egg: FoodServing = {
   id: 'egg',
@@ -56,7 +56,7 @@ describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
         onOpenNumeric={jest.fn()}
       />,
     );
-    expect(screen.getByTestId('serving-ruler-list').props.decelerationRate).toBe('fast');
+    expect(screen.getByTestId('serving-ruler-list').props.decelerationRate).toBe(RULER_DECELERATION_RATE);
     expect(screen.getByTestId('serving-ruler-list').props.snapToInterval).toBe(18);
   });
 
