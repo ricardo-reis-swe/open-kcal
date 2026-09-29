@@ -67,10 +67,19 @@ index 8c71213..7537598 100644
  });
  //# sourceMappingURL=ruler-picker-item.js.map
 diff --git a/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js b/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js
-index 5589f5d..c805d41 100644
+index 5589f5d..09b2f83 100644
 --- a/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js
 +++ b/node_modules/react-native-legend-ruler-picker/lib/module/components/ruler-picker.js
-@@ -31,7 +31,15 @@ export const RulerPicker = ({
+@@ -1,7 +1,7 @@
+ "use strict";
+ 
+ // @ts-nocheck
+-import { useCallback, useEffect, useRef, useState } from 'react';
++import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+ import { Dimensions, StyleSheet, View, Text, Animated } from 'react-native';
+ import { AnimatedLegendList } from '@legendapp/list/animated';
+ import { RulerPickerItem } from "./ruler-picker-item.js";
+@@ -31,12 +31,25 @@ export const RulerPicker = ({
    unitTextStyle,
    decelerationRate = 'normal',
    onValueChange,
@@ -86,8 +95,33 @@ index 5589f5d..c805d41 100644
 +  hideValue = false
  }) => {
    const itemAmount = (max - min) / step;
-   const arrData = Array.from({
-@@ -83,9 +91,16 @@ export const RulerPicker = ({
+-  const arrData = Array.from({
++  // Stable across renders: a new data array makes the list re-lay out (labels blink) and resize.
++  const arrData = useMemo(() => Array.from({
+     length: itemAmount + 1
+-  }, (_, index) => index);
++  }, (_, index) => index), [itemAmount]);
++  const snapToOffsets = useMemo(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
++  const keyExtractor = useCallback((_, index) => index.toString(), []);
++  const getFixedItemSize = useCallback(() => stepWidth + gapBetweenSteps, [stepWidth, gapBetweenSteps]);
++  const userScrolled = useRef(false);
+   const listRef = useRef(null);
+   const [displayValue, setDisplayValue] = useState(initialValue.toFixed(fractionDigits));
+   const prevValue = useRef(initialValue.toFixed(fractionDigits));
+@@ -48,10 +61,10 @@ export const RulerPicker = ({
+     const newStep = calculateCurrentValue(value, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
+     if (prevValue.current !== newStep) {
+       onValueChange?.(newStep);
+-      setDisplayValue(newStep);
++      if (!hideValue) setDisplayValue(newStep);
+     }
+     prevValue.current = newStep;
+-  }, [fractionDigits, gapBetweenSteps, stepWidth, max, min, onValueChange, step]);
++  }, [fractionDigits, gapBetweenSteps, stepWidth, max, min, onValueChange, step, hideValue]);
+   useEffect(() => {
+     const listenerId = scrollPosition.addListener(valueCallback);
+     return () => {
+@@ -83,9 +96,16 @@ export const RulerPicker = ({
        gapBetweenSteps: gapBetweenSteps,
        stepWidth: stepWidth,
        shortStepColor: shortStepColor,
@@ -106,7 +140,24 @@ index 5589f5d..c805d41 100644
    const scrollEndTimeout = useRef(null);
    const isScrolling = useRef(false);
    const handleScrollEnd = useCallback(offset => {
-@@ -160,7 +175,7 @@ export const RulerPicker = ({
+@@ -130,6 +150,7 @@ export const RulerPicker = ({
+       clearTimeout(scrollEndTimeout.current);
+     }
+     isScrolling.current = true;
++    userScrolled.current = true;
+   }, []);
+   const onMomentumScrollBegin = useCallback(() => {
+     // Clear the drag end timeout since momentum is taking over
+@@ -147,6 +168,8 @@ export const RulerPicker = ({
+     };
+   }, []);
+   const onContentSizeChange = useCallback(() => {
++    // Position at initialValue only until the user touches the ruler; later size changes must not yank it back.
++    if (userScrolled.current) return;
+     const initialIndex = Math.floor((initialValue - min) / step);
+     listRef.current?.scrollToOffset({
+       offset: initialIndex * (stepWidth + gapBetweenSteps),
+@@ -160,7 +183,7 @@ export const RulerPicker = ({
        justifyContent: 'center',
        alignItems: 'center'
      },
@@ -115,7 +166,7 @@ index 5589f5d..c805d41 100644
        style: styles.textContainer,
        children: [/*#__PURE__*/_jsx(Text, {
          style: [styles.valueText, valueTextStyle],
-@@ -173,7 +188,7 @@ export const RulerPicker = ({
+@@ -173,7 +196,7 @@ export const RulerPicker = ({
        style: {
          width
        },
@@ -124,7 +175,7 @@ index 5589f5d..c805d41 100644
          pointerEvents: "none",
          style: {
            alignSelf: 'center',
-@@ -183,10 +198,10 @@ export const RulerPicker = ({
+@@ -183,15 +206,15 @@ export const RulerPicker = ({
            marginBottom: -longStepHeight,
            zIndex: 10
          }
@@ -137,6 +188,25 @@ index 5589f5d..c805d41 100644
          },
          children: /*#__PURE__*/_jsx(AnimatedLegendList, {
            ref: listRef,
+           data: arrData,
+-          keyExtractor: (_, index) => index.toString(),
++          keyExtractor: keyExtractor,
+           renderItem: renderItem,
+           ListHeaderComponent: renderSeparator,
+           ListFooterComponent: renderSeparator,
+@@ -201,10 +224,10 @@ export const RulerPicker = ({
+           onMomentumScrollBegin: onMomentumScrollBegin,
+           onMomentumScrollEnd: onMomentumScrollEnd,
+           estimatedItemSize: stepWidth + gapBetweenSteps,
+-          getFixedItemSize: () => stepWidth + gapBetweenSteps,
++          getFixedItemSize: getFixedItemSize,
+           recycleItems: true,
+           drawDistance: 500,
+-          snapToOffsets: arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)),
++          snapToOffsets: snapToOffsets,
+           onContentSizeChange: onContentSizeChange,
+           snapToAlignment: "start",
+           decelerationRate: decelerationRate,
 diff --git a/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts b/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts
 index a73e8ef..a773525 100644
 --- a/node_modules/react-native-legend-ruler-picker/lib/typescript/src/components/ruler-picker-item.d.ts
