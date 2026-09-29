@@ -150,10 +150,10 @@ describe('DATA-11 / DATA-16: foods repository', () => {
     expect(await foods.searchExternal('apple tart')).toEqual([]);
   });
 
-  it('custom foods require every macro and a complete serving', async () => {
+  it('custom foods allow unknown macros and require a complete serving', async () => {
     const { foods } = await setup();
-    const missingMacro = { ...eggs, nutrients: { ...eggs.nutrients, fatG: null } } as unknown as CustomFoodInput;
-    await expect(foods.createCustom(missingMacro)).rejects.toMatchObject({ category: 'validation', fields: ['fatG'] });
+    const missingMacro = { ...eggs, nutrients: { ...eggs.nutrients, fatG: null } };
+    await expect(foods.createCustom(missingMacro)).resolves.toMatchObject({ nutrients: { fatG: null } });
     await expect(
       foods.createCustom({ ...eggs, servings: [{ label: 'slice', quantity: 1, unit: 'slice', basisMultiplier: 0 }] }),
     ).rejects.toMatchObject({ fields: ['servings.0'] });

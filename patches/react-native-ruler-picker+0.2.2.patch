@@ -1,0 +1,897 @@
+diff --git a/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js b/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js
+index 62148c1..d7caff5 100644
+--- a/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js
++++ b/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js
+@@ -9,53 +9,63 @@ var _reactNative = require("react-native");
+ var _flashList = require("@shopify/flash-list");
+ var _RulerPickerItem = require("./RulerPickerItem");
+ var _utils = require("../utils/");
+-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
++function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
++// FlashList v2 forwards FlashListRef; its AnimatedFlashList declaration still exposes a class ref.
++const AnimatedRulerList = _flashList.AnimatedFlashList;
+ const {
+   width: windowWidth
+ } = _reactNative.Dimensions.get('window');
+-const RulerPicker = _ref => {
+-  let {
+-    width = windowWidth,
+-    height = 500,
+-    min,
+-    max,
+-    step = 1,
+-    initialValue = min,
+-    fractionDigits = 1,
+-    unit = 'cm',
+-    indicatorHeight = 80,
+-    gapBetweenSteps = 10,
+-    shortStepHeight = 20,
+-    longStepHeight = 40,
+-    stepWidth = 2,
+-    indicatorColor = 'black',
+-    shortStepColor = 'lightgray',
+-    longStepColor = 'darkgray',
+-    valueTextStyle,
+-    unitTextStyle,
+-    decelerationRate = 'normal',
+-    onValueChange,
+-    onValueChangeEnd
+-  } = _ref;
++const RulerPicker = ({
++  width = windowWidth,
++  height = 500,
++  min,
++  max,
++  step = 1,
++  initialValue = min,
++  fractionDigits = 1,
++  unit = 'cm',
++  indicatorHeight = 80,
++  gapBetweenSteps = 10,
++  shortStepHeight = 20,
++  longStepHeight = 40,
++  stepWidth = 2,
++  indicatorColor = 'black',
++  shortStepColor = 'lightgray',
++  longStepColor = 'darkgray',
++  valueTextStyle,
++  unitTextStyle,
++  decelerationRate = 'normal',
++  onValueChange,
++  onValueChangeEnd,
++  hideValue = false,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'center',
++  stepLabel,
++  stepLabelStyle,
++  stepLabelTop
++}) => {
+   const itemAmount = (max - min) / step;
+-  const arrData = Array.from({
++  const arrData = (0, _react.useMemo)(() => Array.from({
+     length: itemAmount + 1
+-  }, (_, index) => index);
++  }, (_, index) => index), [itemAmount]);
++  const snapToOffsets = (0, _react.useMemo)(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
+   const listRef = (0, _react.useRef)(null);
++  const userScrolled = (0, _react.useRef)(false);
++  const onScrollBeginDrag = (0, _react.useCallback)(() => {
++    userScrolled.current = true;
++  }, []);
+   const stepTextRef = (0, _react.useRef)(null);
+   const prevValue = (0, _react.useRef)(initialValue.toFixed(fractionDigits));
+   const prevMomentumValue = (0, _react.useRef)(initialValue.toFixed(fractionDigits));
+   const scrollPosition = (0, _react.useRef)(new _reactNative.Animated.Value(0)).current;
+-  const valueCallback = (0, _react.useCallback)(_ref2 => {
+-    let {
+-      value
+-    } = _ref2;
++  const valueCallback = (0, _react.useCallback)(({
++    value
++  }) => {
+     const newStep = (0, _utils.calculateCurrentValue)(value, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
+     if (prevValue.current !== newStep) {
+-      var _stepTextRef$current;
+-      onValueChange === null || onValueChange === void 0 ? void 0 : onValueChange(newStep);
+-      (_stepTextRef$current = stepTextRef.current) === null || _stepTextRef$current === void 0 ? void 0 : _stepTextRef$current.setNativeProps({
++      onValueChange?.(newStep);
++      stepTextRef.current?.setNativeProps({
+         text: newStep
+       });
+     }
+@@ -81,10 +91,9 @@ const RulerPicker = _ref => {
+       width: width * 0.5 - stepWidth * 0.5
+     }
+   }), [stepWidth, width]);
+-  const renderItem = (0, _react.useCallback)(_ref3 => {
+-    let {
+-      index
+-    } = _ref3;
++  const renderItem = (0, _react.useCallback)(({
++    index
++  }) => {
+     return /*#__PURE__*/_react.default.createElement(_RulerPickerItem.RulerPickerItem, {
+       isLast: index === arrData.length - 1,
+       index: index,
+@@ -93,20 +102,28 @@ const RulerPicker = _ref => {
+       gapBetweenSteps: gapBetweenSteps,
+       stepWidth: stepWidth,
+       shortStepColor: shortStepColor,
+-      longStepColor: longStepColor
++      longStepColor: longStepColor,
++      longStepEvery: longStepEvery,
++      longStepOffset: longStepOffset,
++      stepsAlign: stepsAlign,
++      itemHeight: height,
++      label: stepLabel?.(index),
++      labelStyle: stepLabelStyle,
++      labelTop: stepLabelTop
+     });
+-  }, [arrData.length, gapBetweenSteps, stepWidth, longStepColor, longStepHeight, shortStepColor, shortStepHeight]);
++  }, [arrData.length, gapBetweenSteps, stepWidth, longStepColor, longStepHeight, shortStepColor, shortStepHeight, longStepEvery, longStepOffset, stepsAlign, height, stepLabel, stepLabelStyle, stepLabelTop]);
+   const onMomentumScrollEnd = (0, _react.useCallback)(event => {
+-    const newStep = (0, _utils.calculateCurrentValue)(event.nativeEvent.contentOffset.x || event.nativeEvent.contentOffset.y, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
++    const newStep = (0, _utils.calculateCurrentValue)(event.nativeEvent.contentOffset.x, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
+     if (prevMomentumValue.current !== newStep) {
+-      onValueChangeEnd === null || onValueChangeEnd === void 0 ? void 0 : onValueChangeEnd(newStep);
++      onValueChangeEnd?.(newStep);
+     }
+     prevMomentumValue.current = newStep;
+   }, [fractionDigits, gapBetweenSteps, stepWidth, max, min, onValueChangeEnd, step]);
+   function onContentSizeChange() {
+-    var _listRef$current;
++    // DS-09: layout changes during a fling must not restore the initial value.
++    if (userScrolled.current) return;
+     const initialIndex = Math.floor((initialValue - min) / step);
+-    (_listRef$current = listRef.current) === null || _listRef$current === void 0 ? void 0 : _listRef$current.scrollToOffset({
++    listRef.current?.scrollToOffset({
+       offset: initialIndex * (stepWidth + gapBetweenSteps),
+       animated: false
+     });
+@@ -116,7 +133,7 @@ const RulerPicker = _ref => {
+       width,
+       height
+     }
+-  }, /*#__PURE__*/_react.default.createElement(_flashList.AnimatedFlashList, {
++  }, /*#__PURE__*/_react.default.createElement(AnimatedRulerList, {
+     ref: listRef,
+     data: arrData,
+     keyExtractor: (_, index) => index.toString(),
+@@ -125,42 +142,52 @@ const RulerPicker = _ref => {
+     ListFooterComponent: renderSeparator,
+     onScroll: scrollHandler,
+     onMomentumScrollEnd: onMomentumScrollEnd,
+-    estimatedItemSize: stepWidth + gapBetweenSteps,
+-    snapToOffsets: arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)),
++    onScrollBeginDrag: onScrollBeginDrag
++    // FlashList v2 measures items; fixed ruler ticks need no position anchoring.
++    ,
++    maintainVisibleContentPosition: {
++      disabled: true
++    },
++    snapToOffsets: snapToOffsets,
+     onContentSizeChange: onContentSizeChange,
+-    snapToAlignment: "start",
++    snapToAlignment: "start"
++    // DS-09: the first tick is centered at offset 0; native overscroll/insets must not shift that boundary.
++    ,
++    bounces: false,
++    alwaysBounceHorizontal: false,
++    overScrollMode: "never",
++    contentInsetAdjustmentBehavior: "never",
+     decelerationRate: decelerationRate,
+-    estimatedFirstItemOffset: 0,
+     scrollEventThrottle: 16,
+     showsHorizontalScrollIndicator: false,
+     showsVerticalScrollIndicator: false,
+     horizontal: true
+-  }), /*#__PURE__*/_react.default.createElement(_reactNative.View, {
++  }), !hideValue && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+     pointerEvents: "none",
+     style: [styles.indicator, {
+       transform: [{
+         translateX: -stepWidth * 0.5
+       }, {
+-        translateY: -indicatorHeight * 0.5 - ((valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize)
++        translateY: -indicatorHeight * 0.5 - (valueTextStyle?.fontSize ?? styles.valueText.fontSize)
+       }],
+       left: stepWidth * 0.5
+     }]
+   }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+     style: [styles.displayTextContainer, {
+-      height: (valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize,
++      height: valueTextStyle?.fontSize ?? styles.valueText.fontSize,
+       transform: [{
+-        translateY: -((valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize) * 0.5
++        translateY: -(valueTextStyle?.fontSize ?? styles.valueText.fontSize) * 0.5
+       }]
+     }]
+   }, /*#__PURE__*/_react.default.createElement(_reactNative.TextInput, {
+     ref: stepTextRef,
+     defaultValue: initialValue.toFixed(fractionDigits),
+     style: [{
+-      lineHeight: (valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize
++      lineHeight: valueTextStyle?.fontSize ?? styles.valueText.fontSize
+     }, styles.valueText, valueTextStyle]
+   }), unit && /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
+     style: [{
+-      lineHeight: (unitTextStyle === null || unitTextStyle === void 0 ? void 0 : unitTextStyle.fontSize) ?? styles.unitText.fontSize
++      lineHeight: unitTextStyle?.fontSize ?? styles.unitText.fontSize
+     }, styles.unitText, unitTextStyle]
+   }, unit)), /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+     style: [{
+@@ -198,4 +225,3 @@ const styles = _reactNative.StyleSheet.create({
+     marginLeft: 6
+   }
+ });
+-//# sourceMappingURL=RulerPicker.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPickerItem.js b/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPickerItem.js
+index 2451f41..20eec83 100644
+--- a/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPickerItem.js
++++ b/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPickerItem.js
+@@ -6,38 +6,53 @@ Object.defineProperty(exports, "__esModule", {
+ exports.RulerPickerItem = void 0;
+ var _react = _interopRequireDefault(require("react"));
+ var _reactNative = require("react-native");
+-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
++function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+ /* eslint-disable react-native/no-inline-styles */
+ 
+-const RulerPickerItem = /*#__PURE__*/_react.default.memo(_ref => {
+-  let {
+-    isLast,
+-    index,
+-    gapBetweenSteps,
+-    shortStepHeight,
+-    longStepHeight,
+-    stepWidth,
+-    shortStepColor,
+-    longStepColor
+-  } = _ref;
+-  const isLong = index % 10 === 0;
++const RulerPickerItem = exports.RulerPickerItem = _react.default.memo(({
++  isLast,
++  index,
++  gapBetweenSteps,
++  shortStepHeight,
++  longStepHeight,
++  stepWidth,
++  shortStepColor,
++  longStepColor,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'center',
++  itemHeight,
++  label,
++  labelStyle,
++  labelTop = longStepHeight
++}) => {
++  const isLong = (index + longStepOffset) % longStepEvery === 0;
+   const height = isLong ? longStepHeight : shortStepHeight;
+   return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+     style: [{
+       width: stepWidth,
+-      height: '100%',
+-      justifyContent: 'center',
++      height: itemHeight ?? '100%',
++      alignItems: 'center',
++      overflow: 'visible',
++      justifyContent: stepsAlign === 'top' ? 'flex-start' : 'center',
+       marginRight: isLast ? 0 : gapBetweenSteps,
+-      marginTop: shortStepHeight
++      marginTop: stepsAlign === 'top' ? 0 : shortStepHeight
+     }]
+   }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+     style: [{
+       width: '100%',
+       height: height,
+       backgroundColor: isLong ? longStepColor : shortStepColor,
+-      marginTop: isLong ? 0 : shortStepHeight
++      marginTop: stepsAlign === 'top' || isLong ? 0 : shortStepHeight
+     }]
+-  }));
++  }), isLong && label ? /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
++    numberOfLines: 1,
++    style: [{
++      position: 'absolute',
++      top: labelTop,
++      left: stepWidth / 2 - 40,
++      width: 80,
++      textAlign: 'center'
++    }, labelStyle]
++  }, label) : null);
+ });
+-exports.RulerPickerItem = RulerPickerItem;
+-//# sourceMappingURL=RulerPickerItem.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js b/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js
+index be03a9c..495d696 100644
+--- a/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js
++++ b/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js
+@@ -1,53 +1,65 @@
+-import React, { useCallback, useEffect, useRef } from 'react';
++import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+ import { Dimensions, StyleSheet, View, Text, Animated, TextInput } from 'react-native';
+ import { AnimatedFlashList } from '@shopify/flash-list';
+ import { RulerPickerItem } from './RulerPickerItem';
+ import { calculateCurrentValue } from '../utils/';
++
++// FlashList v2 forwards FlashListRef; its AnimatedFlashList declaration still exposes a class ref.
++const AnimatedRulerList = AnimatedFlashList;
+ const {
+   width: windowWidth
+ } = Dimensions.get('window');
+-export const RulerPicker = _ref => {
+-  let {
+-    width = windowWidth,
+-    height = 500,
+-    min,
+-    max,
+-    step = 1,
+-    initialValue = min,
+-    fractionDigits = 1,
+-    unit = 'cm',
+-    indicatorHeight = 80,
+-    gapBetweenSteps = 10,
+-    shortStepHeight = 20,
+-    longStepHeight = 40,
+-    stepWidth = 2,
+-    indicatorColor = 'black',
+-    shortStepColor = 'lightgray',
+-    longStepColor = 'darkgray',
+-    valueTextStyle,
+-    unitTextStyle,
+-    decelerationRate = 'normal',
+-    onValueChange,
+-    onValueChangeEnd
+-  } = _ref;
++export const RulerPicker = ({
++  width = windowWidth,
++  height = 500,
++  min,
++  max,
++  step = 1,
++  initialValue = min,
++  fractionDigits = 1,
++  unit = 'cm',
++  indicatorHeight = 80,
++  gapBetweenSteps = 10,
++  shortStepHeight = 20,
++  longStepHeight = 40,
++  stepWidth = 2,
++  indicatorColor = 'black',
++  shortStepColor = 'lightgray',
++  longStepColor = 'darkgray',
++  valueTextStyle,
++  unitTextStyle,
++  decelerationRate = 'normal',
++  onValueChange,
++  onValueChangeEnd,
++  hideValue = false,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'center',
++  stepLabel,
++  stepLabelStyle,
++  stepLabelTop
++}) => {
+   const itemAmount = (max - min) / step;
+-  const arrData = Array.from({
++  const arrData = useMemo(() => Array.from({
+     length: itemAmount + 1
+-  }, (_, index) => index);
++  }, (_, index) => index), [itemAmount]);
++  const snapToOffsets = useMemo(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
+   const listRef = useRef(null);
++  const userScrolled = useRef(false);
++  const onScrollBeginDrag = useCallback(() => {
++    userScrolled.current = true;
++  }, []);
+   const stepTextRef = useRef(null);
+   const prevValue = useRef(initialValue.toFixed(fractionDigits));
+   const prevMomentumValue = useRef(initialValue.toFixed(fractionDigits));
+   const scrollPosition = useRef(new Animated.Value(0)).current;
+-  const valueCallback = useCallback(_ref2 => {
+-    let {
+-      value
+-    } = _ref2;
++  const valueCallback = useCallback(({
++    value
++  }) => {
+     const newStep = calculateCurrentValue(value, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
+     if (prevValue.current !== newStep) {
+-      var _stepTextRef$current;
+-      onValueChange === null || onValueChange === void 0 ? void 0 : onValueChange(newStep);
+-      (_stepTextRef$current = stepTextRef.current) === null || _stepTextRef$current === void 0 ? void 0 : _stepTextRef$current.setNativeProps({
++      onValueChange?.(newStep);
++      stepTextRef.current?.setNativeProps({
+         text: newStep
+       });
+     }
+@@ -73,10 +85,9 @@ export const RulerPicker = _ref => {
+       width: width * 0.5 - stepWidth * 0.5
+     }
+   }), [stepWidth, width]);
+-  const renderItem = useCallback(_ref3 => {
+-    let {
+-      index
+-    } = _ref3;
++  const renderItem = useCallback(({
++    index
++  }) => {
+     return /*#__PURE__*/React.createElement(RulerPickerItem, {
+       isLast: index === arrData.length - 1,
+       index: index,
+@@ -85,20 +96,28 @@ export const RulerPicker = _ref => {
+       gapBetweenSteps: gapBetweenSteps,
+       stepWidth: stepWidth,
+       shortStepColor: shortStepColor,
+-      longStepColor: longStepColor
++      longStepColor: longStepColor,
++      longStepEvery: longStepEvery,
++      longStepOffset: longStepOffset,
++      stepsAlign: stepsAlign,
++      itemHeight: height,
++      label: stepLabel?.(index),
++      labelStyle: stepLabelStyle,
++      labelTop: stepLabelTop
+     });
+-  }, [arrData.length, gapBetweenSteps, stepWidth, longStepColor, longStepHeight, shortStepColor, shortStepHeight]);
++  }, [arrData.length, gapBetweenSteps, stepWidth, longStepColor, longStepHeight, shortStepColor, shortStepHeight, longStepEvery, longStepOffset, stepsAlign, height, stepLabel, stepLabelStyle, stepLabelTop]);
+   const onMomentumScrollEnd = useCallback(event => {
+-    const newStep = calculateCurrentValue(event.nativeEvent.contentOffset.x || event.nativeEvent.contentOffset.y, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
++    const newStep = calculateCurrentValue(event.nativeEvent.contentOffset.x, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
+     if (prevMomentumValue.current !== newStep) {
+-      onValueChangeEnd === null || onValueChangeEnd === void 0 ? void 0 : onValueChangeEnd(newStep);
++      onValueChangeEnd?.(newStep);
+     }
+     prevMomentumValue.current = newStep;
+   }, [fractionDigits, gapBetweenSteps, stepWidth, max, min, onValueChangeEnd, step]);
+   function onContentSizeChange() {
+-    var _listRef$current;
++    // DS-09: layout changes during a fling must not restore the initial value.
++    if (userScrolled.current) return;
+     const initialIndex = Math.floor((initialValue - min) / step);
+-    (_listRef$current = listRef.current) === null || _listRef$current === void 0 ? void 0 : _listRef$current.scrollToOffset({
++    listRef.current?.scrollToOffset({
+       offset: initialIndex * (stepWidth + gapBetweenSteps),
+       animated: false
+     });
+@@ -108,7 +127,7 @@ export const RulerPicker = _ref => {
+       width,
+       height
+     }
+-  }, /*#__PURE__*/React.createElement(AnimatedFlashList, {
++  }, /*#__PURE__*/React.createElement(AnimatedRulerList, {
+     ref: listRef,
+     data: arrData,
+     keyExtractor: (_, index) => index.toString(),
+@@ -117,42 +136,52 @@ export const RulerPicker = _ref => {
+     ListFooterComponent: renderSeparator,
+     onScroll: scrollHandler,
+     onMomentumScrollEnd: onMomentumScrollEnd,
+-    estimatedItemSize: stepWidth + gapBetweenSteps,
+-    snapToOffsets: arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)),
++    onScrollBeginDrag: onScrollBeginDrag
++    // FlashList v2 measures items; fixed ruler ticks need no position anchoring.
++    ,
++    maintainVisibleContentPosition: {
++      disabled: true
++    },
++    snapToOffsets: snapToOffsets,
+     onContentSizeChange: onContentSizeChange,
+-    snapToAlignment: "start",
++    snapToAlignment: "start"
++    // DS-09: the first tick is centered at offset 0; native overscroll/insets must not shift that boundary.
++    ,
++    bounces: false,
++    alwaysBounceHorizontal: false,
++    overScrollMode: "never",
++    contentInsetAdjustmentBehavior: "never",
+     decelerationRate: decelerationRate,
+-    estimatedFirstItemOffset: 0,
+     scrollEventThrottle: 16,
+     showsHorizontalScrollIndicator: false,
+     showsVerticalScrollIndicator: false,
+     horizontal: true
+-  }), /*#__PURE__*/React.createElement(View, {
++  }), !hideValue && /*#__PURE__*/React.createElement(View, {
+     pointerEvents: "none",
+     style: [styles.indicator, {
+       transform: [{
+         translateX: -stepWidth * 0.5
+       }, {
+-        translateY: -indicatorHeight * 0.5 - ((valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize)
++        translateY: -indicatorHeight * 0.5 - (valueTextStyle?.fontSize ?? styles.valueText.fontSize)
+       }],
+       left: stepWidth * 0.5
+     }]
+   }, /*#__PURE__*/React.createElement(View, {
+     style: [styles.displayTextContainer, {
+-      height: (valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize,
++      height: valueTextStyle?.fontSize ?? styles.valueText.fontSize,
+       transform: [{
+-        translateY: -((valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize) * 0.5
++        translateY: -(valueTextStyle?.fontSize ?? styles.valueText.fontSize) * 0.5
+       }]
+     }]
+   }, /*#__PURE__*/React.createElement(TextInput, {
+     ref: stepTextRef,
+     defaultValue: initialValue.toFixed(fractionDigits),
+     style: [{
+-      lineHeight: (valueTextStyle === null || valueTextStyle === void 0 ? void 0 : valueTextStyle.fontSize) ?? styles.valueText.fontSize
++      lineHeight: valueTextStyle?.fontSize ?? styles.valueText.fontSize
+     }, styles.valueText, valueTextStyle]
+   }), unit && /*#__PURE__*/React.createElement(Text, {
+     style: [{
+-      lineHeight: (unitTextStyle === null || unitTextStyle === void 0 ? void 0 : unitTextStyle.fontSize) ?? styles.unitText.fontSize
++      lineHeight: unitTextStyle?.fontSize ?? styles.unitText.fontSize
+     }, styles.unitText, unitTextStyle]
+   }, unit)), /*#__PURE__*/React.createElement(View, {
+     style: [{
+@@ -189,4 +218,3 @@ const styles = StyleSheet.create({
+     marginLeft: 6
+   }
+ });
+-//# sourceMappingURL=RulerPicker.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-ruler-picker/lib/module/components/RulerPickerItem.js b/node_modules/react-native-ruler-picker/lib/module/components/RulerPickerItem.js
+index 60c637b..f7409a9 100644
+--- a/node_modules/react-native-ruler-picker/lib/module/components/RulerPickerItem.js
++++ b/node_modules/react-native-ruler-picker/lib/module/components/RulerPickerItem.js
+@@ -1,34 +1,50 @@
+ /* eslint-disable react-native/no-inline-styles */
+ import React from 'react';
+-import { View } from 'react-native';
+-export const RulerPickerItem = /*#__PURE__*/React.memo(_ref => {
+-  let {
+-    isLast,
+-    index,
+-    gapBetweenSteps,
+-    shortStepHeight,
+-    longStepHeight,
+-    stepWidth,
+-    shortStepColor,
+-    longStepColor
+-  } = _ref;
+-  const isLong = index % 10 === 0;
++import { Text, View } from 'react-native';
++export const RulerPickerItem = React.memo(({
++  isLast,
++  index,
++  gapBetweenSteps,
++  shortStepHeight,
++  longStepHeight,
++  stepWidth,
++  shortStepColor,
++  longStepColor,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'center',
++  itemHeight,
++  label,
++  labelStyle,
++  labelTop = longStepHeight
++}) => {
++  const isLong = (index + longStepOffset) % longStepEvery === 0;
+   const height = isLong ? longStepHeight : shortStepHeight;
+   return /*#__PURE__*/React.createElement(View, {
+     style: [{
+       width: stepWidth,
+-      height: '100%',
+-      justifyContent: 'center',
++      height: itemHeight ?? '100%',
++      alignItems: 'center',
++      overflow: 'visible',
++      justifyContent: stepsAlign === 'top' ? 'flex-start' : 'center',
+       marginRight: isLast ? 0 : gapBetweenSteps,
+-      marginTop: shortStepHeight
++      marginTop: stepsAlign === 'top' ? 0 : shortStepHeight
+     }]
+   }, /*#__PURE__*/React.createElement(View, {
+     style: [{
+       width: '100%',
+       height: height,
+       backgroundColor: isLong ? longStepColor : shortStepColor,
+-      marginTop: isLong ? 0 : shortStepHeight
++      marginTop: stepsAlign === 'top' || isLong ? 0 : shortStepHeight
+     }]
+-  }));
++  }), isLong && label ? /*#__PURE__*/React.createElement(Text, {
++    numberOfLines: 1,
++    style: [{
++      position: 'absolute',
++      top: labelTop,
++      left: stepWidth / 2 - 40,
++      width: 80,
++      textAlign: 'center'
++    }, labelStyle]
++  }, label) : null);
+ });
+-//# sourceMappingURL=RulerPickerItem.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPicker.d.ts b/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPicker.d.ts
+index c756239..23924b4 100644
+--- a/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPicker.d.ts
++++ b/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPicker.d.ts
+@@ -93,6 +93,9 @@ export type RulerPickerProps = {
+      * @param value
+      */
+     onValueChangeEnd?: (value: string) => void;
++    hideValue?: boolean;
++    stepLabel?: (index: number) => string | undefined;
++    stepLabelStyle?: TextStyle;
++    stepLabelTop?: number;
+ } & Partial<RulerPickerItemProps>;
+-export declare const RulerPicker: ({ width, height, min, max, step, initialValue, fractionDigits, unit, indicatorHeight, gapBetweenSteps, shortStepHeight, longStepHeight, stepWidth, indicatorColor, shortStepColor, longStepColor, valueTextStyle, unitTextStyle, decelerationRate, onValueChange, onValueChangeEnd, }: RulerPickerProps) => JSX.Element;
+-//# sourceMappingURL=RulerPicker.d.ts.map
+\ No newline at end of file
++export declare const RulerPicker: (props: RulerPickerProps) => import("react").ReactElement;
+diff --git a/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPickerItem.d.ts b/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPickerItem.d.ts
+index eed0f9e..67aa937 100644
+--- a/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPickerItem.d.ts
++++ b/node_modules/react-native-ruler-picker/lib/typescript/components/RulerPickerItem.d.ts
+@@ -1,4 +1,5 @@
+ import React from 'react';
++import type { TextStyle } from 'react-native';
+ export type RulerPickerItemProps = {
+     /**
+      * Gap between steps
+@@ -36,11 +37,16 @@ export type RulerPickerItemProps = {
+      * @default 'gray'
+      */
+     longStepColor: string;
++    longStepEvery?: number;
++    longStepOffset?: number;
++    stepsAlign?: 'top' | 'center';
+ };
+ type Props = {
+     index: number;
+     isLast: boolean;
++    itemHeight?: number;
++    label?: string;
++    labelStyle?: TextStyle;
++    labelTop?: number;
+ } & RulerPickerItemProps;
+-export declare const RulerPickerItem: React.MemoExoticComponent<({ isLast, index, gapBetweenSteps, shortStepHeight, longStepHeight, stepWidth, shortStepColor, longStepColor, }: Props) => JSX.Element>;
+-export {};
+-//# sourceMappingURL=RulerPickerItem.d.ts.map
+\ No newline at end of file
++export declare const RulerPickerItem: React.MemoExoticComponent<(props: Props) => React.ReactElement>;
+diff --git a/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx b/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx
+index 8d1f0d1..0f6b1ab 100644
+--- a/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx
++++ b/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx
+@@ -1,4 +1,4 @@
+-import React, { useCallback, useEffect, useRef } from 'react';
++import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+ import {
+   Dimensions,
+   StyleSheet,
+@@ -12,13 +12,19 @@ import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+ 
+ import {
+   AnimatedFlashList,
+-  FlashList,
++  FlashListRef,
++  FlashListProps,
+   ListRenderItem,
+ } from '@shopify/flash-list';
+ 
+ import { RulerPickerItem, RulerPickerItemProps } from './RulerPickerItem';
+ import { calculateCurrentValue } from '../utils/';
+ 
++// FlashList v2 forwards FlashListRef; its AnimatedFlashList declaration still exposes a class ref.
++const AnimatedRulerList = AnimatedFlashList as React.ComponentType<
++  FlashListProps<number> & { ref?: React.Ref<FlashListRef<number>> }
++>;
++
+ export type RulerPickerTextProps = Pick<
+   TextStyle,
+   'color' | 'fontSize' | 'fontWeight'
+@@ -118,6 +124,11 @@ export type RulerPickerProps = {
+    * @param value
+    */
+   onValueChangeEnd?: (value: string) => void;
++  /** DS-09: app-owned value chip and labelled, top-aligned ticks. */
++  hideValue?: boolean;
++  stepLabel?: (index: number) => string | undefined;
++  stepLabelStyle?: TextStyle;
++  stepLabelTop?: number;
+ } & Partial<RulerPickerItemProps>;
+ 
+ export const RulerPicker = ({
+@@ -142,10 +153,20 @@ export const RulerPicker = ({
+   decelerationRate = 'normal',
+   onValueChange,
+   onValueChangeEnd,
++  hideValue = false,
++  longStepEvery = 10,
++  longStepOffset = 0,
++  stepsAlign = 'center',
++  stepLabel,
++  stepLabelStyle,
++  stepLabelTop,
+ }: RulerPickerProps) => {
+   const itemAmount = (max - min) / step;
+-  const arrData = Array.from({ length: itemAmount + 1 }, (_, index) => index);
+-  const listRef = useRef<FlashList<typeof arrData>>(null);
++  const arrData = useMemo(() => Array.from({ length: itemAmount + 1 }, (_, index) => index), [itemAmount]);
++  const snapToOffsets = useMemo(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
++  const listRef = useRef<FlashListRef<number>>(null);
++  const userScrolled = useRef(false);
++  const onScrollBeginDrag = useCallback(() => { userScrolled.current = true; }, []);
+ 
+   const stepTextRef = useRef<TextInput>(null);
+   const prevValue = useRef<string>(initialValue.toFixed(fractionDigits));
+@@ -216,6 +237,13 @@ export const RulerPicker = ({
+           stepWidth={stepWidth}
+           shortStepColor={shortStepColor}
+           longStepColor={longStepColor}
++          longStepEvery={longStepEvery}
++          longStepOffset={longStepOffset}
++          stepsAlign={stepsAlign}
++          itemHeight={height}
++          label={stepLabel?.(index)}
++          labelStyle={stepLabelStyle}
++          labelTop={stepLabelTop}
+         />
+       );
+     },
+@@ -227,13 +255,14 @@ export const RulerPicker = ({
+       longStepHeight,
+       shortStepColor,
+       shortStepHeight,
++      longStepEvery, longStepOffset, stepsAlign, height, stepLabel, stepLabelStyle, stepLabelTop,
+     ]
+   );
+ 
+   const onMomentumScrollEnd = useCallback(
+     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+       const newStep = calculateCurrentValue(
+-        event.nativeEvent.contentOffset.x || event.nativeEvent.contentOffset.y,
++        event.nativeEvent.contentOffset.x,
+         stepWidth,
+         gapBetweenSteps,
+         min,
+@@ -259,6 +288,8 @@ export const RulerPicker = ({
+     ]
+   );
+   function onContentSizeChange() {
++    // DS-09: layout changes during a fling must not restore the initial value.
++    if (userScrolled.current) return;
+     const initialIndex = Math.floor((initialValue - min) / step);
+     listRef.current?.scrollToOffset({
+       offset: initialIndex * (stepWidth + gapBetweenSteps),
+@@ -268,7 +299,7 @@ export const RulerPicker = ({
+ 
+   return (
+     <View style={{ width, height }}>
+-      <AnimatedFlashList
++      <AnimatedRulerList
+         ref={listRef}
+         data={arrData}
+         keyExtractor={(_, index) => index.toString()}
+@@ -277,20 +308,24 @@ export const RulerPicker = ({
+         ListFooterComponent={renderSeparator}
+         onScroll={scrollHandler}
+         onMomentumScrollEnd={onMomentumScrollEnd}
+-        estimatedItemSize={stepWidth + gapBetweenSteps}
+-        snapToOffsets={arrData.map(
+-          (_, index) => index * (stepWidth + gapBetweenSteps)
+-        )}
++        onScrollBeginDrag={onScrollBeginDrag}
++        // FlashList v2 measures items; fixed ruler ticks need no position anchoring.
++        maintainVisibleContentPosition={{ disabled: true }}
++        snapToOffsets={snapToOffsets}
+         onContentSizeChange={onContentSizeChange}
+         snapToAlignment="start"
++        // DS-09: the first tick is centered at offset 0; native overscroll/insets must not shift that boundary.
++        bounces={false}
++        alwaysBounceHorizontal={false}
++        overScrollMode="never"
++        contentInsetAdjustmentBehavior="never"
+         decelerationRate={decelerationRate}
+-        estimatedFirstItemOffset={0}
+         scrollEventThrottle={16}
+         showsHorizontalScrollIndicator={false}
+         showsVerticalScrollIndicator={false}
+         horizontal
+       />
+-      <View
++      {!hideValue && <View
+         pointerEvents="none"
+         style={[
+           styles.indicator,
+@@ -358,7 +393,7 @@ export const RulerPicker = ({
+             },
+           ]}
+         />
+-      </View>
++      </View>}
+     </View>
+   );
+ };
+diff --git a/node_modules/react-native-ruler-picker/src/components/RulerPickerItem.tsx b/node_modules/react-native-ruler-picker/src/components/RulerPickerItem.tsx
+index e95a6d7..b67e6eb 100644
+--- a/node_modules/react-native-ruler-picker/src/components/RulerPickerItem.tsx
++++ b/node_modules/react-native-ruler-picker/src/components/RulerPickerItem.tsx
+@@ -1,6 +1,6 @@
+ /* eslint-disable react-native/no-inline-styles */
+ import React from 'react';
+-import { View } from 'react-native';
++import { Text, TextStyle, View } from 'react-native';
+ 
+ export type RulerPickerItemProps = {
+   /**
+@@ -39,11 +39,18 @@ export type RulerPickerItemProps = {
+    * @default 'gray'
+    */
+   longStepColor: string;
++  longStepEvery?: number;
++  longStepOffset?: number;
++  stepsAlign?: 'top' | 'center';
+ };
+ 
+ type Props = {
+   index: number;
+   isLast: boolean;
++  itemHeight?: number;
++  label?: string;
++  labelStyle?: TextStyle;
++  labelTop?: number;
+ } & RulerPickerItemProps;
+ 
+ export const RulerPickerItem = React.memo(
+@@ -56,8 +63,15 @@ export const RulerPickerItem = React.memo(
+     stepWidth,
+     shortStepColor,
+     longStepColor,
++    longStepEvery = 10,
++    longStepOffset = 0,
++    stepsAlign = 'center',
++    itemHeight,
++    label,
++    labelStyle,
++    labelTop = longStepHeight,
+   }: Props) => {
+-    const isLong = index % 10 === 0;
++    const isLong = (index + longStepOffset) % longStepEvery === 0;
+     const height = isLong ? longStepHeight : shortStepHeight;
+ 
+     return (
+@@ -65,10 +79,12 @@ export const RulerPickerItem = React.memo(
+         style={[
+           {
+             width: stepWidth,
+-            height: '100%',
+-            justifyContent: 'center',
++            height: itemHeight ?? '100%',
++            alignItems: 'center',
++            overflow: 'visible',
++            justifyContent: stepsAlign === 'top' ? 'flex-start' : 'center',
+             marginRight: isLast ? 0 : gapBetweenSteps,
+-            marginTop: shortStepHeight,
++            marginTop: stepsAlign === 'top' ? 0 : shortStepHeight,
+           },
+         ]}
+       >
+@@ -78,10 +94,14 @@ export const RulerPickerItem = React.memo(
+               width: '100%',
+               height: height,
+               backgroundColor: isLong ? longStepColor : shortStepColor,
+-              marginTop: isLong ? 0 : shortStepHeight,
++              marginTop: stepsAlign === 'top' || isLong ? 0 : shortStepHeight,
+             },
+           ]}
+         />
++        {isLong && label ? <Text numberOfLines={1} style={[{
++          position: 'absolute', top: labelTop, left: stepWidth / 2 - 40,
++          width: 80, textAlign: 'center',
++        }, labelStyle]}>{label}</Text> : null}
+       </View>
+     );
+   }

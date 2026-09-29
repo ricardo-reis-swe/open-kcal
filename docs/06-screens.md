@@ -49,6 +49,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Large chevrons beside the calorie ring select the previous/next day; they are buttons, not page-swipe handles.
 - Date strip: a horizontally scrollable, windowed row of day buttons (no date bounds; the window extends as the user scrolls). Labels: Yesterday/Today/Tomorrow within ±1 day of today, otherwise a locale short date (`Mon 28 Sep`; year added when not the current year). Selected day = DS-07 marking.
 - Scrolling the strip MUST NOT change the day; tapping a day selects it. Whenever the selected day changes (tap, Today, Date Picker) the strip animates to center it, even if the user had scrolled it away.
+- The selected day and its immediate previous/next days MUST stay mounted so adjacent-day changes show ready content without a loading blink.
 - The selected day's neighbours are labelled prev/next day buttons, and the selected day has increment/decrement accessibility actions. Horizontal swipes on the Diary content MUST NOT change the day.
 - Header `+` and the `+ Add food` row → Food Search (meal, date). Row tap → matching edit screen. A committed left swipe shows a trash icon, deletes immediately, and shows `<item> deleted · Undo` for 5 seconds. An incomplete swipe springs closed. No long-press actions or second-tap Delete button.
 - Each meal and entry has a `…` menu. Meal: `Copy meal`; entry: `Copy item`.
@@ -101,7 +102,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [Date                    Fri 25 Sep       ]   (display only)
 ```
 - **Initial serving**: the recent `last_serving_id` + `last_serving_quantity` if still valid; otherwise the default serving at 1 (count units) or the basis quantity (mass/volume, e.g. 100 g).
-- **Unit tabs**: valid servings (DATA-11). Mass-based foods offer g and oz, volume-based ml and fl oz, with the preferred unit first. More than 3 units → third tab is `More…` → Serving Unit Picker.
+- **Unit tabs**: valid servings (DATA-11). Mass-based foods offer g and oz, volume-based ml and fl oz, with the preferred unit first. Every unit stays visible in a horizontally scrollable row; there is no `More…` picker.
 - Switching units converts the quantity so the amount of food stays the same where convertible; otherwise the new unit starts at 1.
 - **Ruler steps** (snap / major tick): count 0.25 / 1 · g 1 / 10 · oz 0.1 / 1 · ml 5 / 50 · fl oz 0.1 / 1. Minimum = one step (0 can't be saved).
 - Tapping the value chip → direct numeric entry (up to 2 decimals).
@@ -132,11 +133,12 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [Serving*   [ 2    ] [ slice ▾ ]          ]   unit: g · oz · ml · fl oz · Other…
 [NUTRITION PER 2 SLICE                    ]
 [Calories*  [     ] kcal                  ]
-[Protein*   [     ] g   Carbs* [   ] g   Fat* [   ] g ]
+[Protein    [     ] g   Carbs  [   ] g   Fat  [   ] g ]
 ```
 - `Other…` takes a free-text count unit (e.g. `slice`, `bar`) and becomes the food's default serving (DATA-11).
 - Name uses word autocapitalization and is prefilled from `initialName`.
 - Carbs helper text: `As on EU labels (fibre not included)` (PROV-05).
+- Protein, carbs and fat are optional; an empty field saves as unknown (DATA-06).
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
 
 ## UX-09 Add Action Sheet

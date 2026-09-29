@@ -44,9 +44,7 @@ export type FoodInput = {
   servings: readonly ServingInput[];
 };
 
-export type CustomFoodInput = FoodInput & {
-  nutrients: { energyKcal: number; carbohydrateG: number; proteinG: number; fatG: number };
-};
+export type CustomFoodInput = FoodInput;
 
 export type CacheMetadata = {
   fetchedAt: UtcIso;
@@ -91,7 +89,7 @@ const toServing = (r: ServingRow): FoodServing => ({
 
 const isNonNegative = (v: number | null) => v === null || (Number.isFinite(v) && v >= 0);
 
-function validateFood(input: FoodInput, requireMacros: boolean): void {
+function validateFood(input: FoodInput): void {
   const bad: string[] = [];
   if (input.name.trim().length === 0) bad.push('name');
   if (!(Number.isFinite(input.basisQuantity) && input.basisQuantity > 0)) bad.push('basisQuantity');
@@ -99,7 +97,7 @@ function validateFood(input: FoodInput, requireMacros: boolean): void {
   if (!(Number.isFinite(input.nutrients.energyKcal) && input.nutrients.energyKcal >= 0)) bad.push('energyKcal');
   for (const key of ['carbohydrateG', 'proteinG', 'fatG'] as const) {
     const v = input.nutrients[key];
-    if (!isNonNegative(v) || (requireMacros && v === null)) bad.push(key);
+    if (!isNonNegative(v)) bad.push(key);
   }
   // DATA-11: a serving is selectable only with full conversion data.
   if (input.servings.length === 0) bad.push('servings');
@@ -288,7 +286,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
 
     /** DATA-16: validate → insert `custom` food → insert ≥1 servings (one default). Does not create an entry. */
     async createCustom(input: CustomFoodInput): Promise<Food> {
-      validateFood(input, true);
+      validateFood(input);
       return db.transaction(async (tx) => {
         const now = nowUtcIso(clock);
         const id = ids.newId();
@@ -331,7 +329,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       input: FoodInput,
       cache: CacheMetadata,
     ): Promise<Food> {
-      validateFood(input, false);
+      validateFood(input);
       if (externalId.trim().length === 0) throw new ValidationError('Missing external id', ['externalId']);
       return db.transaction(async (tx) => {
         const now = nowUtcIso(clock);

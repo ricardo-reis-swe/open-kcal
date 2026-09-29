@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
@@ -28,7 +28,7 @@ import { routes, type FoodSource, type Origin } from '@/shared/navigation/routes
 import { useTheme } from '@/shared/theme';
 
 import { ServingRuler } from '../components/ServingRuler';
-import { useExternalFood, useFood, useRecentFoods } from '../food-search.queries';
+import { useExternalFood, useFood, useRecentFood } from '../food-search.queries';
 
 export type FoodDetailMode =
   | {
@@ -58,7 +58,7 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
     Boolean(externalId),
   );
   const food = externalId ? externalFood : storedFood;
-  const recents = useRecentFoods();
+  const recent = useRecentFood(foodId, Boolean(foodId));
   const meals = useMeals();
   const settings = useAppSettings();
   const notFound = (
@@ -70,11 +70,19 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   if (!mode || (editing && entry.data && entry.data.kind !== 'food')) body = notFound;
   else if (mode.kind === 'add' && food.data && (food.data.isDeleted || food.data.source !== mode.foodSource)) {
     body = notFound;
-  } else if (mode.kind === 'add' && food.data && recents.data && meals.data && settings.data) {
-    const recent = recents.data.find((item) => item.foodId === food.data!.id);
+  } else if (
+    mode.kind === 'add' &&
+    food.data &&
+    recent.isSuccess &&
+    !recent.isFetching &&
+    meals.data &&
+    settings.data
+  ) {
+    // Wait for the direct lookup to settle. A cached old record (including a prior `null`) must not initialize the
+    // form before its on-mount refresh returns the serving just saved for this food.
     const selected = initialServing(
       food.data.servings,
-      recent ? { servingId: recent.lastServingId, quantity: recent.lastServingQuantity } : null,
+      recent.data ? { servingId: recent.data.lastServingId, quantity: recent.data.lastServingQuantity } : null,
     );
     const initial = selected
       ? { serving: food.data.servings.find((item) => item.id === selected.serving.id)!, quantity: selected.quantity }
@@ -133,7 +141,7 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   }
   if (
     !body &&
-    (entry.isError || meals.isError || settings.isError || (mode?.kind === 'add' && (food.isError || recents.isError)))
+    (entry.isError || meals.isError || settings.isError || (mode?.kind === 'add' && (food.isError || recent.isError)))
   )
     body = notFound;
 
@@ -211,7 +219,6 @@ function FoodDetailForm({
   const [serving, setServing] = useState(initial.serving);
   const [quantity, setQuantity] = useState(initial.quantity);
   const [pickingMeal, setPickingMeal] = useState(false);
-  const [pickingUnit, setPickingUnit] = useState(false);
   const [editingValue, setEditingValue] = useState(false);
   const [valueText, setValueText] = useState(String(initial.quantity));
   const [saveFailed, setSaveFailed] = useState(false);
@@ -242,11 +249,9 @@ function FoodDetailForm({
       }),
     [food.servings, preferredUnits],
   );
-  const visibleUnits = orderedServings.length > 3 ? orderedServings.slice(0, 2) : orderedServings;
   const chooseServing = (next: FoodServing) => {
     setQuantity(convertServingQuantity(quantity, serving, next));
     setServing(next);
-    setPickingUnit(false);
   };
   const save = async () => {
     setSaveFailed(false);
@@ -338,19 +343,7 @@ function FoodDetailForm({
             }}
           />
           {allowServingChange ? (
-            <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.spacing[3] }}>
-              {visibleUnits.map((unit) => (
-                <TextAction
-                  key={unit.id}
-                  label={unit.label}
-                  onPress={() => chooseServing(unit)}
-                  selected={unit.id === serving.id}
-                />
-              ))}
-              {orderedServings.length > 3 ? (
-                <TextAction label={t('foodDetail.moreUnits')} onPress={() => setPickingUnit(true)} />
-              ) : null}
-            </View>
+            <ServingUnitTabs servings={orderedServings} selected={serving} onSelect={chooseServing} />
           ) : null}
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: theme.spacing[4] }}>
             <Macro label={t('foodDetail.carbs')} value={nutrients.carbohydrateG} locale={locale} />
@@ -389,22 +382,6 @@ function FoodDetailForm({
         }}
         onClose={() => setPickingMeal(false)}
       />
-      <BottomSheet
-        visible={pickingUnit}
-        onClose={() => setPickingUnit(false)}
-        accessibilityLabel={t('foodDetail.chooseUnit')}
-        closeLabel={t('common.close')}
-        testID="serving-unit-picker"
-      >
-        {orderedServings.map((unit) => (
-          <ListRow
-            key={unit.id}
-            label={unit.label}
-            value={t('foodDetail.conversionHint', { quantity: unit.quantity, unit: unit.unit })}
-            onPress={() => chooseServing(unit)}
-          />
-        ))}
-      </BottomSheet>
       <BottomSheet
         visible={editingValue}
         onClose={() => setEditingValue(false)}
@@ -460,6 +437,63 @@ function FoodDetailForm({
         />
       ) : null}
     </>
+  );
+}
+
+function ServingUnitTabs({
+  servings,
+  selected,
+  onSelect,
+}: {
+  servings: readonly FoodServing[];
+  selected: FoodServing;
+  onSelect: (serving: FoodServing) => void;
+}) {
+  const theme = useTheme();
+  const scroll = useRef<ScrollView>(null);
+  const layouts = useRef<Record<string, { x: number; width: number }>>({});
+  const hasCentered = useRef(false);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const centerSelected = useCallback(
+    (animated: boolean) => {
+      const layout = layouts.current[selected.id];
+      if (!layout || viewportWidth === 0) return;
+      scroll.current?.scrollTo({ x: Math.max(0, layout.x + layout.width / 2 - viewportWidth / 2), animated });
+    },
+    [selected.id, viewportWidth],
+  );
+
+  useEffect(() => {
+    centerSelected(hasCentered.current);
+    hasCentered.current = true;
+  }, [centerSelected]);
+
+  return (
+    <ScrollView
+      ref={scroll}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      onLayout={(event) => setViewportWidth(event.nativeEvent.layout.width)}
+      // Opening an existing entry can measure its saved unit after the initial effect; center again once the scroll
+      // range exists so the first selected unit is not left off-center.
+      onContentSizeChange={() => centerSelected(false)}
+      contentContainerStyle={{
+        paddingHorizontal: Math.max(theme.spacing[4], viewportWidth / 2),
+        gap: theme.spacing[3],
+      }}
+    >
+      {servings.map((unit) => (
+        <View
+          key={unit.id}
+          onLayout={(event) => {
+            layouts.current[unit.id] = event.nativeEvent.layout;
+            if (unit.id === selected.id) centerSelected(false);
+          }}
+        >
+          <TextAction label={unit.label} onPress={() => onSelect(unit)} selected={unit.id === selected.id} />
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 

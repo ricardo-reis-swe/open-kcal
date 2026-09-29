@@ -15,6 +15,8 @@ export type TextActionProps = {
   disabled?: boolean;
   /** Shows the compact selected-state indicator used by controls such as serving unit tabs (DS-09). */
   selected?: boolean;
+  /** Expands the action across its parent row while retaining its tertiary visual treatment. */
+  fullWidth?: boolean;
   accessibilityHint?: string;
   testID?: string;
 };
@@ -27,6 +29,7 @@ export function TextAction({
   tone = 'primary',
   disabled = false,
   selected = false,
+  fullWidth = false,
   accessibilityHint,
   testID,
 }: TextActionProps) {
@@ -43,6 +46,7 @@ export function TextAction({
       accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
         styles.base,
+        fullWidth && styles.fullWidth,
         {
           minHeight: theme.touchMin,
           paddingHorizontal: theme.spacing[2],
@@ -64,4 +68,5 @@ export function TextAction({
 
 const styles = StyleSheet.create({
   base: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
+  fullWidth: { alignSelf: 'stretch' },
 });

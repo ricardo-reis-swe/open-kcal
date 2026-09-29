@@ -276,6 +276,7 @@ function MealSection({
           label={t('diary.meal.addFood')}
           accessibilityHint={t('diary.meal.addFoodTo', { meal: meal.meal.name })}
           onPress={() => router.push(routes.foodSearch({ mealId: meal.meal.id, date }))}
+          fullWidth
         />
       </View>
       <DashboardActionMenu

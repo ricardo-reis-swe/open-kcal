@@ -59,7 +59,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Delete (one transaction, full rollback on failure): user picks a different target meal → reassign all `diary_entries.meal_id` → clear/update matching `recent_foods.last_meal_id` → delete the meal → compact `sort_order`. The last meal can't be deleted.
 
 ## DATA-11 Foods and servings
-- Custom foods: all macros required by app validation (non-null in practice). External foods may have NULL macros.
+- Custom and external foods MAY have NULL macros; NULL means unknown, never zero (DATA-06).
 - `(source, external_id)` is unique. Re-fetching updates the existing row + cache metadata; never duplicate.
 - Delete custom food = `is_deleted = 1`. It disappears from search and recents; entries keep their snapshots. Undo sets `is_deleted = 0` without changing servings or history. Unreferenced soft-deleted foods may be purged in later maintenance; not required for the MVP.
 - A serving is selectable only with full conversion data; a label alone is not enough. Formula: `nutrient = basis nutrient × basis_multiplier × ruler value`.
@@ -76,7 +76,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Input: convert from the display unit to kg, validate, then insert or update. `local_date` ≤ today.
 
 ## DATA-14 Recents
-- Upserted only after a successful **food** entry save (add or edit). Ordered by `last_used_at` DESC. Quick Calories excluded.
+- Upserted only after a successful **food** entry save (add or edit). Ordered by `last_used_at` DESC. Quick Calories excluded. The Recents list is capped at 20; Food Detail looks up a food's own record directly to restore its last serving (UX-05).
 
 ## DATA-15 Search and cache
 - Sources: (1) active custom foods, (2) recent and valid cached external foods, (3) remote USDA/OFF when available.

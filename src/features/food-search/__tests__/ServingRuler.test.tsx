@@ -6,8 +6,8 @@ import { renderWithProviders } from '@/shared/testing/render';
 
 import { RULER_DECELERATION_RATE, ServingRuler } from '../components/ServingRuler';
 
-// Stand-in exposing the props ServingRuler passes; the real picker renders in FoodDetailScreen tests.
-jest.mock('react-native-legend-ruler-picker', () => {
+// Stand-in exposing ServingRuler props; native-scroll tests keep the picker and FlashList real.
+jest.mock('react-native-ruler-picker', () => {
   const { createElement } = jest.requireActual<typeof import('react')>('react');
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
   return { RulerPicker: (props: object) => createElement(View, { ...props, testID: 'serving-ruler-picker' }) };
@@ -120,7 +120,7 @@ describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
     expect(screen.getByTestId('serving-ruler-value').props.accessibilityLabel).toBe(
       'Enter serving value, current value 2 egg',
     );
-    fireEvent(ruler, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    await fireEvent(ruler, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
     expect(onChange).toHaveBeenCalledWith(2.25);
     expect(onHaptic).not.toHaveBeenCalled();
   });
@@ -138,11 +138,11 @@ describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
         onOpenNumeric={onOpenNumeric}
       />,
     );
-    fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
+    await fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
       nativeEvent: { actionName: 'decrement' },
     });
     expect(onChange).not.toHaveBeenCalled();
-    fireEvent.press(screen.getByTestId('serving-ruler-value'));
+    await fireEvent.press(screen.getByTestId('serving-ruler-value'));
     expect(onOpenNumeric).toHaveBeenCalledTimes(1);
   });
 });

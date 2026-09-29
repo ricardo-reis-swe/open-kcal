@@ -224,10 +224,10 @@ describe('UX-02 Diary', () => {
   it('UX-02: a DB load failure is full-screen with Retry', async () => {
     const services = await setup(async (s) => {
       const loadDay = s.diary.loadDay.bind(s.diary);
-      let failures = 1;
+      let failedToday = false;
       s.diary.loadDay = async (date) => {
-        if (failures > 0) {
-          failures -= 1;
+        if (date === TODAY && !failedToday) {
+          failedToday = true;
           throw new Error('disk I/O error');
         }
         return loadDay(date);
@@ -237,6 +237,21 @@ describe('UX-02 Diary', () => {
     await fireEvent.press(active().getByRole('button', { name: 'Retry' }));
     expect(await active().findByRole('header', { name: 'Breakfast, 0 kilocalories' })).toBeOnTheScreen();
     expect(services).toBeDefined();
+  });
+
+  it('keeps the immediately previous and next days mounted for instant navigation', async () => {
+    await setup();
+    expect(
+      screen.getByTestId(`diary-page-preloaded-${addDays(TODAY, -1)}`, { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByTestId(`diary-page-preloaded-${addDays(TODAY, 1)}`, { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Next day, Tomorrow' }));
+    expect(
+      screen.getByTestId(`diary-page-preloaded-${addDays(TODAY, 2)}`, { includeHiddenElements: true }),
+    ).toBeOnTheScreen();
   });
 
   it('ARCH-22: pt-PT smoke render', async () => {

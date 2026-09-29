@@ -521,5 +521,31 @@ export function createRecentsRepository({ db }: Pick<RepositoryDeps, 'db'>) {
         lastMealId: r.last_meal_id,
       }));
     },
+
+    /** UX-05: Food Detail restores a food's last serving even when it is older than the ≤20 Recents list. */
+    async get(foodId: string): Promise<RecentFood | null> {
+      const row = await db.getFirst<{
+        food_id: string;
+        last_used_at: string;
+        use_count: number;
+        last_serving_id: string | null;
+        last_serving_quantity: number | null;
+        last_meal_id: string | null;
+      }>(
+        `SELECT r.* FROM recent_foods r JOIN foods f ON f.id = r.food_id
+         WHERE r.food_id = ? AND f.is_deleted = 0`,
+        [foodId],
+      );
+      return row
+        ? {
+            foodId: row.food_id,
+            lastUsedAt: row.last_used_at,
+            useCount: row.use_count,
+            lastServingId: row.last_serving_id,
+            lastServingQuantity: row.last_serving_quantity,
+            lastMealId: row.last_meal_id,
+          }
+        : null;
+    },
   };
 }

@@ -10,7 +10,13 @@ import { FoodDetailScreen } from '../screens/FoodDetailScreen';
 const mockAddFoodEntry = jest.fn();
 const mockEditFoodEntry = jest.fn();
 const mockDeleteEntry = jest.fn();
+// Screen flows do not need FlashList's native measurement cycle. The real list's
+// scroll configuration and callbacks are covered in ServingRuler.native-scroll.test.tsx.
+jest.mock('@shopify/flash-list', () => ({
+  AnimatedFlashList: jest.requireActual('react-native').Animated.FlatList,
+}));
 let mockEntry: DiaryEntry | undefined;
+let mockRecent = { foodId: 'food-1', lastServingId: 'serving-1', lastServingQuantity: 50 };
 const mockFood: Food = {
   id: 'food-1',
   source: 'custom',
@@ -23,6 +29,15 @@ const mockFood: Food = {
   isDeleted: false,
   servings: [
     { id: 'serving-1', label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true, sortOrder: 0 },
+    {
+      id: 'serving-oz',
+      label: 'oz',
+      quantity: 1,
+      unit: 'oz',
+      basisMultiplier: 0.28349523125,
+      isDefault: false,
+      sortOrder: 1,
+    },
   ],
 };
 
@@ -56,14 +71,17 @@ jest.mock('@/features/diary/diary.queries', () => ({
 jest.mock('../food-search.queries', () => ({
   useFood: (id: string) => ({ data: id ? mockFood : undefined, isError: false }),
   useExternalFood: () => ({ data: undefined, isError: false }),
-  useRecentFoods: () => ({
-    data: [{ foodId: mockFood.id, lastServingId: mockFood.servings[0]!.id, lastServingQuantity: 50 }],
+  useRecentFood: () => ({
+    data: mockRecent,
+    isSuccess: true,
+    isError: false,
   }),
 }));
 
 afterEach(() => {
   jest.clearAllMocks();
   mockEntry = undefined;
+  mockRecent = { foodId: mockFood.id, lastServingId: mockFood.servings[0]!.id, lastServingQuantity: 50 };
 });
 
 describe('UX-05: Food Detail / Add Entry', () => {
@@ -86,10 +104,10 @@ describe('UX-05: Food Detail / Add Entry', () => {
     expect(screen.getByLabelText('Enter serving value, current value 50 g')).toBeTruthy();
     const ruler = screen.getByTestId('serving-ruler');
     expect(ruler.props.accessibilityRole).toBe('adjustable');
-    fireEvent(ruler, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    await fireEvent(ruler, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
     await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 51 g')).toBeTruthy());
 
-    fireEvent.press(screen.getByTestId('food-detail-add'));
+    await fireEvent.press(screen.getByTestId('food-detail-add'));
     await waitFor(() =>
       expect(mockAddFoodEntry).toHaveBeenCalledWith({
         diaryDate: '2026-09-25',
@@ -120,6 +138,23 @@ describe('UX-05: Food Detail / Add Entry', () => {
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeTruthy();
   });
 
+  it('UX-05: restores the last saved serving type and amount for a previously used food', async () => {
+    mockRecent = { foodId: mockFood.id, lastServingId: 'serving-oz', lastServingQuantity: 2.5 };
+    await renderWithProviders(
+      <FoodDetailScreen
+        mode={{
+          kind: 'add',
+          foodId: mockFood.id,
+          foodSource: 'custom',
+          mealId: 'meal-1',
+          date: '2026-09-25',
+          origin: 'diary',
+        }}
+      />,
+    );
+    expect(await screen.findByLabelText('Enter serving value, current value 2.5 oz')).toBeTruthy();
+  });
+
   it('UX-00 / UX-05: submits a direct numeric serving from the keyboard', async () => {
     await renderWithProviders(
       <FoodDetailScreen
@@ -134,13 +169,13 @@ describe('UX-05: Food Detail / Add Entry', () => {
       />,
     );
 
-    fireEvent.press(screen.getByTestId('serving-ruler-value'));
+    await fireEvent.press(screen.getByTestId('serving-ruler-value'));
     const input = await screen.findByTestId('serving-value-input');
     // Done stays above the keypad: the sheet's KeyboardAvoidingView is enabled (primary action above the keyboard).
     expect(within(screen.getByTestId('kav-enabled')).getByTestId('serving-value-confirm')).toBeTruthy();
-    fireEvent.changeText(input, '75');
+    await fireEvent.changeText(input, '75');
     await waitFor(() => expect(input.props.value).toBe('75'));
-    fireEvent(input, 'submitEditing');
+    await fireEvent(input, 'submitEditing');
     await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 75 g')).toBeTruthy());
   });
 
@@ -167,18 +202,18 @@ describe('UX-05: Food Detail / Add Entry', () => {
 
     expect(screen.getByRole('header', { name: 'Edit entry' })).toBeTruthy();
     expect(screen.queryByTestId('serving-unit-picker')).toBeNull();
-    fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
+    await fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
       nativeEvent: { actionName: 'increment' },
     });
     await waitFor(() => expect(screen.getByLabelText('Enter serving value, current value 51 g')).toBeTruthy());
-    fireEvent.press(screen.getByTestId('food-entry-save'));
+    await fireEvent.press(screen.getByTestId('food-entry-save'));
     await waitFor(() =>
       expect(mockEditFoodEntry).toHaveBeenCalledWith({ id: 'entry-1', mealId: 'meal-1', quantity: 51 }),
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Delete entry' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Delete entry' }));
     const dialog = await screen.findByTestId('food-entry-delete-dialog');
-    fireEvent.press(within(dialog).getByRole('button', { name: 'Delete entry' }));
+    await fireEvent.press(within(dialog).getByRole('button', { name: 'Delete entry' }));
     await waitFor(() => expect(mockDeleteEntry).toHaveBeenCalledWith('entry-1'));
   });
 });

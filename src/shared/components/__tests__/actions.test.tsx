@@ -58,6 +58,12 @@ describe('DS-12: TextAction', () => {
     expect(StyleSheet.flatten(action.props.style).minHeight).toBeGreaterThanOrEqual(44);
   });
 
+  it('can expand to fill its parent row', async () => {
+    await renderWithProviders(<TextAction label="Add food" icon="add" fullWidth onPress={jest.fn()} />);
+    const style = StyleSheet.flatten(screen.getByRole('button', { name: 'Add food' }).props.style);
+    expect(style.alignSelf).toBe('stretch');
+  });
+
   it('UX-00: danger tone for destructive text actions', async () => {
     await renderWithProviders(<TextAction label="Delete entry" tone="danger" onPress={jest.fn()} />);
     expect(StyleSheet.flatten(screen.getByText('Delete entry').props.style).color).toBe(lightColors.danger);

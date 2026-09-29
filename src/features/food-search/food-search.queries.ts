@@ -16,6 +16,7 @@ export type RecentFoodResult = RecentFood & { food: Food };
 export const foodSearchKeys = {
   all: ['foodSearch'] as const,
   recents: ['foodSearch', 'recents'] as const,
+  recent: (foodId: string) => ['foodSearch', 'recent', foodId] as const,
   custom: (query: string) => ['foodSearch', 'custom', query.trim().toLocaleLowerCase()] as const,
   saved: (query: string) => ['foodSearch', 'saved', query.trim().toLocaleLowerCase()] as const,
   off: (query: string, page: number) => ['foodSearch', 'openFoodFacts', query.trim(), page] as const,
@@ -83,6 +84,16 @@ export async function loadRecentFoods(
 export function useRecentFoods() {
   const services = useServices();
   return useQuery({ queryKey: foodSearchKeys.recents, queryFn: () => loadRecentFoods(services) });
+}
+
+/** UX-05: the add form needs this food's saved serving, not only the newest ≤20 Recents. */
+export function useRecentFood(foodId: string, enabled: boolean) {
+  const { recents } = useServices();
+  return useQuery({
+    queryKey: foodSearchKeys.recent(foodId),
+    queryFn: () => recents.get(foodId),
+    enabled,
+  });
 }
 
 /** M4 local search runs on every debounced query; provider requests are added separately in M5/M6. */

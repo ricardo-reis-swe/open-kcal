@@ -71,7 +71,10 @@ export function customFoodFormSchema(locale: string, energyUnit: EnergyUnit) {
         context.addIssue({ code: 'custom', path: ['energy'], message: 'range' });
       }
       for (const field of ['protein', 'carbohydrate', 'fat'] as const) {
-        if (!inRange(parseLocalizedDecimal(values[field], locale), 0, CUSTOM_FOOD_MACRO_MAX_G)) {
+        if (
+          values[field].trim().length > 0 &&
+          !inRange(parseLocalizedDecimal(values[field], locale), 0, CUSTOM_FOOD_MACRO_MAX_G)
+        ) {
           context.addIssue({ code: 'custom', path: [field], message: 'range' });
         }
       }
@@ -150,9 +153,9 @@ export function customFoodInputFromForm(
     basisUnit,
     nutrients: {
       energyKcal: energyToKcal(energy, energyUnit),
-      proteinG: parseLocalizedDecimal(values.protein, locale)!,
-      carbohydrateG: parseLocalizedDecimal(values.carbohydrate, locale)!,
-      fatG: parseLocalizedDecimal(values.fat, locale)!,
+      proteinG: parseLocalizedDecimal(values.protein, locale),
+      carbohydrateG: parseLocalizedDecimal(values.carbohydrate, locale),
+      fatG: parseLocalizedDecimal(values.fat, locale),
     },
     servings,
   };

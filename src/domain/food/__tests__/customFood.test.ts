@@ -91,7 +91,14 @@ describe('DATA-04 / DATA-11 / UX-08: custom-food command', () => {
     expect(input.servings[1]).toMatchObject({ label: 'fl oz', basisMultiplier: 2 / 3, isDefault: true });
   });
 
-  it('returns null instead of emitting an invalid repository command', () => {
-    expect(customFoodInputFromForm({ ...valid, fat: '' }, 'en-GB', 'kcal')).toBeNull();
+  it('maps omitted macros to unknown nutrition', () => {
+    expect(
+      customFoodInputFromForm({ ...valid, protein: '', carbohydrate: '', fat: '' }, 'en-GB', 'kcal')?.nutrients,
+    ).toEqual({
+      energyKcal: 156,
+      proteinG: null,
+      carbohydrateG: null,
+      fatG: null,
+    });
   });
 });

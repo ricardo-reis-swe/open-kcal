@@ -1,8 +1,8 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, useWindowDimensions, View } from 'react-native';
-import { RulerPicker } from 'react-native-legend-ruler-picker';
+import { RulerPicker } from 'react-native-ruler-picker';
 
 import type { FoodServing } from '@/data/db/repositories/foodsRepository';
 import { adjustRulerQuantity, rulerSpec, snapRulerQuantity } from '@/domain/food/servings';
@@ -62,7 +62,7 @@ function displaySelectedQuantity(value: number, locale: string): string {
 }
 
 /**
- * DS-09 / UX-05: serving ruler on `react-native-legend-ruler-picker`, with a fixed pointer and accessible
+ * DS-09 / UX-05: serving ruler on `react-native-ruler-picker`, with a fixed pointer and accessible
  * alternatives. The picker works in step indexes (0…max) and is uncontrolled, so a value set from outside the
  * ruler (a11y action, numeric entry, serving change) remounts it at the new index.
  */
@@ -80,13 +80,22 @@ export function ServingRuler({
   const theme = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const last = useRef(quantity);
-  const lastServingId = useRef(serving.id);
   const lastHapticAt = useRef(0);
   const { step, majorStep } = rulerSpec(serving);
   const minimum = step;
   const majorEvery = Math.max(1, Math.round(majorStep / step));
   // Fixed per mount: the picker only reads initialValue when it mounts.
-  const [mount, setMount] = useState(() => ({ key: 0, index: rulerIndex(quantity, step) }));
+  const [mount, setMount] = useState(() => ({
+    key: 0,
+    index: rulerIndex(quantity, step),
+    quantity,
+    servingId: serving.id,
+  }));
+  // Sync externally-set values during rendering so React discards the stale tree before it reaches the screen. This
+  // prevents a serving change from briefly showing the old unit's index (for example, 2 eggs as 8 g).
+  if (quantity !== mount.quantity || serving.id !== mount.servingId) {
+    setMount({ key: mount.key + 1, index: rulerIndex(quantity, step), quantity, servingId: serving.id });
+  }
   const maximumIndex = Math.max(MINIMUM_STEPS, mount.index + 1_000);
   const rulerWidth = Math.max(1, windowWidth);
   const energy = formatEnergy(energyKcal, energyUnit, locale);
@@ -98,17 +107,13 @@ export function ServingRuler({
     unit: spokenUnit,
   });
 
-  useEffect(() => {
-    if (quantity === last.current && serving.id === lastServingId.current) return;
-    last.current = quantity;
-    lastServingId.current = serving.id;
-    setMount((current) => ({ key: current.key + 1, index: rulerIndex(quantity, step) }));
-  }, [quantity, serving.id, step]);
-
   const emit = useCallback(
     (next: number) => {
       if (next === last.current) return;
       last.current = next;
+      // Keep the picker uncontrolled while it is dragged; the parent update then matches this state and does not
+      // trigger a costly remount for every tick.
+      setMount((current) => ({ ...current, quantity: next, servingId: serving.id }));
       onChange(next);
       const now = Date.now();
       if (process.env.NODE_ENV !== 'test' && now - lastHapticAt.current >= 50) {
@@ -116,7 +121,7 @@ export function ServingRuler({
         onHaptic?.();
       }
     },
-    [onChange, onHaptic],
+    [onChange, onHaptic, serving.id],
   );
 
   // Index i is (i + 1) steps, so majors land on whole multiples of majorStep.
@@ -191,7 +196,6 @@ export function ServingRuler({
           initialValue={mount.index}
           fractionDigits={0}
           hideValue
-          listHeight={RULER_HEIGHT}
           stepsAlign="top"
           stepWidth={STEP_WIDTH}
           gapBetweenSteps={STEP_GAP}

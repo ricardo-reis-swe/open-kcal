@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { MacroKey, NutrientTotals } from '@/domain/nutrition/nutrients';
-import { AppIcon, AppText, ProgressTrack } from '@/shared/components';
+import { AppText, ProgressTrack } from '@/shared/components';
 import { formatGrams } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme, type Colors } from '@/shared/theme';
@@ -25,8 +25,8 @@ const MACROS = [
 const COLUMN_BASIS = 88;
 
 /**
- * DS-08 macro strip: one row, 3 columns (label, consumed/target, 4pt track). An info icon marks a partial total
- * when Quick Calories or incomplete foods have unknown values (DATA-06); the explanation is in the label (DS-11).
+ * DS-08 macro strip: one row, 3 columns (label, consumed/target, 4pt track). Partial totals from Quick Calories or
+ * incomplete foods are explained in the accessible label (DATA-06, DS-11).
  */
 export function MacroStrip({ totals, targets }: MacroStripProps) {
   const { t } = useTranslation();
@@ -41,8 +41,8 @@ export function MacroStrip({ totals, targets }: MacroStripProps) {
         const total = totals[macro.key];
         const target = targets?.[macro.key] ?? null;
         const partial = total.unknownCount > 0;
-        // Product override: an all-unknown total displays its known sum (0), while the info icon and accessible
-        // explanation still make the incomplete nutrition data explicit.
+        // Product override: an all-unknown total displays its known sum (0); the accessible explanation still makes
+        // the incomplete nutrition data explicit.
         const consumed = formatGrams(total.knownSum, locale);
         const over = target !== null && total.knownSum > target;
         const name = t(macro.label);
@@ -67,11 +67,10 @@ export function MacroStrip({ totals, targets }: MacroStripProps) {
             accessibilityLabel={a11y}
             style={[styles.column, { flexBasis: basis }]}
           >
-            <View style={[styles.labelRow, { gap: theme.spacing[1] }]}>
+            <View style={styles.labelRow}>
               <AppText variant="label" color="textSecondary" style={styles.shrink}>
                 {name}
               </AppText>
-              {partial ? <AppIcon name="information-circle-outline" size="inline" color="textSecondary" /> : null}
             </View>
             <AppText variant="compactStrong" tabular color={over ? 'warning' : 'textPrimary'}>
               {value}
