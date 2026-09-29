@@ -1,5 +1,11 @@
 // Effective-dated nutrition goals (DATA-09, UX-01).
-import { invalidGoalFields, planGoalSave, type NutritionGoal, type NutritionTargets } from '@/domain/nutrition/goals';
+import {
+  gramsFromMacroPercent,
+  invalidGoalFields,
+  planGoalSave,
+  type NutritionGoal,
+  type NutritionTargets,
+} from '@/domain/nutrition/goals';
 import { nowUtcIso, todayLocal, type LocalDate } from '@/shared/dates';
 import { ValidationError } from '@/shared/errors';
 
@@ -36,19 +42,40 @@ const toGoal = (r: GoalRow): NutritionGoal => ({
   fatTargetPercent: r.fat_target_percent,
 });
 
+/**
+ * DATA-09: percentage mode stores the three percentages and derives the canonical gram targets from the calorie
+ * target (4/4/9), so stored grams can never disagree with the percentages. Grams mode clears the percentages.
+ */
 function normalizedTargets(targets: NutritionTargets) {
   const mode = targets.macroTargetMode ?? 'grams';
+  if (mode === 'grams') {
+    return {
+      ...targets,
+      macroTargetMode: mode,
+      carbohydrateTargetPercent: null,
+      proteinTargetPercent: null,
+      fatTargetPercent: null,
+    };
+  }
+  const carbohydrateTargetPercent = targets.carbohydrateTargetPercent ?? null;
+  const proteinTargetPercent = targets.proteinTargetPercent ?? null;
+  const fatTargetPercent = targets.fatTargetPercent ?? null;
+  const grams = (percent: number | null, macro: 'carbohydrateG' | 'proteinG' | 'fatG', fallback: number) =>
+    percent === null ? fallback : gramsFromMacroPercent(targets.calorieTargetKcal, percent, macro);
   return {
     ...targets,
     macroTargetMode: mode,
-    carbohydrateTargetPercent: mode === 'percent' ? (targets.carbohydrateTargetPercent ?? null) : null,
-    proteinTargetPercent: mode === 'percent' ? (targets.proteinTargetPercent ?? null) : null,
-    fatTargetPercent: mode === 'percent' ? (targets.fatTargetPercent ?? null) : null,
+    carbohydrateTargetPercent,
+    proteinTargetPercent,
+    fatTargetPercent,
+    carbohydrateTargetG: grams(carbohydrateTargetPercent, 'carbohydrateG', targets.carbohydrateTargetG),
+    proteinTargetG: grams(proteinTargetPercent, 'proteinG', targets.proteinTargetG),
+    fatTargetG: grams(fatTargetPercent, 'fatG', targets.fatTargetG),
   };
 }
 
 function validateTargets(t: NutritionTargets): void {
-  const bad = invalidGoalFields(normalizedTargets(t)); // UX-00 ranges
+  const bad = invalidGoalFields(t); // UX-00 ranges
   if (bad.length > 0) throw new ValidationError('Invalid goal targets', bad);
 }
 

@@ -129,6 +129,23 @@ describe('DATA-09 / UX-01: goals repository', () => {
     });
   });
 
+  it('DATA-09: percentage mode derives canonical grams from the calorie target, ignoring stale gram inputs', async () => {
+    const goals = createGoalsRepository(await openSeededTestDatabase());
+    const saved = await goals.save({
+      calorieTargetKcal: 2000,
+      carbohydrateTargetG: 1,
+      proteinTargetG: 1,
+      fatTargetG: 1,
+      macroTargetMode: 'percent',
+      carbohydrateTargetPercent: 40,
+      proteinTargetPercent: 30,
+      fatTargetPercent: 30,
+    });
+    expect(saved.carbohydrateTargetG).toBeCloseTo(200);
+    expect(saved.proteinTargetG).toBeCloseTo(150);
+    expect(saved.fatTargetG).toBeCloseTo(66.667, 2);
+  });
+
   it('rejects invalid targets without writing', async () => {
     const deps = await openSeededTestDatabase();
     const goals = createGoalsRepository(deps);

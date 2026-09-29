@@ -153,13 +153,15 @@ export function FoodSearchScreen({
   const leaveSearch = () => {
     onBack();
   };
-  const deleteFood = async (food: Food) => {
+  const deleteFood = async (food: Food): Promise<boolean> => {
     setDeleteFailed(false);
     try {
       await writes.deleteCustom.mutateAsync(food.id);
       setDeletedFood(food);
+      return true;
     } catch {
       setDeleteFailed(true);
+      return false;
     }
   };
   const undoDelete = async () => {
@@ -186,7 +188,7 @@ export function FoodSearchScreen({
             locale={locale}
             energyUnit={settings.data.energyUnit}
             onPress={() => onSelectFood(food)}
-            onDelete={food.source === 'custom' ? () => void deleteFood(food) : undefined}
+            onDelete={food.source === 'custom' ? () => deleteFood(food) : undefined}
           />
         ))}
         {customFoods.length === customPages * 20 ? (
@@ -457,7 +459,7 @@ export function FoodSearchScreen({
                   locale={locale}
                   energyUnit={settings.data.energyUnit}
                   onPress={() => onSelectFood(food)}
-                  onDelete={food.source === 'custom' ? () => void deleteFood(food) : undefined}
+                  onDelete={food.source === 'custom' ? () => deleteFood(food) : undefined}
                 />
               ))
             ) : (
@@ -470,6 +472,7 @@ export function FoodSearchScreen({
       </ScrollView>
       {deletedFood ? (
         <UndoToast
+          key={deletedFood.id}
           message={t('foodSearch.deleted', { name: deletedFood.name })}
           undoLabel={t('common.undo')}
           onUndo={() => void undoDelete()}
@@ -493,7 +496,8 @@ function FoodResultRow({
   locale: string;
   energyUnit: 'kcal' | 'kJ';
   onPress: () => void;
-  onDelete?: () => void;
+  /** Resolving `false` (the delete failed) springs the row back into place. */
+  onDelete?: () => Promise<boolean>;
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
@@ -506,7 +510,10 @@ function FoodResultRow({
   const energyValue = formatEnergy(food.nutrients.energyKcal, energyUnit, locale);
   const energyUnitLabel = t(`diary.units.${energyUnit}`);
   const translateX = useSharedValue(0);
-  const commitDelete = () => onDelete?.();
+  const commitDelete = () =>
+    void onDelete?.().then((deleted) => {
+      if (!deleted) translateX.set(withTiming(0, { duration: 160 }));
+    });
   const pan = Gesture.Pan()
     .withTestId(`food-swipe-${food.id}-pan`)
     .enabled(Boolean(onDelete))

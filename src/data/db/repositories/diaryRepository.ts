@@ -34,6 +34,8 @@ export type DiaryEntry = {
   nutrients: Nutrients;
   note: string | null;
   sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type DiaryMeal = { meal: Meal; entries: DiaryEntry[]; totals: NutrientTotals };
@@ -55,6 +57,8 @@ type EntryRow = {
   fat_g: number | null;
   note: string | null;
   sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 type TotalsRow = {
@@ -82,6 +86,8 @@ const toEntry = (r: EntryRow): DiaryEntry => ({
   nutrients: { energyKcal: r.energy_kcal, carbohydrateG: r.carbohydrate_g, proteinG: r.protein_g, fatG: r.fat_g },
   note: r.note,
   sortOrder: r.sort_order,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
 });
 
 // DATA-06: SUM ignores NULLs; unknowns are counted separately so they never become 0.
@@ -441,12 +447,14 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
       if (changes === 0) throw new NotFoundError('Entry not found');
     },
 
-    /** DATA-12: Undo restores the exact deleted snapshot and its original position; recents stay unchanged. */
+    /**
+     * DATA-12: Undo restores the exact deleted snapshot — original ID, `sort_order` and timestamps (so the
+     * `created_at` tie-break keeps its place); recents stay unchanged.
+     */
     async restoreEntry(entry: DiaryEntry): Promise<void> {
       assertDate(entry.diaryDate);
       await db.transaction(async (tx) => {
         await assertMeal(tx, entry.mealId);
-        const now = nowUtcIso(clock);
         await tx.run(
           `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
              serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
@@ -468,8 +476,8 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
             entry.nutrients.fatG,
             entry.note,
             entry.sortOrder,
-            now,
-            now,
+            entry.createdAt,
+            entry.updatedAt,
           ],
         );
       });

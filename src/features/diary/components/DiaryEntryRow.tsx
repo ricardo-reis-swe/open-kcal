@@ -18,7 +18,8 @@ export type EntryRowProps = {
   unit: EnergyUnit;
   /** Row tap → the matching edit screen (UX-02). */
   onPress?: () => void;
-  onDelete?: () => void;
+  /** Committed swipe (UX-02). Resolving `false` (the delete failed) springs the row back into place. */
+  onDelete?: () => Promise<boolean> | void;
   onMenu?: () => void;
 };
 
@@ -107,7 +108,7 @@ export function MealEntries({
   entries: DiaryEntry[];
   unit: EnergyUnit;
   origin: Origin;
-  onDelete?: (entry: DiaryEntry) => void;
+  onDelete?: (entry: DiaryEntry) => Promise<boolean> | void;
   onMenu?: (entry: DiaryEntry) => void;
 }) {
   return entries.map((entry) =>
@@ -151,14 +152,16 @@ function RowFrame({
   secondary: string | null;
   value: string;
   marker?: boolean;
-  onDelete?: () => void;
+  onDelete?: () => Promise<boolean> | void;
   onMenu?: () => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const translateX = useSharedValue(0);
   const commitDelete = () => {
-    onDelete?.();
+    void onDelete?.()?.then((deleted) => {
+      if (!deleted) translateX.set(withTiming(0, { duration: 160 }));
+    });
   };
   const pan = Gesture.Pan()
     .withTestId(`${testID}-pan`)

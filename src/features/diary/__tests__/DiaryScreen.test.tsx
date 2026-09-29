@@ -124,8 +124,21 @@ describe('UX-02 Diary', () => {
     const mealPicker = await screen.findByTestId('meal-picker');
     await fireEvent.press(within(mealPicker).getByRole('button', { name: 'Lunch' }));
     expect(await screen.findByText(/^Copied 1 item to Lunch/)).toBeOnTheScreen();
+    // DS-10: the confirmation is a transient toast, not a status left above the meal.
+    expect(screen.getByTestId('diary-toast')).toHaveTextContent(/^Copied 1 item to Lunch/);
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
     const tomorrow = await services.diary.loadDay(addDays(TODAY, 1));
     expect(tomorrow.meals[1]!.entries).toEqual([expect.objectContaining({ name: 'Scrambled eggs' })]);
+  });
+
+  it('UX-02: a failed delete keeps the row and shows a transient error without Undo', async () => {
+    const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
+    jest.spyOn(services.diary, 'deleteEntry').mockRejectedValueOnce(new Error('disk'));
+    const row = await active().findByTestId(`diary-entry-${entry.id}`);
+    await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    expect(await screen.findByTestId('diary-toast')).toHaveTextContent("Couldn't delete. Try again.");
+    expect(active().getByTestId(`diary-entry-${entry.id}`)).toBeOnTheScreen();
   });
 
   it('DS-08: Quick Calories rows show the note first and state unknown macros', async () => {

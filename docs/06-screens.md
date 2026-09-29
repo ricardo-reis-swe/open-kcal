@@ -57,6 +57,9 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Error: a DB load failure is full-screen with Retry. Never an offline banner.
 - Focus order: app bar → strip days left to right (rendered ones; prev, selected, next among them) → Today → ring (one element) → carbs, protein, fat → each meal (header, menu, header +, entries and their menus, Add food).
 
+## UX-03 Meal Detail (removed)
+- Removed 2026-09-28 (user request). Entries are edited and copied from the Diary (UX-02, UX-12). ID kept so it is not reused.
+
 ## UX-04 Food Search
 ```text
 [‹ [🔍 Search foods             ✕]        ]

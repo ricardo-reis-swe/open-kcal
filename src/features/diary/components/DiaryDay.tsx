@@ -44,25 +44,28 @@ export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
   const settings = useAppSettings();
   const { deleteEntry, restoreEntry } = useDiaryWrites();
   const list = useRef<FlatList<DiaryMeal>>(null);
-  const [deletedEntry, setDeletedEntry] = useState<DiaryMeal['entries'][number] | null>(null);
-  const [deleteError, setDeleteError] = useState(false);
-
-  const removeEntry = (entry: DiaryMeal['entries'][number]) => {
-    setDeleteError(false);
-    deleteEntry.mutate(entry.id, {
-      onSuccess: () => setDeletedEntry(entry),
-      onError: () => setDeleteError(true),
-    });
+  // DS-10: one transient toast — Undo after a committed delete swipe, or a copy result / failure.
+  const [toast, setToast] = useState<Toast | null>(null);
+  const toastSeq = useRef(0);
+  const showToast = (message: string, undo?: DiaryMeal['entries'][number]) => {
+    toastSeq.current += 1;
+    setToast({ key: toastSeq.current, message, undo });
   };
-  const undoDelete = () => {
-    if (!deletedEntry) return;
-    restoreEntry.mutate(deletedEntry, {
-      onSuccess: () => setDeletedEntry(null),
-      onError: () => {
-        setDeletedEntry(null);
-        setDeleteError(true);
-      },
-    });
+
+  // UX-02 / DATA-12: a committed swipe deletes immediately; resolving `false` springs the row back.
+  const removeEntry = async (entry: DiaryMeal['entries'][number]): Promise<boolean> => {
+    try {
+      await deleteEntry.mutateAsync(entry.id);
+      showToast(t('diary.entry.deleted', { name: entry.note ?? entry.name }), entry);
+      return true;
+    } catch {
+      showToast(t('diary.entry.deleteError'));
+      return false;
+    }
+  };
+  const undoDelete = (entry: DiaryMeal['entries'][number]) => {
+    setToast(null);
+    restoreEntry.mutate(entry, { onError: () => showToast(t('diary.entry.deleteError')) });
   };
 
   useEffect(() => {
@@ -99,34 +102,34 @@ export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
   const provisional = settings.data.goalsConfirmedAt === null;
   return (
     <View style={{ flex: 1 }}>
-      {deleteError ? (
-        <View style={{ paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[2] }}>
-          <InlineStatus tone="error" message={t('diary.entry.deleteError')} />
-        </View>
-      ) : null}
       <FlatList
         ref={list}
         testID={active ? 'diary-day-list' : undefined}
         data={day.data.meals}
         keyExtractor={(meal) => meal.meal.id}
         ListHeaderComponent={<Overview day={day.data} unit={unit} provisional={provisional} />}
-        renderItem={({ item }) => <MealSection meal={item} unit={unit} date={date} onDelete={removeEntry} />}
+        renderItem={({ item }) => (
+          <MealSection meal={item} unit={unit} date={date} onDelete={removeEntry} onMessage={showToast} />
+        )}
         contentContainerStyle={{ paddingBottom: theme.spacing[6], backgroundColor: theme.colors.surface }}
         style={{ backgroundColor: theme.colors.canvas }}
         keyboardDismissMode="on-drag"
       />
-      {deletedEntry ? (
+      {toast ? (
         <UndoToast
-          message={t('diary.entry.deleted', { name: deletedEntry.note ?? deletedEntry.name })}
-          undoLabel={t('common.undo')}
-          onUndo={undoDelete}
-          onDismiss={() => setDeletedEntry(null)}
-          testID="diary-delete-undo"
+          key={toast.key}
+          message={toast.message}
+          undoLabel={toast.undo ? t('common.undo') : undefined}
+          onUndo={toast.undo ? () => undoDelete(toast.undo!) : undefined}
+          onDismiss={() => setToast((current) => (current?.key === toast.key ? null : current))}
+          testID={toast.undo ? 'diary-delete-undo' : 'diary-toast'}
         />
       ) : null}
     </View>
   );
 }
+
+type Toast = { key: number; message: string; undo?: DiaryMeal['entries'][number] };
 
 function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: EnergyUnit; provisional: boolean }) {
   const { t } = useTranslation();
@@ -231,11 +234,13 @@ function MealSection({
   unit,
   date,
   onDelete,
+  onMessage,
 }: {
   meal: DiaryMeal;
   unit: EnergyUnit;
   date: LocalDate;
-  onDelete: (entry: DiaryMeal['entries'][number]) => void;
+  onDelete: (entry: DiaryMeal['entries'][number]) => Promise<boolean>;
+  onMessage: (message: string) => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -244,17 +249,11 @@ function MealSection({
   const [queuedCopy, setQueuedCopy] = useState<CopyTarget | null>(null);
   const [copyTarget, setCopyTarget] = useState<CopyTarget | null>(null);
   const [copyVisible, setCopyVisible] = useState(false);
-  const [status, setStatus] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
 
   const openEntryMenu = (entry: DiaryMeal['entries'][number]) =>
     setMenuTarget({ kind: 'entry', id: entry.id, name: entry.note ?? entry.name, sourceDate: date });
   return (
     <View testID={`diary-meal-${meal.meal.id}`}>
-      {status ? (
-        <View style={{ paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[2] }}>
-          <InlineStatus tone={status.tone} message={status.message} />
-        </View>
-      ) : null}
       <MealHeader
         name={meal.meal.name}
         energyKcal={meal.totals.energyKcal}
@@ -303,11 +302,11 @@ function MealSection({
           onClose={() => setCopyVisible(false)}
           onCopied={(message) => {
             setCopyTarget(null);
-            setStatus({ tone: 'success', message });
+            onMessage(message);
           }}
           onError={(message) => {
             setCopyTarget(null);
-            setStatus({ tone: 'error', message });
+            onMessage(message);
           }}
         />
       ) : null}

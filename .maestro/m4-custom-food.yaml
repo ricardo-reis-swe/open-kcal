@@ -28,8 +28,8 @@ appId: com.ricardoreis.calorietracker
     visible: New food
     timeout: 5000
 # No hideKeyboard: Android presses Back when no soft keyboard shows, and the iOS number pad has no dismiss key (and
-# Maestro drags don't trigger keyboardDismissMode). With the keypad up, iOS reports fields clipped behind the Save
-# footer as visible, so each field is centered first; the last one is scrolled fully into view (`scroll` starts at
+# Maestro drags don't trigger keyboardDismissMode). With the keypad up, iOS reports fields clipped behind the keypad
+# as visible, so each field is centered first; the last one is scrolled fully into view (`scroll` starts at
 # mid screen, inside the form) before its tap.
 - tapOn:
     id: custom-food-serving
@@ -63,8 +63,8 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: custom-food-fat
 - inputText: '5'
-# Maestro aims at Save's keypad-less position, so dismiss the keypad first: a tap on plain text in the form (the carbs
-# helper) dismisses it (keyboardShouldPersistTaps="handled").
+# Dismiss the keypad before the header Save so the next screen opens without it: a tap on plain text in the form (the
+# carbs helper) dismisses it (keyboardShouldPersistTaps="handled").
 - tapOn: As on EU labels.*
 - waitForAnimationToEnd
 - tapOn:
@@ -112,7 +112,7 @@ appId: com.ricardoreis.calorietracker
 - extendedWaitUntil:
     notVisible: '${output.food}.*'
     timeout: 5000
-# Clean up the custom food itself and exercise the UX-04 swipe confirmation.
+# Clean up the custom food itself: a committed UX-04 swipe deletes immediately (no second tap) and offers Undo.
 - tapOn:
     text: Add food
     index: 1
@@ -127,8 +127,10 @@ appId: com.ricardoreis.calorietracker
     from:
       id: 'food-swipe-.*'
     direction: LEFT
-- tapOn:
-    id: 'food-delete-.*'
+- extendedWaitUntil:
+    visible:
+      id: food-delete-undo
+    timeout: 5000
 # Remote sections list fuzzy matches (food-result-*), so check the deleted food's own row label (name, basis, energy).
 - extendedWaitUntil:
     notVisible: '${output.food}, .*'

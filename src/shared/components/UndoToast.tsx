@@ -8,14 +8,15 @@ import { FocusablePressable } from './FocusablePressable';
 
 export type UndoToastProps = {
   message: string;
-  undoLabel: string;
-  onUndo: () => void;
+  /** Omit both for a plain transient message (e.g. copy confirmation or a failure). */
+  undoLabel?: string;
+  onUndo?: () => void;
   onDismiss: () => void;
   durationMs?: number;
   testID?: string;
 };
 
-/** Temporary bottom snackbar for immediately committed, reversible actions (DS-10). */
+/** Temporary bottom snackbar (DS-10): Undo after an immediately committed delete, or a result that isn't visible. */
 export function UndoToast({ message, undoLabel, onUndo, onDismiss, durationMs = 5_000, testID }: UndoToastProps) {
   const theme = useTheme();
   const dismissRef = useRef(onDismiss);
@@ -40,7 +41,8 @@ export function UndoToast({ message, undoLabel, onUndo, onDismiss, durationMs = 
           bottom: theme.spacing[4],
           minHeight: theme.touchMin,
           paddingLeft: theme.spacing[4],
-          paddingRight: theme.spacing[1],
+          paddingRight: onUndo ? theme.spacing[1] : theme.spacing[4],
+          paddingVertical: onUndo ? 0 : theme.spacing[2],
           borderRadius: theme.radii.medium,
           backgroundColor: theme.colors.textPrimary,
         },
@@ -50,24 +52,26 @@ export function UndoToast({ message, undoLabel, onUndo, onDismiss, durationMs = 
       <AppText variant="compact" style={{ flex: 1, color: theme.colors.canvas }}>
         {message}
       </AppText>
-      <FocusablePressable
-        accessibilityRole="button"
-        accessibilityLabel={undoLabel}
-        onPress={onUndo}
-        style={({ pressed }) => [
-          styles.action,
-          {
-            minHeight: theme.touchMin,
-            paddingHorizontal: theme.spacing[3],
-            borderRadius: theme.radii.small,
-            backgroundColor: pressed ? 'rgba(255,255,255,0.14)' : 'transparent',
-          },
-        ]}
-      >
-        <AppText variant="compactStrong" style={{ color: theme.colors.canvas }}>
-          {undoLabel}
-        </AppText>
-      </FocusablePressable>
+      {onUndo && undoLabel ? (
+        <FocusablePressable
+          accessibilityRole="button"
+          accessibilityLabel={undoLabel}
+          onPress={onUndo}
+          style={({ pressed }) => [
+            styles.action,
+            {
+              minHeight: theme.touchMin,
+              paddingHorizontal: theme.spacing[3],
+              borderRadius: theme.radii.small,
+              backgroundColor: pressed ? 'rgba(255,255,255,0.14)' : 'transparent',
+            },
+          ]}
+        >
+          <AppText variant="compactStrong" style={{ color: theme.colors.canvas }}>
+            {undoLabel}
+          </AppText>
+        </FocusablePressable>
+      ) : null}
     </View>
   );
 }

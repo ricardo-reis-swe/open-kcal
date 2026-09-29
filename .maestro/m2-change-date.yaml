@@ -1,27 +1,28 @@
-# ARCH-18 / ROAD-02 M2: swipe to another date and back to Today (UX-02, NAV-05, DS-11 button alternative).
+# ARCH-18 / ROAD-02 M2: overview chevrons change the date and Today returns (UX-02, NAV-05, DS-11 strip buttons).
+# A horizontal swipe on the day content MUST NOT change the day (UX-02).
 appId: com.ricardoreis.calorietracker
 ---
 - runFlow: subflows/launch.yaml
 - assertVisible: Showing Today
-- swipe: # a full-width fling; the day list sits at 60% height
+- swipe: # a full-width fling on the day content; the day list sits at 60% height
     start: 90%, 60%
     end: 10%, 60%
     duration: 250
+- assertVisible: Showing Today
+- assertNotVisible: Go to today
+- tapOn:
+    id: diary-overview-next
 - extendedWaitUntil:
     visible: Showing Tomorrow
     timeout: 5000
 - assertVisible: Go to today
-- swipe:
-    start: 10%, 60%
-    end: 90%, 60%
-    duration: 250
+- tapOn:
+    id: diary-overview-previous
 - extendedWaitUntil:
     visible: Showing Today
     timeout: 5000
-- swipe:
-    start: 10%, 60%
-    end: 90%, 60%
-    duration: 250
+- tapOn:
+    id: diary-overview-previous
 - extendedWaitUntil:
     visible: Showing Yesterday
     timeout: 5000

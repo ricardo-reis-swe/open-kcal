@@ -129,7 +129,9 @@ export function invalidGoalFields(targets: NutritionTargets): GoalFieldKey[] {
       ) ||
       Math.abs(percentages.reduce<number>((sum, value) => sum + (value ?? 0), 0) - 100) > 1e-7
     ) {
-      bad.push('carbohydrateTargetG', 'proteinTargetG', 'fatTargetG');
+      for (const key of ['carbohydrateTargetG', 'proteinTargetG', 'fatTargetG'] as const) {
+        if (!bad.includes(key)) bad.push(key);
+      }
     }
   }
   return bad;

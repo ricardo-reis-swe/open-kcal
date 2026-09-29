@@ -18,7 +18,7 @@ appId: com.ricardoreis.calorietracker
 - tapOn:
     id: weight-entry-input
 - inputText: ${output.w}
-- tapOn: # avoidKeyboard keeps Save above the keypad
+- tapOn: # the sheet-header Save stays visible with the keypad open (UX-00)
     id: weight-entry-save
 - extendedWaitUntil:
     notVisible:

@@ -155,6 +155,7 @@ Indexed, bounded queries · totals aggregated in SQL · debounce remote search +
 - Add one only if it: meets an approved requirement or a demonstrated need; supports the Expo SDK on both platforms; is maintained and documented; needs no account/backend/paid service for core behavior; has acceptable size/native/privacy/maintenance cost; can sit behind an internal interface at domain/infra boundaries.
 - Prefer Expo-maintained packages. One router, one DB, one form lib, one validation lib; no global store until justified; no second persistence cache.
 - Every dependency must satisfy a recorded product or engineering need. A major one needs a short architecture note: problem, choice, rejected options, migration cost.
+- `@legendapp/list` (JS only, pinned) — `ServingRuler` only. Problem: the DS-09 ruler needs native scroll momentum and snap over a long tick range without mounting every tick (ARCH-19). Choice: a horizontal recycled list with fixed item size. Rejected: `PanResponder` translation (no momentum, JS-thread drag), `FlatList` (no recycling; blanking on fast flings). Migration cost: one component; swapping back to `FlatList` keeps the same props.
 
 ## ARCH-22 Localization
 - `expo-localization` (device locale/region) + `i18next` / `react-i18next`. Languages: `en` (fallback) and `pt-PT` (SCOPE-12). Add an `Intl.PluralRules` polyfill if the Hermes build lacks it.

@@ -1,5 +1,7 @@
 # M7 Meal Detail + copy — independent review
 
+> **Superseded 2026-09-28** (commit `d786ee8`, user request): Meal Detail (UX-03) was removed and copy moved to the Diary `…` menus with a date-then-meal Copy Sheet (UX-02, UX-12). This review describes the original M7 build and is kept as history.
+
 Reviewed HEAD: `9060795b76f7322ebfaee271ba8915f7efbc7698`
 Commit range: `6c78c1a..HEAD` (bc3c5f5, e69e986, 9060795)
 

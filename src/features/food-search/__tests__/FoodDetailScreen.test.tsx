@@ -158,6 +158,8 @@ describe('UX-05: Food Detail / Add Entry', () => {
       nutrients: { energyKcal: 210, carbohydrateG: 30, proteinG: 6, fatG: 7 },
       note: null,
       sortOrder: 0,
+      createdAt: '2026-09-25T08:00:00.000Z',
+      updatedAt: '2026-09-25T08:00:00.000Z',
     };
     mockEditFoodEntry.mockResolvedValue(mockEntry);
     mockDeleteEntry.mockResolvedValue(undefined);

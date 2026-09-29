@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { i18next } from '@/shared/i18n/i18n';
@@ -91,6 +91,14 @@ describe('DS-10: UndoToast', () => {
     expect(screen.getByText('Eggs deleted')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Undo' }));
     expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it('without an action it is a plain message that dismisses itself', async () => {
+    const onDismiss = jest.fn();
+    await renderWithProviders(<UndoToast message="Copied 1 item" onDismiss={onDismiss} durationMs={10} />);
+    expect(screen.getByText('Copied 1 item')).toBeOnTheScreen();
+    expect(screen.queryByRole('button')).toBeNull();
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledTimes(1));
   });
 });
 
