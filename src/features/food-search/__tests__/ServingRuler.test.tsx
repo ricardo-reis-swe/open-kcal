@@ -1,10 +1,18 @@
 import { useState } from 'react';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import type { FoodServing } from '@/data/db/repositories/foodsRepository';
 import { renderWithProviders } from '@/shared/testing/render';
 
-import { RULER_DECELERATION_RATE, rulerIndexForOffset, ServingRuler } from '../components/ServingRuler';
+import { RULER_DECELERATION_RATE, ServingRuler } from '../components/ServingRuler';
+
+// Stand-in exposing the props ServingRuler passes; the real picker renders in FoodDetailScreen tests.
+jest.mock('react-native-legend-ruler-picker', () => {
+  const { createElement } = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  return { RulerPicker: (props: object) => createElement(View, { ...props, testID: 'serving-ruler-picker' }) };
+});
+const picker = () => screen.getByTestId('serving-ruler-picker');
 
 const egg: FoodServing = {
   id: 'egg',
@@ -17,7 +25,7 @@ const egg: FoodServing = {
 };
 
 describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
-  it('tracks multi-step drags from the gesture start without compounding parent updates', async () => {
+  it('maps picker step indexes to snapped quantities without compounding parent updates', async () => {
     function ControlledRuler() {
       const [quantity, setQuantity] = useState(2);
       return (
@@ -32,20 +40,35 @@ describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
       );
     }
     await renderWithProviders(<ControlledRuler />);
-    const list = screen.getByTestId('serving-ruler-list');
-    list.props.onScrollBeginDrag({ nativeEvent: { contentOffset: { x: 126, y: 0 } } });
-    list.props.onScroll({ nativeEvent: { contentOffset: { x: 234, y: 0 } } });
+    // Index 0 = one step (0.25 egg); index 13 = 3.5 egg.
+    expect(picker().props.initialValue).toBe(7);
+    await act(async () => picker().props.onValueChange('13'));
     await waitFor(() => expect(screen.getByTestId('serving-ruler-value')).toHaveTextContent(/3\.50\s*egg/));
+    expect(picker().props.initialValue).toBe(7);
   });
 
-  it('changes value only as a tick crosses the fixed center pointer', () => {
-    expect(rulerIndexForOffset(143.9, 126, 100)).toBe(7);
-    expect(rulerIndexForOffset(144, 143.9, 100)).toBe(8);
-    expect(rulerIndexForOffset(126.1, 144, 100)).toBe(8);
-    expect(rulerIndexForOffset(126, 126.1, 100)).toBe(7);
+  it('remounts the picker at the new index when the value is set from outside the ruler', async () => {
+    let setQuantity: (quantity: number) => void = () => undefined;
+    function ExternalRuler() {
+      const [quantity, set] = useState(2);
+      setQuantity = set;
+      return (
+        <ServingRuler
+          quantity={quantity}
+          serving={egg}
+          energyKcal={quantity * 78}
+          energyUnit="kcal"
+          onChange={set}
+          onOpenNumeric={jest.fn()}
+        />
+      );
+    }
+    await renderWithProviders(<ExternalRuler />);
+    await act(async () => setQuantity(5));
+    await waitFor(() => expect(picker().props.initialValue).toBe(19));
   });
 
-  it('uses native fast deceleration and exact tick snapping', async () => {
+  it('uses the tuned fling deceleration', async () => {
     await renderWithProviders(
       <ServingRuler
         quantity={2}
@@ -56,8 +79,7 @@ describe('UX-05 / DS-09 / DS-11: ServingRuler', () => {
         onOpenNumeric={jest.fn()}
       />,
     );
-    expect(screen.getByTestId('serving-ruler-list').props.decelerationRate).toBe(RULER_DECELERATION_RATE);
-    expect(screen.getByTestId('serving-ruler-list').props.snapToInterval).toBe(18);
+    expect(picker().props.decelerationRate).toBe(RULER_DECELERATION_RATE);
   });
 
   it('is adjustable, announces serving nutrition, and moves exactly one step', async () => {
