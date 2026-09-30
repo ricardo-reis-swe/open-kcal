@@ -2,6 +2,7 @@ import { mapOpenFoodFactsProduct, mapOpenFoodFactsSearch } from '../mapper';
 
 import capturedProduct from '../__fixtures__/product-5601009983179.json';
 import capturedSearch from '../__fixtures__/search-iogurte-grego.json';
+import syntheticCatalog from '../__fixtures__/synthetic-product-catalog.json';
 
 describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
   const product = {
@@ -138,5 +139,28 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
         nutriments: { 'energy-kcal_100g': 901 },
       }),
     ).toBeNull();
+  });
+
+  it('PROV-14: maps catalog nutrients from g to catalog units, with serving fallback, bounds and alcohol ignored', () => {
+    // Explicit expected output (PROV-13). Sodium is left to storage (DATA-20 derives it from salt).
+    expect(mapOpenFoodFactsProduct(syntheticCatalog.product)?.input.nutrients).toEqual({
+      energyKcal: 380,
+      proteinG: 10,
+      carbohydrateG: 60,
+      fatG: 8,
+      extra: {
+        fibre: 7.5,
+        sugars: 22,
+        saturated_fat: 1.2,
+        salt: 0.5,
+        iron: expect.closeTo(12, 10),
+        calcium: expect.closeTo(400, 10),
+        vitamin_d: expect.closeTo(4.2, 10),
+        vitamin_c: expect.closeTo(15, 10), // 0.006 g per 40 g serving
+        folate: expect.closeTo(200, 10), // vitamin-b9 before folates
+        caffeine: 0,
+      },
+    });
+    // Not present: polyunsaturated fat 140 g (> 100 g), alcohol_100g (% vol), the zinc "<" modifier.
   });
 });

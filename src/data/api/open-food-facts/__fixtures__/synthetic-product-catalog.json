@@ -1,0 +1,31 @@
+{
+  "status": 1,
+  "product": {
+    "code": "0000000000001",
+    "product_name": "Synthetic cereal",
+    "brands": "Example",
+    "serving_quantity": 40,
+    "serving_size": "40 g",
+    "nutrition_data_per": "100g",
+    "nutriments": {
+      "energy-kcal_100g": 380,
+      "proteins_100g": 10,
+      "carbohydrates_100g": 60,
+      "fat_100g": 8,
+      "fiber_100g": 7.5,
+      "sugars_100g": "22",
+      "saturated-fat_100g": 1.2,
+      "salt_100g": 0.5,
+      "iron_100g": 0.012,
+      "calcium_100g": 0.4,
+      "vitamin-d_100g": 0.0000042,
+      "vitamin-b9_100g": 0.0002,
+      "folates_100g": 0.9,
+      "vitamin-c_serving": 0.006,
+      "polyunsaturated-fat_100g": 140,
+      "caffeine_100g": 0,
+      "alcohol_100g": 5,
+      "zinc_modifier": "<"
+    }
+  }
+}

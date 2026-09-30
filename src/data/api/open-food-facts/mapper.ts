@@ -1,11 +1,50 @@
-// Open Food Facts normalization (PROV-05/06/07). Payloads stay inside the adapter.
+// Open Food Facts normalization (PROV-05/06/07/14). Payloads stay inside the adapter.
 import { z } from 'zod';
 
 import { schemaError } from '@/data/api/diagnostics';
 import type { FoodInput, ServingInput } from '@/data/db/repositories/foodsRepository';
+import {
+  catalogNutrient,
+  convertNutrientUnit,
+  type NutrientAmounts,
+  type NutrientId,
+} from '@/domain/nutrition/nutrientCatalog';
 import { ProviderResponseError } from '@/shared/errors';
 
-export const PARSER_VERSION = 1;
+/** PROV-09: bump on a mapping change so cached foods refresh on their next open (2: PROV-14 nutrients). */
+export const PARSER_VERSION = 2;
+
+/** PROV-14: `nutriments` keys (reported in g) per catalog id, first present wins. `alcohol_*` is ignored. */
+const OFF_CATALOG: Record<NutrientId, readonly string[]> = {
+  fibre: ['fiber'],
+  sugars: ['sugars'],
+  added_sugars: ['added-sugars'],
+  saturated_fat: ['saturated-fat'],
+  monounsaturated_fat: ['monounsaturated-fat'],
+  polyunsaturated_fat: ['polyunsaturated-fat'],
+  trans_fat: ['trans-fat'],
+  cholesterol: ['cholesterol'],
+  salt: ['salt'],
+  sodium: ['sodium'],
+  potassium: ['potassium'],
+  calcium: ['calcium'],
+  iron: ['iron'],
+  magnesium: ['magnesium'],
+  phosphorus: ['phosphorus'],
+  zinc: ['zinc'],
+  vitamin_a: ['vitamin-a'],
+  vitamin_c: ['vitamin-c'],
+  vitamin_d: ['vitamin-d'],
+  vitamin_e: ['vitamin-e'],
+  vitamin_k: ['vitamin-k'],
+  thiamin: ['vitamin-b1'],
+  riboflavin: ['vitamin-b2'],
+  niacin: ['vitamin-pp'],
+  vitamin_b6: ['vitamin-b6'],
+  vitamin_b12: ['vitamin-b12'],
+  folate: ['vitamin-b9', 'folates'],
+  caffeine: ['caffeine'],
+};
 
 const numberLike = z.union([z.number(), z.string()]).transform((value, ctx) => {
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -165,6 +204,16 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
       isDefault: true,
     });
   }
+  // PROV-14: per 100 g/ml in g (bounded like a macro: > 100 g is invalid), serving fallback, then catalog units.
+  const extra: NutrientAmounts = {};
+  for (const [id, keys] of Object.entries(OFF_CATALOG) as [NutrientId, readonly string[]][]) {
+    for (const key of keys) {
+      const grams = nutrient(n, `${key}_100g`) ?? fromServing(key);
+      if (grams === null) continue;
+      extra[id] = convertNutrientUnit(grams, 'g', catalogNutrient(id).unit);
+      break;
+    }
+  }
   const hint = hintedServing(product, unit);
   if (hint && !servings.some((candidate) => candidate.label.toLowerCase() === hint.label.toLowerCase()))
     servings.splice(serving ? 1 : 0, 0, hint);
@@ -175,7 +224,13 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
       brand: brand(product.brands),
       basisQuantity: 100,
       basisUnit: unit,
-      nutrients: { energyKcal: resolvedEnergy, carbohydrateG: carbohydrate, proteinG: protein, fatG: fat },
+      nutrients: {
+        energyKcal: resolvedEnergy,
+        carbohydrateG: carbohydrate,
+        proteinG: protein,
+        fatG: fat,
+        ...(Object.keys(extra).length > 0 ? { extra } : {}),
+      },
       servings,
     },
   };

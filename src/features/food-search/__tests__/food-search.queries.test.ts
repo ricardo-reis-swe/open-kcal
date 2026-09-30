@@ -1,6 +1,7 @@
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
 import { createTestServices } from '@/shared/testing/services';
 
+import { PARSER_VERSION as OFF_PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
 import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
 
 import { loadRecentFoods, refreshSavedFood } from '../food-search.queries';
@@ -83,6 +84,19 @@ describe('PROV-09: saved-food refresh', () => {
     const refreshed = await services.foods.get(saved.id);
     expect(refreshed.nutrients.extra).toEqual({ iron: 2.7 });
     expect(await services.foods.cacheMetadata(saved.id)).toMatchObject({ schemaVersion: USDA_PARSER_VERSION });
+  });
+
+  it('refreshes an old-parser OFF food too', async () => {
+    const { services } = await createTestServices();
+    const saved = await services.foods.upsertExternal('open_food_facts', '123', input(), {
+      ...cached,
+      expiresAt: '2027-01-01T00:00:00.000Z',
+      schemaVersion: 1,
+    });
+    jest.spyOn(services.openFoodFacts, 'getFood').mockResolvedValue({ externalId: '123', input: input({ salt: 1 }) });
+    await refreshSavedFood(services, saved);
+    expect((await services.foods.get(saved.id)).nutrients.extra).toEqual({ salt: 1, sodium: 400 });
+    expect(await services.foods.cacheMetadata(saved.id)).toMatchObject({ schemaVersion: OFF_PARSER_VERSION });
   });
 
   it('leaves fresh current-parser and custom foods alone', async () => {
