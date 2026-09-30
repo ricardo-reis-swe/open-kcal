@@ -4,6 +4,7 @@ import { useTheme } from '@/shared/theme';
 
 import { AppText } from './AppText';
 import { FocusablePressable } from './FocusablePressable';
+import { useOverlayPresence } from './overlayPresence';
 
 export type ConfirmationDialogProps = {
   visible: boolean;
@@ -33,6 +34,7 @@ export function ConfirmationDialog({
   testID,
 }: ConfirmationDialogProps) {
   const theme = useTheme();
+  useOverlayPresence(visible);
   if (!visible) return null;
   const actionStyle = ({ pressed }: { pressed: boolean }) => [
     styles.action,

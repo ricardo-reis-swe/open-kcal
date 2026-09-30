@@ -17,6 +17,7 @@ import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 import { useTheme } from '@/shared/theme';
 
 import { FocusablePressable } from './FocusablePressable';
+import { useOverlayPresence } from './overlayPresence';
 
 export type BottomSheetProps = {
   visible: boolean;
@@ -69,6 +70,7 @@ export function BottomSheet({
   testID,
 }: BottomSheetProps) {
   const theme = useTheme();
+  useOverlayPresence(visible);
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const reduceMotion = useReducedMotion();

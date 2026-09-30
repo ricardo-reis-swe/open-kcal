@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
-import { AppBar, PressableIcon } from '@/shared/components';
-import { addDays } from '@/shared/dates';
+import { useServices } from '@/bootstrap/services';
+import { AppBar, isOverlayOpen, PressableIcon } from '@/shared/components';
+import { addDays, todayLocal } from '@/shared/dates';
 import { DatePicker } from '@/shared/navigation/DatePicker';
+import { onWidgetTodayRequest } from '@/shared/navigation/widgetLink';
 import { useTheme } from '@/shared/theme';
 
 import { DiaryDateStrip } from '../components/DiaryDateStrip';
@@ -18,6 +20,7 @@ export function DiaryScreen() {
   const theme = useTheme();
   const { date, today, setDate } = useDiaryDate();
   const navigation = useNavigation();
+  const { clock } = useServices();
   // NAV-02: the Diary tab tapped while already at the Diary root scrolls the day to the top (deeper, it pops).
   const [scrollToTop, setScrollToTop] = useState(0);
   const [pickingDate, setPickingDate] = useState(false);
@@ -31,6 +34,15 @@ export function DiaryScreen() {
       if (navigation.isFocused()) setScrollToTop((n) => n + 1);
     });
   }, [navigation]);
+  // NAV-10: a widget tap while the app runs shows today, as the Today action, only at the Diary root with nothing on
+  // top (a sheet, dialog or the date picker); anywhere else the app just comes to the front unchanged.
+  useEffect(
+    () =>
+      onWidgetTodayRequest(() => {
+        if (navigation.isFocused() && !pickingDate && !isOverlayOpen()) setDate(todayLocal(clock));
+      }),
+    [navigation, pickingDate, clock, setDate],
+  );
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
       <AppBar

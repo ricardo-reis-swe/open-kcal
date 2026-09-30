@@ -3,6 +3,7 @@ export { AppIcon, type AppIconProps, type IconName, type IconSize } from './AppI
 export { AppText, type AppTextProps, type TextVariant } from './AppText';
 export { BottomSheet, type BottomSheetProps } from './BottomSheet';
 export { ConfirmationDialog, type ConfirmationDialogProps } from './ConfirmationDialog';
+export { isOverlayOpen } from './overlayPresence';
 export { FocusablePressable } from './FocusablePressable';
 export { FormField, type FormFieldProps } from './FormField';
 export { HeaderAction, type HeaderActionProps } from './HeaderAction';
