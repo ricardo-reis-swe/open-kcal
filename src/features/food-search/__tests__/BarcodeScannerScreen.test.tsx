@@ -58,9 +58,12 @@ describe('UX-24 Barcode Scanner', () => {
     expect(cameraMock.requests).toBe(0);
   });
 
-  it('without a camera, shows Camera unavailable and the manual field; an invalid code is a field error', async () => {
-    cameraMock.available = false;
+  it('a camera that fails to mount shows Camera unavailable and the manual field; an invalid code is a field error', async () => {
     const { off } = await setup();
+    // The camera is shown first (native has no availability query); a mount error switches to unavailable.
+    await screen.findByTestId('barcode-camera', { includeHiddenElements: true });
+    expect(screen.getByText('Point the camera at a barcode.')).toBeOnTheScreen();
+    await fireEvent(camera(), 'mountError', { message: 'Camera is not available' });
     expect(await screen.findByText('Camera unavailable.')).toBeOnTheScreen();
     await fireEvent.changeText(screen.getByTestId('barcode-manual-input'), '1234');
     await fireEvent.press(screen.getByTestId('barcode-look-up'));
@@ -125,8 +128,9 @@ describe('UX-24 Barcode Scanner', () => {
   });
 
   it('renders in pt-PT', async () => {
-    cameraMock.available = false;
     await setup({ language: 'pt-PT' });
+    await screen.findByTestId('barcode-camera', { includeHiddenElements: true });
+    await fireEvent(camera(), 'mountError', { message: 'Camera is not available' });
     expect(await screen.findByText('Câmara indisponível.')).toBeOnTheScreen();
     expect(screen.getByRole('header', { name: 'Ler código de barras' })).toBeOnTheScreen();
   });

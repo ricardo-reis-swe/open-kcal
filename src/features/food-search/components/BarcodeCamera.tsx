@@ -24,9 +24,16 @@ type Props = {
 /** Camera permission state + request (the system prompt), for UX-24's permission states. */
 export const useCameraPermission = useCameraPermissions;
 
-/** `false` on devices without a usable camera (e.g. the iOS simulator) → UX-24 camera unavailable. */
-export function isCameraAvailable(): Promise<boolean> {
-  return CameraView.isAvailableAsync().catch(() => false);
+/**
+ * `false` → UX-24 camera unavailable. `isAvailableAsync` exists on web only and throws on iOS/Android (found on the
+ * Zenfone, 2026-09-30), so native assumes a camera; a missing one reports through `onMountError` instead.
+ */
+export async function isCameraAvailable(): Promise<boolean> {
+  try {
+    return await CameraView.isAvailableAsync();
+  } catch {
+    return true;
+  }
 }
 
 export function BarcodeCamera({ scanning, torch, onCode, onUnavailable }: Props) {

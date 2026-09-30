@@ -12,12 +12,10 @@ export const BLOCKED: Permission = { granted: false, canAskAgain: false, status:
 export const cameraMock = {
   permission: GRANTED as Permission | null,
   afterRequest: GRANTED as Permission,
-  available: true,
   requests: 0,
   reset() {
     this.permission = GRANTED;
     this.afterRequest = GRANTED;
-    this.available = true;
     this.requests = 0;
   },
 };
@@ -25,7 +23,10 @@ export const cameraMock = {
 export function CameraView(props: ViewProps & Record<string, unknown>) {
   return <View {...props} />;
 }
-CameraView.isAvailableAsync = async () => cameraMock.available;
+// Like native expo-camera, where only web implements `isAvailableAsync`: tests without a camera fire `mountError`.
+CameraView.isAvailableAsync = async (): Promise<boolean> => {
+  throw new Error('The method or property expo-camera.isAvailableAsync is not available on android');
+};
 
 export function useCameraPermissions() {
   const [permission, setPermission] = useState(cameraMock.permission);
