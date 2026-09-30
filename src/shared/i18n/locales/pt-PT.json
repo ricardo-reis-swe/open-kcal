@@ -475,6 +475,8 @@
     "partial": "Alguns registos não o indicam."
   },
   "widget": {
-    "unavailable": "Abrir o Calorie Tracker"
+    "unavailable": "Abrir o Calorie Tracker",
+    "pickerLabel": "Calorias restantes",
+    "pickerDescription": "Calorias restantes de hoje"
   }
 }

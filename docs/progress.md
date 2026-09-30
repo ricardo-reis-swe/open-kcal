@@ -30,7 +30,7 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 
 ## Android widget (user-requested, 2026-09-30)
 
-Status: **in progress** · Spec: SCOPE-01, UX-22, NAV-10, DATA-22, ARCH-23, DS-14 · In-session; the T2 spike runs on the user's Zenfone (user decision 2026-09-30), otherwise gate on `npm run check`.
+Status: **awaiting user device check** (agent work done) · Spec: SCOPE-01, UX-22, NAV-10, DATA-22, ARCH-23, DS-14 · In-session; the T2 spike runs on the user's Zenfone (user decision 2026-09-30), otherwise gate on `npm run check`.
 
 ### Tasks
 
@@ -39,8 +39,8 @@ Status: **in progress** · Spec: SCOPE-01, UX-22, NAV-10, DATA-22, ARCH-23, DS-1
 - [x] T3 View model + task handler + i18n (en, pt-PT) + tests: `caloriesLeftViewModel.ts` (ring labels reused), `readWidgetDay.ts` (Diary `loadDay` + settings), `openWidgetDatabase()` (pragmas only, `null` unless fully migrated), `CaloriesLeftWidget.tsx` (DS-14), global library mock `androidWidgetMock.ts`; tests `caloriesLeftViewModel.test.ts`, `widgetTaskHandler.test.ts`.
 - [x] T4 `refreshWidget` + global `MutationCache.onSuccess` + refresh after startup and after the dev seed + tests (`refreshWidget.test.tsx`, `query-client.test.ts`). Widget connection made read-only (ARCH-23). Zenfone 2026-09-30: widget matched the Diary (1,354 kcal left), dropped to 1,254 on a 100 kcal Quick Calories save and returned on delete.
 - [x] T5 NAV-10 deep link: `shared/navigation/widgetLink.ts`, `+native-intent.tsx` (cold → `/diary`, warm → keep screen + ask the Diary root), `DiaryScreen` sets today only when focused with no overlay (`shared/components/overlayPresence.ts`, counted by `BottomSheet`/`ConfirmationDialog`, plus the date picker). Tests `widgetLink.test.ts`, `widget-today.nav.test.tsx`. Zenfone 2026-09-30: warm tap at the Diary root Tomorrow → Today; from Profile stays on Profile, Diary keeps Tomorrow. Cold tap in the **dev build** opens the Expo dev launcher (dev-client behavior); cold start in a release build is the user's device check.
-- [ ] T6 Widget JSX (DS-14) + picker preview image.
-- [ ] Device check: the user's.
+- [x] T6 Widget JSX (DS-14, landed in T3) + picker preview `assets/widget-calories-left-preview.png` (Roboto, 1,731 kcal left) + en/pt-PT picker label and description (`plugins/withWidgetStrings.js`; APK resources checked with `aapt2`). Zenfone reinstall: the placed widget kept working (1,354 kcal left).
+- [ ] Device check: the user's. Open: cold-start tap in a release build (the dev build opens the Expo dev launcher), the widget after local midnight (≤ 30 min, DATA-22), pt-PT picker text and widget on a pt-PT phone, the picker preview.
 
 ## Nutrient details (user-requested, 2026-09-30)
 

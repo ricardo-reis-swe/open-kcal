@@ -170,7 +170,7 @@ Check the current versions: Expo [dev builds](https://docs.expo.dev/develop/deve
 
 ## ARCH-23 Android widget (UX-22)
 - Library: `react-native-android-widget` (pinned, ARCH-20) via its config plugin in `app.json`; no hand edits to `android/` (ARCH-01 CNG).
-- Plugin config: one widget `CaloriesLeft`, 2×1 target cells, `resizeMode: horizontal`, `updatePeriodMillis: 1800000`, localized label + description, preview image in `assets/`.
+- Plugin config: one widget `CaloriesLeft`, 2×1 target cells, `resizeMode: horizontal`, `updatePeriodMillis: 1800000`, label + description as `@string/` resources written in en + pt-PT by `plugins/withWidgetStrings.js` from the locale files (`widget.pickerLabel`, `widget.pickerDescription`), preview image `assets/widget-calories-left-preview.png`.
 - Code in `src/features/widget/`: `CaloriesLeftWidget.tsx` (widget JSX only), `caloriesLeftViewModel.ts` (pure: goal + consumed + unit + locale → display state), `widgetTaskHandler.ts`, `refreshWidget.ts`.
 - Entry: `package.json` `main` → `index.ts`, which registers the task handler then imports `expo-router/entry`. **Why:** the headless task must be registered before the app root, even when no UI starts.
 - Task handler (background JS, no UI):

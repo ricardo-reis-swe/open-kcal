@@ -475,6 +475,8 @@
     "partial": "Some entries don't list it."
   },
   "widget": {
-    "unavailable": "Open Calorie Tracker"
+    "unavailable": "Open Calorie Tracker",
+    "pickerLabel": "Calories left",
+    "pickerDescription": "Today's calories left"
   }
 }

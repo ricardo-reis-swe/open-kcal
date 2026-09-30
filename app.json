@@ -45,18 +45,20 @@
           "widgets": [
             {
               "name": "CaloriesLeft",
-              "label": "Calories left",
-              "description": "Today's calories left",
+              "label": "@string/widget_calories_left_label",
+              "description": "@string/widget_calories_left_description",
               "minWidth": "110dp",
               "minHeight": "40dp",
               "targetCellWidth": 2,
               "targetCellHeight": 1,
               "resizeMode": "horizontal",
-              "updatePeriodMillis": 1800000
+              "updatePeriodMillis": 1800000,
+              "previewImage": "./assets/widget-calories-left-preview.png"
             }
           ]
         }
-      ]
+      ],
+      "./plugins/withWidgetStrings"
     ],
     "experiments": {
       "typedRoutes": true
