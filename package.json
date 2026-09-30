@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "android:usb": "REACT_NATIVE_PACKAGER_HOSTNAME=localhost expo run:android",
+    "android:phone": "expo run:android --variant release --device $ANDROID_DEVICE_NAME --no-bundler",
     "lint": "expo lint --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "jest",
