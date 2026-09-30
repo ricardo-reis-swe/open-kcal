@@ -76,7 +76,7 @@ describe('PROV-13: captured USDA fixtures', () => {
           brand: null,
           basisQuantity: 100,
           basisUnit: 'g',
-          nutrients: { energyKcal: 446, proteinG: 7.6, carbohydrateG: 68.33, fatG: 13.77 },
+          nutrients: { energyKcal: 446, proteinG: 7.6, carbohydrateG: 68.33, fatG: 13.77, extra: { fibre: 3.4 } },
           servings: [
             { label: 'cracker', quantity: 1, unit: 'cracker', basisMultiplier: 0.11, isDefault: true },
             ...basisServings,
@@ -94,7 +94,7 @@ describe('PROV-13: captured USDA fixtures', () => {
           brand: null,
           basisQuantity: 100,
           basisUnit: 'g',
-          nutrients: { energyKcal: 31, proteinG: 0.21, carbohydrateG: 2.92, fatG: 2.08 },
+          nutrients: { energyKcal: 31, proteinG: 0.21, carbohydrateG: 2.92, fatG: 2.08, extra: { fibre: 0 } },
           servings: [
             { label: 'cup', quantity: 1, unit: 'cup', basisMultiplier: 2.44, isDefault: true },
             { label: 'fl oz', quantity: 1, unit: 'fl oz', basisMultiplier: 0.305 },
@@ -113,7 +113,7 @@ describe('PROV-13: captured USDA fixtures', () => {
           brand: 'Ocean spray',
           basisQuantity: 100,
           basisUnit: 'g',
-          nutrients: { energyKcal: 467, proteinG: 3.33, carbohydrateG: 66.7, fatG: 20 },
+          nutrients: { energyKcal: 467, proteinG: 3.33, carbohydrateG: 66.7, fatG: 20, extra: { fibre: 3.3 } },
           servings: [
             { label: 'serving', quantity: 1, unit: 'serving', basisMultiplier: 0.3, isDefault: true },
             { label: 'Tbsp', quantity: 1, unit: 'Tbsp', basisMultiplier: 0.15 },

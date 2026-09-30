@@ -1,0 +1,27 @@
+{
+  "fdcId": 900001,
+  "description": "Synthetic catalog food",
+  "dataType": "Foundation",
+  "foodNutrients": [
+    { "nutrient": { "number": "208", "unitName": "kcal" }, "amount": 200 },
+    { "nutrient": { "number": "203", "unitName": "g" }, "amount": 10 },
+    { "nutrient": { "number": "204", "unitName": "g" }, "amount": 5 },
+    { "nutrient": { "number": "205", "unitName": "g" }, "amount": 30 },
+    { "nutrient": { "number": "291", "unitName": "g" }, "amount": 4 },
+    { "nutrient": { "number": "269.3", "unitName": "g" }, "amount": 12 },
+    { "nutrient": { "number": "606", "unitName": "g" }, "amount": 1.5 },
+    { "nutrient": { "number": "601", "unitName": "mg" }, "amount": 20 },
+    { "nutrient": { "number": "307", "unitName": "mg" }, "amount": 400 },
+    { "nutrient": { "number": "303", "unitName": "mg" }, "amount": 2.5 },
+    { "nutrient": { "number": "309", "unitName": "g" }, "amount": 0.003 },
+    { "nutrient": { "number": "320", "unitName": "IU" }, "amount": 500 },
+    { "nutrient": { "number": "401", "unitName": "mg" }, "amount": 30 },
+    { "nutrient": { "number": "324", "unitName": "IU" }, "amount": 80 },
+    { "nutrient": { "number": "418", "unitName": "µg" }, "amount": 1.2 },
+    { "nutrient": { "number": "417", "unitName": "UG" }, "amount": 60 },
+    { "nutrient": { "number": "262", "unitName": "mg" }, "amount": 0 },
+    { "nutrient": { "number": "646", "unitName": "g" }, "amount": 150 },
+    { "nutrient": { "number": "645", "unitName": "g" } }
+  ],
+  "foodPortions": []
+}

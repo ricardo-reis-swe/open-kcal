@@ -128,23 +128,31 @@ export function useSavedFoodSearch(query: string, pages = 1, visible = true) {
   });
 }
 
-/** PROV-09: expired saved OFF foods open immediately; a successful refresh is only visible on a later open. */
-export async function refreshSavedOpenFoodFacts(services: AppServices, food: Food): Promise<void> {
-  if (food.source !== 'open_food_facts' || !food.externalId) return;
+/**
+ * PROV-09: an expired or old-parser saved food (USDA or OFF) opens immediately; a successful background refresh is
+ * only visible on a later open. A parser bump (e.g. PROV-14 nutrients) reaches cached foods this way.
+ */
+export async function refreshSavedFood(services: AppServices, food: Food): Promise<void> {
+  if (food.source === 'custom' || !food.externalId) return;
+  const usda = food.source === 'usda';
+  const parserVersion = usda ? USDA_PARSER_VERSION : PARSER_VERSION;
   const cache = await services.foods.cacheMetadata(food.id);
-  if (!cache || (!cache.isExpired && cache.schemaVersion >= PARSER_VERSION)) return;
+  if (!cache || (!cache.isExpired && cache.schemaVersion >= parserVersion)) return;
   try {
-    const candidate = await services.openFoodFacts.getFood(food.externalId, new AbortController().signal);
+    const signal = new AbortController().signal;
+    const candidate = usda
+      ? await services.usda.getFood(food.externalId, signal)
+      : await services.openFoodFacts.getFood(food.externalId, signal);
     if (!candidate) return;
     const fetchedAt = nowUtcIso(services.clock);
     const expiresAt = new Date(
-      services.clock.now().getTime() + 30 * 24 * 60 * 60_000,
+      services.clock.now().getTime() + (usda ? 90 : 30) * 24 * 60 * 60_000,
     ).toISOString() as typeof fetchedAt;
-    await services.foods.upsertExternal('open_food_facts', candidate.externalId, candidate.input, {
+    await services.foods.upsertExternal(food.source, candidate.externalId, candidate.input, {
       fetchedAt,
       expiresAt,
       rawPayloadJson: null,
-      schemaVersion: PARSER_VERSION,
+      schemaVersion: parserVersion,
     });
   } catch {
     // PROV-09: refresh failures are silent; the cached food remains fully usable.

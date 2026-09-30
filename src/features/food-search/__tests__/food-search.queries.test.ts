@@ -1,7 +1,9 @@
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
 import { createTestServices } from '@/shared/testing/services';
 
-import { loadRecentFoods } from '../food-search.queries';
+import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
+
+import { loadRecentFoods, refreshSavedFood } from '../food-search.queries';
 
 const food = (name: string): CustomFoodInput => ({
   name,
@@ -58,5 +60,42 @@ describe('UX-04 / DATA-14: local Food Search queries', () => {
     }
     await expect(loadRecentFoods(services, 1)).resolves.toHaveLength(1);
     expect((await loadRecentFoods(services))[0]!.food.name).toBe('One');
+  });
+});
+
+describe('PROV-09: saved-food refresh', () => {
+  const cached = { fetchedAt: '2026-09-01T00:00:00.000Z', rawPayloadJson: null };
+  const input = (extra?: CustomFoodInput['nutrients']['extra']): CustomFoodInput => ({
+    ...food('Spinach'),
+    nutrients: { ...food('Spinach').nutrients, extra },
+  });
+
+  it('refreshes an old-parser USDA food in the background so its nutrients arrive (PROV-14)', async () => {
+    const { services } = await createTestServices();
+    const saved = await services.foods.upsertExternal('usda', '5', input(), {
+      ...cached,
+      expiresAt: '2027-01-01T00:00:00.000Z',
+      schemaVersion: 1,
+    });
+    jest.spyOn(services.usda, 'getFood').mockResolvedValue({ externalId: '5', input: input({ iron: 2.7 }) });
+    await refreshSavedFood(services, saved);
+    expect(services.usda.getFood).toHaveBeenCalledWith('5', expect.any(AbortSignal));
+    const refreshed = await services.foods.get(saved.id);
+    expect(refreshed.nutrients.extra).toEqual({ iron: 2.7 });
+    expect(await services.foods.cacheMetadata(saved.id)).toMatchObject({ schemaVersion: USDA_PARSER_VERSION });
+  });
+
+  it('leaves fresh current-parser and custom foods alone', async () => {
+    const { services } = await createTestServices();
+    const fresh = await services.foods.upsertExternal('usda', '6', input(), {
+      ...cached,
+      expiresAt: '2027-01-01T00:00:00.000Z',
+      schemaVersion: USDA_PARSER_VERSION,
+    });
+    const custom = await services.foods.createCustom(food('Mine'));
+    const getFood = jest.spyOn(services.usda, 'getFood');
+    await refreshSavedFood(services, fresh);
+    await refreshSavedFood(services, custom);
+    expect(getFood).not.toHaveBeenCalled();
   });
 });

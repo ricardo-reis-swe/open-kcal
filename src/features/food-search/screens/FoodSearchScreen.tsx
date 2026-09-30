@@ -35,7 +35,7 @@ import {
   useOpenFoodFactsSearch,
   useOnlineStatus,
   useRecentFoods,
-  refreshSavedOpenFoodFacts,
+  refreshSavedFood,
   useSavedFoodSearch,
   useUsdaSearch,
 } from '../food-search.queries';
@@ -208,7 +208,7 @@ export function FoodSearchScreen({
             locale={locale}
             energyUnit={settings.data.energyUnit}
             onPress={() => {
-              void refreshSavedOpenFoodFacts(services, food);
+              void refreshSavedFood(services, food);
               onSelectFood(food);
             }}
             onDelete={() => deleteFood(food)}
@@ -456,7 +456,10 @@ export function FoodSearchScreen({
                   food={food}
                   locale={locale}
                   energyUnit={settings.data.energyUnit}
-                  onPress={() => onSelectFood(food)}
+                  onPress={() => {
+                    void refreshSavedFood(services, food); // PROV-09: Recent opens refresh too
+                    onSelectFood(food);
+                  }}
                   onDelete={() => deleteFood(food)}
                 />
               ))

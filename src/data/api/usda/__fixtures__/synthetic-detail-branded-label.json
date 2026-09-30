@@ -1,0 +1,20 @@
+{
+  "fdcId": 900002,
+  "description": "LABEL ONLY BAR",
+  "dataType": "Branded",
+  "brandName": "EXAMPLE",
+  "servingSize": 40,
+  "servingSizeUnit": "g",
+  "labelNutrients": {
+    "calories": { "value": 160 },
+    "protein": { "value": 4 },
+    "fat": { "value": 6 },
+    "carbohydrates": { "value": 24 },
+    "fiber": { "value": 2 },
+    "sugars": { "value": 10 },
+    "saturatedFat": { "value": 1 },
+    "sodium": { "value": 120 },
+    "calcium": { "value": 40 }
+  },
+  "foodNutrients": [{ "nutrient": { "number": "301", "unitName": "mg" }, "amount": 150 }]
+}

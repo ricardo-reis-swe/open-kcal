@@ -6,7 +6,12 @@ const key = process.env.USDA_CAPTURE_KEY;
 
 const outputDirectory = new URL('../src/data/api/usda/__fixtures__/captured/', import.meta.url);
 const baseUrl = 'https://api.nal.usda.gov/fdc/v1';
-const mappedNutrientNumbers = new Set(['208', '958', '957', '268', '203', '204', '205', '205.2', '291']);
+// PROV-05 energy/macros + PROV-14 catalog numbers.
+const mappedNutrientNumbers = new Set([
+  '208', '958', '957', '268', '203', '204', '205', '205.2', '291',
+  '269', '269.3', '539', '606', '645', '646', '605', '601', '307', '306', '301', '303', '304', '305', '309',
+  '320', '401', '328', '324', '323', '430', '404', '405', '406', '415', '418', '435', '417', '262',
+]);
 
 const scalar = (value) => (typeof value === 'string' || typeof value === 'number' ? value : undefined);
 const text = (value) => (typeof value === 'string' ? value : undefined);
@@ -67,7 +72,10 @@ function common(value) {
 function labelNutrients(value) {
   const labels = object(value);
   const result = {};
-  for (const name of ['calories', 'protein', 'fat', 'carbohydrates', 'fiber']) {
+  for (const name of [
+    'calories', 'protein', 'fat', 'carbohydrates', 'fiber', 'sugars', 'addedSugar', 'saturatedFat', 'transFat',
+    'cholesterol', 'sodium', 'potassium', 'calcium', 'iron',
+  ]) {
     const item = object(labels[name]);
     if (scalar(item.value) !== undefined) result[name] = { value: scalar(item.value) };
   }

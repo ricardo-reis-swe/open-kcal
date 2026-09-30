@@ -1,11 +1,20 @@
-// USDA normalization (PROV-05/06/07/08). Payloads never leave this adapter.
+// USDA normalization (PROV-05/06/07/08/14). Payloads never leave this adapter.
 import { z } from 'zod';
 
 import { schemaError } from '@/data/api/diagnostics';
 import type { FoodInput, ServingInput } from '@/data/db/repositories/foodsRepository';
+import {
+  catalogNutrient,
+  convertNutrientUnit,
+  nutrientGrams,
+  type NutrientAmounts,
+  type NutrientId,
+  type NutrientUnit,
+} from '@/domain/nutrition/nutrientCatalog';
 import { ProviderResponseError } from '@/shared/errors';
 
-export const PARSER_VERSION = 1;
+/** PROV-09: bump on a mapping change so cached foods refresh on their next open (2: PROV-14 nutrients). */
+export const PARSER_VERSION = 2;
 
 const numberLike = z.union([z.number(), z.string()]).transform((value, ctx) => {
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -48,6 +57,15 @@ const baseFoodSchema = z.object({
       fat: z.object({ value: numberLike }).optional(),
       carbohydrates: z.object({ value: numberLike }).optional(),
       fiber: z.object({ value: numberLike }).optional(),
+      sugars: z.object({ value: numberLike }).optional(),
+      addedSugar: z.object({ value: numberLike }).optional(),
+      saturatedFat: z.object({ value: numberLike }).optional(),
+      transFat: z.object({ value: numberLike }).optional(),
+      cholesterol: z.object({ value: numberLike }).optional(),
+      sodium: z.object({ value: numberLike }).optional(),
+      potassium: z.object({ value: numberLike }).optional(),
+      calcium: z.object({ value: numberLike }).optional(),
+      iron: z.object({ value: numberLike }).optional(),
     })
     .optional(),
 });
@@ -76,6 +94,103 @@ function sentenceCase(value: string): string {
 
 function valid(value: number | undefined, maximum: number): number | null {
   return value !== undefined && Number.isFinite(value) && value >= 0 && value <= maximum ? value : null;
+}
+
+/** PROV-14: USDA numbers per catalog id, first present wins; `IU ÷ 40` is vitamin D's only IU source. */
+const USDA_CATALOG: Record<NutrientId, readonly string[]> = {
+  fibre: ['291'],
+  sugars: ['269', '269.3'],
+  added_sugars: ['539'],
+  saturated_fat: ['606'],
+  monounsaturated_fat: ['645'],
+  polyunsaturated_fat: ['646'],
+  trans_fat: ['605'],
+  cholesterol: ['601'],
+  salt: [],
+  sodium: ['307'],
+  potassium: ['306'],
+  calcium: ['301'],
+  iron: ['303'],
+  magnesium: ['304'],
+  phosphorus: ['305'],
+  zinc: ['309'],
+  vitamin_a: ['320'],
+  vitamin_c: ['401'],
+  vitamin_d: ['328', '324'],
+  vitamin_e: ['323'],
+  vitamin_k: ['430'],
+  thiamin: ['404'],
+  riboflavin: ['405'],
+  niacin: ['406'],
+  vitamin_b6: ['415'],
+  vitamin_b12: ['418'],
+  folate: ['435', '417'],
+  caffeine: ['262'],
+};
+
+/** PROV-14 Branded fallback: `labelNutrients` key and its unit (per serving). */
+const USDA_LABEL_CATALOG: Partial<
+  Record<NutrientId, { key: keyof NonNullable<UsdaFood['labelNutrients']>; unit: NutrientUnit }>
+> = {
+  fibre: { key: 'fiber', unit: 'g' },
+  sugars: { key: 'sugars', unit: 'g' },
+  added_sugars: { key: 'addedSugar', unit: 'g' },
+  saturated_fat: { key: 'saturatedFat', unit: 'g' },
+  trans_fat: { key: 'transFat', unit: 'g' },
+  cholesterol: { key: 'cholesterol', unit: 'mg' },
+  sodium: { key: 'sodium', unit: 'mg' },
+  potassium: { key: 'potassium', unit: 'mg' },
+  calcium: { key: 'calcium', unit: 'mg' },
+  iron: { key: 'iron', unit: 'mg' },
+};
+
+function massUnit(unit: string): NutrientUnit | null {
+  const u = unit.trim().toLowerCase();
+  if (u === 'g') return 'g';
+  if (u === 'mg') return 'mg';
+  if (u === 'µg' || u === 'μg' || u === 'ug' || u === 'mcg') return 'µg';
+  return null;
+}
+
+/** PROV-14 sanity bound: negative or more than 100 g per 100 g → unknown. */
+function catalogAmount(id: NutrientId, amount: number): number | null {
+  return Number.isFinite(amount) && amount >= 0 && nutrientGrams(id, amount) <= 100 ? amount : null;
+}
+
+function catalogNutrients(food: UsdaFood, values: Nutrient[]): NutrientAmounts {
+  const amounts: NutrientAmounts = {};
+  for (const [id, numbers] of Object.entries(USDA_CATALOG) as [NutrientId, readonly string[]][]) {
+    const target = catalogNutrient(id).unit;
+    for (const number of numbers) {
+      const value = values.find((v) => v.number === number);
+      if (!value) continue;
+      const from = massUnit(value.unit);
+      const converted =
+        from !== null
+          ? convertNutrientUnit(value.value, from, target)
+          : number === '324' && value.unit.trim().toLowerCase() === 'iu'
+            ? value.value / 40
+            : null; // any other unit is a mismatch → missing
+      const amount = converted === null ? null : catalogAmount(id, converted);
+      if (amount !== null) {
+        amounts[id] = amount;
+        break;
+      }
+    }
+  }
+  if (food.dataType === 'Branded' && food.servingSize && food.servingSize > 0) {
+    for (const [id, source] of Object.entries(USDA_LABEL_CATALOG) as [
+      NutrientId,
+      NonNullable<(typeof USDA_LABEL_CATALOG)[NutrientId]>,
+    ][]) {
+      const value = food.labelNutrients?.[source.key]?.value;
+      if (amounts[id] !== undefined || value === undefined) continue;
+      const per100 = (value / food.servingSize) * 100;
+      const amount = catalogAmount(id, convertNutrientUnit(per100, source.unit, catalogNutrient(id).unit));
+      if (amount !== null) amounts[id] = amount;
+    }
+  }
+  return amounts;
 }
 
 function nutrients(food: UsdaFood, values: Nutrient[]) {
@@ -113,10 +228,20 @@ function nutrients(food: UsdaFood, values: Nutrient[]) {
       proteinG: protein ?? per100(label?.protein?.value, 100),
       fatG: fat ?? per100(label?.fat?.value, 100),
       carbohydrateG: carbohydrate ?? (labelCarbs === null ? null : Math.max(0, labelCarbs - (labelFibre ?? 0))),
+      ...withExtra(catalogNutrients(food, values)),
     };
   }
-  return { energyKcal: energy, proteinG: protein, fatG: fat, carbohydrateG: carbohydrate };
+  return {
+    energyKcal: energy,
+    proteinG: protein,
+    fatG: fat,
+    carbohydrateG: carbohydrate,
+    ...withExtra(catalogNutrients(food, values)),
+  };
 }
+
+/** DATA-20: `extra` only when some catalog nutrient is known. */
+const withExtra = (extra: NutrientAmounts) => (Object.keys(extra).length > 0 ? { extra } : {});
 
 function basisUnit(food: UsdaFood): 'g' | 'ml' {
   return food.dataType === 'Branded' && /^(ml|MLT)$/i.test(food.servingSizeUnit ?? '') ? 'ml' : 'g';

@@ -1,6 +1,8 @@
 import { mapUsdaFood, mapUsdaSearch } from '../mapper';
 
 import branded from '../__fixtures__/synthetic-detail-branded.json';
+import labelOnly from '../__fixtures__/synthetic-detail-branded-label.json';
+import catalog from '../__fixtures__/synthetic-detail-catalog.json';
 import search from '../__fixtures__/synthetic-search-egg.json';
 
 describe('PROV-05 / PROV-06 / PROV-07 / PROV-08: USDA mapping', () => {
@@ -15,7 +17,13 @@ describe('PROV-05 / PROV-06 / PROV-07 / PROV-08: USDA mapping', () => {
             name: 'Egg, whole',
             basisQuantity: 100,
             basisUnit: 'g',
-            nutrients: { energyKcal: 143, proteinG: 12.6, carbohydrateG: expect.closeTo(0.9, 10), fatG: 9.5 },
+            nutrients: {
+              energyKcal: 143,
+              proteinG: 12.6,
+              carbohydrateG: expect.closeTo(0.9, 10),
+              fatG: 9.5,
+              extra: { fibre: 0.2 },
+            },
           }),
         },
         expect.objectContaining({ externalId: '2' }),
@@ -30,7 +38,7 @@ describe('PROV-05 / PROV-06 / PROV-07 / PROV-08: USDA mapping', () => {
         name: 'Peanut butter',
         brand: 'Example foods',
         basisUnit: 'g',
-        nutrients: { energyKcal: 600, proteinG: 25, carbohydrateG: 19, fatG: 50 },
+        nutrients: { energyKcal: 600, proteinG: 25, carbohydrateG: 19, fatG: 50, extra: { fibre: 6 } },
         servings: [
           expect.objectContaining({ label: 'serving', basisMultiplier: 0.3, isDefault: true }),
           expect.objectContaining({ label: 'Tbsp', basisMultiplier: 0.15 }),
@@ -102,5 +110,67 @@ describe('PROV-05 / PROV-06 / PROV-07 / PROV-08: USDA mapping', () => {
       input: { basisUnit: 'ml', nutrients: { energyKcal: 40, carbohydrateG: 8, proteinG: null, fatG: null } },
     });
     expect(mapUsdaFood({ fdcId: 12, description: 'Empty', foodNutrients: [] })).toBeNull();
+  });
+
+  it('PROV-14: maps catalog nutrients to catalog units with fallbacks, and drops mismatched or out-of-range ones', () => {
+    // Explicit expected output (PROV-13): mg / µg / g conversions, 269 → 269.3, IU vitamin D ÷ 40, 435 → 417.
+    expect(mapUsdaFood(catalog)?.input.nutrients).toEqual({
+      energyKcal: 200,
+      proteinG: 10,
+      fatG: 5,
+      carbohydrateG: 26,
+      extra: {
+        fibre: 4,
+        sugars: 12,
+        saturated_fat: 1.5,
+        cholesterol: 20,
+        sodium: 400,
+        iron: 2.5,
+        zinc: 3,
+        vitamin_c: 30,
+        vitamin_d: 2,
+        vitamin_b12: 1.2,
+        folate: 60,
+        caffeine: 0,
+      },
+    });
+    // Not present: vitamin A in IU (unit mismatch), polyunsaturated fat 150 g (> 100 g), monounsaturated header row.
+  });
+
+  it('PROV-14: Branded label nutrients fill only what foodNutrients lacks, per 100 g', () => {
+    expect(mapUsdaFood(labelOnly)).toEqual({
+      externalId: '900002',
+      input: expect.objectContaining({
+        name: 'Label only bar',
+        brand: 'Example',
+        nutrients: {
+          energyKcal: 400,
+          proteinG: 10,
+          fatG: 15,
+          carbohydrateG: 55,
+          extra: { fibre: 5, sugars: 25, saturated_fat: 2.5, sodium: 300, calcium: 150 },
+        },
+      }),
+    });
+  });
+
+  it('PROV-14: search hits carry catalog nutrients in the search shape (UG, MG)', () => {
+    const page = mapUsdaSearch({
+      currentPage: 1,
+      totalPages: 1,
+      foods: [
+        {
+          fdcId: 5,
+          description: 'Spinach',
+          dataType: 'Foundation',
+          foodNutrients: [
+            { nutrientNumber: '208', unitName: 'KCAL', value: 23 },
+            { nutrientNumber: '303', unitName: 'MG', value: 2.7 },
+            { nutrientNumber: '430', unitName: 'UG', value: 483 },
+          ],
+        },
+      ],
+    });
+    expect(page.candidates[0]?.input.nutrients.extra).toEqual({ iron: 2.7, vitamin_k: 483 });
   });
 });
