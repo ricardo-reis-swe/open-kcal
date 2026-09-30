@@ -91,3 +91,14 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 ## DS-13 Visual QA (per component, before done)
 MVP: light theme · iOS + Android · one phone size · default text. Check the states that apply (empty/typical/long/loading/offline/error/disabled) through the Maestro flows and by hand on both platforms; screenshots aren't required.
 - The matrix (small + large width, large text, increased contrast, reduced motion, screenshot sets) is deferred (POST-13). DS-11 behavior still applies. **Why:** speed for the MVP proof of concept (user decision 2026-09-28).
+
+## DS-14 Android widget (UX-22)
+- Light theme only, even when the system is dark (DS-03). Colors from `lightColors` in `tokens.ts`, never raw hex in widget code.
+- Background `surface`, corner radius `radii.large`, no shadow or border. Padding `spacing[3]`.
+- Content left-aligned, vertically centered:
+  - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `danger` (DS-03 explicit label: "over").
+  - Label (`kcal left` / `kcal over`, or kJ): `typography.compact`, `textSecondary`.
+  - Unavailable: `Open Calorie Tracker` in `compact`, `textSecondary`, no number.
+- Single line each. The number MUST NOT truncate; the label may ellipsize (pt-PT is longer).
+- Accessibility: the whole widget is one tap target with one content description, e.g. `1,731 kcal left`, `250 kcal over`.
+- Picker preview: a static PNG in `assets/` (en, a typical value), shown in the launcher's widget picker.

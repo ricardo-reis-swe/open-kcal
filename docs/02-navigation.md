@@ -83,3 +83,12 @@ Deleting a food entry from its edit screen · deleting a Quick Calories entry fr
 - `origin` (Diary | Profile | Weight History) decides where save/cancel return.
 - DB-backed screens reload by ID after mutations, so totals can't go stale.
 - No routes for anything in SCOPE-10.
+
+## NAV-10 Widget tap (UX-22)
+- The widget opens `calorietracker://diary/today`. `+native-intent.tsx` maps it; no new route (NAV-09).
+- Cold start → Diary root, today (same as NAV-05 fresh launch).
+- App already running:
+  - At the Diary root (any date) → date becomes today, as the Today action.
+  - Anywhere else (deeper Diary screen, Profile tab, any overlay) → app comes to front on the current screen, unchanged.
+- **Why:** jumping away from an open form would silently lose input (UX-00); the user returns to the Diary in one tap anyway.
+- The link carries no data. Unknown/malformed paths under `diary/` → Diary root, no date change.

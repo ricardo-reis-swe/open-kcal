@@ -147,3 +147,16 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 - Read through Zod. Tolerates catalog growth: unknown ids are dropped, duplicates keep the first, missing catalog ids are appended hidden. Unparseable → the default (never a crash). Zero visible is allowed (the Diary hides its chevron, DS-08).
 - `app_settings.dashboard_nutrients_open INTEGER NOT NULL DEFAULT 0 CHECK (IN (0, 1))`: whether the Diary nutrient panel is open; toggling it saves immediately.
 - Both added by migration 4 (DATA-17), which updates `schema.sql` in the same change.
+
+## DATA-22 Widget refresh (UX-22, ARCH-23)
+- The widget holds no data of its own; every redraw re-reads SQLite (ARCH-23). Freshness depends only on when a redraw runs.
+- Redraw triggers:
+  | Trigger | How | Staleness limit |
+  |---|---|---|
+  | Any successful app mutation | Global `MutationCache.onSuccess` in `query-client.ts` → `refreshWidget()`. Not per call site. | Immediate |
+  | App startup after migrations + seed (DATA-17) | `refreshWidget()` once the DB is ready | Immediate |
+  | Widget added / resized | Library event | Immediate |
+  | Local midnight, time zone or locale change, app not opened | `updatePeriodMillis` (30 min) | ≤ 30 min while the device is awake |
+- **Why global:** new write paths get widget refresh for free. The widget doesn't filter by date or kind. Unrelated writes (weight, settings) cause a harmless redraw.
+- A dev-only seed (ARCH-18) goes through the same path.
+- No exact alarms (no `SCHEDULE_EXACT_ALARM`) and no extra native broadcast receivers.

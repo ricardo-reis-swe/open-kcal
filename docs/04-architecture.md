@@ -167,3 +167,16 @@ Indexed, bounded queries · totals aggregated in SQL · debounce remote search +
 
 ## ARCH-21 Official docs
 Check the current versions: Expo [dev builds](https://docs.expo.dev/develop/development-builds/use-development-builds/) · [Router](https://docs.expo.dev/versions/latest/sdk/router/) · [SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) · [SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) · [Haptics](https://docs.expo.dev/versions/latest/sdk/haptics/) · [env vars](https://docs.expo.dev/guides/environment-variables/) · [unit testing](https://docs.expo.dev/develop/unit-testing/) · [Router testing](https://docs.expo.dev/router/reference/testing/) · [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview) · [React Hook Form](https://react-hook-form.com/) · [Zod](https://zod.dev/).
+
+## ARCH-23 Android widget (UX-22)
+- Library: `react-native-android-widget` (pinned, ARCH-20) via its config plugin in `app.json`; no hand edits to `android/` (ARCH-01 CNG).
+- Plugin config: one widget `CaloriesLeft`, 2×1 target cells, `resizeMode: horizontal`, `updatePeriodMillis: 1800000`, localized label + description, preview image in `assets/`.
+- Code in `src/features/widget/`: `CaloriesLeftWidget.tsx` (widget JSX only), `caloriesLeftViewModel.ts` (pure: goal + consumed + unit + locale → display state), `widgetTaskHandler.ts`, `refreshWidget.ts`.
+- Entry: `package.json` `main` → `index.ts`, which registers the task handler then imports `expo-router/entry`. **Why:** the headless task must be registered before the app root, even when no UI starts.
+- Task handler (background JS, no UI):
+  - Opens the same SQLite DB. MUST NOT run migrations or the seed; schema version ≠ app's expected version → UX-22 unavailable state.
+  - Reads through existing repositories + domain (goal resolution, day totals, unit conversion). MUST NOT duplicate nutrition or goal math.
+  - Handles `WIDGET_ADDED`, `WIDGET_UPDATE`, `WIDGET_RESIZED`; `WIDGET_DELETED` → no-op. Initializes i18n from the device locale (ARCH-22) before rendering.
+  - Any error → unavailable state + a logger warning with no diary data (ARCH-15). Never throws.
+- `refreshWidget()`: app-side, fire-and-forget `requestWidgetUpdate`; no-op on iOS and in Jest; failures logged, never shown to the user.
+- Tests: Jest for the view model and for the handler with a mocked repository; the library is mocked. No widget rendering tests.

@@ -28,6 +28,20 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 
 2026-09-28 (user-approved, commit "docs(spec): Food Search section order and visibility") SCOPE-01/UX-18/UX-04/DATA-19/ROAD-01/ROAD-02: new MVP feature for M9, reorder and show/hide the 4 Food Search sections on Food Databases (spec only; migration 2 + `schema.sql` change come with the code).
 
+## Android widget (user-requested, 2026-09-30)
+
+Status: **in progress** · Spec: SCOPE-01, UX-22, NAV-10, DATA-22, ARCH-23, DS-14 · In-session; the T2 spike runs on the user's Zenfone (user decision 2026-09-30), otherwise gate on `npm run check`.
+
+### Tasks
+
+- [x] T1 Specs.
+- [ ] T2 Spike: `react-native-android-widget` + plugin config + `index.ts` entry; Android dev build on the Zenfone; headless task opens SQLite while the app runs. Stop and report if it fails.
+- [ ] T3 View model + task handler + i18n (en, pt-PT) + tests.
+- [ ] T4 `refreshWidget` + global `MutationCache.onSuccess` + refresh after startup + tests.
+- [ ] T5 NAV-10 deep link (`+native-intent.tsx`, Diary Today at root) + tests.
+- [ ] T6 Widget JSX (DS-14) + picker preview image.
+- [ ] Device check: the user's.
+
 ## Nutrient details (user-requested, 2026-09-30)
 
 Status: **agent work done; device check and pt-PT review are the user's** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/17), PROV-14, UX-02/05/06/08/15/21, DS-08/09, NAV-06 · Same working rules as M9: in-session, no device tests, gate on `npm run check`.
