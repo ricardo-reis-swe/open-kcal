@@ -96,7 +96,7 @@ MVP: light theme · iOS + Android · one phone size · default text. Check the s
 ## DS-14 Android widget (UX-22)
 - Follows UX-23 (user decision 2026-09-30). `System` hands the launcher a light and a dark version, so it switches with the phone's dark mode without a redraw; a forced `Light`/`Dark` draws only that one. Colors from `lightColors`/`darkColors` in `tokens.ts`, never raw hex in widget code.
 - Background `surface`, corner radius `radii.large`, no shadow or border. Padding `spacing[3]`.
-- Content left-aligned, vertically centered:
+- Content centered horizontally and vertically (user decision 2026-09-30):
   - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `warning`, as the Diary ring (DS-03 explicit label: "over").
   - Label (`kcal left` / `kcal over`, or kJ): `typography.compact`, `textSecondary`.
   - Unavailable: `Open Calorie Tracker` in `compact`, `textSecondary`, no number.

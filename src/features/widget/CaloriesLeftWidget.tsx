@@ -26,7 +26,7 @@ export function CaloriesLeftWidget({ view, scheme }: { view: CaloriesLeftView; s
         borderRadius: radii.large,
         padding: spacing[3],
         justifyContent: 'center',
-        alignItems: 'flex-start',
+        alignItems: 'center',
       }}
     >
       {view.kind !== 'unavailable' ? (
