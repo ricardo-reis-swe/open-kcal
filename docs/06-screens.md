@@ -37,7 +37,8 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [Diary                                   📅]
 [‹ Yesterday    TODAY    Tomorrow ›  Today ]   ← days scroll sideways; "Today" only when not on today
 [  ‹     ◯ 1,731 kcal left             ›  ]   ← ring tap: Consumed 669/2,400 kcal
-[ Carbs 82/250 g │ Protein 41/150 g │ Fat 25/80 g ]
+[ Carbs 82/250 g │ Protein 41/150 g │ Fat 25/80 g  ⌄ ]   ← chevron: nutrient panel (DATA-21)
+[ Fibre 18 g · Sugars 42 g · Sat. fat 12 g · Salt 3.1 g ]   ← only while open
 [ Using default goals · Set goals           ]   ← UX-01 only
 [Breakfast                      700 kcal ⋯ + ]
 [  Scrambled eggs                         ⋯ ]
@@ -55,6 +56,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Each meal and entry has a `…` menu. Meal: `Copy meal`; entry: `Copy item`.
 - Empty meal = header (0 kcal) + one compact `textSecondary` line `No foods logged`.
 - Over goal and unknown macros: DS-08.
+- **Nutrient panel**: the macro strip's trailing chevron opens/closes the day's totals for the DATA-21 visible nutrients, in their set order (DS-08). The open state persists (DATA-21). No visible nutrients → no chevron and no panel. No targets (SCOPE-10).
 - Error: a DB load failure is full-screen with Retry. Never an offline banner.
 - Focus order: app bar → strip days left to right (rendered ones; prev, selected, next among them) → Today → ring (one element) → carbs, protein, fat → each meal (header, menu, header +, entries and their menus).
 
@@ -108,11 +110,13 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Tapping the value chip → direct numeric entry (up to 2 decimals).
 - Ruler a11y: role `adjustable`, increment/decrement = one step, label `Serving, 2, egg, 156 kilocalories`.
 - Header action label: `Add`. The Meal row already makes the target explicit. Returns per NAV-04.
+- **Nutrition facts** (below Date, always shown): every catalog nutrient the food has (DATA-20), grouped (`Carbs & fats`, `Minerals`, `Vitamins`, `Other`) in catalog order, scaled live to the chosen serving like the macros; unknown nutrients are left out. Nothing known: `No other nutrients listed.` Compact rows per DS-09.
 
 ## UX-06 Edit Food Entry
 - Same layout as UX-05. Title `Edit entry`, header action `Save`, `Delete entry` at the end. Loads quantity + unit from the snapshot.
 - If the original food or serving can't be resolved (`food_id` NULL, food deleted, serving gone): hide the unit tabs and scale the snapshot proportionally (`snapshot value / old qty × new qty`). Meal can still change.
 - Date is display-only (moving between dates is not in scope).
+- Nutrition facts (UX-05) come from the entry's snapshot rows, scaled with the quantity; a serving change recomputes them from the food (DATA-16).
 
 ## UX-07 Quick Calories / Edit Quick Calories
 ```text
@@ -139,6 +143,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Name uses word autocapitalization and is prefilled from `initialName`.
 - Carbs helper text: `As on EU labels (fibre not included)` (PROV-05).
 - Protein, carbs and fat are optional; an empty field saves as unknown (DATA-06).
+- **More nutrients**: a collapsed disclosure under the macros with one optional field per catalog nutrient (DATA-20), grouped as UX-05, in the catalog unit (g / mg / µg), per the entered serving like the macros. `Salt` is offered and `sodium` is derived (EU labels list salt). Empty = unknown. Collapsed by default; opens when any value is set.
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
 
 ## UX-09 Add Action Sheet
@@ -181,6 +186,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 [DIARY                                    ]
 [Meals                          4 meals  › ]
 [Units                  kg · g · kcal · ml › ]
+[Dashboard nutrients           4 shown › ]
 [FOOD DATA                                ]
 [Food databases              USDA on     › ]
 ```
@@ -226,3 +232,18 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 ## UX-20 System screens
 - Launch screen until config + migrations finish (ARCH-17).
 - Startup/migration failure: `Couldn't open your diary.` + `Retry` + `Copy diagnostic info` (versions and error category only, ARCH-15). Never a reset.
+
+## UX-21 Dashboard nutrients
+```text
+[‹  Dashboard nutrients                   ]
+[SHOWN                                    ]
+[≡ Fibre                              ●  ]   ← drag handle · switch
+[≡ Sugars                             ●  ]
+[CARBS & FATS                             ]
+[  Added sugars                       ○  ]
+[MINERALS · VITAMINS · OTHER  …           ]
+```
+- Opened from Profile › Diary › `Dashboard nutrients` (value `<n> shown`, or `None`).
+- `Shown`: the visible nutrients in dashboard order, with drag handle + switch. Reorder as UX-17 Meals (handle drag, a11y `Move up` / `Move down`).
+- Below, the hidden nutrients grouped as UX-05, in catalog order, with a switch. Switching one on appends it to the end of `Shown`; switching off moves it back to its group.
+- Every change saves immediately (DATA-21), as Units; no Save button. Zero shown is allowed; helper: `The Diary shows no nutrient panel.`

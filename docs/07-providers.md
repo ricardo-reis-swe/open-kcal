@@ -45,7 +45,7 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 - If a product read is throttled, Food Detail waits for a slot for at most ~5 s, then shows its unavailable state.
 
 ## PROV-05 Nutrient mapping
-Output per food: `energy_kcal` (required) and `protein_g`, `carbohydrate_g`, `fat_g` (each nullable, DATA-06), all per the food's basis (PROV-06). A missing or invalid value → `null`, never 0. A present 0 stays 0.
+Output per food: `energy_kcal` (required) and `protein_g`, `carbohydrate_g`, `fat_g` (each nullable, DATA-06), plus catalog nutrients (PROV-14), all per the food's basis (PROV-06). A missing or invalid value → `null`, never 0. A present 0 stays 0.
 
 **USDA.** Nutrients are keyed by `number` (a string). The shape differs by call, so the adapter reads both:
 - Search: `foodNutrients[] = { nutrientNumber, unitName: "KCAL" | "G" | "kJ", value }`.
@@ -273,9 +273,56 @@ Implements ARCH-18's API contract tests. Fixtures live in `src/data/api/{usda,op
 | USDA | detail FNDDS `2705413` | `portionDescription`, filler rows skipped |
 | USDA | detail Branded `2035482` | all-caps name, `serving` + household `Tbsp`, fibre subtraction |
 | USDA | synthetic: no `208`, has `958`/`957`; kJ-only; 401; 429 with `Retry-After` | energy fallbacks, key rejected, cooldown |
+| USDA | synthetic: catalog nutrients in mg/µg/IU, a unit mismatch, sodium only, Branded `labelNutrients` only | PROV-14 conversion, salt derivation, label fallback |
 | OFF | search `iogurte grego` | `brands` array, `*_100g` nutriments |
 | OFF | product `0894700010137` | `serving_quantity`, `nutrition_data_per: serving`, comma-string `brands` |
 | OFF | captured liquid product (ml) | 100 ml basis, ml/fl oz pair |
 | OFF | synthetic: kJ-only; numeric strings; 0 kcal and no macros; `status: 0`; 503 HTML body; 429 | fallbacks, drop rule, not found, rate limit |
+| OFF | synthetic: catalog nutrients in g, salt only, `alcohol_100g`, a `*_serving`-only vitamin | PROV-14 conversion, salt derivation, alcohol ignored |
 
 No live API calls in tests during the MVP. A scheduled live contract check is post-MVP (POST-08).
+
+## PROV-14 Catalog nutrient mapping
+Output: one amount per DATA-20 catalog id the source supplies, converted to the catalog unit, per the food's basis. Missing or invalid → no value (unknown), never 0; a present 0 stays 0. Salt/sodium derivation: DATA-20.
+
+**USDA** (search and detail shapes as PROV-05; units compared case-insensitively, `µg` = `ug` = `mcg`). Take the first present:
+
+| Id | Numbers | Id | Numbers |
+|---|---|---|---|
+| `fibre` | `291` | `vitamin_a` | `320` (µg RAE) |
+| `sugars` | `269` → `269.3` | `vitamin_c` | `401` |
+| `added_sugars` | `539` | `vitamin_d` | `328` (µg) → `324` (IU ÷ 40) |
+| `saturated_fat` | `606` | `vitamin_e` | `323` |
+| `monounsaturated_fat` | `645` | `vitamin_k` | `430` |
+| `polyunsaturated_fat` | `646` | `thiamin` | `404` |
+| `trans_fat` | `605` | `riboflavin` | `405` |
+| `cholesterol` | `601` | `niacin` | `406` |
+| `sodium` | `307` | `vitamin_b6` | `415` |
+| `potassium` | `306` | `vitamin_b12` | `418` |
+| `calcium` | `301` | `folate` | `435` (µg DFE) → `417` (µg) |
+| `iron` | `303` | `caffeine` | `262` |
+| `magnesium` | `304` | | |
+| `phosphorus` | `305` | | |
+| `zinc` | `309` | | |
+- Convert g ↔ mg ↔ µg to the catalog unit. Any other unit (e.g. IU where µg is expected, except `324`) → missing.
+- Branded fallback per nutrient, as PROV-05: `labelNutrients.{fiber, sugars, addedSugar, saturatedFat, transFat, cholesterol, sodium, potassium, calcium, iron}` ÷ `servingSize` × 100 (label mineral/cholesterol values are mg).
+
+**OFF.** `nutriments.<key>_100g`, as-sold only; OFF reports these in g, so convert to the catalog unit. Serving fallback and numeric-string rules as PROV-05.
+
+| Id | Key | Id | Key |
+|---|---|---|---|
+| `fibre` | `fiber` | `vitamin_a` | `vitamin-a` |
+| `sugars` | `sugars` | `vitamin_c` | `vitamin-c` |
+| `added_sugars` | `added-sugars` | `vitamin_d` | `vitamin-d` |
+| `saturated_fat` | `saturated-fat` | `vitamin_e` | `vitamin-e` |
+| `monounsaturated_fat` | `monounsaturated-fat` | `vitamin_k` | `vitamin-k` |
+| `polyunsaturated_fat` | `polyunsaturated-fat` | `thiamin` | `vitamin-b1` |
+| `trans_fat` | `trans-fat` | `riboflavin` | `vitamin-b2` |
+| `cholesterol` | `cholesterol` | `niacin` | `vitamin-pp` |
+| `salt` | `salt` | `vitamin_b6` | `vitamin-b6` |
+| `sodium` | `sodium` | `vitamin_b12` | `vitamin-b12` |
+| `potassium` · `calcium` · `iron` · `magnesium` · `phosphorus` · `zinc` | same name | `folate` | `vitamin-b9` → `folates` |
+| `caffeine` | `caffeine` | | |
+- Ignore `alcohol_*` (DATA-20).
+
+**Sanity bounds** (per 100 g/ml, after conversion to g): negative or > 100 g → that nutrient is invalid (unknown). A bad catalog nutrient never drops the food (PROV-07 is unchanged).

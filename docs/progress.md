@@ -14,6 +14,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M7 Dashboard copy | done |
 | M8 Profile | done |
 | M9 Hardening | awaiting user acceptance |
+| Nutrient details (user-requested) | in progress |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -26,6 +27,22 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 2026-09-28 (user-approved, commit "feat(food-search): separate provider sections, 10 per page") UX-04/PROV-08: reverted the merged `Online` list (4a3df52) to separate `Open Food Facts` and `USDA` sections, each with its own `Show more` and inline status (OFF now also shows its busy state); remote page size 10 (cap 5 pages = 50 per section); kept `keyboardShouldPersistTaps`, the `food-search-create-custom` testID and the m4 top-action tap (`FoodSearchScreen.tsx`, `usda/client.ts`, `open-food-facts/client.ts`; tests `FoodSearchScreen.test.tsx`, client tests); live Android `egg` checked.
 
 2026-09-28 (user-approved, commit "docs(spec): Food Search section order and visibility") SCOPE-01/UX-18/UX-04/DATA-19/ROAD-01/ROAD-02: new MVP feature for M9, reorder and show/hide the 4 Food Search sections on Food Databases (spec only; migration 2 + `schema.sql` change come with the code).
+
+## Nutrient details (user-requested, 2026-09-30)
+
+Status: **in progress** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/17), PROV-14, UX-02/05/06/08/15/21, DS-08/09, NAV-06 · Same working rules as M9: in-session, no device tests, gate on `npm run check`.
+
+### Tasks
+
+- [x] T1 Specs (this commit).
+- [ ] T2 Catalog `nutrientCatalog.ts` + migration 4 (`food_nutrients`, `diary_entry_nutrients`, DATA-21 settings) + `schema.sql` + repositories (food rows, entry snapshots, day totals, copy/undo) + migration tests from v1–v3.
+- [ ] T3 USDA PROV-14 mapping + fixtures.
+- [ ] T4 OFF PROV-14 mapping + fixtures.
+- [ ] T5 Food Detail / Edit entry Nutrition facts (UX-05/06).
+- [ ] T6 Dashboard Nutrients screen + Profile row + route (UX-21, UX-15, NAV-06).
+- [ ] T7 Diary chevron + nutrient panel, open state persisted (UX-02, DS-08).
+- [ ] T8 Custom food More nutrients (UX-08).
+- [ ] Device check: the user's.
 
 ## M9 Hardening
 

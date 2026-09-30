@@ -20,15 +20,17 @@ Read when: touching SQLite, repositories, migrations, nutrition math, dates or s
 - Changing a unit preference MUST NOT rewrite diary, food, goal or weight records.
 - Constants: `1 lb = 0.45359237 kg` · `1 oz = 28.349523125 g` · `1 fl oz = 29.5735295625 ml` · `1 kcal = 4.184 kJ`.
 - Keep full precision in storage and calculations; round only for display. Entry nutrition is computed from unrounded values and then snapshotted. Day totals sum snapshots and round once.
+- Catalog nutrients (DATA-20) are stored in their catalog unit (g / mg / µg).
 
 ## DATA-05 Nutrition snapshots
-- A food entry stores name, brand, serving and kcal/macros **at save time**. Totals come from snapshots, never from `foods`.
+- A food entry stores name, brand, serving, kcal/macros and its catalog nutrient rows (DATA-20) **at save time**. Totals come from snapshots, never from `foods`.
 - **Why:** history must not change when an API food updates, the cache refreshes, a custom food is edited/deleted, or a serving is renamed/removed.
 - The entry must stay fully usable if `food_id` later becomes NULL.
 
 ## DATA-06 Unknown ≠ zero
 - NULL nutrient = unknown; 0 = known zero. MUST NOT coerce NULL to 0 in API mapping or aggregation. The Diary UI shows the known sum (including `0`) plus an unknown indicator when `unknown count > 0`.
-- Quick Calories: macros and serving columns always NULL. Use one consistent display name such as `Quick Calories`; user text goes in `note` (trimmed; empty → NULL).
+- Catalog nutrients follow the same rule by row: no row = unknown, a row with `0` = known zero (DATA-20).
+- Quick Calories: macros and serving columns always NULL, and no nutrient rows. Use one consistent display name such as `Quick Calories`; user text goes in `note` (trimmed; empty → NULL).
 - Per macro, aggregates return **known sum + unknown count**:
 ```sql
 SELECT SUM(energy_kcal) AS energy_kcal,
@@ -94,6 +96,8 @@ FROM diary_entries WHERE diary_date = ?;
 | Edit food entry | Load by ID → validate serving/meal → recompute snapshot only if serving changed → upsert recent after save. |
 | Add/edit Quick Calories | Validate meal, date, kcal ≥ 0 (the UI requires ≥ 1, UX-07). Macros + serving NULL. Trim note. |
 | Copy item / meal | Tx: read the source entry or source meal/date entries in order → new UUID(s) → copy snapshots exactly → chosen destination date + meal → append after existing `sort_order`. Copies are independent of the originals. |
+| Add / edit food entry nutrients | Same transaction as the entry: snapshot every nutrient row the food has, scaled like kcal/macros (`amount × basis_multiplier × quantity`). An edit rewrites the rows whenever it recomputes kcal/macros; the snapshot-only fallback (UX-06) scales them proportionally. |
+| Copy item / meal, Undo delete | Copy / reinsert the entry's nutrient rows with it. |
 | Delete custom / saved food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
 | Update goals | DATA-09. |
@@ -102,6 +106,7 @@ FROM diary_entries WHERE diary_date = ?;
 - First launch, one idempotent transaction: schema + indexes → settings row (locale-informed unit defaults, predictable fallback) → 4 default meals in display order → provisional goal row (UX-01; `goals_confirmed_at` NULL) → schema version. Repeated or interrupted launches MUST NOT duplicate anything.
 - Migrations: numbered, forward-only, stored with the code. Each has an increasing integer version, runs in a transaction where possible, records its version only after all steps succeed, detects whether it already ran, and preserves user data.
 - Migration 3 adds the macro target mode and percentage columns; existing goals remain fixed-gram goals.
+- Migration 4 adds `food_nutrients`, `diary_entry_nutrients` (DATA-20) and the DATA-21 settings columns. Existing foods and entries get no rows (unknown); nothing is backfilled.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.
 
@@ -113,3 +118,32 @@ FROM diary_entries WHERE diary_date = ?;
 - UX-18 `Search results` is stored in `app_settings.food_search_sections TEXT NOT NULL DEFAULT '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]'`: a JSON array, in display order, of all 4 section ids, each with its visibility.
 - Added by migration 2 (DATA-17), which updates `schema.sql` in the same change. Existing rows get the default.
 - Read through Zod: exactly the 4 ids, each once, ≥1 visible. Invalid or unparseable data → the default (never a crash). The repository MUST reject writes that break these rules.
+
+## DATA-20 Nutrient catalog and storage
+- The catalog lives in code (`src/domain/nutrition/nutrientCatalog.ts`, source of truth for ids, units, groups, order and display decimals). Ids are stable strings, stored in SQLite; never rename one. Rows whose id isn't in the catalog are ignored on read.
+- Catalog (group · id · unit), in display order:
+
+| Group | Nutrients |
+|---|---|
+| `fatsSugars` | `fibre` g · `sugars` g · `added_sugars` g · `saturated_fat` g · `monounsaturated_fat` g · `polyunsaturated_fat` g · `trans_fat` g · `cholesterol` mg |
+| `minerals` | `salt` g · `sodium` mg · `potassium` mg · `calcium` mg · `iron` mg · `magnesium` mg · `phosphorus` mg · `zinc` mg |
+| `vitamins` | `vitamin_a` µg (RAE) · `vitamin_c` mg · `vitamin_d` µg · `vitamin_e` mg · `vitamin_k` µg · `thiamin` mg · `riboflavin` mg · `niacin` mg · `vitamin_b6` mg · `vitamin_b12` µg · `folate` µg (DFE) |
+| `other` | `caffeine` mg |
+- Out of the catalog: amino acids, individual fatty acids, alcohol. **Why:** USDA sends 100+ such rows for some foods; OFF reports alcohol in % vol, which can't be merged with grams.
+- `food_nutrients(food_id → foods ON DELETE CASCADE, nutrient_id, amount REAL NOT NULL ≥ 0, PK(food_id, nutrient_id))`: per the food's basis (PROV-06), like its macros.
+- `diary_entry_nutrients(entry_id → diary_entries ON DELETE CASCADE, nutrient_id, amount REAL NOT NULL ≥ 0, PK(entry_id, nutrient_id))`: the entry snapshot (DATA-05).
+- Salt and sodium: when a source gives only one, store both, derived with `salt g = sodium mg × 2.5 ÷ 1000`.
+- An external upsert (DATA-15) replaces the food's rows with the new response: a nutrient missing from it becomes unknown. Custom foods write the rows entered in UX-08.
+- Day totals per nutrient = known sum + unknown count, where unknown count = the day's entries without a row for it (Quick Calories included):
+```sql
+SELECT n.nutrient_id, SUM(n.amount) AS known_sum, COUNT(*) AS known_count
+FROM diary_entry_nutrients n JOIN diary_entries e ON e.id = n.entry_id
+WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count − known_count
+```
+- No nutrient goals (SCOPE-10).
+
+## DATA-21 Dashboard nutrients setting
+- `app_settings.dashboard_nutrients TEXT NOT NULL`: a JSON array of `{ "id", "visible" }` in dashboard order, one per catalog id. Default: `fibre`, `sugars`, `saturated_fat`, `salt` visible, then the other catalog ids hidden in catalog order.
+- Read through Zod. Tolerates catalog growth: unknown ids are dropped, duplicates keep the first, missing catalog ids are appended hidden. Unparseable → the default (never a crash). Zero visible is allowed (the Diary hides its chevron, DS-08).
+- `app_settings.dashboard_nutrients_open INTEGER NOT NULL DEFAULT 0 CHECK (IN (0, 1))`: whether the Diary nutrient panel is open; toggling it saves immediately.
+- Both added by migration 4 (DATA-17), which updates `schema.sql` in the same change.

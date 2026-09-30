@@ -15,6 +15,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Body weight: current, goal, history.
 - Unit preferences (SCOPE-08).
 - Food Search sections: reorder and show/hide `My foods`, `Saved`, `Open Food Facts`, `USDA` (UX-18, DATA-19).
+- Nutrient details beyond macros (user decision 2026-09-30): Food Detail lists every catalog nutrient a food carries; the Diary opens the day's totals for user-chosen nutrients; custom foods may carry them (DATA-20/21, UX-02, UX-05, UX-21).
 
 ## SCOPE-02 Configurable meals
 - Defaults: Breakfast, Lunch, Dinner, Snacks.
@@ -47,7 +48,7 @@ Scrambled eggs
 - Editable and deletable from the Diary.
 
 ## SCOPE-06 Custom foods
-- Required: name, calories, serving amount, serving unit, protein, carbs, fat. Optional: brand.
+- Required: name, calories, serving amount, serving unit, protein, carbs, fat. Optional: brand, catalog nutrients (DATA-20, UX-08).
 - Stored locally; appear in future searches and in recents.
 
 ## SCOPE-07 Ruler
@@ -63,7 +64,7 @@ Scrambled eggs
 - Weight history is stored from day one, even if the first UI is simple.
 
 ## SCOPE-10 Out of MVP — MUST NOT build or add placeholders for
-Barcode scanner · accounts · cloud sync · social · recipes · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · micronutrient-focused UI · automatic calorie-goal calculation · gamification/streaks.
+Barcode scanner · accounts · cloud sync · social · recipes · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
 
 Other docs refer to this list instead of repeating it.
 
