@@ -252,7 +252,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 ## UX-22 Android widget (calories left)
 ```text
 [ 1,731        ]
-[ kcal left    ]      over goal: [ 250 / kcal over ] in `danger`
+[ kcal left    ]      over goal: [ 250 / kcal over ] in `warning`
 ```
 - One size, 2×1 cells, resizable horizontally only. Android only.
 - Value = the Diary overview's remaining for **today** (UX-02, DATA-09 goal for today − today's consumed). Same rounding, grouping and locale as the Diary (UX number display); energy unit follows Units (kcal|kJ).
@@ -260,7 +260,8 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
   | State | Shows |
   |---|---|
   | Remaining ≥ 0 | `{n} kcal left` |
-  | Over goal | `{n} kcal over`, number in `danger` |
+  | Over goal | `{n} kcal over`, number in `warning` (as the ring, DS-03) |
+  | No goal applies to today (DATA-09) | `{n} kcal eaten`, as the ring |
   | Provisional goal (UX-01) | Same as above; no "default goals" hint |
   | DB not ready / read fails | `Open Calorie Tracker` |
 - Tap anywhere → the app opens on the Diary at today (NAV-10).

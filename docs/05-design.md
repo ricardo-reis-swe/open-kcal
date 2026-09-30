@@ -96,7 +96,7 @@ MVP: light theme · iOS + Android · one phone size · default text. Check the s
 - Light theme only, even when the system is dark (DS-03). Colors from `lightColors` in `tokens.ts`, never raw hex in widget code.
 - Background `surface`, corner radius `radii.large`, no shadow or border. Padding `spacing[3]`.
 - Content left-aligned, vertically centered:
-  - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `danger` (DS-03 explicit label: "over").
+  - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `warning`, as the Diary ring (DS-03 explicit label: "over").
   - Label (`kcal left` / `kcal over`, or kJ): `typography.compact`, `textSecondary`.
   - Unavailable: `Open Calorie Tracker` in `compact`, `textSecondary`, no number.
 - Single line each. The number MUST NOT truncate; the label may ellipsize (pt-PT is longer).
