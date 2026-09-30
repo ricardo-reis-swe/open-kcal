@@ -2,7 +2,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import type { AppSettings } from '@/data/db/repositories/settingsRepository';
-import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
+import { visibleDashboardNutrients } from '@/domain/nutrition/dashboardNutrients';
+import { useAppSettings, useDashboardNutrients, useMeals } from '@/features/diary/diary.queries';
 import { useCurrentGoal, useCurrentWeight, useUsdaKeyConfigured } from '@/features/profile/profile.queries';
 import { AppBar, AppText, ListRow, PrimaryButton, SectionHeader } from '@/shared/components';
 import { formatEnergy, formatWeight } from '@/shared/i18n/format';
@@ -20,6 +21,7 @@ export type ProfileNavigation = {
   onWeightGoal?: () => void;
   onMeals?: () => void;
   onUnits?: () => void;
+  onDashboardNutrients?: () => void;
   onFoodDatabases?: () => void;
 };
 
@@ -33,6 +35,8 @@ export function ProfileScreen(nav: ProfileNavigation) {
   const weight = useCurrentWeight();
   const meals = useMeals().data;
   const usda = useUsdaKeyConfigured().data;
+  const dashboardNutrients = useDashboardNutrients().data;
+  const shownNutrients = dashboardNutrients ? visibleDashboardNutrients(dashboardNutrients).length : undefined;
 
   const unitLabel = (unit: string) => t(`units.${unit}` as 'units.kg');
   const withUnit = (value: string, unit: string) => t('profile.valueWithUnit', { value, unit: unitLabel(unit) });
@@ -99,6 +103,16 @@ export function ProfileScreen(nav: ProfileNavigation) {
           'profile-meals',
         )}
         {row(t('profile.units'), units, nav.onUnits, 'profile-units')}
+        {row(
+          t('profile.dashboardNutrients'),
+          shownNutrients === undefined
+            ? undefined
+            : shownNutrients === 0
+              ? t('profile.nutrientsNone')
+              : t('profile.nutrientsShown', { count: shownNutrients }),
+          nav.onDashboardNutrients,
+          'profile-dashboard-nutrients',
+        )}
 
         <SectionHeader label={t('profile.foodDataSection')} uppercase />
         {row(

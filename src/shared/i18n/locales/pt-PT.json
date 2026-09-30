@@ -115,7 +115,11 @@
     "foodDatabases": "Bases de dados de alimentos",
     "usdaOn": "USDA ativo",
     "usdaOff": "USDA inativo",
-    "valueWithUnit": "{{value}} {{unit}}"
+    "valueWithUnit": "{{value}} {{unit}}",
+    "dashboardNutrients": "Nutrientes no Diário",
+    "nutrientsShown_one": "{{count}} visível",
+    "nutrientsShown_other": "{{count}} visíveis",
+    "nutrientsNone": "Nenhum"
   },
   "caloriesMacros": {
     "title": "Calorias e macros",
@@ -297,7 +301,9 @@
       "otherUnit": "Introduza uma unidade de porção.",
       "energy": "Introduza calorias de 1 a {{max}} {{unit}}.",
       "macro": "Introduza uma quantidade de 0 a {{max}} g."
-    }
+    },
+    "moreNutrients": "Mais nutrientes",
+    "moreNutrientsHint": "Opcional, por dose indicada acima."
   },
   "servingRuler": {
     "a11y": "Porção, {{quantity}}, {{serving}}, {{energy}} {{unit}}",
@@ -453,5 +459,18 @@
       "µg": "microgramas"
     },
     "a11y": "{{name}}, {{value}} {{unit}}"
+  },
+  "dashboardNutrients": {
+    "title": "Nutrientes no Diário",
+    "shown": "Visíveis",
+    "noneHelper": "O Diário não mostra o painel de nutrientes.",
+    "saveError": "Não foi possível guardar. Tente novamente."
+  },
+  "diaryNutrients": {
+    "show": "Mostrar mais nutrientes",
+    "hide": "Ocultar mais nutrientes",
+    "value": "{{value}} {{unit}}",
+    "a11y": "{{name}}, {{value}} {{unit}}.",
+    "partial": "Alguns registos não o indicam."
   }
 }

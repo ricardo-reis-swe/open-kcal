@@ -12,6 +12,7 @@ export default function ProfileRoute() {
       onCaloriesMacros={() => router.push(routes.caloriesMacros())}
       onMeals={() => router.push(routes.meals())}
       onUnits={() => router.push(routes.units())}
+      onDashboardNutrients={() => router.push(routes.dashboardNutrients())}
       onWeightGoal={() => router.push(routes.weightGoal())}
       onFoodDatabases={() => router.push(routes.foodDatabases())}
     />

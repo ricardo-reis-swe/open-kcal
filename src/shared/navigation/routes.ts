@@ -35,6 +35,7 @@ export type RouteParams = {
   foodDatabases: undefined;
   caloriesMacros: undefined;
   units: undefined;
+  dashboardNutrients: undefined;
   weightGoal: undefined;
 };
 
@@ -94,6 +95,8 @@ export const routes = {
   caloriesMacros: (): Href => '/profile/calories-macros' as Href,
   /** NAV-06 / UX-18 Units. */
   units: (): Href => '/profile/units' as Href,
+  /** NAV-06 / UX-21 Dashboard nutrients (DATA-21). */
+  dashboardNutrients: (): Href => '/profile/dashboard-nutrients' as Href,
   /** NAV-06 / UX-18 Weight Goal. */
   weightGoal: (): Href => '/profile/weight-goal' as Href,
   /** NAV-06 / UX-18 Weight History (rows and `+` open the app-level Weight Entry Sheet, NAV-07). */

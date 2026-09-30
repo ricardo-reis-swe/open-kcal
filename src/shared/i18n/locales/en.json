@@ -115,7 +115,11 @@
     "foodDatabases": "Food databases",
     "usdaOn": "USDA on",
     "usdaOff": "USDA off",
-    "valueWithUnit": "{{value}} {{unit}}"
+    "valueWithUnit": "{{value}} {{unit}}",
+    "dashboardNutrients": "Dashboard nutrients",
+    "nutrientsShown_one": "{{count}} shown",
+    "nutrientsShown_other": "{{count}} shown",
+    "nutrientsNone": "None"
   },
   "caloriesMacros": {
     "title": "Calories & macros",
@@ -297,7 +301,9 @@
       "otherUnit": "Enter a serving unit.",
       "energy": "Enter calories from 1 to {{max}} {{unit}}.",
       "macro": "Enter an amount from 0 to {{max}} g."
-    }
+    },
+    "moreNutrients": "More nutrients",
+    "moreNutrientsHint": "Optional, per the serving above."
   },
   "servingRuler": {
     "a11y": "Serving, {{quantity}}, {{serving}}, {{energy}} {{unit}}",
@@ -453,5 +459,18 @@
       "µg": "micrograms"
     },
     "a11y": "{{name}}, {{value}} {{unit}}"
+  },
+  "dashboardNutrients": {
+    "title": "Dashboard nutrients",
+    "shown": "Shown",
+    "noneHelper": "The Diary shows no nutrient panel.",
+    "saveError": "Couldn't save. Try again."
+  },
+  "diaryNutrients": {
+    "show": "Show more nutrients",
+    "hide": "Hide more nutrients",
+    "value": "{{value}} {{unit}}",
+    "a11y": "{{name}}, {{value}} {{unit}}.",
+    "partial": "Some entries don't list it."
   }
 }

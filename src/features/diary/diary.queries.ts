@@ -10,6 +10,7 @@ import type {
   EditFoodEntryInput,
   QuickCaloriesInput,
 } from '@/data/db/repositories/diaryRepository';
+import type { DashboardNutrients } from '@/domain/nutrition/dashboardNutrients';
 import type { LocalDate } from '@/shared/dates';
 
 export const diaryKeys = {
@@ -18,7 +19,11 @@ export const diaryKeys = {
   entry: (id: string) => ['diary', 'entry', id] as const,
 };
 
-export const settingsKeys = { all: ['settings'] as const };
+export const settingsKeys = {
+  all: ['settings'] as const,
+  dashboardNutrients: ['settings', 'dashboardNutrients'] as const,
+  dashboardNutrientsOpen: ['settings', 'dashboardNutrientsOpen'] as const,
+};
 export const mealKeys = { all: ['meals'] as const };
 
 export function useDiaryDay(date: LocalDate) {
@@ -29,6 +34,42 @@ export function useDiaryDay(date: LocalDate) {
 export function useAppSettings() {
   const { settings } = useServices();
   return useQuery({ queryKey: settingsKeys.all, queryFn: () => settings.get() });
+}
+
+/** DATA-21: the Diary nutrient panel's nutrients, in order (UX-02, UX-21). */
+export function useDashboardNutrients() {
+  const { settings } = useServices();
+  return useQuery({ queryKey: settingsKeys.dashboardNutrients, queryFn: () => settings.getDashboardNutrients() });
+}
+
+/** UX-21: every switch change or drop saves immediately (as Units). */
+export function useSetDashboardNutrients() {
+  const { settings } = useServices();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (items: DashboardNutrients) => settings.setDashboardNutrients(items),
+    onSuccess: (saved) => client.setQueryData(settingsKeys.dashboardNutrients, saved),
+  });
+}
+
+/** DATA-21: whether the Diary nutrient panel is open. */
+export function useDashboardNutrientsOpen() {
+  const { settings } = useServices();
+  return useQuery({
+    queryKey: settingsKeys.dashboardNutrientsOpen,
+    queryFn: () => settings.getDashboardNutrientsOpen(),
+  });
+}
+
+/** UX-02: the chevron flips the panel at once (optimistic) and persists the new state. */
+export function useSetDashboardNutrientsOpen() {
+  const { settings } = useServices();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (open: boolean) => settings.setDashboardNutrientsOpen(open),
+    onMutate: (open) => client.setQueryData(settingsKeys.dashboardNutrientsOpen, open),
+    onError: (_error, open) => client.setQueryData(settingsKeys.dashboardNutrientsOpen, !open),
+  });
 }
 
 /** Meals in the user's saved order (NAV-07 Meal Picker; never fixed names). */

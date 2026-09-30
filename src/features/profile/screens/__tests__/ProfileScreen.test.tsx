@@ -37,6 +37,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
     expect(await screen.findByText(`${meals.length} meals`)).toBeTruthy();
     expect(screen.getByText('lb · g · kJ · ml')).toBeTruthy();
     expect(await screen.findByText('USDA on')).toBeTruthy();
+    expect(screen.getByText('4 shown')).toBeTruthy(); // DATA-21 default
     const kj = new Intl.NumberFormat('en-GB').format(Math.round(goal!.calorieTargetKcal * 4.184));
     expect(screen.getByText(`${kj} kJ`)).toBeTruthy();
   });
@@ -50,11 +51,20 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       onWeightGoal: jest.fn(),
       onMeals: jest.fn(),
       onUnits: jest.fn(),
+      onDashboardNutrients: jest.fn(),
       onFoodDatabases: jest.fn(),
     };
     await renderWithServices(<ProfileScreen {...nav} />, services);
     await fireEvent.press(await screen.findByTestId('profile-update-weight'));
-    for (const id of ['weight-history', 'calories-macros', 'weight-goal', 'meals', 'units', 'food-databases']) {
+    for (const id of [
+      'weight-history',
+      'calories-macros',
+      'weight-goal',
+      'meals',
+      'units',
+      'dashboard-nutrients',
+      'food-databases',
+    ]) {
       await fireEvent.press(screen.getByTestId(`profile-${id}`));
     }
     for (const handler of Object.values(nav)) expect(handler).toHaveBeenCalledTimes(1);
