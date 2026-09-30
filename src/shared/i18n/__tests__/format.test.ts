@@ -1,4 +1,4 @@
-import { formatEnergy, formatGrams, formatShortDate, formatWeight, relativeDay } from '../format';
+import { formatEnergy, formatGrams, formatNutrientAmount, formatShortDate, formatWeight, relativeDay } from '../format';
 
 describe('UX-00 number display', () => {
   it('UX-00: energy is a grouped integer in the locale', () => {
@@ -51,5 +51,16 @@ describe('UX-02 date labels', () => {
     }).format(new Date(Date.UTC(2026, 8, 28)));
     expect(formatShortDate('2026-09-28', '2026-09-25', 'pt-PT')).toBe(expected);
     expect(formatShortDate('2026-09-28', '2026-09-25', 'pt-PT')).toMatch(/28/);
+  });
+});
+
+describe('DATA-20 / DS-09: nutrient amounts', () => {
+  it('uses up to the catalog decimals in the locale and never shows a known amount as 0', () => {
+    expect(formatNutrientAmount(4.56, 1, 'en-GB')).toBe('4.6');
+    expect(formatNutrientAmount(4, 1, 'en-GB')).toBe('4');
+    expect(formatNutrientAmount(0.25, 2, 'pt-PT')).toBe('0,25');
+    expect(formatNutrientAmount(1234.4, 0, 'en-GB')).toBe('1,234');
+    expect(formatNutrientAmount(0.004, 1, 'en-GB')).toBe('<0.1');
+    expect(formatNutrientAmount(0, 1, 'en-GB')).toBe('0');
   });
 });

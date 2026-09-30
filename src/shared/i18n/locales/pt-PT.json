@@ -407,5 +407,51 @@
     "dateTime": "{{date}}, {{time}}",
     "row": "{{date}}, {{weight}}, {{change}}",
     "rowFirst": "{{date}}, {{weight}}"
+  },
+  "nutrients": {
+    "title": "Informação nutricional",
+    "empty": "Sem outros nutrientes indicados.",
+    "groups": {
+      "fatsSugars": "Hidratos e gorduras",
+      "minerals": "Minerais",
+      "vitamins": "Vitaminas",
+      "other": "Outros"
+    },
+    "names": {
+      "fibre": "Fibra",
+      "sugars": "Açúcares",
+      "added_sugars": "Açúcares adicionados",
+      "saturated_fat": "Gordura saturada",
+      "monounsaturated_fat": "Gordura monoinsaturada",
+      "polyunsaturated_fat": "Gordura polinsaturada",
+      "trans_fat": "Gordura trans",
+      "cholesterol": "Colesterol",
+      "salt": "Sal",
+      "sodium": "Sódio",
+      "potassium": "Potássio",
+      "calcium": "Cálcio",
+      "iron": "Ferro",
+      "magnesium": "Magnésio",
+      "phosphorus": "Fósforo",
+      "zinc": "Zinco",
+      "vitamin_a": "Vitamina A",
+      "vitamin_c": "Vitamina C",
+      "vitamin_d": "Vitamina D",
+      "vitamin_e": "Vitamina E",
+      "vitamin_k": "Vitamina K",
+      "thiamin": "Tiamina (B1)",
+      "riboflavin": "Riboflavina (B2)",
+      "niacin": "Niacina (B3)",
+      "vitamin_b6": "Vitamina B6",
+      "vitamin_b12": "Vitamina B12",
+      "folate": "Folato",
+      "caffeine": "Cafeína"
+    },
+    "unitsSpoken": {
+      "g": "gramas",
+      "mg": "miligramas",
+      "µg": "microgramas"
+    },
+    "a11y": "{{name}}, {{value}} {{unit}}"
   }
 }

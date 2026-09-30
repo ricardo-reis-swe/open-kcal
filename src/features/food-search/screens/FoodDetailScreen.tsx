@@ -6,7 +6,7 @@ import { ScrollView, View } from 'react-native';
 import type { DiaryEntry } from '@/data/db/repositories/diaryRepository';
 import type { Food, FoodServing } from '@/data/db/repositories/foodsRepository';
 import { convertServingQuantity, initialServing } from '@/domain/food/servings';
-import { servingNutrients } from '@/domain/nutrition/nutrients';
+import { scaleNutrients, servingNutrients } from '@/domain/nutrition/nutrients';
 import { useAppSettings, useDiaryEntry, useDiaryWrites, useMeals } from '@/features/diary/diary.queries';
 import { useDiaryDate } from '@/features/diary/hooks/DiaryDateContext';
 import {
@@ -28,6 +28,7 @@ import { routes, type FoodSource, type Origin } from '@/shared/navigation/routes
 import { useTheme } from '@/shared/theme';
 
 import { announceAddedFood } from '../addedNotice';
+import { NutritionFacts } from '../components/NutritionFacts';
 import { ServingRuler } from '../components/ServingRuler';
 import { useExternalFood, useFood, useRecentFood } from '../food-search.queries';
 
@@ -226,15 +227,9 @@ function FoodDetailForm({
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const nutrients = useMemo(() => {
+    // UX-06: the entry's own serving scales its snapshot (incl. nutrient rows); another serving recomputes.
     if (entry && serving.label.trim().toLowerCase() === entry.servingUnit?.trim().toLowerCase()) {
-      const factor = quantity / entry.servingQuantity!;
-      const scale = (value: number | null) => (value === null ? null : value * factor);
-      return {
-        energyKcal: entry.nutrients.energyKcal * factor,
-        carbohydrateG: scale(entry.nutrients.carbohydrateG),
-        proteinG: scale(entry.nutrients.proteinG),
-        fatG: scale(entry.nutrients.fatG),
-      };
+      return scaleNutrients(entry.nutrients, quantity / entry.servingQuantity!);
     }
     return servingNutrients(food.nutrients, serving, quantity);
   }, [entry, food.nutrients, quantity, serving]);
@@ -357,6 +352,7 @@ function FoodDetailForm({
             <ListRow label={t('foodDetail.meal')} value={mealName} onPress={() => setPickingMeal(true)} navigates />
             <ListRow label={t('foodDetail.date')} value={dateLabel} />
           </View>
+          <NutritionFacts amounts={nutrients.extra} locale={locale} />
           {mode.kind === 'edit' ? (
             <View style={{ paddingHorizontal: theme.spacing[4] }}>
               <TextAction

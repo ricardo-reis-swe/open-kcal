@@ -254,4 +254,81 @@ describe('UX-05: Food Detail / Add Entry', () => {
     await fireEvent.press(within(dialog).getByRole('button', { name: 'Delete entry' }));
     await waitFor(() => expect(mockDeleteEntry).toHaveBeenCalledWith('entry-1'));
   });
+
+  it('UX-05 / DATA-20: Nutrition facts lists the known catalog nutrients by group, scaled to the serving', async () => {
+    mockFood.nutrients.extra = { fibre: 10, sodium: 400, salt: 1, vitamin_c: 0.004, caffeine: 0 };
+    try {
+      await renderWithProviders(
+        <FoodDetailScreen
+          mode={{
+            kind: 'add',
+            foodId: mockFood.id,
+            foodSource: 'custom',
+            mealId: 'meal-1',
+            date: '2026-09-25',
+            origin: 'diary',
+          }}
+        />,
+      );
+      // Recent serving: 50 g of a per-100 g food.
+      const facts = screen.getByTestId('nutrition-facts');
+      expect(within(facts).getByRole('header', { name: 'Nutrition facts' })).toBeTruthy();
+      expect(within(screen.getByTestId('nutrition-facts-fatsSugars')).getByLabelText('Fibre, 5 grams')).toBeTruthy();
+      const minerals = screen.getByTestId('nutrition-facts-minerals');
+      expect(within(minerals).getByLabelText('Salt, 0.5 grams')).toBeTruthy();
+      expect(within(minerals).getByLabelText('Sodium, 200 milligrams')).toBeTruthy();
+      // A known amount too small to show is never rendered as a known zero.
+      expect(screen.getByTestId('nutrition-fact-vitamin_c')).toHaveTextContent('Vitamin C<0.1 mg');
+      expect(screen.getByTestId('nutrition-fact-caffeine')).toHaveTextContent('Caffeine0 mg');
+      expect(screen.queryByTestId('nutrition-fact-iron')).toBeNull();
+      await fireEvent(screen.getByTestId('serving-ruler'), 'accessibilityAction', {
+        nativeEvent: { actionName: 'increment' },
+      });
+      await waitFor(() => expect(screen.getByLabelText('Fibre, 5.1 grams')).toBeTruthy());
+    } finally {
+      delete mockFood.nutrients.extra;
+    }
+  });
+
+  it('UX-05: a food with no catalog nutrients says so', async () => {
+    await renderWithProviders(
+      <FoodDetailScreen
+        mode={{
+          kind: 'add',
+          foodId: mockFood.id,
+          foodSource: 'custom',
+          mealId: 'meal-1',
+          date: '2026-09-25',
+          origin: 'diary',
+        }}
+      />,
+    );
+    expect(within(screen.getByTestId('nutrition-facts')).getByText('No other nutrients listed.')).toBeTruthy();
+  });
+
+  it('UX-06: an edited entry shows its snapshot nutrients, scaled with the quantity', async () => {
+    mockEntry = {
+      id: 'entry-2',
+      kind: 'food',
+      diaryDate: '2026-09-25',
+      mealId: 'meal-1',
+      foodId: null,
+      name: 'Archived oats',
+      brand: null,
+      servingQuantity: 50,
+      servingUnit: 'g',
+      nutrients: { energyKcal: 210, carbohydrateG: 30, proteinG: 6, fatG: 7, extra: { iron: 2 } },
+      note: null,
+      sortOrder: 0,
+      createdAt: '2026-09-25T08:00:00.000Z',
+      updatedAt: '2026-09-25T08:00:00.000Z',
+    };
+    await renderWithProviders(<FoodDetailScreen mode={{ kind: 'edit', entryId: 'entry-2', origin: 'diary' }} />);
+    expect(screen.getByLabelText('Iron, 2 milligrams')).toBeTruthy();
+    await fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'increment' },
+    });
+    await waitFor(() => expect(screen.getByLabelText('Iron, 2 milligrams')).toBeTruthy()); // 2.04 → 1 decimal: 2
+    expect(screen.getByTestId('nutrition-fact-iron')).toHaveTextContent('Iron2 mg');
+  });
 });

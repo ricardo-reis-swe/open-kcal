@@ -40,6 +40,24 @@ export function formatGrams(grams: number, locale: string): string {
   return Math.abs(tenths) >= 10 ? formatInteger(grams, locale) : decimalFormat(locale).format(tenths + 0);
 }
 
+const nutrientFormats = new Map<string, Intl.NumberFormat>();
+
+/**
+ * DATA-20 / DS-09: a catalog nutrient amount with up to its catalog decimals. A known amount too small to show is
+ * `<0.1` (never `0`, which would read as a known zero, DATA-06).
+ */
+export function formatNutrientAmount(amount: number, decimals: number, locale: string): string {
+  const key = `${locale}|${decimals}`;
+  let format = nutrientFormats.get(key);
+  if (!format) {
+    format = new Intl.NumberFormat(locale, { maximumFractionDigits: decimals });
+    nutrientFormats.set(key, format);
+  }
+  const smallest = 10 ** -decimals;
+  if (amount > 0 && amount < smallest / 2) return `<${format.format(smallest)}`;
+  return format.format(amount + 0);
+}
+
 /** UX-00: body weight with exactly 1 decimal, converted from canonical kg (DATA-04). */
 export function formatWeight(kg: number, unit: WeightUnit, locale: string): string {
   let format = oneDecimalFormats.get(locale);
