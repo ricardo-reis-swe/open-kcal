@@ -119,7 +119,9 @@
     "dashboardNutrients": "Nutrientes no Diário",
     "nutrientsShown_one": "{{count}} visível",
     "nutrientsShown_other": "{{count}} visíveis",
-    "nutrientsNone": "Nenhum"
+    "nutrientsNone": "Nenhum",
+    "appSection": "Aplicação",
+    "theme": "Tema"
   },
   "caloriesMacros": {
     "title": "Calorias e macros",
@@ -358,6 +360,13 @@
     "energy": "Energia",
     "volume": "Volume",
     "saveError": "Não foi possível guardar. Tente novamente."
+  },
+  "theme": {
+    "title": "Tema",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "systemHint": "Sistema segue a definição clara ou escura do telemóvel."
   },
   "meals": {
     "title": "Refeições",

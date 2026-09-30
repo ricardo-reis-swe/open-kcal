@@ -25,6 +25,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
     expect(await screen.findByText('No weight logged yet')).toBeTruthy();
     expect(screen.getByText('Goal —')).toBeTruthy();
     expect(await screen.findByText('USDA off')).toBeTruthy();
+    expect(await screen.findByText('System')).toBeTruthy(); // DATA-23 default
   });
 
   it('UX-15: summary and row values follow the configured units (DATA-04)', async () => {
@@ -53,6 +54,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       onUnits: jest.fn(),
       onDashboardNutrients: jest.fn(),
       onFoodDatabases: jest.fn(),
+      onTheme: jest.fn(),
     };
     await renderWithServices(<ProfileScreen {...nav} />, services);
     await fireEvent.press(await screen.findByTestId('profile-update-weight'));
@@ -64,6 +66,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       'units',
       'dashboard-nutrients',
       'food-databases',
+      'theme',
     ]) {
       await fireEvent.press(screen.getByTestId(`profile-${id}`));
     }

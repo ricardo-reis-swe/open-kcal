@@ -35,6 +35,7 @@ export type RouteParams = {
   foodDatabases: undefined;
   caloriesMacros: undefined;
   units: undefined;
+  theme: undefined;
   dashboardNutrients: undefined;
   weightGoal: undefined;
 };
@@ -95,6 +96,8 @@ export const routes = {
   caloriesMacros: (): Href => '/profile/calories-macros' as Href,
   /** NAV-06 / UX-18 Units. */
   units: (): Href => '/profile/units' as Href,
+  /** NAV-06 / UX-23 Theme (DATA-23). */
+  theme: (): Href => '/profile/theme' as Href,
   /** NAV-06 / UX-21 Dashboard nutrients (DATA-21). */
   dashboardNutrients: (): Href => '/profile/dashboard-nutrients' as Href,
   /** NAV-06 / UX-18 Weight Goal. */

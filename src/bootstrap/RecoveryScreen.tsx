@@ -48,7 +48,8 @@ export function RecoveryScreen({ error, diagnostics, onRetry, retrying = false, 
         },
       ]}
     >
-      <StatusBar style="dark" />
+      {/* The recovery screen sits on the canvas, not the app bar, so the status bar follows the scheme. */}
+      <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
       <AppText variant="screenTitle" accessibilityRole="header">
         {t('startup.title')}
       </AppText>

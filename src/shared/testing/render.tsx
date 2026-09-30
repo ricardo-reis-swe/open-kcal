@@ -5,28 +5,37 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { i18next, initI18n } from '@/shared/i18n/i18n';
 import type { AppLanguage } from '@/shared/i18n/locale';
-import { ThemeProvider } from '@/shared/theme';
+import { ThemeProvider, type ColorScheme } from '@/shared/theme';
 
 // Component tests run in `en`; one pt-PT smoke test per screen (ARCH-22).
-export type ProviderOptions = { language?: AppLanguage };
+export type ProviderOptions = { scheme?: ColorScheme; language?: AppLanguage };
 
 const TEST_METRICS = {
   frame: { x: 0, y: 0, width: 375, height: 667 },
   insets: { top: 20, left: 0, right: 0, bottom: 0 },
 };
 
-export function TestProviders({ children, language = 'en' }: ProviderOptions & { children: ReactNode }) {
+export function TestProviders({
+  children,
+  scheme = 'light',
+  language = 'en',
+}: ProviderOptions & { children: ReactNode }) {
   initI18n({ language, formattingLocale: language, regionCode: language === 'pt-PT' ? 'PT' : 'US' });
   return (
     <SafeAreaProvider initialMetrics={TEST_METRICS}>
       <I18nextProvider i18n={i18next}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider scheme={scheme}>{children}</ThemeProvider>
       </I18nextProvider>
     </SafeAreaProvider>
   );
 }
 
 export function renderWithProviders(ui: ReactElement, options: ProviderOptions & RenderOptions = {}) {
-  const { language, ...renderOptions } = options;
-  return render(<TestProviders language={language}>{ui}</TestProviders>, renderOptions);
+  const { scheme, language, ...renderOptions } = options;
+  return render(
+    <TestProviders scheme={scheme} language={language}>
+      {ui}
+    </TestProviders>,
+    renderOptions,
+  );
 }

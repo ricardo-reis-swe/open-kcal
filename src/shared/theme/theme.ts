@@ -5,6 +5,9 @@ import { darkColors, lightColors, motionMs, radii, sizes, spacing, typography, t
 // Theme assembled from `tokens.ts` (DS-12). Components read it via `useTheme()`, never tokens directly.
 
 export type ColorScheme = 'light' | 'dark';
+/** UX-23 / DATA-23: the stored choice; `system` follows the OS appearance. */
+export const THEME_PREFERENCES = ['system', 'light', 'dark'] as const;
+export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 export type Elevation = 0 | 1 | 2;
 
 /** Semantic tokens plus content colors derived for filled surfaces. */

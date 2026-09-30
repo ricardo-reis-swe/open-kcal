@@ -190,6 +190,8 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 [Dashboard nutrients           4 shown › ]
 [FOOD DATA                                ]
 [Food databases              USDA on     › ]
+[APP                                      ]
+[Theme                          System   › ]
 ```
 - No weight yet: `No weight logged yet`. No goal: `Goal —`.
 
@@ -267,3 +269,8 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - Tap anywhere → the app opens on the Diary at today (NAV-10).
 - Strings in en + pt-PT (ARCH-22). No other data on the widget: no meals, macros or food names.
 - MUST NOT show stale data after a write in the app or after local midnight beyond the limits in DATA-22.
+
+## UX-23 Theme
+- One segmented control `System | Light | Dark` (DS-03), with helper `System follows your phone's light or dark setting.` Default `System`.
+- Each choice saves (DATA-23) and re-themes the whole app at once, as Units; no Save button. Back → Profile. A failed save shows an inline error and keeps the previous choice.
+- The Android widget stays light (DS-14).

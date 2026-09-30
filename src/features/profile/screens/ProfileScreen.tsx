@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next';
 import type { AppSettings } from '@/data/db/repositories/settingsRepository';
 import { visibleDashboardNutrients } from '@/domain/nutrition/dashboardNutrients';
 import { useAppSettings, useDashboardNutrients, useMeals } from '@/features/diary/diary.queries';
-import { useCurrentGoal, useCurrentWeight, useUsdaKeyConfigured } from '@/features/profile/profile.queries';
+import {
+  useCurrentGoal,
+  useCurrentWeight,
+  useThemePreference,
+  useUsdaKeyConfigured,
+} from '@/features/profile/profile.queries';
 import { AppBar, AppText, ListRow, PrimaryButton, SectionHeader } from '@/shared/components';
 import { formatEnergy, formatWeight } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
@@ -23,6 +28,7 @@ export type ProfileNavigation = {
   onUnits?: () => void;
   onDashboardNutrients?: () => void;
   onFoodDatabases?: () => void;
+  onTheme?: () => void;
 };
 
 /** UX-15 Profile hub: weight summary, Update weight, and the settings rows with their current values (DS-09). */
@@ -36,6 +42,7 @@ export function ProfileScreen(nav: ProfileNavigation) {
   const meals = useMeals().data;
   const usda = useUsdaKeyConfigured().data;
   const dashboardNutrients = useDashboardNutrients().data;
+  const themePreference = useThemePreference().data;
   const shownNutrients = dashboardNutrients ? visibleDashboardNutrients(dashboardNutrients).length : undefined;
 
   const unitLabel = (unit: string) => t(`units.${unit}` as 'units.kg');
@@ -120,6 +127,14 @@ export function ProfileScreen(nav: ProfileNavigation) {
           usda === undefined ? undefined : t(usda ? 'profile.usdaOn' : 'profile.usdaOff'),
           nav.onFoodDatabases,
           'profile-food-databases',
+        )}
+
+        <SectionHeader label={t('profile.appSection')} uppercase />
+        {row(
+          t('profile.theme'),
+          themePreference ? t(`theme.${themePreference}`) : undefined,
+          nav.onTheme,
+          'profile-theme',
         )}
       </ScrollView>
     </View>

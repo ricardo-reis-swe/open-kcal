@@ -15,6 +15,7 @@ export default function ProfileRoute() {
       onDashboardNutrients={() => router.push(routes.dashboardNutrients())}
       onWeightGoal={() => router.push(routes.weightGoal())}
       onFoodDatabases={() => router.push(routes.foodDatabases())}
+      onTheme={() => router.push(routes.theme())}
     />
   );
 }

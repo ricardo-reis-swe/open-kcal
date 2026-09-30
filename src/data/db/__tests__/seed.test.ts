@@ -56,6 +56,7 @@ describe('DATA-17: first-launch init + seed', () => {
       dashboard_nutrients:
         '[{"id":"fibre","visible":true},{"id":"sugars","visible":true},{"id":"saturated_fat","visible":true},{"id":"salt","visible":true}]',
       dashboard_nutrients_open: 0,
+      theme_preference: 'system', // DATA-23 default (migration 5)
     });
     expect(await db.getAll('SELECT name, sort_order FROM meals ORDER BY sort_order')).toEqual(
       EN_MEALS.map((name, sort_order) => ({ name, sort_order })),

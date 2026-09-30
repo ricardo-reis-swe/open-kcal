@@ -6,6 +6,7 @@ import { initializeApp } from '@/bootstrap/initialize-app';
 import { AppProviders } from '@/bootstrap/providers';
 import { startServices } from '@/bootstrap/start-services';
 import { StartupGate } from '@/bootstrap/StartupGate';
+import { ThemePreferenceSync } from '@/bootstrap/ThemePreferenceSync';
 import { getAppVersion } from '@/shared/config/env';
 
 initializeApp();
@@ -17,6 +18,7 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <StartupGate start={startServices} appVersion={getAppVersion()} copyText={copyText}>
+        <ThemePreferenceSync />
         {/* Light content: the app bar is green in light mode and dark surface in dark mode (DS-07). */}
         <StatusBar style="light" />
         <Stack screenOptions={{ headerShown: false }}>

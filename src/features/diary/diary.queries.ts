@@ -23,6 +23,7 @@ export const settingsKeys = {
   all: ['settings'] as const,
   dashboardNutrients: ['settings', 'dashboardNutrients'] as const,
   dashboardNutrientsOpen: ['settings', 'dashboardNutrientsOpen'] as const,
+  themePreference: ['settings', 'themePreference'] as const,
 };
 export const mealKeys = { all: ['meals'] as const };
 

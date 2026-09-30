@@ -1,5 +1,5 @@
--- Reference schema v4 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
--- v3: DATA-09 macro target mode; v4: DATA-20 nutrient rows + DATA-21 dashboard nutrients).
+-- Reference schema v5 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
+-- v3: DATA-09 macro target mode; v4: DATA-20 nutrient rows + DATA-21 dashboard nutrients; v5: DATA-23 theme preference).
 -- Conventions: ids are app-generated UUID TEXT; *_at are UTC ISO-8601 with ms ("2026-09-25T14:32:18.123Z");
 -- *_date / effective_from are local dates 'YYYY-MM-DD'. Canonical units: kg, g, ml, kcal. NULL nutrient = unknown, 0 = known zero.
 -- Every connection: PRAGMA foreign_keys = ON; WAL where supported.
@@ -22,7 +22,8 @@ CREATE TABLE app_settings (
   updated_at         TEXT NOT NULL,
   food_search_sections TEXT NOT NULL DEFAULT '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]',
   dashboard_nutrients TEXT NOT NULL DEFAULT '[{"id":"fibre","visible":true},{"id":"sugars","visible":true},{"id":"saturated_fat","visible":true},{"id":"salt","visible":true}]',
-  dashboard_nutrients_open INTEGER NOT NULL DEFAULT 0 CHECK (dashboard_nutrients_open IN (0, 1))
+  dashboard_nutrients_open INTEGER NOT NULL DEFAULT 0 CHECK (dashboard_nutrients_open IN (0, 1)),
+  theme_preference   TEXT NOT NULL DEFAULT 'system' CHECK (theme_preference IN ('system', 'light', 'dark'))
 );
 
 -- Effective-dated. Goal for date D = row with greatest effective_from <= D.

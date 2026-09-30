@@ -1,7 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { Text } from 'react-native';
 
 import { sequentialIds } from '@/data/db/ids';
+import { settingsKeys } from '@/features/diary/diary.queries';
 import { parseConfig } from '@/shared/config/env';
 import { fixedClock } from '@/shared/dates';
 import { DatabaseError, MigrationError } from '@/shared/errors';
@@ -55,6 +57,22 @@ describe('ARCH-17 / UX-20: StartupGate', () => {
     await act(async () => start.resolve(services));
     expect(screen.getByText('services ready')).toBeOnTheScreen();
     expect(screen.queryByTestId('launch-screen')).toBeNull();
+  });
+
+  it('UX-23: the stored theme is in the query cache when the app mounts (no flash of the other scheme)', async () => {
+    const services = await startServices({ ids: sequentialIds() });
+    await services.settings.setThemePreference('dark');
+    function ThemeOnMount() {
+      const client = useQueryClient();
+      return <Text>{`theme ${String(client.getQueryData(settingsKeys.themePreference))}`}</Text>;
+    }
+    await renderWithProviders(
+      <StartupGate start={async () => services} appVersion="0.1.0" copyText={jest.fn()}>
+        <ThemeOnMount />
+      </StartupGate>,
+    );
+    await act(async () => undefined);
+    expect(screen.getByText('theme dark')).toBeOnTheScreen();
   });
 
   it('shows the recovery screen on failure; Retry runs startup again (never a reset)', async () => {

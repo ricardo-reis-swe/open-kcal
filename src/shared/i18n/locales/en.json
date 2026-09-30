@@ -119,7 +119,9 @@
     "dashboardNutrients": "Dashboard nutrients",
     "nutrientsShown_one": "{{count}} shown",
     "nutrientsShown_other": "{{count}} shown",
-    "nutrientsNone": "None"
+    "nutrientsNone": "None",
+    "appSection": "App",
+    "theme": "Theme"
   },
   "caloriesMacros": {
     "title": "Calories & macros",
@@ -358,6 +360,13 @@
     "energy": "Energy",
     "volume": "Volume",
     "saveError": "Couldn't save. Try again."
+  },
+  "theme": {
+    "title": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "systemHint": "System follows your phone's light or dark setting."
   },
   "meals": {
     "title": "Meals",

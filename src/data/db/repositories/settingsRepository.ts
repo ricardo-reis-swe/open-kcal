@@ -15,6 +15,7 @@ import type { UnitPreferences } from '@/domain/units/units';
 import { isValidWeightKg } from '@/domain/weight/weight';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
 import { DatabaseError, ValidationError } from '@/shared/errors';
+import { THEME_PREFERENCES, type ThemePreference } from '@/shared/theme/theme';
 
 import type { SqlExecutor } from '../sql';
 import type { RepositoryDeps } from './deps';
@@ -118,6 +119,24 @@ export function createSettingsRepository({ db, clock }: RepositoryDeps) {
         nowUtcIso(clock),
       ]);
       return open;
+    },
+
+    /** DATA-23: an unexpected stored value reads as `system` (never a crash). */
+    async getThemePreference(): Promise<ThemePreference> {
+      const row = await db.getFirst<{ theme_preference: unknown }>(
+        'SELECT theme_preference FROM app_settings WHERE id = 1',
+      );
+      const parsed = z.enum(THEME_PREFERENCES).safeParse(row?.theme_preference);
+      return parsed.success ? parsed.data : 'system';
+    },
+
+    async setThemePreference(preference: ThemePreference): Promise<ThemePreference> {
+      if (!THEME_PREFERENCES.includes(preference)) throw new ValidationError('Invalid theme', ['themePreference']);
+      await db.run('UPDATE app_settings SET theme_preference = ?, updated_at = ? WHERE id = 1', [
+        preference,
+        nowUtcIso(clock),
+      ]);
+      return preference;
     },
 
     /** Canonical kg; `null` clears the goal (UX-18). */

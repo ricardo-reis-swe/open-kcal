@@ -31,8 +31,8 @@ describe('DATA-17: migrations', () => {
     const reference = await openTestDatabase();
     await reference.exec(readFileSync(join(__dirname, '../../schema/schema.sql'), 'utf8'));
     expect(await schemaOf(migrated)).toEqual(await schemaOf(reference));
-    expect(await readSchemaVersion(migrated)).toBe(4);
-    expect(LATEST_SCHEMA_VERSION).toBe(4);
+    expect(await readSchemaVersion(migrated)).toBe(5);
+    expect(LATEST_SCHEMA_VERSION).toBe(5);
   });
 
   it('DATA-19: migration 2 adds food_search_sections with the default, preserving existing settings', async () => {
@@ -46,6 +46,22 @@ describe('DATA-17: migrations', () => {
     const row = await db.getFirst<Record<string, unknown>>('SELECT * FROM app_settings');
     expect(row).toMatchObject({ weight_unit: 'lb', energy_unit: 'kJ', goal_weight_kg: 80 });
     expect(JSON.parse(row!.food_search_sections as string)).toEqual(DEFAULT_FOOD_SEARCH_SECTIONS);
+  });
+
+  it('DATA-23: migration 5 adds the theme preference as system, preserving existing settings', async () => {
+    const db = await openTestDatabase();
+    await migrate(db, MIGRATIONS.slice(0, 4), { clock, logger: quietLogger() });
+    await db.run(
+      "INSERT INTO app_settings (id, weight_unit, food_weight_unit, energy_unit, volume_unit, goal_weight_kg, goals_confirmed_at, created_at, updated_at) VALUES (1, 'lb', 'oz', 'kJ', 'fl_oz', 80, 'x', 'x', 'x')",
+    );
+    expect(await migrate(db, MIGRATIONS, { clock, logger: quietLogger() })).toEqual({
+      fromVersion: 4,
+      toVersion: 5,
+      applied: [5],
+    });
+    const row = await db.getFirst<Record<string, unknown>>('SELECT * FROM app_settings');
+    expect(row).toMatchObject({ weight_unit: 'lb', goal_weight_kg: 80, theme_preference: 'system' });
+    await expect(db.run("UPDATE app_settings SET theme_preference = 'sepia'")).rejects.toThrow();
   });
 
   it('DATA-09: migration 3 preserves existing goals as fixed-gram targets', async () => {
@@ -82,7 +98,7 @@ describe('DATA-17: migrations', () => {
             serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, sort_order, created_at, updated_at)
           VALUES ('e1', 'food', '2026-09-25', 'm1', 'f1', 'Oats', 50, 'g', 190, 6.5, 30, 3.5, 0, 'x', 'x');
       `);
-      const result = await migrate(db, MIGRATIONS, { clock, logger: quietLogger() });
+      const result = await migrate(db, MIGRATIONS.slice(0, 4), { clock, logger: quietLogger() });
       expect(result.toVersion).toBe(4);
       expect(await db.getFirst('SELECT name, energy_kcal FROM foods')).toEqual({ name: 'Oats', energy_kcal: 380 });
       expect(await db.getFirst('SELECT energy_kcal, protein_g FROM diary_entries')).toEqual({
@@ -124,13 +140,14 @@ describe('DATA-17: migrations', () => {
     const logger = quietLogger();
     const first = await migrate(db, MIGRATIONS, { clock, logger });
     const second = await migrate(db, MIGRATIONS, { clock, logger });
-    expect(first.applied).toEqual([1, 2, 3, 4]);
-    expect(second).toEqual({ fromVersion: 4, toVersion: 4, applied: [] });
+    expect(first.applied).toEqual([1, 2, 3, 4, 5]);
+    expect(second).toEqual({ fromVersion: 5, toVersion: 5, applied: [] });
     expect(await db.getAll('SELECT version FROM schema_version ORDER BY version')).toEqual([
       { version: 1 },
       { version: 2 },
       { version: 3 },
       { version: 4 },
+      { version: 5 },
     ]);
   });
 

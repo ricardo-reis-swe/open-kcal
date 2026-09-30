@@ -32,6 +32,15 @@ describe('DATA-04: settings repository', () => {
     expect(await deps.db.getAll('SELECT * FROM nutrition_goals')).toEqual(goalsBefore);
   });
 
+  it('DATA-23: stores the theme preference (default system) and rejects unknown values', async () => {
+    const settings = createSettingsRepository(await openSeededTestDatabase());
+    expect(await settings.getThemePreference()).toBe('system');
+    expect(await settings.setThemePreference('dark')).toBe('dark');
+    expect(await settings.getThemePreference()).toBe('dark');
+    await expect(settings.setThemePreference('sepia' as 'dark')).rejects.toMatchObject({ category: 'validation' });
+    expect(await settings.getThemePreference()).toBe('dark');
+  });
+
   it('sets and clears the goal weight in kg', async () => {
     const settings = createSettingsRepository(await openSeededTestDatabase());
     expect((await settings.setGoalWeightKg(70.5)).goalWeightKg).toBe(70.5);

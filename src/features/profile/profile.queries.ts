@@ -9,6 +9,7 @@ import type { WeightInput } from '@/data/db/repositories/weightRepository';
 import { diaryKeys, mealKeys, settingsKeys } from '@/features/diary/diary.queries';
 import { foodSearchKeys } from '@/features/food-search/food-search.queries';
 import { todayLocal } from '@/shared/dates';
+import type { ThemePreference } from '@/shared/theme';
 
 export const goalKeys = {
   all: ['goals'] as const,
@@ -67,6 +68,22 @@ export function useUpdateUnits() {
   return useMutation({
     mutationFn: (units: Partial<UnitPreferences>) => settings.updateUnits(units),
     onSuccess: () => client.invalidateQueries({ queryKey: settingsKeys.all }),
+  });
+}
+
+/** DATA-23 / UX-23: the stored theme choice (the root layout applies it, UX-15 shows it). */
+export function useThemePreference() {
+  const { settings } = useServices();
+  return useQuery({ queryKey: settingsKeys.themePreference, queryFn: () => settings.getThemePreference() });
+}
+
+/** UX-23: each choice saves immediately and re-themes the app at once. */
+export function useSetThemePreference() {
+  const { settings } = useServices();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (preference: ThemePreference) => settings.setThemePreference(preference),
+    onSuccess: (saved) => client.setQueryData(settingsKeys.themePreference, saved),
   });
 }
 

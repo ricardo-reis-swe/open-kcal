@@ -21,7 +21,7 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 - White text only on greens that pass contrast for that size; bright greens are for progress/graphics/outlines.
 - Macros: fixed color + text label + fixed position (carbs, protein, fat). Color is never the only identifier.
 - Calorie ring is brand green. Over goal → explicit label + warning/danger color, never an unexplained red ring.
-- The MVP MUST render the light theme only. Dark tokens MAY remain in code for a future theme setting, but MUST NOT be selected by the OS or QA runs.
+- Light and dark themes from `tokens.ts`. UX-23 picks one or follows the OS (`System`, the default). Dark keeps the same structure and hierarchy: no glow, glass or heavier shadows; it relies on contrast + borders, not shadows (DS-05). System UI (keyboard, date picker, alerts) follows the chosen scheme. Before the DB is ready (launch, UX-20 recovery) the app follows the OS.
 
 ## DS-04 Type
 - System font. Routine readable text ≥14 (`compact`). `micro` only for nonessential metadata and it still scales.
@@ -93,7 +93,7 @@ MVP: light theme · iOS + Android · one phone size · default text. Check the s
 - The matrix (small + large width, large text, increased contrast, reduced motion, screenshot sets) is deferred (POST-13). DS-11 behavior still applies. **Why:** speed for the MVP proof of concept (user decision 2026-09-28).
 
 ## DS-14 Android widget (UX-22)
-- Light theme only, even when the system is dark (DS-03). Colors from `lightColors` in `tokens.ts`, never raw hex in widget code.
+- Light theme only, even when the system or UX-23 is dark (DS-03). Colors from `lightColors` in `tokens.ts`, never raw hex in widget code.
 - Background `surface`, corner radius `radii.large`, no shadow or border. Padding `spacing[3]`.
 - Content left-aligned, vertically centered:
   - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `warning`, as the Diary ring (DS-03 explicit label: "over").

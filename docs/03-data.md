@@ -107,6 +107,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Migrations: numbered, forward-only, stored with the code. Each has an increasing integer version, runs in a transaction where possible, records its version only after all steps succeed, detects whether it already ran, and preserves user data.
 - Migration 3 adds the macro target mode and percentage columns; existing goals remain fixed-gram goals.
 - Migration 4 adds `food_nutrients`, `diary_entry_nutrients` (DATA-20) and the DATA-21 settings columns. Existing foods and entries get no rows (unknown); nothing is backfilled.
+- Migration 5 adds DATA-23 `theme_preference`; existing installs get `system`.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.
 
@@ -160,3 +161,7 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 - **Why global:** new write paths get widget refresh for free. The widget doesn't filter by date or kind. Unrelated writes (weight, settings) cause a harmless redraw.
 - A dev-only seed (ARCH-18) goes through the same path.
 - No exact alarms (no `SCHEDULE_EXACT_ALARM`) and no extra native broadcast receivers.
+
+## DATA-23 Theme preference
+- `app_settings.theme_preference TEXT NOT NULL DEFAULT 'system' CHECK (IN ('system', 'light', 'dark'))` (UX-23). An unexpected stored value reads as `system`.
+- Read during startup, before the Router mounts (ARCH-17), so the app never shows the other scheme first. A failed read falls back to `system`.

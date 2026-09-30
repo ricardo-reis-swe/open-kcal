@@ -54,7 +54,7 @@ App Root
 ## NAV-06 Profile stack screens
 | Screen | Behavior |
 |---|---|
-| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, Food Databases. |
+| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, Food Databases, Theme. |
 | Calories & Macros | Edit kcal/carb/protein/fat goals. Save → Profile; diary targets update immediately. |
 | Meals | Meals in saved order. Reorder in the list; tap → Add/Edit Meal; add new; delete via confirmation. Defaults are ordinary records. |
 | Add / Edit Meal | Create or rename. Save → Meals. Delete only in edit mode (protected, NAV-08). |
@@ -62,6 +62,7 @@ App Root
 | Dashboard Nutrients | Choose and order the Diary panel's nutrients (UX-21). Changes save immediately; back → Profile. |
 | Weight Goal | View/edit goal in the configured unit. Save → Profile. |
 | Weight History | Dated entries + Update Weight. Row → Weight Entry Sheet (edit mode). |
+| Theme | System / Light / Dark (UX-23). Each change saves immediately; back → Profile. |
 | Food Databases | Lists Open Food Facts + USDA. Add, replace or remove USDA key; shows whether USDA search is available. Key goes to secure storage; never shown in full after saving. |
 
 ## NAV-07 Sheets

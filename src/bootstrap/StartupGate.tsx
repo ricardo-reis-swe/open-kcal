@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { LATEST_SCHEMA_VERSION } from '@/data/db/migrations';
+import { settingsKeys } from '@/features/diary/diary.queries';
 import { refreshWidget } from '@/features/widget/refreshWidget';
 import { toAppError, type AppError } from '@/shared/errors';
 import { logger } from '@/shared/logging/logger';
@@ -43,9 +44,16 @@ export function StartupGate({ start, appVersion, copyText, children }: StartupGa
     if (!starting) return;
     let cancelled = false;
     start().then(
-      (services) => {
+      async (services) => {
+        const queryClient = createQueryClient();
+        // UX-23: the theme is read before the Router mounts, so the app never flashes the other scheme. A failed
+        // read leaves the query to fetch normally (the app follows the system until then).
+        await services.settings.getThemePreference().then(
+          (preference) => queryClient.setQueryData(settingsKeys.themePreference, preference),
+          () => undefined,
+        );
         if (cancelled) return;
-        setState({ status: 'ready', ready: { services, queryClient: createQueryClient() } });
+        setState({ status: 'ready', ready: { services, queryClient } });
         refreshWidget(); // DATA-22: after migrations, so a widget left unavailable by an app update recovers.
       },
       (error: unknown) => {
