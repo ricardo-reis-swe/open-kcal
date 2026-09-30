@@ -40,7 +40,7 @@ Status: **in progress** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/
 - [x] T4 OFF PROV-14 mapping (`open-food-facts/mapper.ts`: `nutriments` keys in g → catalog units, `*_serving` fallback, > 100 g bound, `vitamin-b9` → `folates`, alcohol ignored), `PARSER_VERSION` 2; fixture `synthetic-product-catalog.json`; OFF refresh test in `food-search.queries.test.ts`.
 - [x] T5 Food Detail / Edit entry Nutrition facts (UX-05/06): `components/NutritionFacts.tsx` (grouped, catalog order, scaled live, `<0.1` for tiny known amounts, spoken units), `formatNutrientAmount`; entry path scales the snapshot with `scaleNutrients`; `nutrients.*` strings en + pt-PT (28 names, 4 groups; pt-PT wording not yet reviewed by the user); tests in `FoodDetailScreen.test.tsx`, `format.test.ts`.
 - [x] T6 Dashboard Nutrients (UX-21, UX-15, NAV-06): `DashboardNutrientsScreen.tsx` (`Shown` reorderable, hidden by group), route `/profile/dashboard-nutrients` + `routes.dashboardNutrients()`, Profile row `<n> shown` / `None`; shared `ReorderableSwitchRow` extracted from `SearchResultsGroup`; hooks `useDashboardNutrients` / `useSetDashboardNutrients` (+ open state for T7); tests `dashboard-nutrients.nav.test.tsx`, `ProfileScreen.test.tsx`.
-- [ ] T7 Diary chevron + nutrient panel, open state persisted (UX-02, DS-08).
+- [x] T7 Diary chevron + nutrient panel (UX-02, DS-08): `components/NutrientPanel.tsx` (DATA-21 order, `nutrientTotal`, partial note in the a11y label, fade unless reduced motion), chevron in `DiaryDay` `Overview` (hidden with no visible nutrients; open state saved via `useSetDashboardNutrientsOpen`, optimistic); `PressableIcon` `expanded` state; tests in `DiaryScreen.test.tsx`.
 - [ ] T8 Custom food More nutrients (UX-08).
 - [ ] Device check: the user's.
 

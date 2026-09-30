@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import type { DiaryDay as DiaryDayModel, DiaryMeal } from '@/data/db/repositories/diaryRepository';
+import { visibleDashboardNutrients } from '@/domain/nutrition/dashboardNutrients';
 import type { EnergyUnit } from '@/domain/units/units';
 import {
   AppIcon,
@@ -11,6 +12,7 @@ import {
   BottomSheet,
   FocusablePressable,
   InlineStatus,
+  PressableIcon,
   PrimaryButton,
   UndoToast,
 } from '@/shared/components';
@@ -18,13 +20,21 @@ import { addDays, type LocalDate } from '@/shared/dates';
 import { routes } from '@/shared/navigation/routes';
 import { useTheme } from '@/shared/theme';
 
-import { useAppSettings, useDiaryDay, useDiaryWrites } from '../diary.queries';
+import {
+  useAppSettings,
+  useDashboardNutrients,
+  useDashboardNutrientsOpen,
+  useDiaryDay,
+  useDiaryWrites,
+  useSetDashboardNutrientsOpen,
+} from '../diary.queries';
 import { useDiaryDate } from '../hooks/DiaryDateContext';
 import { CalorieRing } from './CalorieRing';
 import { CopyFlow, type CopyTarget } from './CopyFlow';
 import { useDiaryDateLabel } from './DiaryDateStrip';
 import { MealEntries } from './DiaryEntryRow';
 import { MacroStrip } from './MacroStrip';
+import { NutrientPanel } from './NutrientPanel';
 import { MealHeader } from './MealHeader';
 
 export type DiaryDayProps = {
@@ -136,6 +146,10 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
   const { today, setDate } = useDiaryDate();
   const dateLabel = useDiaryDateLabel();
   const goal = day.goal;
+  const dashboardNutrients = useDashboardNutrients().data;
+  const nutrientIds = dashboardNutrients ? visibleDashboardNutrients(dashboardNutrients) : [];
+  const panelOpen = useDashboardNutrientsOpen().data ?? false;
+  const setPanelOpen = useSetDashboardNutrientsOpen();
   const previous = addDays(day.date, -1);
   const next = addDays(day.date, 1);
   return (
@@ -164,14 +178,32 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
             />
           </View>
         </View>
-        <MacroStrip
-          totals={day.totals}
-          targets={
-            goal
-              ? { carbohydrateG: goal.carbohydrateTargetG, proteinG: goal.proteinTargetG, fatG: goal.fatTargetG }
-              : null
-          }
-        />
+        <View>
+          <View style={styles.macroRow}>
+            <View style={styles.macros}>
+              <MacroStrip
+                totals={day.totals}
+                targets={
+                  goal
+                    ? { carbohydrateG: goal.carbohydrateTargetG, proteinG: goal.proteinTargetG, fatG: goal.fatTargetG }
+                    : null
+                }
+              />
+            </View>
+            {/* DS-08 / UX-02: no visible nutrients → no chevron and no panel. */}
+            {nutrientIds.length > 0 ? (
+              <PressableIcon
+                icon={panelOpen ? 'chevron-up' : 'chevron-down'}
+                accessibilityLabel={t(panelOpen ? 'diaryNutrients.hide' : 'diaryNutrients.show')}
+                onPress={() => setPanelOpen.mutate(!panelOpen)}
+                expanded={panelOpen}
+                color="textSecondary"
+                testID="diary-nutrients-toggle"
+              />
+            ) : null}
+          </View>
+          {panelOpen && nutrientIds.length > 0 ? <NutrientPanel totals={day.totals} ids={nutrientIds} /> : null}
+        </View>
       </View>
       {provisional ? (
         // UX-01: shown while goals are provisional; no dismiss. `Set goals` → Calories & Macros (UX-16).
@@ -366,6 +398,8 @@ function DashboardActionMenu({
 }
 
 const styles = StyleSheet.create({
+  macroRow: { flexDirection: 'row', alignItems: 'center' },
+  macros: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   overview: { alignItems: 'center' },
   ringNavigation: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },

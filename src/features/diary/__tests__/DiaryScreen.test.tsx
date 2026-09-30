@@ -311,4 +311,53 @@ describe('UX-02 Diary', () => {
     await fireEvent.press(await screen.findByTestId('date-picker-today'));
     expect(screen.getByLabelText('Showing Today')).toBeOnTheScreen();
   });
+
+  it('UX-02 / DS-08: the chevron opens the nutrient panel with the day totals and remembers it', async () => {
+    const services = await setup(async (s) => {
+      const [breakfast, lunch] = await s.meals.list();
+      const oats = await s.foods.createCustom({
+        name: 'Oats',
+        basisQuantity: 100,
+        basisUnit: 'g',
+        nutrients: { energyKcal: 380, carbohydrateG: 60, proteinG: 13, fatG: 7, extra: { fibre: 10, salt: 0.1 } },
+        servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+      });
+      await s.diary.addFoodEntry({
+        diaryDate: TODAY,
+        mealId: breakfast!.id,
+        foodId: oats.id,
+        servingId: oats.servings[0]!.id,
+        quantity: 50,
+      });
+      await s.diary.addQuickCalories({ diaryDate: TODAY, mealId: lunch!.id, energyKcal: 300 });
+    });
+    const toggle = await active().findByRole('button', { name: 'Show more nutrients' });
+    expect(toggle.props.accessibilityState).toMatchObject({ expanded: false });
+    expect(active().queryByTestId('nutrient-panel')).toBeNull();
+    await fireEvent.press(toggle);
+    const panel = await active().findByTestId('nutrient-panel');
+    // DATA-21 default order; the Quick Calories entry makes every total partial (DATA-06).
+    expect(
+      within(panel)
+        .getAllByTestId(/^nutrient-panel-/)
+        .map((item) => item.props.testID),
+    ).toEqual(['nutrient-panel-fibre', 'nutrient-panel-sugars', 'nutrient-panel-saturated_fat', 'nutrient-panel-salt']);
+    expect(within(panel).getByTestId('nutrient-panel-fibre')).toHaveTextContent('Fibre5 g');
+    expect(within(panel).getByLabelText("Fibre, 5 grams. Some entries don't list it.")).toBeOnTheScreen();
+    expect(active().getByRole('button', { name: 'Hide more nutrients' }).props.accessibilityState).toMatchObject({
+      expanded: true,
+    });
+    await waitFor(async () => expect(await services.settings.getDashboardNutrientsOpen()).toBe(true));
+  });
+
+  it('DS-08: no visible dashboard nutrients → no chevron and no panel', async () => {
+    await setup(async (s) => {
+      const none = (await s.settings.getDashboardNutrients()).map(({ id }) => ({ id, visible: false }));
+      await s.settings.setDashboardNutrients(none);
+      await s.settings.setDashboardNutrientsOpen(true);
+    });
+    await active().findByTestId('macro-strip');
+    expect(active().queryByTestId('diary-nutrients-toggle')).toBeNull();
+    expect(active().queryByTestId('nutrient-panel')).toBeNull();
+  });
 });
