@@ -35,7 +35,7 @@ Status: **in progress** · Spec: SCOPE-01, UX-22, NAV-10, DATA-22, ARCH-23, DS-1
 ### Tasks
 
 - [x] T1 Specs.
-- [ ] T2 Spike: `react-native-android-widget` + plugin config + `index.ts` entry; Android dev build on the Zenfone; headless task opens SQLite while the app runs. Stop and report if it fails.
+- [x] T2 Spike: `react-native-android-widget` 0.22.1 + plugin config + `index.ts` entry. Zenfone dev build 2026-09-30: the headless task (WorkManager, app process) opened SQLite while the app ran and rendered `v4 · 9 entries`; resize re-rendered. Spike handler in `src/features/widget/widgetTaskHandler.tsx`, replaced in T3.
 - [ ] T3 View model + task handler + i18n (en, pt-PT) + tests.
 - [ ] T4 `refreshWidget` + global `MutationCache.onSuccess` + refresh after startup + tests.
 - [ ] T5 NAV-10 deep link (`+native-intent.tsx`, Diary Today at root) + tests.

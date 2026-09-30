@@ -1,7 +1,7 @@
 {
   "name": "calorie-tracker",
   "version": "0.1.0",
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "private": true,
   "scripts": {
     "start": "expo start --dev-client",
@@ -42,6 +42,7 @@
     "react-hook-form": "7.89.0",
     "react-i18next": "17.0.15",
     "react-native": "0.86.3",
+    "react-native-android-widget": "0.22.1",
     "react-native-gesture-handler": "2.32.0",
     "react-native-reanimated": "4.5.1",
     "react-native-ruler-picker": "0.2.2",

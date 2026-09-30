@@ -28,14 +28,8 @@
         "expo-localization",
         {
           "supportedLocales": {
-            "ios": [
-              "en",
-              "pt-PT"
-            ],
-            "android": [
-              "en",
-              "pt-PT"
-            ]
+            "ios": ["en", "pt-PT"],
+            "android": ["en", "pt-PT"]
           }
         }
       ],
@@ -44,7 +38,25 @@
       "./plugins/withIosSceneLifecycle",
       "expo-sqlite",
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "CaloriesLeft",
+              "label": "Calories left",
+              "description": "Today's calories left",
+              "minWidth": "110dp",
+              "minHeight": "40dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 1,
+              "resizeMode": "horizontal",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
