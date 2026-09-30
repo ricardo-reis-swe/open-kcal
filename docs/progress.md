@@ -14,7 +14,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M7 Dashboard copy | done |
 | M8 Profile | done |
 | M9 Hardening | awaiting user acceptance |
-| Nutrient details (user-requested) | in progress |
+| Nutrient details (user-requested) | awaiting user device check |
 
 Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -30,7 +30,7 @@ Spec changes: 2026-09-28 DS-13 reduced to light theme · iOS + Android · one ph
 
 ## Nutrient details (user-requested, 2026-09-30)
 
-Status: **in progress** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/17), PROV-14, UX-02/05/06/08/15/21, DS-08/09, NAV-06 · Same working rules as M9: in-session, no device tests, gate on `npm run check`.
+Status: **agent work done; device check and pt-PT review are the user's** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/17), PROV-14, UX-02/05/06/08/15/21, DS-08/09, NAV-06 · Same working rules as M9: in-session, no device tests, gate on `npm run check`.
 
 ### Tasks
 
@@ -41,8 +41,9 @@ Status: **in progress** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/
 - [x] T5 Food Detail / Edit entry Nutrition facts (UX-05/06): `components/NutritionFacts.tsx` (grouped, catalog order, scaled live, `<0.1` for tiny known amounts, spoken units), `formatNutrientAmount`; entry path scales the snapshot with `scaleNutrients`; `nutrients.*` strings en + pt-PT (28 names, 4 groups; pt-PT wording not yet reviewed by the user); tests in `FoodDetailScreen.test.tsx`, `format.test.ts`.
 - [x] T6 Dashboard Nutrients (UX-21, UX-15, NAV-06): `DashboardNutrientsScreen.tsx` (`Shown` reorderable, hidden by group), route `/profile/dashboard-nutrients` + `routes.dashboardNutrients()`, Profile row `<n> shown` / `None`; shared `ReorderableSwitchRow` extracted from `SearchResultsGroup`; hooks `useDashboardNutrients` / `useSetDashboardNutrients` (+ open state for T7); tests `dashboard-nutrients.nav.test.tsx`, `ProfileScreen.test.tsx`.
 - [x] T7 Diary chevron + nutrient panel (UX-02, DS-08): `components/NutrientPanel.tsx` (DATA-21 order, `nutrientTotal`, partial note in the a11y label, fade unless reduced motion), chevron in `DiaryDay` `Overview` (hidden with no visible nutrients; open state saved via `useSetDashboardNutrientsOpen`, optimistic); `PressableIcon` `expanded` state; tests in `DiaryScreen.test.tsx`.
-- [ ] T8 Custom food More nutrients (UX-08).
-- [ ] Device check: the user's.
+- [x] T8 Custom food More nutrients (UX-08): collapsed disclosure in `CreateCustomFoodScreen.tsx`, grouped optional fields for 27 catalog nutrients (sodium derived from salt), per the entered serving, each bounded 0–1,000 g in its own unit (`customFoodNutrientMax`); `customFood.ts` form values `extra` + mapping; tests `customFood.test.ts`, `CreateCustomFoodScreen.test.tsx`.
+- [ ] Device check: the user's (Diary chevron/panel, Dashboard nutrients drag, Food Detail list, custom food More nutrients, migration 4 on the existing phone DB).
+- [ ] The user reviews the new pt-PT strings (`nutrients.*`, `dashboardNutrients.*`, `diaryNutrients.*`, `customFood.moreNutrients*`).
 
 ## M9 Hardening
 

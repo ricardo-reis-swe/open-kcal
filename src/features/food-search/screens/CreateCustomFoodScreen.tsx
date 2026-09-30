@@ -9,15 +9,19 @@ import {
   CUSTOM_FOOD_ENERGY_MAX_KCAL,
   CUSTOM_FOOD_MACRO_MAX_G,
   CUSTOM_FOOD_NAME_MAX,
+  CUSTOM_FOOD_NUTRIENT_IDS,
   customFoodFormSchema,
+  customFoodNutrientMax,
   customFoodInputFromForm,
   type CustomFoodFormValues,
   type CustomServingUnit,
 } from '@/domain/food/customFood';
+import { NUTRIENT_GROUPS, catalogNutrient, type NutrientId } from '@/domain/nutrition/nutrientCatalog';
 import { energyFromKcal } from '@/domain/units/units';
 import { useAppSettings } from '@/features/diary/diary.queries';
 import {
   AppBar,
+  AppIcon,
   AppText,
   ConfirmationDialog,
   FormField,
@@ -83,7 +87,11 @@ function CustomFoodForm({
     const errors: FieldErrors<CustomFoodFormValues> = {};
     for (const issue of result.error.issues) {
       const field = issue.path[0] as keyof CustomFoodFormValues | undefined;
-      if (field) errors[field] ??= { type: 'validate', message: issue.message };
+      if (field === 'extra') {
+        const id = issue.path[1] as NutrientId;
+        errors.extra ??= {};
+        errors.extra[id] ??= { type: 'validate', message: issue.message };
+      } else if (field) errors[field] ??= { type: 'validate', message: issue.message };
     }
     return { values: {}, errors };
   };
@@ -103,6 +111,7 @@ function CustomFoodForm({
       protein: '',
       carbohydrate: '',
       fat: '',
+      extra: {},
     },
     // UX-00: surface feedback both when a field loses focus and as soon as it becomes valid again.
     mode: 'all',
@@ -113,9 +122,12 @@ function CustomFoodForm({
   const otherUnit = useWatch({ control, name: 'otherUnit' });
   const [discarding, setDiscarding] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  const fieldError = (field: keyof CustomFoodFormValues, message: string) =>
+  const fieldError = (field: Exclude<keyof CustomFoodFormValues, 'extra'>, message: string) =>
     errors[field] && (touchedFields[field] || submitCount > 0) ? message : undefined;
+  const nutrientError = (id: NutrientId, message: string) =>
+    errors.extra?.[id] && (touchedFields.extra?.[id] || submitCount > 0) ? message : undefined;
   const unitLabel =
     servingUnit === 'other' ? otherUnit.trim() || t('customFood.units.other') : t(`customFood.units.${servingUnit}`);
   const nutritionBasis =
@@ -269,8 +281,74 @@ function CustomFoodForm({
                 )}
               />
             ))}
-            {saveFailed ? <InlineStatus tone="error" message={t('customFood.saveError')} /> : null}
           </View>
+          {/* UX-08 More nutrients: collapsed by default; optional, per the entered serving, in catalog units. */}
+          <FocusablePressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: moreOpen }}
+            onPress={() => setMoreOpen((open) => !open)}
+            testID="custom-food-more-nutrients"
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: theme.spacing[2],
+              minHeight: theme.touchMin,
+              paddingHorizontal: theme.spacing[4],
+              backgroundColor: pressed ? theme.colors.primaryTint : 'transparent',
+            })}
+          >
+            <AppText variant="bodyStrong" color="primary" style={{ flex: 1 }}>
+              {t('customFood.moreNutrients')}
+            </AppText>
+            <AppIcon name={moreOpen ? 'chevron-up' : 'chevron-down'} color="primary" />
+          </FocusablePressable>
+          {moreOpen ? (
+            <View testID="custom-food-nutrients">
+              <AppText variant="compact" color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
+                {t('customFood.moreNutrientsHint')}
+              </AppText>
+              {NUTRIENT_GROUPS.map((group) => (
+                <View key={group}>
+                  <SectionHeader label={t(`nutrients.groups.${group}`)} uppercase />
+                  <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[4] }}>
+                    {CUSTOM_FOOD_NUTRIENT_IDS.filter((id) => catalogNutrient(id).group === group).map((id) => {
+                      const { unit } = catalogNutrient(id);
+                      return (
+                        <Controller
+                          key={id}
+                          control={control}
+                          name={`extra.${id}`}
+                          render={({ field }) => (
+                            <FormField
+                              label={t(`nutrients.names.${id}`)}
+                              value={field.value ?? ''}
+                              onChangeText={field.onChange}
+                              onBlur={field.onBlur}
+                              keyboardType="decimal-pad"
+                              unit={unit}
+                              error={nutrientError(
+                                id,
+                                t('customFood.errors.nutrient', {
+                                  max: formatInteger(customFoodNutrientMax(id), locale),
+                                  unit,
+                                }),
+                              )}
+                              testID={`custom-food-nutrient-${id}`}
+                            />
+                          )}
+                        />
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
+          {saveFailed ? (
+            <View style={{ paddingHorizontal: theme.spacing[4] }}>
+              <InlineStatus tone="error" message={t('customFood.saveError')} />
+            </View>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
       <ConfirmationDialog

@@ -2,12 +2,28 @@
 import { z } from 'zod';
 
 import type { CustomFoodInput, ServingInput } from '@/data/db/repositories/foodsRepository';
+import {
+  NUTRIENT_IDS,
+  catalogNutrient,
+  convertNutrientUnit,
+  isNutrientId,
+  type NutrientAmounts,
+  type NutrientId,
+} from '@/domain/nutrition/nutrientCatalog';
 import { G_PER_OZ, ML_PER_FL_OZ, energyToKcal, type EnergyUnit } from '@/domain/units/units';
 
 export const CUSTOM_FOOD_NAME_MAX = 80;
 export const CUSTOM_FOOD_AMOUNT_MAX = 10_000;
 export const CUSTOM_FOOD_MACRO_MAX_G = 1_000;
 export const CUSTOM_FOOD_ENERGY_MAX_KCAL = 10_000;
+
+/** UX-08 More nutrients: every catalog nutrient but sodium, which storage derives from salt (DATA-20). */
+export const CUSTOM_FOOD_NUTRIENT_IDS: readonly NutrientId[] = NUTRIENT_IDS.filter((id) => id !== 'sodium');
+
+/** The macro bound (per entered serving) in a catalog nutrient's own unit. */
+export function customFoodNutrientMax(id: NutrientId): number {
+  return convertNutrientUnit(CUSTOM_FOOD_MACRO_MAX_G, 'g', catalogNutrient(id).unit);
+}
 
 export const customServingUnitSchema = z.enum(['g', 'oz', 'ml', 'fl_oz', 'other']);
 export type CustomServingUnit = z.infer<typeof customServingUnitSchema>;
@@ -22,6 +38,8 @@ export type CustomFoodFormValues = {
   protein: string;
   carbohydrate: string;
   fat: string;
+  /** UX-08 More nutrients, keyed by catalog id; empty = unknown. */
+  extra?: Partial<Record<NutrientId, string>>;
 };
 
 // Hermes on iOS has no `NumberFormat.prototype.formatToParts`: read the separator from `format(1.1)` instead.
@@ -56,6 +74,7 @@ export function customFoodFormSchema(locale: string, energyUnit: EnergyUnit) {
       protein: z.string(),
       carbohydrate: z.string(),
       fat: z.string(),
+      extra: z.record(z.string(), z.string().optional()).default({}),
     })
     .superRefine((values, context) => {
       const amount = parseLocalizedDecimal(values.servingAmount, locale);
@@ -76,6 +95,12 @@ export function customFoodFormSchema(locale: string, energyUnit: EnergyUnit) {
           !inRange(parseLocalizedDecimal(values[field], locale), 0, CUSTOM_FOOD_MACRO_MAX_G)
         ) {
           context.addIssue({ code: 'custom', path: [field], message: 'range' });
+        }
+      }
+      for (const [id, text] of Object.entries(values.extra)) {
+        if (!text || text.trim().length === 0) continue;
+        if (!isNutrientId(id) || !inRange(parseLocalizedDecimal(text, locale), 0, customFoodNutrientMax(id))) {
+          context.addIssue({ code: 'custom', path: ['extra', id], message: 'range' });
         }
       }
     });
@@ -146,6 +171,13 @@ export function customFoodInputFromForm(
     }
   }
 
+  // DATA-20: amounts per the entered serving (the basis), like the macros; empty fields stay unknown.
+  const extra: NutrientAmounts = {};
+  for (const [id, text] of Object.entries(values.extra)) {
+    const amount = text ? parseLocalizedDecimal(text, locale) : null;
+    if (amount !== null && isNutrientId(id)) extra[id] = amount;
+  }
+
   return {
     name: values.name.trim(),
     brand: values.brand.trim() || null,
@@ -156,6 +188,7 @@ export function customFoodInputFromForm(
       proteinG: parseLocalizedDecimal(values.protein, locale),
       carbohydrateG: parseLocalizedDecimal(values.carbohydrate, locale),
       fatG: parseLocalizedDecimal(values.fat, locale),
+      ...(Object.keys(extra).length > 0 ? { extra } : {}),
     },
     servings,
   };

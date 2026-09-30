@@ -1,6 +1,7 @@
 import { G_PER_OZ, ML_PER_FL_OZ } from '@/domain/units/units';
 
 import {
+  CUSTOM_FOOD_NUTRIENT_IDS,
   customFoodFormSchema,
   customFoodInputFromForm,
   parseLocalizedDecimal,
@@ -100,5 +101,32 @@ describe('DATA-04 / DATA-11 / UX-08: custom-food command', () => {
       carbohydrateG: null,
       fatG: null,
     });
+  });
+
+  it('UX-08 / DATA-20: maps More nutrients per the entered serving; empty fields stay unknown', () => {
+    const input = customFoodInputFromForm(
+      { ...valid, extra: { fibre: '2,5', salt: '0,3', iron: '', vitamin_d: '1' } },
+      'pt-PT',
+      'kcal',
+    );
+    expect(input?.nutrients.extra).toEqual({ fibre: 2.5, salt: 0.3, vitamin_d: 1 });
+    expect(customFoodInputFromForm({ ...valid, extra: { fibre: '' } }, 'en-GB', 'kcal')?.nutrients).not.toHaveProperty(
+      'extra',
+    );
+  });
+
+  it('UX-08: validates each nutrient from 0 to the macro bound in its own unit; sodium is not offered', () => {
+    const schema = customFoodFormSchema('en-GB', 'kcal');
+    const issues = (extra: CustomFoodFormValues['extra']) =>
+      schema.safeParse({ ...valid, extra }).error?.issues.map((issue) => issue.path.join('.')) ?? [];
+    expect(issues({ fibre: '1000', cholesterol: '1000000', vitamin_d: '1000000000' })).toEqual([]);
+    expect(issues({ fibre: '1000.01', cholesterol: '-1', caffeine: 'abc' })).toEqual([
+      'extra.fibre',
+      'extra.cholesterol',
+      'extra.caffeine',
+    ]);
+    expect(issues({ alcohol: '5' } as never)).toEqual(['extra.alcohol']);
+    expect(CUSTOM_FOOD_NUTRIENT_IDS).not.toContain('sodium');
+    expect(CUSTOM_FOOD_NUTRIENT_IDS).toHaveLength(27);
   });
 });

@@ -300,7 +300,8 @@
       "amount": "Introduza uma quantidade superior a 0 e até {{max}}.",
       "otherUnit": "Introduza uma unidade de porção.",
       "energy": "Introduza calorias de 1 a {{max}} {{unit}}.",
-      "macro": "Introduza uma quantidade de 0 a {{max}} g."
+      "macro": "Introduza uma quantidade de 0 a {{max}} g.",
+      "nutrient": "Introduza uma quantidade de 0 a {{max}} {{unit}}."
     },
     "moreNutrients": "Mais nutrientes",
     "moreNutrientsHint": "Opcional, por dose indicada acima."
