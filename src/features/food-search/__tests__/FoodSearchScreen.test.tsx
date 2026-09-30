@@ -1,4 +1,6 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { onlineManager } from '@tanstack/react-query';
 
 import type { CustomFoodInput } from '@/data/db/repositories/foodsRepository';
@@ -6,7 +8,7 @@ import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
 import { ProviderConfigurationError, RateLimitError, TimeoutError } from '@/shared/errors';
 
-import { FoodSearchScreen, shouldCommitFoodDelete } from '../screens/FoodSearchScreen';
+import { FoodSearchScreen } from '../screens/FoodSearchScreen';
 
 const almonds: CustomFoodInput = {
   name: 'Almond oats',
@@ -206,11 +208,30 @@ describe('UX-04: local Food Search screen', () => {
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
   });
 
-  it('UX-04: custom-food deletion commits at the swipe threshold and offers Undo', async () => {
+  it('UX-04: a saved food is deleted from its revealed Delete button and Undo restores it', async () => {
+    const { services } = await setup({ initialQuery: 'almond', withCachedExternal: true });
+    const [saved] = await services.foods.searchExternal('cached');
+    await screen.findByText('Cached almond yoghurt');
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId(`food-swipe-${saved!.id}-pan`), [
+        { state: State.BEGAN, translationX: 0, velocityX: 0 },
+        { state: State.ACTIVE, translationX: -20, velocityX: -200 },
+        { state: State.ACTIVE, translationX: -80, velocityX: -200 },
+        { state: State.END, translationX: -80, velocityX: -200 },
+      ]);
+    });
+    fireEvent.press(screen.getByTestId(`food-swipe-${saved!.id}-delete`));
+    await waitFor(async () => expect(await services.foods.searchExternal('cached')).toEqual([]));
+    expect(screen.getByTestId('food-delete-undo')).toHaveTextContent('Cached almond yoghurt deletedUndo');
+    fireEvent.press(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(async () =>
+      expect(await services.foods.searchExternal('cached')).toEqual([expect.objectContaining({ id: saved!.id })]),
+    );
+  });
+
+  it('UX-04: custom-food deletion via the accessibility action offers Undo', async () => {
     const { food, services } = await setup({ initialQuery: 'almond' });
     const row = await screen.findByTestId(`food-result-${food.id}`);
-    expect(shouldCommitFoodDelete(-71)).toBe(false);
-    expect(shouldCommitFoodDelete(-72)).toBe(true);
     expect(row.props.accessibilityActions).toEqual([{ name: 'delete', label: 'Delete food' }]);
     fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
     await waitFor(async () => expect(await services.foods.searchCustom('almond')).toEqual([]));

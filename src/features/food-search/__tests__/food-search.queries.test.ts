@@ -54,7 +54,7 @@ describe('UX-04 / DATA-14: local Food Search queries', () => {
         servingId: created.servings[0]!.id,
         quantity: 1,
       });
-      if (name === 'Two') await services.foods.deleteCustom(created.id);
+      if (name === 'Two') await services.foods.deleteFood(created.id);
     }
     await expect(loadRecentFoods(services, 1)).resolves.toHaveLength(1);
     expect((await loadRecentFoods(services))[0]!.food.name).toBe('One');

@@ -1,4 +1,4 @@
-// Foods + servings (DATA-11, DATA-15, DATA-16). Custom foods are soft-deleted; external foods are unique by
+// Foods + servings (DATA-11, DATA-15, DATA-16). Custom and saved external foods are soft-deleted; external foods are unique by
 // (source, external_id) and re-fetching updates the existing row instead of duplicating it.
 import type { Nutrients } from '@/domain/nutrition/nutrients';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
@@ -301,22 +301,22 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       });
     },
 
-    /** DATA-11: soft delete. Entries keep their snapshots; the food leaves search and recents. */
-    async deleteCustom(id: string): Promise<void> {
-      const { changes } = await db.run(
-        "UPDATE foods SET is_deleted = 1, updated_at = ? WHERE id = ? AND source = 'custom'",
-        [nowUtcIso(clock), id],
-      );
-      if (changes === 0) throw new NotFoundError('Custom food not found');
+    /** DATA-11: soft delete of a custom or saved external food. Entries keep their snapshots; it leaves search and recents. */
+    async deleteFood(id: string): Promise<void> {
+      const { changes } = await db.run('UPDATE foods SET is_deleted = 1, updated_at = ? WHERE id = ?', [
+        nowUtcIso(clock),
+        id,
+      ]);
+      if (changes === 0) throw new NotFoundError('Food not found');
     },
 
-    /** DATA-11: Undo reactivates a soft-deleted custom food without changing its servings or history. */
-    async restoreCustom(id: string): Promise<void> {
+    /** DATA-11: Undo reactivates a soft-deleted food without changing its servings or history. */
+    async restoreFood(id: string): Promise<void> {
       const { changes } = await db.run(
-        "UPDATE foods SET is_deleted = 0, updated_at = ? WHERE id = ? AND source = 'custom' AND is_deleted = 1",
+        'UPDATE foods SET is_deleted = 0, updated_at = ? WHERE id = ? AND is_deleted = 1',
         [nowUtcIso(clock), id],
       );
-      if (changes === 0) throw new NotFoundError('Deleted custom food not found');
+      if (changes === 0) throw new NotFoundError('Deleted food not found');
     },
 
     /**
@@ -333,6 +333,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       if (externalId.trim().length === 0) throw new ValidationError('Missing external id', ['externalId']);
       return db.transaction(async (tx) => {
         const now = nowUtcIso(clock);
+        // DATA-11: re-selecting a deleted saved food from its provider saves it again.
         const existing = await tx.getFirst<{ id: string }>(
           'SELECT id FROM foods WHERE source = ? AND external_id = ?',
           [source, externalId],
@@ -341,7 +342,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
         if (existing) {
           await tx.run(
             `UPDATE foods SET name = ?, brand = ?, basis_quantity = ?, basis_unit = ?, energy_kcal = ?, protein_g = ?,
-               carbohydrate_g = ?, fat_g = ?, updated_at = ? WHERE id = ?`,
+               carbohydrate_g = ?, fat_g = ?, is_deleted = 0, updated_at = ? WHERE id = ?`,
             [...foodValues(input), now, id],
           );
           await mergeServings(tx, ids, id, input.servings);

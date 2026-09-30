@@ -1,9 +1,6 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TextInput, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import {
@@ -16,11 +13,11 @@ import { ProviderConfigurationError, RateLimitError } from '@/shared/errors';
 import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
 import {
   AppBar,
-  AppIcon,
   AppText,
   InlineStatus,
   PressableIcon,
   SectionHeader,
+  SwipeToDelete,
   TextAction,
   UndoToast,
 } from '@/shared/components';
@@ -45,10 +42,6 @@ import {
 const LOCAL_DEBOUNCE_MS = 150;
 const OFF_DEBOUNCE_MS = 800;
 const USDA_DEBOUNCE_MS = 400;
-const DELETE_SWIPE_LIMIT = 120;
-const DELETE_EXIT_OFFSET = 500;
-
-export const shouldCommitFoodDelete = (dx: number) => dx <= -72;
 
 type Props = {
   mealId: string;
@@ -156,7 +149,7 @@ export function FoodSearchScreen({
   const deleteFood = async (food: Food): Promise<boolean> => {
     setDeleteFailed(false);
     try {
-      await writes.deleteCustom.mutateAsync(food.id);
+      await writes.deleteFood.mutateAsync(food.id);
       setDeletedFood(food);
       return true;
     } catch {
@@ -167,7 +160,7 @@ export function FoodSearchScreen({
   const undoDelete = async () => {
     if (!deletedFood) return;
     try {
-      await writes.restoreCustom.mutateAsync(deletedFood.id);
+      await writes.restoreFood.mutateAsync(deletedFood.id);
       setDeletedFood(null);
     } catch {
       setDeletedFood(null);
@@ -214,6 +207,7 @@ export function FoodSearchScreen({
               void refreshSavedOpenFoodFacts(services, food);
               onSelectFood(food);
             }}
+            onDelete={() => deleteFood(food)}
           />
         ))}
         {savedFoods.length === savedPages * 20 ? (
@@ -459,7 +453,7 @@ export function FoodSearchScreen({
                   locale={locale}
                   energyUnit={settings.data.energyUnit}
                   onPress={() => onSelectFood(food)}
-                  onDelete={food.source === 'custom' ? () => deleteFood(food) : undefined}
+                  onDelete={() => deleteFood(food)}
                 />
               ))
             ) : (
@@ -496,7 +490,7 @@ function FoodResultRow({
   locale: string;
   energyUnit: 'kcal' | 'kJ';
   onPress: () => void;
-  /** Resolving `false` (the delete failed) springs the row back into place. */
+  /** Revealed Delete button tap. Resolving `false` (the delete failed) closes the row again. */
   onDelete?: () => Promise<boolean>;
   disabled?: boolean;
 }) {
@@ -509,89 +503,44 @@ function FoodResultRow({
   });
   const energyValue = formatEnergy(food.nutrients.energyKcal, energyUnit, locale);
   const energyUnitLabel = t(`diary.units.${energyUnit}`);
-  const translateX = useSharedValue(0);
-  const commitDelete = () =>
-    void onDelete?.().then((deleted) => {
-      if (!deleted) translateX.set(withTiming(0, { duration: 160 }));
-    });
-  const pan = Gesture.Pan()
-    .withTestId(`food-swipe-${food.id}-pan`)
-    .enabled(Boolean(onDelete))
-    .activeOffsetX([-10, 10])
-    .failOffsetY([-10, 10])
-    .onUpdate((event) => translateX.set(Math.max(-DELETE_SWIPE_LIMIT, Math.min(0, event.translationX))))
-    .onFinalize((event) => {
-      const committed = event.velocityX < -700 || shouldCommitFoodDelete(translateX.get());
-      if (!committed) {
-        translateX.set(withTiming(0, { duration: 160 }));
-        return;
-      }
-      translateX.set(
-        withTiming(-DELETE_EXIT_OFFSET, { duration: 180 }, (finished) => {
-          if (finished) scheduleOnRN(commitDelete);
-        }),
-      );
-    });
-  const animatedRow = useAnimatedStyle(() => ({ transform: [{ translateX: translateX.get() }] }));
   return (
-    <View style={{ overflow: 'hidden', backgroundColor: theme.colors.danger }}>
-      {onDelete ? (
-        <View
-          pointerEvents="none"
-          testID={`food-delete-icon-${food.id}`}
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: 88,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <AppIcon name="trash-outline" color="onPrimary" />
+    <SwipeToDelete testID={`food-swipe-${food.id}`} label={t('common.delete')} onDelete={onDelete}>
+      <FocusablePressable
+        accessibilityRole="button"
+        accessibilityLabel={`${food.name}, ${basis}, ${energy}`}
+        accessibilityActions={onDelete ? [{ name: 'delete', label: t('foodSearch.deleteFood') }] : undefined}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'delete') onDelete?.();
+        }}
+        disabled={disabled}
+        onPress={onPress}
+        testID={`food-result-${food.id}`}
+        style={({ pressed }) => ({
+          minHeight: 60,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: theme.spacing[3],
+          paddingHorizontal: theme.spacing[4],
+          paddingVertical: theme.spacing[2],
+          backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
+        })}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText numberOfLines={1}>{food.name}</AppText>
+          <AppText variant="compact" color="textSecondary" numberOfLines={1}>
+            {basis} · {t(`foodSearch.sources.${food.source}`)}
+          </AppText>
         </View>
-      ) : null}
-      <GestureDetector gesture={pan}>
-        <Animated.View testID={`food-swipe-${food.id}`} style={animatedRow}>
-          <FocusablePressable
-            accessibilityRole="button"
-            accessibilityLabel={`${food.name}, ${basis}, ${energy}`}
-            accessibilityActions={onDelete ? [{ name: 'delete', label: t('foodSearch.deleteFood') }] : undefined}
-            onAccessibilityAction={(event) => {
-              if (event.nativeEvent.actionName === 'delete') onDelete?.();
-            }}
-            disabled={disabled}
-            onPress={onPress}
-            testID={`food-result-${food.id}`}
-            style={({ pressed }) => ({
-              minHeight: 60,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: theme.spacing[3],
-              paddingHorizontal: theme.spacing[4],
-              paddingVertical: theme.spacing[2],
-              backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
-            })}
-          >
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <AppText numberOfLines={1}>{food.name}</AppText>
-              <AppText variant="compact" color="textSecondary" numberOfLines={1}>
-                {basis} · {t(`foodSearch.sources.${food.source}`)}
-              </AppText>
-            </View>
-            <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
-              <AppText variant="compact" numberOfLines={1} tabular align="right">
-                {energyValue}
-              </AppText>
-              <AppText variant="compact" numberOfLines={1} align="right">
-                {energyUnitLabel}
-              </AppText>
-            </View>
-          </FocusablePressable>
-        </Animated.View>
-      </GestureDetector>
-    </View>
+        <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
+          <AppText variant="compact" numberOfLines={1} tabular align="right">
+            {energyValue}
+          </AppText>
+          <AppText variant="compact" numberOfLines={1} align="right">
+            {energyUnitLabel}
+          </AppText>
+        </View>
+      </FocusablePressable>
+    </SwipeToDelete>
   );
 }
 

@@ -38,8 +38,8 @@ App Root
 ## NAV-04 Diary stack screens
 | Screen | Shows / does | Exits |
 |---|---|---|
-| Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, Add Food per meal. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → Delete action. Meal/entry `…` → dashboard actions. Add Food → Food Search(meal, date). |
-| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. No barcode. Swipe a custom food → soft delete (UX-04). | Result → Food Detail. Create Custom Food → keeps date + meal. Back → origin, nothing created. |
+| Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, Add Food per meal. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → reveals Delete; tap deletes. Meal/entry `…` → dashboard actions. Add Food → Food Search(meal, date). |
+| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. No barcode. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Create Custom Food → keeps date + meal. Back → origin, nothing created. |
 | Food Detail / Add Entry | Food identity, units, ruler, live kcal/macros, target meal (changeable via Meal Picker), target date. | Save → writes, returns to Diary, refreshed, target date visible. Cancel/back → nothing saved. |
 | Edit Food Entry | Loads date, meal, food, serving and nutrition from `entryId`. Ruler, unit, reassign meal, Save, Delete. | Save/delete → Diary, totals refreshed. |
 | Quick Calories | Meal (changeable via Meal Picker), calories, optional note, Add. Macros unknown. | Add → origin, totals refreshed. |
@@ -74,7 +74,7 @@ App Root
 Deleting a food entry from its edit screen · deleting a Quick Calories entry from its edit screen · deleting a weight entry · deleting a meal · removing the USDA key.
 - The dialog names the object; the destructive action is visually distinct.
 - Deleting a meal that has entries MUST require picking another existing meal to reassign them to. Never silently delete diary history.
-- Not in this list, so no dialog: a committed delete swipe on a Diary entry or custom food. The row deletes immediately and offers a temporary Undo toast.
+- Not in this list, so no dialog: the swipe-revealed Delete on a Diary entry or saved food. The row deletes immediately and offers a temporary Undo toast.
 - Also confirmed: leaving a dirty Create Custom Food or Calories & Macros form (`Discard changes?`, UX-00).
 
 ## NAV-09 Route rules

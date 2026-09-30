@@ -173,6 +173,18 @@ describe('DATA-11 / DATA-16: foods repository', () => {
     expect(usda.id).not.toBe(first.id);
   });
 
+  it('DATA-11: a deleted saved food leaves saved search; Undo or re-selecting it from its provider saves it again', async () => {
+    const { foods } = await setup();
+    const food = await foods.upsertExternal('open_food_facts', '7', offBar(400), cache('2027-01-01T00:00:00.000Z'));
+    await foods.deleteFood(food.id);
+    expect(await foods.searchExternal('bar')).toEqual([]);
+    await foods.restoreFood(food.id);
+    expect(await foods.searchExternal('bar')).toEqual([expect.objectContaining({ id: food.id })]);
+    await foods.deleteFood(food.id);
+    const again = await foods.upsertExternal('open_food_facts', '7', offBar(400), cache('2027-01-01T00:00:00.000Z'));
+    expect(again).toMatchObject({ id: food.id, isDeleted: false });
+  });
+
   it('DATA-15: expired cache stays loggable; expiry only flags refresh', async () => {
     const { deps, foods, diary, breakfast } = await setup();
     const food = await foods.upsertExternal('open_food_facts', '9', offBar(400), cache('2026-09-26T10:00:00.000Z'));
@@ -201,7 +213,7 @@ describe('DATA-11 / DATA-16: foods repository', () => {
       quantity: 2,
     });
     expect(await recents.list()).toHaveLength(1);
-    await foods.deleteCustom(food.id);
+    await foods.deleteFood(food.id);
     expect((await foods.get(food.id)).isDeleted).toBe(true);
     expect(await recents.list()).toEqual([]);
     expect(await diary.getEntry(entry.id)).toMatchObject({
@@ -218,7 +230,7 @@ describe('DATA-11 / DATA-16: foods repository', () => {
         quantity: 1,
       }),
     ).rejects.toMatchObject({ category: 'not_found' });
-    await foods.restoreCustom(food.id);
+    await foods.restoreFood(food.id);
     expect((await foods.get(food.id)).isDeleted).toBe(false);
     expect(await recents.list()).toHaveLength(1);
   });

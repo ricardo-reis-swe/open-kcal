@@ -11,7 +11,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Ruler serving selector with live kcal/macro updates (SCOPE-07).
 - Diary per date: date-strip or large overview chevrons change days; Today action and calendar jump. Past, today and future dates all editable.
 - Entries shown directly under their meal; tap any entry on the Diary to edit it.
-- Dashboard entry/meal menus copy an item or whole meal to a chosen date and meal; swipe an entry left to delete it.
+- Dashboard entry/meal menus copy an item or whole meal to a chosen date and meal; swipe an entry left to reveal Delete.
 - Body weight: current, goal, history.
 - Unit preferences (SCOPE-08).
 - Food Search sections: reorder and show/hide `My foods`, `Saved`, `Open Food Facts`, `USDA` (UX-18, DATA-19).

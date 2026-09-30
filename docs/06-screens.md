@@ -51,7 +51,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Scrolling the strip MUST NOT change the day; tapping a day selects it. Whenever the selected day changes (tap, Today, Date Picker) the strip animates to center it, even if the user had scrolled it away.
 - The selected day and its immediate previous/next days MUST stay mounted so adjacent-day changes show ready content without a loading blink.
 - The selected day's neighbours are labelled prev/next day buttons, and the selected day has increment/decrement accessibility actions. Horizontal swipes on the Diary content MUST NOT change the day.
-- Header `+` and the `+ Add food` row → Food Search (meal, date). Row tap → matching edit screen. A committed left swipe shows a trash icon, deletes immediately, and shows `<item> deleted · Undo` for 5 seconds. An incomplete swipe springs closed. No long-press actions or second-tap Delete button.
+- Header `+` and the `+ Add food` row → Food Search (meal, date). Row tap → matching edit screen. A left swipe reveals a `Delete` button (DS-08); tapping it deletes and shows `<item> deleted · Undo` for 5 seconds. A short swipe springs closed. No long-press actions or confirmation dialog.
 - Each meal and entry has a `…` menu. Meal: `Copy meal`; entry: `Copy item`.
 - Empty meal = header (0 kcal) + `+ Add food` row only (no empty text on Diary, to protect density).
 - Over goal and unknown macros: DS-08.
@@ -86,7 +86,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Nothing anywhere: `No foods found for "<q>".` + `Create custom food`.
 - Tapping a remote result opens Food Detail immediately. Food Detail performs the provider detail read and upsert (DATA-15); Food Search MUST NOT replace the row with a loading label.
 - Tapping an expired cached food opens it immediately with cached values; a background refresh (when online) updates it for next time and never changes values on an open screen.
-- **Delete custom food**: a committed left swipe on any custom-food row (in `My foods` or Recent) shows a trash icon, soft-deletes it immediately (DATA-11), and shows `<food> deleted · Undo` for 5 seconds. An incomplete swipe springs closed; there is no second-tap Delete button or dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. External-food rows have no swipe action. Custom foods can't be edited in the MVP.
+- **Delete saved food**: a left swipe on any stored-food row (`My foods`, `Saved` or Recent) reveals a `Delete` button (DS-08); tapping it soft-deletes the food (DATA-11) and shows `<food> deleted · Undo` for 5 seconds. A short swipe springs closed; no dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. Remote provider rows (not yet saved) have no swipe action. Custom foods can't be edited in the MVP.
 - Clearing the field returns to the no-query state. Returning from Food Detail keeps the query and results. Search key = `search`.
 
 ## UX-05 Food Detail / Add Entry

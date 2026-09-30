@@ -61,13 +61,13 @@ FROM diary_entries WHERE diary_date = ?;
 ## DATA-11 Foods and servings
 - Custom and external foods MAY have NULL macros; NULL means unknown, never zero (DATA-06).
 - `(source, external_id)` is unique. Re-fetching updates the existing row + cache metadata; never duplicate.
-- Delete custom food = `is_deleted = 1`. It disappears from search and recents; entries keep their snapshots. Undo sets `is_deleted = 0` without changing servings or history. Unreferenced soft-deleted foods may be purged in later maintenance; not required for the MVP.
+- Delete custom or saved external food = `is_deleted = 1`. It disappears from search and recents; entries keep their snapshots. Undo sets `is_deleted = 0` without changing servings or history. Re-selecting a deleted external food from its provider upserts it with `is_deleted = 0`. Unreferenced soft-deleted foods may be purged in later maintenance; not required for the MVP.
 - A serving is selectable only with full conversion data; a label alone is not enough. Formula: `nutrient = basis nutrient × basis_multiplier × ruler value`.
 
 ## DATA-12 Diary entries
 - Food entries require name snapshot, `serving_quantity` and `serving_unit_snapshot`.
 - Moving an entry to another meal changes only `meal_id` + `updated_at`; nutrition is not recalculated.
-- Delete removes the row physically after a committed swipe. Totals are derived; recent `use_count` is not decremented. While the Undo toast is visible, Undo reinserts the exact entry snapshot with its original ID and `sort_order`; it does not update recents.
+- Delete removes the row physically after the revealed Delete tap (UX-02). Totals are derived; recent `use_count` is not decremented. While the Undo toast is visible, Undo reinserts the exact entry snapshot with its original ID and `sort_order`; it does not update recents.
 
 ## DATA-13 Weight
 - Multiple measurements per day. Current weight = latest `measured_at`, tie-break `created_at`.
@@ -94,7 +94,7 @@ FROM diary_entries WHERE diary_date = ?;
 | Edit food entry | Load by ID → validate serving/meal → recompute snapshot only if serving changed → upsert recent after save. |
 | Add/edit Quick Calories | Validate meal, date, kcal ≥ 0 (the UI requires ≥ 1, UX-07). Macros + serving NULL. Trim note. |
 | Copy item / meal | Tx: read the source entry or source meal/date entries in order → new UUID(s) → copy snapshots exactly → chosen destination date + meal → append after existing `sort_order`. Copies are independent of the originals. |
-| Delete custom food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
+| Delete custom / saved food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
 | Update goals | DATA-09. |
 

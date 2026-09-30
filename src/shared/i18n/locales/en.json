@@ -3,6 +3,7 @@
     "add": "Add",
     "cancel": "Cancel",
     "close": "Close",
+    "delete": "Delete",
     "undo": "Undo",
     "back": "Back",
     "notFound": "This item no longer exists.",

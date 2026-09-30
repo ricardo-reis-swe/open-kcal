@@ -162,7 +162,7 @@ describe('DATA-16 Copy meal', () => {
 
   it('keeps the snapshot when the food was since soft-deleted, and never touches recents', async () => {
     const { deps, foods, diary, recents, breakfast, food } = await setup();
-    await foods.deleteCustom(food.id);
+    await foods.deleteFood(food.id);
     const recentRows = await deps.db.getAll('SELECT * FROM recent_foods');
     await diary.copyMeal({
       mealId: breakfast,

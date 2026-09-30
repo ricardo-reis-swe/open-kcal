@@ -112,7 +112,7 @@ appId: com.ricardoreis.calorietracker
 - extendedWaitUntil:
     notVisible: '${output.food}.*'
     timeout: 5000
-# Clean up the custom food itself: a committed UX-04 swipe deletes immediately (no second tap) and offers Undo.
+# Clean up the custom food itself: a UX-04 swipe reveals Delete; tapping it deletes and offers Undo.
 - tapOn:
     text: Add food
     index: 1
@@ -127,6 +127,8 @@ appId: com.ricardoreis.calorietracker
     from:
       id: 'food-swipe-.*'
     direction: LEFT
+- tapOn:
+    id: 'food-swipe-.*-delete'
 - extendedWaitUntil:
     visible:
       id: food-delete-undo

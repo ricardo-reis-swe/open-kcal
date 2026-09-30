@@ -8,7 +8,7 @@ import { createTestServices, renderWithServices } from '@/shared/testing/service
 
 import { DiaryDateProvider } from '../hooks/DiaryDateContext';
 import { DiaryScreen } from '../screens/DiaryScreen';
-import { shouldCommitEntryDelete } from '../components/DiaryEntryRow';
+import { shouldOpenDeleteAction } from '@/shared/components/SwipeToDelete';
 
 // Component tests render the screen without a navigator; tab presses are covered by diary-date.nav.test.tsx.
 jest.mock('expo-router', () => {
@@ -77,25 +77,51 @@ describe('UX-02 Diary', () => {
     expect(active().getByTestId(`diary-entry-${entry.id}-details`)).toHaveTextContent('2 × egg200 kcal');
   });
 
-  it('DS-08: commits swipe-delete only after the horizontal threshold', () => {
-    expect(shouldCommitEntryDelete(-71)).toBe(false);
-    expect(shouldCommitEntryDelete(-72)).toBe(true);
+  it('DS-08: a released swipe opens the Delete action past half its width or on a left fling', () => {
+    expect(shouldOpenDeleteAction(-43, 0)).toBe(false);
+    expect(shouldOpenDeleteAction(-44, 0)).toBe(true);
+    expect(shouldOpenDeleteAction(-10, -800)).toBe(true);
+    expect(shouldOpenDeleteAction(-80, 800)).toBe(false);
   });
 
-  it('UX-02: a committed swipe shows only the trash affordance and deletes without a second tap', async () => {
+  it('UX-02: a swipe reveals Delete; tapping it deletes and offers Undo', async () => {
     const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
     const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
-    expect(await active().findByTestId(`diary-entry-${entry.id}-delete-icon`)).toBeOnTheScreen();
-    expect(active().queryByTestId(`diary-entry-${entry.id}-delete`)).toBeNull();
+    const swipe = `diary-entry-${entry.id}-swipe`;
+    await active().findByTestId(`diary-entry-${entry.id}`);
     await act(async () => {
-      fireGestureHandler(getByGestureTestId(`diary-entry-${entry.id}-pan`), [
+      fireGestureHandler(getByGestureTestId(`${swipe}-pan`), [
         { state: State.BEGAN, translationX: 0, velocityX: 0 },
+        { state: State.ACTIVE, translationX: -20, velocityX: -200 },
         { state: State.ACTIVE, translationX: -80, velocityX: -200 },
-        { state: State.END, translationX: -80, velocityX: -800 },
+        { state: State.END, translationX: -80, velocityX: -200 },
       ]);
     });
+    // Revealing alone deletes nothing.
+    expect(active().getByTestId(`diary-entry-${entry.id}`)).toBeOnTheScreen();
+    await fireEvent.press(active().getByTestId(`${swipe}-delete`));
     await waitFor(() => expect(screen.queryByTestId(`diary-entry-${entry.id}`)).toBeNull());
-    expect(screen.getByTestId('diary-delete-undo')).toBeOnTheScreen();
+    expect(screen.getByTestId('diary-delete-undo')).toHaveTextContent('Scrambled eggs deletedUndo');
+    await fireEvent.press(screen.getByRole('button', { name: 'Undo' }));
+    expect(await active().findByTestId(`diary-entry-${entry.id}`)).toBeOnTheScreen();
+  });
+
+  it('UX-02: tapping an open row closes it without opening the entry', async () => {
+    const services = await setup(async (s) => void (await addEggs(s, TODAY, 0, 2)));
+    const entry = (await services.diary.loadDay(TODAY)).meals[0]!.entries[0]!;
+    const swipe = `diary-entry-${entry.id}-swipe`;
+    await active().findByTestId(`diary-entry-${entry.id}`);
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId(`${swipe}-pan`), [
+        { state: State.BEGAN, translationX: 0, velocityX: 0 },
+        { state: State.ACTIVE, translationX: -20, velocityX: -200 },
+        { state: State.ACTIVE, translationX: -80, velocityX: -200 },
+        { state: State.END, translationX: -80, velocityX: -200 },
+      ]);
+    });
+    await fireEvent.press(active().getByTestId(`${swipe}-close`));
+    expect(active().queryByTestId(`${swipe}-close`)).toBeNull();
+    expect(active().getByTestId(`diary-entry-${entry.id}`)).toBeOnTheScreen();
   });
 
   it('UX-02: the delete accessibility action deletes immediately and offers Undo', async () => {

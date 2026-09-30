@@ -12,6 +12,7 @@ export { PressableIcon, type PressableIconProps } from './PressableIcon';
 export { PrimaryButton, type PrimaryButtonProps } from './PrimaryButton';
 export { ProgressTrack, type ProgressTrackProps } from './ProgressTrack';
 export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
+export { SwipeToDelete, type SwipeToDeleteProps } from './SwipeToDelete';
 export { TextAction, type TextActionProps } from './TextAction';
 export { UndoToast, type UndoToastProps } from './UndoToast';
 export { NotFoundState, type NotFoundStateProps } from './NotFoundState';

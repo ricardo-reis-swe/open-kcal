@@ -227,7 +227,7 @@ export function useLocalFoodWrites() {
     mutationFn: (input: CustomFoodInput) => foods.createCustom(input),
     onSuccess: refresh,
   });
-  const deleteCustom = useMutation({ mutationFn: (id: string) => foods.deleteCustom(id), onSuccess: refresh });
-  const restoreCustom = useMutation({ mutationFn: (id: string) => foods.restoreCustom(id), onSuccess: refresh });
-  return { createCustom, deleteCustom, restoreCustom };
+  const deleteFood = useMutation({ mutationFn: (id: string) => foods.deleteFood(id), onSuccess: refresh });
+  const restoreFood = useMutation({ mutationFn: (id: string) => foods.restoreFood(id), onSuccess: refresh });
+  return { createCustom, deleteFood, restoreFood };
 }
