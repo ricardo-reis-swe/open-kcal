@@ -181,3 +181,9 @@ Check the current versions: Expo [dev builds](https://docs.expo.dev/develop/deve
   - Any error → unavailable state + a logger warning with no diary data (ARCH-15). Never throws.
 - `refreshWidget()`: app-side, fire-and-forget `requestWidgetUpdate`; no-op on iOS and in Jest; failures logged, never shown to the user.
 - Tests: Jest for the view model and for the handler with a mocked repository; the library is mocked. No widget rendering tests.
+
+## ARCH-24 Camera and barcode scanning (UX-24)
+- Library: `expo-camera` (Expo-maintained, `npx expo install`, pinned; ARCH-20) — `CameraView` with `barcodeScannerSettings.barcodeTypes = ['ean13', 'ean8', 'upc_a', 'upc_e']` and `onBarcodeScanned`. Rejected: `react-native-vision-camera` (more native setup for the same result), `expo-barcode-scanner` (removed from Expo), iOS-only `launchScanner`.
+- Config plugin in `app.json`: `cameraPermission` (en), `microphonePermission: false`, `recordAudioAndroid: false`. The iOS pt-PT usage text comes from Expo `locales` (`NSCameraUsageDescription`). Android shows the system's own permission text. Needs a native rebuild.
+- Only `src/features/food-search/components/BarcodeCamera.tsx` imports `expo-camera`. Pure code rules: `src/domain/food/barcode.ts` (DATA-24). Lookup: `barcodeLookup.ts` (PROV-15).
+- Tests: `expo-camera` is mocked in `jest.setup.ts`; tests fire `onBarcodeScanned` through the mock and cover permission states. No camera or device tests.

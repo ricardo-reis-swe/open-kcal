@@ -15,6 +15,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | M8 Profile | done |
 | M9 Hardening | awaiting user acceptance |
 | Nutrient details (user-requested) | awaiting user device check |
+| Barcode scanning (user-requested) | in progress |
 
 Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new UX-23 Theme screen (`System | Light | Dark`, default System) from a Profile `APP › Theme` row (UX-15, NAV-06), DATA-23 `theme_preference` (migration 5), the widget follows the theme too (DS-14: both versions on `System`). Needs a native rebuild (`userInterfaceStyle: automatic`); not checked on a device. 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -58,6 +59,18 @@ Status: **agent work done; device check and pt-PT review are the user's** · Spe
 - [x] T8 Custom food More nutrients (UX-08): collapsed disclosure in `CreateCustomFoodScreen.tsx`, grouped optional fields for 27 catalog nutrients (sodium derived from salt), per the entered serving, each bounded 0–1,000 g in its own unit (`customFoodNutrientMax`); `customFood.ts` form values `extra` + mapping; tests `customFood.test.ts`, `CreateCustomFoodScreen.test.tsx`.
 - [ ] Device check: the user's (Diary chevron/panel, Dashboard nutrients drag, Food Detail list, custom food More nutrients, migration 4 on the existing phone DB).
 - [ ] The user reviews the new pt-PT strings (`nutrients.*`, `dashboardNutrients.*`, `diaryNutrients.*`, `customFood.moreNutrients*`).
+
+## Barcode scanning (user-requested, 2026-09-30)
+
+Status: **in progress** · Spec: SCOPE-01/10, NAV-02/03/04, DATA-17/24, PROV-15, UX-04/08/09/24, DS-09/10, ARCH-24 · Same working rules as M9: in-session, no device tests, gate on `npm run check`.
+
+### Tasks
+
+- [x] T1 Specs (this commit). User decisions: entry from Food Search + the `+` sheet; a custom food created from a scan keeps its barcode; lookup checks OFF and USDA, never a hidden or unavailable provider.
+- [ ] T2 Domain `barcode.ts` (check digit, UPC-E expansion, GTIN-14) + migration 6 `foods.barcode` + `schema.sql` v6 + `findByBarcode` + mappers write `barcode` (USDA `PARSER_VERSION` 3).
+- [ ] T3 PROV-15 lookup (`barcodeLookup.ts`, USDA barcode search).
+- [ ] T4 `expo-camera` + config plugin + iOS pt-PT permission text; Barcode Scanner screen + route (UX-24); Food Search scan icon; `+` sheet row; Create Custom Food `barcode` param.
+- [ ] Device check: the user's (native rebuild needed; camera permission, scanning on both OSes, USDA 13/14-digit `gtinUpc` with a real key).
 
 ## M9 Hardening
 

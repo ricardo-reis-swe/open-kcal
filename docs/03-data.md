@@ -108,6 +108,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Migration 3 adds the macro target mode and percentage columns; existing goals remain fixed-gram goals.
 - Migration 4 adds `food_nutrients`, `diary_entry_nutrients` (DATA-20) and the DATA-21 settings columns. Existing foods and entries get no rows (unknown); nothing is backfilled.
 - Migration 5 adds DATA-23 `theme_preference`; existing installs get `system`.
+- Migration 6 adds DATA-24 `foods.barcode` + its index and backfills saved OFF foods.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.
 
@@ -165,3 +166,18 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 ## DATA-23 Theme preference
 - `app_settings.theme_preference TEXT NOT NULL DEFAULT 'system' CHECK (IN ('system', 'light', 'dark'))` (UX-23). An unexpected stored value reads as `system`.
 - Read during startup, before the Router mounts (ARCH-17), so the app never shows the other scheme first. A failed read falls back to `system`. The widget reads it on every redraw (DS-14, ARCH-23).
+
+## DATA-24 Barcodes
+- `foods.barcode TEXT` (nullable) holds a **GTIN-14**: exactly 14 digits, the code zero-padded on the left. Index `idx_foods_barcode ON foods (barcode) WHERE barcode IS NOT NULL`. Not unique: the same product may exist per source and as a custom food.
+- Normalization and check-digit rules live in `src/domain/food/barcode.ts` (EAN-13, EAN-8, UPC-A, UPC-E expanded to UPC-A, GTIN-14). Only a code with a valid check digit is stored or looked up.
+- Written on every upsert/create:
+  | Food | `barcode` |
+  |---|---|
+  | OFF | `code`, when it is a valid GTIN; else NULL |
+  | USDA | `gtinUpc` (detail read), when valid; else NULL |
+  | Custom created from a scan (UX-08 `barcode` param) | the scanned code |
+  | Other custom | NULL |
+- Migration 6: add the column + index; backfill OFF rows whose `external_id` is 8, 12, 13 or 14 digits by zero-padding (no check-digit test in SQL). USDA rows get theirs when PROV-09 refreshes them (parser version bump).
+- `findByBarcode(gtin14)`: active foods only (`is_deleted = 0`); custom first, then the most recently used (`recent_foods.last_used_at`), then `updated_at` DESC. The first row wins.
+- **Why GTIN-14:** a UPC-A and the same product's EAN-13 (leading `0`) are one key after padding.
+- Barcodes are diary-adjacent data: MUST NOT be logged (ARCH-15).

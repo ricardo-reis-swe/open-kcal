@@ -11,7 +11,7 @@ Read when: adding routes, wiring save/cancel/back, or changing where a flow retu
 ```text
 App Root
 ├── Tabs: Diary | + (action) | Profile
-│   ├── Diary Stack: Diary, Food Search, Food Detail / Add Entry,
+│   ├── Diary Stack: Diary, Food Search, Barcode Scanner, Food Detail / Add Entry,
 │   │                Edit Food Entry, Quick Calories, Edit Quick Calories, Create Custom Food
 │   └── Profile Stack: Profile, Calories & Macros, Meals, Add / Edit Meal, Units,
 │                      Weight Goal, Weight History, Food Databases / USDA API Key
@@ -25,6 +25,7 @@ App Root
 ## NAV-03 `+` Add Action Sheet
 ```text
 + ├── Add Food       → Meal Picker → Food Search
+  ├── Scan Barcode   → Meal Picker → Food Search + Barcode Scanner on top
   ├── Quick Calories → Meal Picker → Quick Calories
   └── Update Weight  → Weight Entry Sheet
 ```
@@ -33,18 +34,19 @@ App Root
 - Global `+` Quick Calories ends on **Diary on the target date** after saving, even when started from Profile. A food add returns to Food Search (NAV-04); its Back then leaves search.
 - Food and Quick Calories use the selected diary date. Weight defaults to **today** (editable in the sheet), not the diary date.
 - Dismiss: swipe down, tap outside, back. Picking an action closes the sheet before opening the next route or sheet.
-- MUST NOT include barcode (SCOPE-10).
+- Scan Barcode pushes Food Search (field not focused) and then the Barcode Scanner, so every scan outcome returns to Food Search exactly as Add Food does.
 
 ## NAV-04 Diary stack screens
 | Screen | Shows / does | Exits |
 |---|---|---|
 | Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, `+` per meal header. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → reveals Delete; tap deletes. Meal/entry `…` → dashboard actions. Meal `+` → Food Search(meal, date). |
-| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. No barcode. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Create Custom Food → keeps date + meal. Back → origin, nothing created. |
+| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. Scan icon in the field. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Scan icon → Barcode Scanner (meal, date). Create Custom Food → keeps date + meal. Back → origin, nothing created. |
+| Barcode Scanner | Camera, torch, manual code entry; looks the code up (PROV-15). UX-24. | Found → **replaces** itself with Food Detail (so Save/back land on Food Search). Not found → `Create custom food` **replaces** itself with Create Custom Food (barcode kept, DATA-24). Back → Food Search, query and results intact. |
 | Food Detail / Add Entry | Food identity, units, ruler, live kcal/macros, target meal (changeable via Meal Picker), target date. | Save → writes, returns to Food Search (query and results intact) with `Added <food> to <meal>` (DS-10); the Diary is already on the target date when search is left (user decision 2026-09-30). Cancel/back → nothing saved. |
 | Edit Food Entry | Loads date, meal, food, serving and nutrition from `entryId`. Ruler, unit, reassign meal, Save, Delete. | Save/delete → Diary, totals refreshed. |
 | Quick Calories | Meal (changeable via Meal Picker), calories, optional note, Add. Macros unknown. | Add → origin, totals refreshed. |
 | Edit Quick Calories | Meal, calories, note; Save, Delete. | Same return and delete rules as Edit Food Entry. |
-| Create Custom Food | Fields from SCOPE-06. | Save → stores food → Food Detail with that food, original date + meal. Does NOT log automatically. Cancel → Food Search with query and results intact. |
+| Create Custom Food | Fields from SCOPE-06; optional `barcode` param from the scanner. | Save → stores food → Food Detail with that food, original date + meal. Does NOT log automatically. Cancel → Food Search with query and results intact. |
 
 ## NAV-05 Date
 - The selected date is owned by the Diary stack (not a component). It survives search, add/edit and tab switches. Fresh launch = today.

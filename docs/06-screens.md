@@ -71,7 +71,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [⚡ Quick calories    ＋ Create custom food ]
 [RECENT / results by section…             ]
 ```
-- Opens with the field focused. `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
+- Opens with the field focused (not when opened for NAV-03 Scan Barcode). Trailing scan icon (a11y `Scan barcode`) → Barcode Scanner (UX-24). `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
 - **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 800 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). **Why 800 ms for USDA:** 400 ms fired mid-word requests that spend quota and risk the 10-minute 429 cooldown (user decision 2026-09-30). Stale requests are cancelled.
 - Sections with sticky labels: `My foods` (custom), `Saved` (cached external), `Open Food Facts`, `USDA`, in the order and visibility set in UX-18 `Search results`. Each remote section shows the first page (10, PROV-08) + a `Show more` row for the next page.
@@ -145,10 +145,11 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Carbs helper text: `As on EU labels (fibre not included)` (PROV-05).
 - Protein, carbs and fat are optional; an empty field saves as unknown (DATA-06).
 - **More nutrients**: a collapsed disclosure under the macros with one optional field per catalog nutrient (DATA-20), grouped as UX-05, in the catalog unit (g / mg / µg), per the entered serving like the macros. `Salt` is offered and `sodium` is derived (EU labels list salt). Empty = unknown. Collapsed by default; opens when any value is set.
+- **From a scan** (`barcode` param, DATA-24): a display-only `Barcode  5601234567890` row under Brand; the code is saved with the food. Name starts empty.
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
 
 ## UX-09 Add Action Sheet
-Rows: `Add food` · `Quick calories` · `Update weight` (icon + label). No title. Behavior: NAV-03.
+Rows: `Add food` · `Scan barcode` · `Quick calories` · `Update weight` (icon + label). No title. Behavior: NAV-03.
 
 ## UX-10 Meal Picker
 - Compact title `Choose meal`. Meals in order; the current meal gets a check when changing. Tap = select + close.
@@ -274,3 +275,32 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - One segmented control `System | Light | Dark` (DS-03), with helper `System follows your phone's light or dark setting.` Default `System`.
 - Each choice saves (DATA-23) and re-themes the whole app at once, as Units; no Save button. Back → Profile. A failed save shows an inline error and keeps the previous choice.
 - The Android widget follows it too (DS-14); a change redraws it (DATA-22).
+
+## UX-24 Barcode Scanner
+```text
+[‹  Scan barcode                     🔦 ]   torch toggle (only when the device has one)
+[                                        ]
+[      ┌──────────────────────┐          ]   camera preview fills the body
+[      │      frame guide      │          ]
+[      └──────────────────────┘          ]
+[ Point the camera at a barcode.         ]   panel below the preview
+[ Enter code manually                    ]
+```
+- Reads EAN-13, EAN-8, UPC-A, UPC-E (ARCH-24). A read that fails the check digit is ignored (keeps scanning). The first valid read stops scanning, fires a light haptic (DS-10) and starts the PROV-15 lookup.
+- **Enter code manually** → a field (`Barcode`, number pad) + `Look up`. Invalid → field error `Enter a valid barcode (8–14 digits).` Also the only path on devices without a camera.
+
+| State | Shows |
+|---|---|
+| Permission not asked | the system prompt on open |
+| Permission denied | `Allow camera access to scan barcodes.` + `Open settings` + `Enter code manually` |
+| Camera unavailable / error | `Camera unavailable.` + `Enter code manually` |
+| Scanning | preview, frame, hint, torch, manual entry |
+| Looking up | preview frozen; `Looking up <code>…` + spinner |
+| Found | NAV-04: replaced by Food Detail |
+| Not found | `No food found for <code>.` + `Checked: <sources>.` + `Create custom food` (primary) + `Scan again` |
+| Not found, a provider failed | as Not found, plus `Couldn't check <Provider>.` + `Retry` |
+
+- `<sources>` lists what PROV-15 actually checked, e.g. `saved foods, Open Food Facts, USDA`. When nothing remote was checked it says why: `Offline. Only saved foods were checked.` / `Open Food Facts and USDA are turned off.` (hidden in UX-18) / USDA without a key is simply not listed.
+- `<code>` shows the GTIN-13 (or EAN-8) form, digits only.
+- Back → Food Search. `Scan again` returns to Scanning. Leaving mid-lookup cancels it (PROV-15).
+- Strings in en + pt-PT (ARCH-22), including the camera permission text (ARCH-24).

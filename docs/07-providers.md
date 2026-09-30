@@ -326,3 +326,20 @@ Output: one amount per DATA-20 catalog id the source supplies, converted to the 
 - Ignore `alcohol_*` (DATA-20).
 
 **Sanity bounds** (per 100 g/ml, after conversion to g): negative or > 100 g → that nutrient is invalid (unknown). A bad catalog nutrient never drops the food (PROV-07 is unchanged).
+
+## PROV-15 Barcode lookup
+Input: a valid GTIN-14 (DATA-24). Output: a stored food id (→ Food Detail) or a miss with the list of sources checked and any that failed. Runs in `src/features/food-search/barcodeLookup.ts`; one lookup per scan, not cached in TanStack Query.
+
+**Order.** Stop at the first food found.
+1. Saved foods: DATA-24 `findByBarcode`. Always runs; no request; works offline.
+2. Remote providers in the DATA-19 section order, only when **all** hold: the section is visible (UX-18), the provider is available (USDA: key configured), and the device is online. Otherwise it gets **no request**.
+
+**OFF.** Product read (PROV-03 select call) with the code as GTIN-13 (GTIN-14 minus its leading `0`), or as EAN-8 when the GTIN-14 starts with six zeros. It spends the product budget (PROV-04). Found + passes PROV-07 → upsert (DATA-15, PROV-09 TTL). `NotFoundError` or PROV-07 failure → miss.
+
+**USDA.** `GET /foods/search?query=<code>&dataType=Branded&pageSize=10`, where `<code>` is the 12-digit UPC-A when the GTIN-14 starts with `00`, else the 13-digit form. Accept only a hit whose `gtinUpc` normalizes to the same GTIN-14 (the search is full text). Then the detail read (PROV-02) → upsert. No hit → miss.
+- Checked live 2026-09-30: `031200037206` → `fdcId 2035482`, `gtinUpc 031200037206`. **Not yet checked:** Branded foods stored with 13/14-digit `gtinUpc`; re-check with a real key at implementation and add a fixture.
+- Detail reads map `gtinUpc` → `barcode`; `PARSER_VERSION` 3 so cached USDA foods pick it up on their next refresh.
+
+**Errors (PROV-12).** A provider error (timeout, 5xx, rate limited, key rejected, schema) marks that provider **failed** and the lookup continues with the next one. Nothing found and ≥1 failed → UX-24 failed state with `Retry`. Aborted (screen left) → ignore silently. The code goes in the USDA query string, never into logs or error payloads (ARCH-15).
+
+**Fixtures (PROV-13).** USDA barcode search (captured hit + synthetic non-matching `gtinUpc`); OFF product by barcode reuses the product fixtures.

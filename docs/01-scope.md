@@ -17,6 +17,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Food Search sections: reorder and show/hide `My foods`, `Saved`, `Open Food Facts`, `USDA` (UX-18, DATA-19).
 - Nutrient details beyond macros (user decision 2026-09-30): Food Detail lists every catalog nutrient a food carries; the Diary opens the day's totals for user-chosen nutrients; custom foods may carry them (DATA-20/21, UX-02, UX-05, UX-21).
 - Android home-screen widget showing today's calories left (user decision 2026-09-30; UX-22). iOS widget not in scope.
+- Barcode scanning (user decision 2026-09-30): scan a product's EAN/UPC from Food Search or the `+` sheet to open it in Food Detail. Lookup: saved foods first, then the visible, available remote providers in the UX-18 order (PROV-15); a hidden or unavailable provider gets no request. A custom food created from a scan keeps the barcode (DATA-24).
 
 ## SCOPE-02 Configurable meals
 - Defaults: Breakfast, Lunch, Dinner, Snacks.
@@ -65,7 +66,7 @@ Scrambled eggs
 - Weight history is stored from day one, even if the first UI is simple.
 
 ## SCOPE-10 Out of MVP — MUST NOT build or add placeholders for
-Barcode scanner · accounts · cloud sync · social · recipes · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
+Accounts · cloud sync · social · recipes · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
 
 Other docs refer to this list instead of repeating it.
 
