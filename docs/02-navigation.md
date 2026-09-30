@@ -38,7 +38,7 @@ App Root
 ## NAV-04 Diary stack screens
 | Screen | Shows / does | Exits |
 |---|---|---|
-| Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, Add Food per meal. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → reveals Delete; tap deletes. Meal/entry `…` → dashboard actions. Add Food → Food Search(meal, date). |
+| Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, `+` per meal header. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → reveals Delete; tap deletes. Meal/entry `…` → dashboard actions. Meal `+` → Food Search(meal, date). |
 | Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. No barcode. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Create Custom Food → keeps date + meal. Back → origin, nothing created. |
 | Food Detail / Add Entry | Food identity, units, ruler, live kcal/macros, target meal (changeable via Meal Picker), target date. | Save → writes, returns to Diary, refreshed, target date visible. Cancel/back → nothing saved. |
 | Edit Food Entry | Loads date, meal, food, serving and nutrition from `entryId`. Ruler, unit, reassign meal, Save, Delete. | Save/delete → Diary, totals refreshed. |

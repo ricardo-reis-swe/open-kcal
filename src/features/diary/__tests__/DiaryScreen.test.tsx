@@ -55,13 +55,14 @@ async function addEggs(services: AppServices, date: string, mealIndex: number, q
 }
 
 describe('UX-02 Diary', () => {
-  it('UX-02: an empty day shows every meal with 0 kcal and an Add food row', async () => {
+  it('UX-02: an empty day shows every meal with 0 kcal, its header +, and a compact empty line', async () => {
     await setup();
     for (const meal of ['Breakfast', 'Lunch', 'Dinner', 'Snacks']) {
       expect(await active().findByRole('header', { name: `${meal}, 0 kilocalories` })).toBeOnTheScreen();
       expect(active().getByRole('button', { name: `Add food to ${meal}` })).toBeOnTheScreen();
     }
-    expect(active().getAllByRole('button', { name: 'Add food' })).toHaveLength(4);
+    expect(active().getAllByText('No foods logged')).toHaveLength(4);
+    expect(active().queryByRole('button', { name: 'Add food' })).toBeNull();
     expect(active().getByLabelText('Calories remaining, 2,000 of 2,000 kilocalories. 0 eaten.')).toBeOnTheScreen();
     expect(active().queryByText('0 eaten')).toBeNull();
     await fireEvent.press(active().getByTestId('calorie-ring'));
@@ -282,7 +283,7 @@ describe('UX-02 Diary', () => {
 
   it('ARCH-22: pt-PT smoke render', async () => {
     await setup(undefined, 'pt-PT');
-    expect(await active().findAllByRole('button', { name: 'Adicionar alimento' })).toHaveLength(4);
+    expect(await active().findAllByText('Sem alimentos registados')).toHaveLength(4);
     expect(screen.getByLabelText('A mostrar Hoje')).toBeOnTheScreen();
     expect(active().getByText('A usar objetivos predefinidos')).toBeOnTheScreen();
   });

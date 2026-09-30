@@ -42,8 +42,8 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [Breakfast                      700 kcal ⋯ + ]
 [  Scrambled eggs                         ⋯ ]
 [  2 × egg  199 kcal                        ]
-[  + Add food                               ]
-[◦ Lunch …                                  ]
+[Lunch                            0 kcal ⋯ + ]
+[  No foods logged                          ]
 ```
 - Trailing calendar icon (label "Choose date") → Date Picker.
 - Large chevrons beside the calorie ring select the previous/next day; they are buttons, not page-swipe handles.
@@ -51,12 +51,12 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Scrolling the strip MUST NOT change the day; tapping a day selects it. Whenever the selected day changes (tap, Today, Date Picker) the strip animates to center it, even if the user had scrolled it away.
 - The selected day and its immediate previous/next days MUST stay mounted so adjacent-day changes show ready content without a loading blink.
 - The selected day's neighbours are labelled prev/next day buttons, and the selected day has increment/decrement accessibility actions. Horizontal swipes on the Diary content MUST NOT change the day.
-- Header `+` and the `+ Add food` row → Food Search (meal, date). Row tap → matching edit screen. A left swipe reveals a `Delete` button (DS-08); tapping it deletes and shows `<item> deleted · Undo` for 5 seconds. A short swipe springs closed. No long-press actions or confirmation dialog.
+- Header `+` → Food Search (meal, date); there is no separate Add food row (user decision 2026-09-30). Row tap → matching edit screen. A left swipe reveals a `Delete` button (DS-08); tapping it deletes and shows `<item> deleted · Undo` for 5 seconds. A short swipe springs closed. No long-press actions or confirmation dialog.
 - Each meal and entry has a `…` menu. Meal: `Copy meal`; entry: `Copy item`.
-- Empty meal = header (0 kcal) + `+ Add food` row only (no empty text on Diary, to protect density).
+- Empty meal = header (0 kcal) + one compact `textSecondary` line `No foods logged`.
 - Over goal and unknown macros: DS-08.
 - Error: a DB load failure is full-screen with Retry. Never an offline banner.
-- Focus order: app bar → strip days left to right (rendered ones; prev, selected, next among them) → Today → ring (one element) → carbs, protein, fat → each meal (header, menu, header +, entries and their menus, Add food).
+- Focus order: app bar → strip days left to right (rendered ones; prev, selected, next among them) → Today → ring (one element) → carbs, protein, fat → each meal (header, menu, header +, entries and their menus).
 
 ## UX-03 Meal Detail (removed)
 - Removed 2026-09-28 (user request). Entries are edited and copied from the Diary (UX-02, UX-12). ID kept so it is not reused.

@@ -45,7 +45,7 @@ onFlowComplete:
     direction: DOWN
     timeout: 15000
 - tapOn:
-    text: Add food
+    text: 'Add food to .*'
     index: 1
 - extendedWaitUntil:
     visible: Food search

@@ -114,7 +114,7 @@ appId: com.ricardoreis.calorietracker
     timeout: 5000
 # Clean up the custom food itself: a UX-04 swipe reveals Delete; tapping it deletes and offers Undo.
 - tapOn:
-    text: Add food
+    text: 'Add food to .*'
     index: 1
 - tapOn:
     id: food-search-input

@@ -74,10 +74,10 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
     ).toEqual(['Breakfast', 'Lunch', 'Dinner', 'Snacks']);
   });
 
-  it('NAV-04 / UX-04: a meal Add food row opens Food Search with its meal and date context', async () => {
+  it('NAV-04 / UX-04: a meal header + opens Food Search with its meal and date context', async () => {
     const app = await renderApp('/diary');
     await screen.findByTestId('diary-day-list');
-    await fireEvent.press(activeDay().getAllByRole('button', { name: 'Add food' })[0]!);
+    await fireEvent.press(activeDay().getByRole('button', { name: 'Add food to Breakfast' }));
     await flush();
     expect(app.getPathname()).toBe('/diary/food-search');
     expect(await screen.findByRole('header', { name: 'Food search' })).toBeOnTheScreen();
@@ -87,7 +87,7 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
   it('UX-05/08 / NAV-04: creates a custom food, continues to Food Detail, and adds it to the Diary', async () => {
     const app = await renderApp('/diary');
     await screen.findByTestId('diary-day-list');
-    await fireEvent.press(activeDay().getAllByRole('button', { name: 'Add food' })[0]!);
+    await fireEvent.press(activeDay().getByRole('button', { name: 'Add food to Breakfast' }));
     await flush();
     await fireEvent.changeText(screen.getByTestId('food-search-input'), 'Navigation oats');
     await fireEvent.press(screen.getByRole('button', { name: 'Create custom food' }));

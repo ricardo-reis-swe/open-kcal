@@ -27,13 +27,12 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Visible **Today** action whenever the selected date ≠ today. Calendar picker for any date.
 - Future dates behave like normal days (no separate planning mode).
 - Overview: calorie goal, consumed, remaining, circular calorie progress, carbs/protein/fat consumed vs target.
-- Each meal: name, meal kcal total, entries (name, serving, kcal), Add Food, and a copy menu.
+- Each meal: name, meal kcal total, `+` to add food, entries (name, serving, kcal), and a copy menu.
 
 ```text
-BREAKFAST                         700 kcal
+BREAKFAST                     700 kcal  +
 Scrambled eggs
 2 × egg                           199 kcal
-+ Add food
 ```
 
 ## SCOPE-04 Food logging and editing

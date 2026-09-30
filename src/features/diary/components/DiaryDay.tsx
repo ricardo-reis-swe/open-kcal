@@ -12,7 +12,6 @@ import {
   FocusablePressable,
   InlineStatus,
   PrimaryButton,
-  TextAction,
   UndoToast,
 } from '@/shared/components';
 import { addDays, type LocalDate } from '@/shared/dates';
@@ -263,22 +262,17 @@ function MealSection({
       />
       {/* UX-02: row tap → the matching edit screen; it returns here (NAV-04). */}
       <MealEntries entries={meal.entries} unit={unit} origin="diary" onDelete={onDelete} onMenu={openEntryMenu} />
-      {/* DS-08 Add Food row (42–44): the last row per meal. */}
-      <View
-        style={{
-          minHeight: theme.sizes.addFoodRow[1],
-          paddingHorizontal: theme.spacing[2],
-          justifyContent: 'center',
-        }}
-      >
-        <TextAction
-          icon="add"
-          label={t('diary.meal.addFood')}
-          accessibilityHint={t('diary.meal.addFoodTo', { meal: meal.meal.name })}
-          onPress={() => router.push(routes.foodSearch({ mealId: meal.meal.id, date }))}
-          fullWidth
-        />
-      </View>
+      {/* UX-02: adding is the header `+` only; an empty meal says so in one compact line. */}
+      {meal.entries.length === 0 ? (
+        <AppText
+          variant="compact"
+          color="textSecondary"
+          testID={`diary-meal-${meal.meal.id}-empty`}
+          style={{ paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[2] }}
+        >
+          {t('diary.meal.empty')}
+        </AppText>
+      ) : null}
       <DashboardActionMenu
         target={menuTarget}
         visible={menuTarget !== null}

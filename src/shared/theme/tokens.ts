@@ -91,7 +91,6 @@ export const sizes = {
   mealMarker: 28,
   foodRowSingle: 48,
   foodRowDouble: [52, 56],
-  addFoodRow: [42, 44],
   settingsRow: [48, 52],
   bottomNav: 56, // + safe area
   centerAction: 48, // rises ≤ 8 above bar
