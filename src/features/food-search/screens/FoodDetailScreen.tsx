@@ -27,6 +27,7 @@ import { MealPicker } from '@/shared/navigation/MealPicker';
 import { routes, type FoodSource, type Origin } from '@/shared/navigation/routes';
 import { useTheme } from '@/shared/theme';
 
+import { announceAddedFood } from '../addedNotice';
 import { ServingRuler } from '../components/ServingRuler';
 import { useExternalFood, useFood, useRecentFood } from '../food-search.queries';
 
@@ -265,8 +266,10 @@ function FoodDetailForm({
           quantity,
         });
         setDate(mode.date);
-        // NAV-03/04: every add flow ends on the target Diary date.
-        router.dismissTo(routes.diary());
+        // NAV-04: an add returns to Food Search (query and results intact) to log the next food; the Diary is
+        // already on the target date for when the user leaves search.
+        announceAddedFood(food.name, mealName);
+        router.back();
       } else {
         await writes.editFoodEntry.mutateAsync({
           id: mode.entryId,

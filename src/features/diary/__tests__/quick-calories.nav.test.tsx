@@ -108,6 +108,12 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
     expect(await screen.findByText('Navigation oats')).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('food-detail-add'));
     await flush();
+    // NAV-04: an add returns to Food Search with the query kept and confirms the add; Back then shows the Diary.
+    expect(app.getPathname()).toBe('/diary/food-search');
+    expect(screen.getByTestId('food-search-input').props.value).toBe('Navigation oats');
+    expect(await screen.findByTestId('food-added-toast')).toHaveTextContent('Added Navigation oats to Breakfast');
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await flush();
     expect(app.getPathname()).toBe('/diary');
     expect(await activeDay().findByRole('header', { name: 'Breakfast, 200 kilocalories' })).toBeOnTheScreen();
   });

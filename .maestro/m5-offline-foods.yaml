@@ -35,6 +35,12 @@ onFlowComplete:
     timeout: 5000
 - tapOn:
     id: food-detail-add
+# NAV-04: an add returns to Food Search (with an Added toast); Back goes on to the Diary.
+- extendedWaitUntil:
+    visible:
+      id: food-added-toast
+    timeout: 5000
+- tapOn: Back
 # Meals can be reordered (M8), so the entry's meal may sit below the fold: scroll to it on the Diary.
 - extendedWaitUntil:
     visible:

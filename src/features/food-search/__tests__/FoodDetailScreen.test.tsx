@@ -117,7 +117,9 @@ describe('UX-05: Food Detail / Add Entry', () => {
         quantity: 51,
       }),
     );
-    expect(router.dismissTo).toHaveBeenCalledWith('/diary');
+    // NAV-04: back to Food Search to log the next food.
+    expect(router.back).toHaveBeenCalled();
+    expect(router.dismissTo).not.toHaveBeenCalled();
   });
 
   it('ARCH-22: renders the key add-entry controls in pt-PT', async () => {

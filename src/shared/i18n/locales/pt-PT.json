@@ -263,6 +263,7 @@
     "delete": "Eliminar",
     "deleteFood": "Eliminar alimento",
     "deleted": "{{name}} eliminado",
+    "added": "{{name}} adicionado a {{meal}}",
     "deleteError": "Não foi possível eliminar este alimento. Tente novamente."
   },
   "customFood": {

@@ -74,6 +74,12 @@ appId: com.ricardoreis.calorietracker
     timeout: 5000
 - tapOn:
     id: food-detail-add
+# NAV-04: an add returns to Food Search (with an Added toast); Back goes on to the Diary.
+- extendedWaitUntil:
+    visible:
+      id: food-added-toast
+    timeout: 5000
+- tapOn: Back
 - scrollUntilVisible:
     element: '${output.food}, 100 .*, 200 .*'
     direction: DOWN

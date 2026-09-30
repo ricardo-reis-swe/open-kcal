@@ -27,6 +27,7 @@ import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { useTheme } from '@/shared/theme';
 
+import { clearAddedFood, useAddedFoodNotice } from '../addedNotice';
 import {
   useCustomFoodSearch,
   useFoodSearchSections,
@@ -79,6 +80,9 @@ export function FoodSearchScreen({
   const services = useServices();
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deletedFood, setDeletedFood] = useState<Food | null>(null);
+  const added = useAddedFoodNotice();
+  // A notice belongs to this visit of search; leaving it drops a toast that hasn't shown yet.
+  useEffect(() => () => void (added && clearAddedFood(added.key)), [added]);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [offQuery, setOffQuery] = useState(initialQuery.trim());
@@ -472,6 +476,14 @@ export function FoodSearchScreen({
           onUndo={() => void undoDelete()}
           onDismiss={() => setDeletedFood(null)}
           testID="food-delete-undo"
+        />
+      ) : null}
+      {added && !deletedFood ? (
+        <UndoToast
+          key={added.key}
+          message={t('foodSearch.added', { name: added.foodName, meal: added.mealName })}
+          onDismiss={() => clearAddedFood(added.key)}
+          testID="food-added-toast"
         />
       ) : null}
     </View>
