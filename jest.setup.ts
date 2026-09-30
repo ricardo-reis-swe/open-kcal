@@ -19,3 +19,6 @@ jest.mock('@react-native-community/netinfo', () => require('@react-native-commun
 
 // ARCH-23: the Android widget library's native module doesn't exist in Jest.
 jest.mock('react-native-android-widget', () => require('./src/shared/testing/androidWidgetMock'));
+
+// ARCH-24: expo-camera's native view and permissions don't exist in Jest.
+jest.mock('expo-camera', () => require('./src/shared/testing/expoCameraMock'));

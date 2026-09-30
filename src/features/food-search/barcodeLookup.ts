@@ -76,7 +76,7 @@ async function readCandidate(
   signal: AbortSignal,
 ): Promise<FoodCandidate | null> {
   try {
-    if (provider === 'open_food_facts') return await services.openFoodFacts.getFood(displayBarcode(gtin), signal);
+    if (provider === 'open_food_facts') return await services.openFoodFacts.findBarcode(displayBarcode(gtin), signal);
     const fdcId = await services.usda.findBarcode(gtin, signal);
     return fdcId ? await services.usda.getFood(fdcId, signal) : null;
   } catch (error) {

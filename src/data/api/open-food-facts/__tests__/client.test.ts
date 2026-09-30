@@ -132,4 +132,39 @@ describe('PROV-01 / PROV-03 / PROV-12: OFF client', () => {
     await pending;
     jest.useRealTimers();
   });
+
+  it('PROV-15: a barcode read treats not found as a quiet miss and still logs real failures', async () => {
+    const records: LogRecord[] = [];
+    const log = createLogger({ isDev: true, sink: (record) => records.push(record) });
+    const missing = new OpenFoodFactsClient(
+      config,
+      jest.fn().mockResolvedValue(new Response(JSON.stringify({ status: 0 }), { status: 404 })),
+      {},
+      log,
+    );
+    await expect(missing.findBarcode('5601009983179', new AbortController().signal)).resolves.toBeNull();
+    const zero = new OpenFoodFactsClient(
+      config,
+      jest.fn().mockResolvedValue(new Response(JSON.stringify({ status: 0 }), { status: 200 })),
+      {},
+      log,
+    );
+    await expect(zero.findBarcode('5601009983179', new AbortController().signal)).resolves.toBeNull();
+    expect(records).toEqual([]);
+    const request = jest.fn().mockResolvedValue(new Response(JSON.stringify({ status: 1, product }), { status: 200 }));
+    const found = new OpenFoodFactsClient(config, request, {}, log);
+    await expect(found.findBarcode('5601009983179', new AbortController().signal)).resolves.toMatchObject({
+      externalId: '1',
+    });
+    expect(String(request.mock.calls[0]?.[0])).toContain('/api/v2/product/5601009983179');
+    const down = new OpenFoodFactsClient(
+      config,
+      jest.fn().mockResolvedValue(new Response('', { status: 500 })),
+      {},
+      log,
+    );
+    await expect(down.findBarcode('5601009983179', new AbortController().signal)).rejects.toBeTruthy();
+    expect(records.map((record) => record.level)).toContain('error');
+    expect(JSON.stringify(records)).not.toContain('5601009983179'); // ARCH-15 / DATA-24
+  });
 });

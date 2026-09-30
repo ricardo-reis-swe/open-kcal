@@ -334,7 +334,7 @@ Input: a valid GTIN-14 (DATA-24). Output: a stored food id (→ Food Detail) or 
 1. Saved foods: DATA-24 `findByBarcode`. Always runs; no request; works offline.
 2. Remote providers in the DATA-19 section order, only when **all** hold: the section is visible (UX-18), the provider is available (USDA: key configured), and the device is online. Otherwise it gets **no request**.
 
-**OFF.** Product read (PROV-03 select call) with the code as GTIN-13 (GTIN-14 minus its leading `0`), or as EAN-8 when the GTIN-14 starts with six zeros. It spends the product budget (PROV-04). Found + passes PROV-07 → upsert (DATA-15, PROV-09 TTL). `NotFoundError` or PROV-07 failure → miss.
+**OFF.** Product read (PROV-03 select call) with the code as GTIN-13 (GTIN-14 minus its leading `0`), or as EAN-8 when the GTIN-14 starts with six zeros. It spends the product budget (PROV-04). Found + passes PROV-07 → upsert (DATA-15, PROV-09 TTL). Not found (404 / `status: 0`) or a PROV-07 failure → miss; a not-found barcode read is **not logged** (it's expected, and a logged error raises the dev-build error toast).
 
 **USDA.** `GET /foods/search?query=<code>&dataType=Branded&pageSize=10`, where `<code>` is the 12-digit UPC-A when the GTIN-14 starts with `00`, else the 13-digit form. Accept only a hit whose `gtinUpc` normalizes to the same GTIN-14 (the search is full text). Then the detail read (PROV-02) → upsert. No hit → miss.
 - Checked live 2026-09-30: `031200037206` → `fdcId 2035482`, `gtinUpc 031200037206`. **Not yet checked:** Branded foods stored with 13/14-digit `gtinUpc`; re-check with a real key at implementation and add a fixture.

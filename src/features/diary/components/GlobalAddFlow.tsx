@@ -10,6 +10,7 @@ import { useMeals } from '../diary.queries';
 import { useDiaryDate } from '../hooks/DiaryDateContext';
 
 type Props = { open: boolean; onClose: () => void };
+type MealFlow = 'pickFoodMeal' | 'pickScanMeal' | 'pickQuickMeal';
 
 /**
  * `+` flows (NAV-03), from either tab: Add Action Sheet → Meal Picker → the flow's screen on the selected diary date.
@@ -21,7 +22,7 @@ export function GlobalAddFlow({ open, onClose }: Props) {
   const meals = useMeals();
   const [picking, setPicking] = useState(false);
   // What to do once the current sheet has finished closing.
-  const next = useRef<'pickFoodMeal' | 'pickQuickMeal' | 'weight' | null>(null);
+  const next = useRef<MealFlow | 'weight' | null>(null);
   const openWeightEntry = useOpenWeightEntry();
   const pickedMeal = useRef<string | null>(null);
 
@@ -31,8 +32,19 @@ export function GlobalAddFlow({ open, onClose }: Props) {
     router.push(routes.quickCalories({ mealId, date, origin: pathname.startsWith('/profile') ? 'profile' : 'diary' }));
   const openFoodSearch = (mealId: string) =>
     router.push(routes.foodSearch({ mealId, date, origin: pathname.startsWith('/profile') ? 'profile' : 'diary' }));
+  // NAV-03 Scan Barcode: Food Search (field not focused) with the scanner on top, so every outcome lands on search.
+  const openScanner = (mealId: string) => {
+    const origin = pathname.startsWith('/profile') ? 'profile' : 'diary';
+    router.push(routes.foodSearch({ mealId, date, scan: true, origin }));
+    router.push(routes.barcodeScanner({ mealId, date, origin }));
+  };
+  const openMealFlow = (kind: MealFlow, mealId: string) => {
+    if (kind === 'pickFoodMeal') openFoodSearch(mealId);
+    else if (kind === 'pickScanMeal') openScanner(mealId);
+    else openQuickCalories(mealId);
+  };
 
-  const beginMealFlow = (kind: 'pickFoodMeal' | 'pickQuickMeal' | 'weight') => {
+  const beginMealFlow = (kind: MealFlow | 'weight') => {
     next.current = kind;
     onClose();
   };
@@ -43,6 +55,7 @@ export function GlobalAddFlow({ open, onClose }: Props) {
         visible={open}
         onClose={onClose}
         onAddFood={() => beginMealFlow('pickFoodMeal')}
+        onScanBarcode={() => beginMealFlow('pickScanMeal')}
         onQuickCalories={() => beginMealFlow('pickQuickMeal')}
         // NAV-03: Update weight → Weight Entry Sheet, defaulting to today (not the diary date).
         onUpdateWeight={() => beginMealFlow('weight')}
@@ -55,10 +68,8 @@ export function GlobalAddFlow({ open, onClose }: Props) {
             return;
           }
           const list = meals.data ?? [];
-          if (list.length === 1) {
-            if (kind === 'pickFoodMeal') openFoodSearch(list[0]!.id);
-            else openQuickCalories(list[0]!.id);
-          } else {
+          if (list.length === 1) openMealFlow(kind, list[0]!.id);
+          else {
             next.current = kind;
             setPicking(true);
           }
@@ -80,8 +91,7 @@ export function GlobalAddFlow({ open, onClose }: Props) {
           const kind = next.current;
           pickedMeal.current = null;
           next.current = null;
-          if (mealId && kind === 'pickFoodMeal') openFoodSearch(mealId);
-          else if (mealId) openQuickCalories(mealId);
+          if (mealId && kind && kind !== 'weight') openMealFlow(kind, mealId);
         }}
       />
     </>

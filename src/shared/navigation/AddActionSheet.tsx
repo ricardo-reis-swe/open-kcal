@@ -9,15 +9,25 @@ type Props = {
   onDismissed?: () => void;
   /** Each action row is disabled until its flow lands: Add food (M4), Update weight (M8). */
   onAddFood?: () => void;
+  onScanBarcode?: () => void;
   onQuickCalories?: () => void;
   onUpdateWeight?: () => void;
 };
 
-/** Add Action Sheet opened by `+` from either tab (UX-09, NAV-03): icon + label rows, no title, no barcode. */
-export function AddActionSheet({ visible, onClose, onDismissed, onAddFood, onQuickCalories, onUpdateWeight }: Props) {
+/** Add Action Sheet opened by `+` from either tab (UX-09, NAV-03): icon + label rows, no title. */
+export function AddActionSheet({
+  visible,
+  onClose,
+  onDismissed,
+  onAddFood,
+  onScanBarcode,
+  onQuickCalories,
+  onUpdateWeight,
+}: Props) {
   const { t } = useTranslation();
   const rows = [
     { key: 'add-food', label: t('addActions.addFood'), icon: 'restaurant-outline', onPress: onAddFood },
+    { key: 'scan-barcode', label: t('addActions.scanBarcode'), icon: 'barcode-outline', onPress: onScanBarcode },
     { key: 'quick-calories', label: t('addActions.quickCalories'), icon: 'flash-outline', onPress: onQuickCalories },
     { key: 'update-weight', label: t('addActions.updateWeight'), icon: 'scale-outline', onPress: onUpdateWeight },
   ] as const;

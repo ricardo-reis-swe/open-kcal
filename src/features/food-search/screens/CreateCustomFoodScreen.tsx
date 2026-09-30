@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
+import { displayBarcode } from '@/domain/food/barcode';
 import {
   CUSTOM_FOOD_AMOUNT_MAX,
   CUSTOM_FOOD_ENERGY_MAX_KCAL,
@@ -27,6 +28,7 @@ import {
   FormField,
   HeaderAction,
   InlineStatus,
+  ListRow,
   SectionHeader,
 } from '@/shared/components';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
@@ -38,6 +40,8 @@ import { useLocalFoodWrites } from '../food-search.queries';
 
 type Props = {
   initialName?: string;
+  /** DATA-24: GTIN-14 from the Barcode Scanner (UX-24); saved with the food. */
+  barcode?: string;
   onCancel: () => void;
   onSaved: (food: Food) => void;
 };
@@ -45,7 +49,7 @@ type Props = {
 const SERVING_UNITS: readonly CustomServingUnit[] = ['g', 'oz', 'ml', 'fl_oz', 'other'];
 
 /** UX-08 Create Custom Food. Saving creates the food only; the route continues to Food Detail (NAV-04). */
-export function CreateCustomFoodScreen({ initialName = '', onCancel, onSaved }: Props) {
+export function CreateCustomFoodScreen({ initialName = '', barcode, onCancel, onSaved }: Props) {
   const theme = useTheme();
   const settings = useAppSettings();
   return (
@@ -53,6 +57,7 @@ export function CreateCustomFoodScreen({ initialName = '', onCancel, onSaved }: 
       {settings.data ? (
         <CustomFoodForm
           initialName={initialName}
+          barcode={barcode}
           energyUnit={settings.data.energyUnit}
           initialServingUnit={settings.data.foodWeightUnit}
           onCancel={onCancel}
@@ -65,12 +70,14 @@ export function CreateCustomFoodScreen({ initialName = '', onCancel, onSaved }: 
 
 function CustomFoodForm({
   initialName,
+  barcode,
   energyUnit,
   initialServingUnit,
   onCancel,
   onSaved,
 }: {
   initialName: string;
+  barcode: string | undefined;
   energyUnit: 'kcal' | 'kJ';
   initialServingUnit: 'g' | 'oz';
   onCancel: () => void;
@@ -145,7 +152,7 @@ function CustomFoodForm({
     if (!input) return;
     setSaveFailed(false);
     try {
-      onSaved(await writes.createCustom.mutateAsync(input));
+      onSaved(await writes.createCustom.mutateAsync(barcode ? { ...input, barcode } : input));
     } catch {
       setSaveFailed(true);
     }
@@ -205,6 +212,9 @@ function CustomFoodForm({
                 />
               )}
             />
+            {barcode ? (
+              <ListRow label={t('customFood.barcode')} value={displayBarcode(barcode)} testID="custom-food-barcode" />
+            ) : null}
             <Controller
               control={control}
               name="servingAmount"

@@ -17,7 +17,10 @@ export type FoodSource = 'custom' | 'usda' | 'open_food_facts';
 
 export type RouteParams = {
   diary: { date?: LocalDate };
-  foodSearch: { mealId: Uuid; date: LocalDate; initialQuery?: string; origin?: Origin };
+  /** `scan`: opened for NAV-03 Scan Barcode (the Barcode Scanner is pushed on top; the field isn't focused). */
+  foodSearch: { mealId: Uuid; date: LocalDate; initialQuery?: string; scan?: boolean; origin?: Origin };
+  /** UX-24; always pushed over Food Search (NAV-04). */
+  barcodeScanner: { mealId: Uuid; date: LocalDate; origin?: Origin };
   foodDetail: {
     foodId: Uuid;
     foodSource: FoodSource;
@@ -29,7 +32,8 @@ export type RouteParams = {
   editFoodEntry: { entryId: Uuid; origin?: Origin };
   quickCalories: { mealId: Uuid; date: LocalDate; origin?: Origin };
   editQuickCalories: { entryId: Uuid; origin?: Origin };
-  createCustomFood: { mealId: Uuid; date: LocalDate; initialName?: string; origin?: Origin };
+  /** `barcode`: a GTIN-14 from the Barcode Scanner (DATA-24). */
+  createCustomFood: { mealId: Uuid; date: LocalDate; initialName?: string; barcode?: string; origin?: Origin };
   mealEdit: { mode: 'create' } | { mode: 'edit'; mealId: Uuid };
   weightEntry: { mode: 'create'; date?: LocalDate } | { mode: 'edit'; weightEntryId: Uuid; date?: LocalDate };
   foodDatabases: undefined;
@@ -56,8 +60,13 @@ const paramSchemas = {
     mealId: idSchema,
     date: dateSchema,
     initialQuery: z.string().optional(),
+    scan: z
+      .literal('1')
+      .optional()
+      .transform((value) => value === '1'),
     origin: originSchema.default('diary'),
   }),
+  barcodeScanner: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
   foodDetail: z.object({
     foodId: idSchema,
     foodSource: z.enum(['custom', 'usda', 'open_food_facts']),
@@ -70,6 +79,10 @@ const paramSchemas = {
     mealId: idSchema,
     date: dateSchema,
     initialName: z.string().optional(),
+    barcode: z
+      .string()
+      .regex(/^\d{14}$/)
+      .optional(),
     origin: originSchema.default('diary'),
   }),
   quickCalories: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
@@ -117,8 +130,13 @@ export const routes = {
       mealId: p.mealId,
       date: p.date,
       ...(p.initialQuery ? { initialQuery: p.initialQuery } : {}),
+      ...(p.scan ? { scan: '1' } : {}),
       origin: p.origin ?? 'diary',
     },
+  }) as unknown as Href,
+  barcodeScanner: (p: RouteParams['barcodeScanner']): Href => ({
+    pathname: '/diary/barcode-scanner',
+    params: { mealId: p.mealId, date: p.date, origin: p.origin ?? 'diary' },
   }) as unknown as Href,
   foodDetail: (p: RouteParams['foodDetail']): Href => ({
     pathname: '/diary/food-detail/[foodId]',
@@ -137,6 +155,7 @@ export const routes = {
       mealId: p.mealId,
       date: p.date,
       ...(p.initialName ? { initialName: p.initialName } : {}),
+      ...(p.barcode ? { barcode: p.barcode } : {}),
       origin: p.origin ?? 'diary',
     },
   }) as unknown as Href,

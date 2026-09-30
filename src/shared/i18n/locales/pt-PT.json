@@ -184,6 +184,7 @@
   "addActions": {
     "sheetLabel": "Ações de adicionar",
     "addFood": "Adicionar alimento",
+    "scanBarcode": "Ler código de barras",
     "quickCalories": "Calorias rápidas",
     "updateWeight": "Atualizar peso"
   },
@@ -236,6 +237,7 @@
     "placeholder": "Pesquisar alimentos",
     "searchLabel": "Pesquisar alimentos",
     "clear": "Limpar pesquisa",
+    "scanBarcode": "Ler código de barras",
     "context": "A adicionar a {{meal}} · {{date}}",
     "quickCalories": "Calorias rápidas",
     "createCustom": "Criar alimento personalizado",
@@ -276,6 +278,7 @@
     "title": "Novo alimento",
     "name": "Nome*",
     "brand": "Marca",
+    "barcode": "Código de barras",
     "serving": "Porção*",
     "otherUnit": "Unidade da porção",
     "nutrition": "Nutrição",
@@ -487,5 +490,31 @@
     "unavailable": "Abrir o Calorie Tracker",
     "pickerLabel": "Calorias restantes",
     "pickerDescription": "Calorias restantes de hoje"
+  },
+  "barcode": {
+    "title": "Ler código de barras",
+    "hint": "Aponte a câmara para um código de barras.",
+    "manualEntry": "Introduzir código manualmente",
+    "manualLabel": "Código de barras",
+    "lookUp": "Procurar",
+    "invalidCode": "Introduza um código de barras válido (8–14 dígitos).",
+    "torchOn": "Ligar lanterna",
+    "torchOff": "Desligar lanterna",
+    "permissionDenied": "Permita o acesso à câmara para ler códigos de barras.",
+    "allowCamera": "Permitir câmara",
+    "openSettings": "Abrir definições",
+    "cameraUnavailable": "Câmara indisponível.",
+    "lookingUp": "A procurar {{code}}…",
+    "notFound": "Nenhum alimento encontrado para {{code}}.",
+    "checked": "Verificado: {{sources}}.",
+    "savedFoods": "alimentos guardados",
+    "offline": "Sem ligação. Só foram verificados os alimentos guardados.",
+    "hiddenOne": "{{provider}} está desativado em Bases de dados de alimentos.",
+    "hiddenBoth": "Open Food Facts e USDA estão desativados em Bases de dados de alimentos.",
+    "failed": "Não foi possível verificar {{provider}}.",
+    "retry": "Tentar novamente",
+    "createCustom": "Criar alimento personalizado",
+    "scanAgain": "Ler novamente",
+    "cameraPermission": "O Calorie Tracker usa a câmara para ler códigos de barras de alimentos."
   }
 }

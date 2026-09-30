@@ -145,7 +145,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Carbs helper text: `As on EU labels (fibre not included)` (PROV-05).
 - Protein, carbs and fat are optional; an empty field saves as unknown (DATA-06).
 - **More nutrients**: a collapsed disclosure under the macros with one optional field per catalog nutrient (DATA-20), grouped as UX-05, in the catalog unit (g / mg / µg), per the entered serving like the macros. `Salt` is offered and `sodium` is derived (EU labels list salt). Empty = unknown. Collapsed by default; opens when any value is set.
-- **From a scan** (`barcode` param, DATA-24): a display-only `Barcode  5601234567890` row under Brand; the code is saved with the food. Name starts empty.
+- **From a scan** (`barcode` param, DATA-24): a display-only `Barcode  5601009983179` row under Brand; the code is saved with the food. Name starts empty.
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
 
 ## UX-09 Add Action Sheet
@@ -278,7 +278,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 
 ## UX-24 Barcode Scanner
 ```text
-[‹  Scan barcode                     🔦 ]   torch toggle (only when the device has one)
+[‹  Scan barcode                     🔦 ]   torch toggle (only while the camera is on)
 [                                        ]
 [      ┌──────────────────────┐          ]   camera preview fills the body
 [      │      frame guide      │          ]
@@ -292,15 +292,15 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 | State | Shows |
 |---|---|
 | Permission not asked | the system prompt on open |
-| Permission denied | `Allow camera access to scan barcodes.` + `Open settings` + `Enter code manually` |
-| Camera unavailable / error | `Camera unavailable.` + `Enter code manually` |
+| Permission denied | `Allow camera access to scan barcodes.` + `Allow camera` (asks again) or, once the OS won't ask, `Open settings`; the manual field |
+| Camera unavailable / error | `Camera unavailable.` + the manual field |
 | Scanning | preview, frame, hint, torch, manual entry |
 | Looking up | preview frozen; `Looking up <code>…` + spinner |
 | Found | NAV-04: replaced by Food Detail |
 | Not found | `No food found for <code>.` + `Checked: <sources>.` + `Create custom food` (primary) + `Scan again` |
 | Not found, a provider failed | as Not found, plus `Couldn't check <Provider>.` + `Retry` |
 
-- `<sources>` lists what PROV-15 actually checked, e.g. `saved foods, Open Food Facts, USDA`. When nothing remote was checked it says why: `Offline. Only saved foods were checked.` / `Open Food Facts and USDA are turned off.` (hidden in UX-18) / USDA without a key is simply not listed.
+- `<sources>` lists what PROV-15 actually checked, e.g. `saved foods, Open Food Facts, USDA`. Notes: `Offline. Only saved foods were checked.`, or per provider hidden in UX-18 `<Provider> is turned off in Food Databases.` (both: `Open Food Facts and USDA are turned off in Food Databases.`). USDA without a key is simply not listed.
 - `<code>` shows the GTIN-13 (or EAN-8) form, digits only.
 - Back → Food Search. `Scan again` returns to Scanning. Leaving mid-lookup cancels it (PROV-15).
 - Strings in en + pt-PT (ARCH-22), including the camera permission text (ARCH-24).

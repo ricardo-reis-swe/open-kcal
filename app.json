@@ -38,6 +38,14 @@
       "./plugins/withIosSceneLifecycle",
       "expo-sqlite",
       "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Calorie Tracker uses the camera to scan food barcodes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "@react-native-community/datetimepicker",
       [
         "react-native-android-widget",
@@ -60,6 +68,9 @@
       ],
       "./plugins/withWidgetStrings"
     ],
+    "locales": {
+      "pt-PT": "./locales/ios/pt-PT.json"
+    },
     "experiments": {
       "typedRoutes": true
     }

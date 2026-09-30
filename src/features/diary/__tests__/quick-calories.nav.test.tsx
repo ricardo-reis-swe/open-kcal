@@ -43,7 +43,7 @@ async function addQuickCalories(kcal: string, note?: string) {
 }
 
 describe('NAV-03 / UX-09: + Add Action Sheet', () => {
-  it('UX-09: rows are Add food, Quick calories and Update weight; all enabled (M4 food, M8 weight)', async () => {
+  it('UX-09: rows are Add food, Scan barcode, Quick calories and Update weight; all enabled', async () => {
     await renderApp('/diary');
     await fireEvent.press(screen.getByRole('button', { name: 'Add' }));
     const sheet = screen.getByTestId('add-action-sheet');
@@ -51,11 +51,11 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
       .getAllByRole('button')
       .map((b) => b.props.accessibilityLabel)
       .filter((label) => label !== 'Close');
-    expect(rows).toEqual(['Add food', 'Quick calories', 'Update weight']);
+    expect(rows).toEqual(['Add food', 'Scan barcode', 'Quick calories', 'Update weight']);
     expect(within(sheet).getByRole('button', { name: 'Add food' })).toBeEnabled();
     expect(within(sheet).getByRole('button', { name: 'Update weight' })).toBeEnabled();
     expect(within(sheet).getByRole('button', { name: 'Quick calories' })).toBeEnabled();
-    expect(within(sheet).queryByText(/barcode/i)).toBeNull();
+    expect(within(sheet).getByRole('button', { name: 'Scan barcode' })).toBeEnabled();
   });
 
   it('UX-10: picking an action closes the sheet, then the Meal Picker lists meals in saved order', async () => {

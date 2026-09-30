@@ -1,22 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { CreateCustomFoodScreen } from '@/features/food-search/screens/CreateCustomFoodScreen';
+import { BarcodeScannerScreen } from '@/features/food-search/screens/BarcodeScannerScreen';
 import { NotFoundState } from '@/shared/components';
 import { parseRouteParams, routes } from '@/shared/navigation/routes';
 
-/** UX-08: create only, then continue to Food Detail without logging automatically (NAV-04). */
-export default function CreateCustomFoodRoute() {
+/** UX-24 over Food Search. Found and Create custom food **replace** the scanner, so they return to Food Search (NAV-04). */
+export default function BarcodeScannerRoute() {
   const { t } = useTranslation();
-  const params = parseRouteParams('createCustomFood', useLocalSearchParams());
+  const params = parseRouteParams('barcodeScanner', useLocalSearchParams());
   if (!params)
     return <NotFoundState actionLabel={t('common.backToDiary')} onAction={() => router.dismissTo(routes.diary())} />;
   return (
-    <CreateCustomFoodScreen
-      initialName={params.initialName}
-      barcode={params.barcode}
-      onCancel={() => router.back()}
-      onSaved={(food) =>
+    <BarcodeScannerScreen
+      onBack={() => router.back()}
+      onFound={(food) =>
         router.replace(
           routes.foodDetail({
             foodId: food.id,
@@ -25,6 +23,11 @@ export default function CreateCustomFoodRoute() {
             date: params.date,
             origin: params.origin,
           }),
+        )
+      }
+      onCreateCustom={(barcode) =>
+        router.replace(
+          routes.createCustomFood({ mealId: params.mealId, date: params.date, barcode, origin: params.origin }),
         )
       }
     />

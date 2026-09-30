@@ -9,7 +9,7 @@ describe('ARCH-03 / NAV-04 / NAV-09: food route contracts', () => {
         initialQuery: 'oats',
         origin: 'profile',
       }),
-    ).toEqual({ mealId: 'lunch', date: '2026-09-25', initialQuery: 'oats', origin: 'profile' });
+    ).toEqual({ mealId: 'lunch', date: '2026-09-25', initialQuery: 'oats', scan: false, origin: 'profile' });
   });
 
   it('validates Food Detail using IDs and lightweight context only', () => {

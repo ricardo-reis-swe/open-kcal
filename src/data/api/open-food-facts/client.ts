@@ -108,6 +108,21 @@ export class OpenFoodFactsClient {
     );
   }
 
+  /**
+   * PROV-15: a product read by barcode. Not found is an expected miss (`null`), not a logged failure: logging it would
+   * raise the dev-build error toast on every unknown product.
+   */
+  findBarcode(code: string, signal: AbortSignal): Promise<FoodCandidate | null> {
+    return this.diagnosed('detail', signal, async () => {
+      try {
+        return await this.product(code, signal);
+      } catch (error) {
+        if (error instanceof NotFoundError) return null;
+        throw error;
+      }
+    });
+  }
+
   getFood(externalId: string, signal: AbortSignal): Promise<FoodCandidate | null> {
     return this.diagnosed('detail', signal, () => this.product(externalId, signal));
   }

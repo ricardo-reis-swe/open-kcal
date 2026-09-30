@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import TabsLayout from '@/app/(tabs)/_layout';
 import DiaryStackLayout from '@/app/(tabs)/diary/_layout';
 import DiaryIndex from '@/app/(tabs)/diary/index';
+import BarcodeScannerRoute from '@/app/(tabs)/diary/barcode-scanner';
 import CreateCustomFoodRoute from '@/app/(tabs)/diary/create-custom-food';
 import FoodDetailRoute from '@/app/(tabs)/diary/food-detail/[foodId]';
 import EditFoodEntryRoute from '@/app/(tabs)/diary/food-entry/[entryId]';
@@ -33,6 +34,7 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/diary/_layout': DiaryStackLayout,
     '(tabs)/diary/index': DiaryIndex,
     '(tabs)/diary/food-search/index': FoodSearchRoute,
+    '(tabs)/diary/barcode-scanner': BarcodeScannerRoute,
     '(tabs)/diary/food-detail/[foodId]': FoodDetailRoute,
     '(tabs)/diary/food-entry/[entryId]': EditFoodEntryRoute,
     '(tabs)/diary/create-custom-food': CreateCustomFoodRoute,

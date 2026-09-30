@@ -96,6 +96,7 @@ async function setup(
   const onSelectFood = jest.fn();
   const onSelectExternal = jest.fn();
   const onCreateCustom = jest.fn();
+  const onScan = jest.fn();
   if (options.usdaError) jest.spyOn(services.usda, 'search').mockRejectedValue(options.usdaError);
   else if (options.usdaCandidates)
     jest
@@ -158,6 +159,7 @@ async function setup(
       today="2026-09-25"
       initialQuery={options.initialQuery}
       onBack={jest.fn()}
+      onScan={onScan}
       onQuickCalories={jest.fn()}
       onCreateCustom={onCreateCustom}
       onSelectFood={onSelectFood}
@@ -173,6 +175,7 @@ async function setup(
     onSelectFood,
     onSelectExternal,
     onCreateCustom,
+    onScan,
     view,
     productSignal: () => productSignal,
     resolvePendingProduct,

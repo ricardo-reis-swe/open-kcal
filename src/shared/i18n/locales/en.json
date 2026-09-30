@@ -184,6 +184,7 @@
   "addActions": {
     "sheetLabel": "Add actions",
     "addFood": "Add food",
+    "scanBarcode": "Scan barcode",
     "quickCalories": "Quick calories",
     "updateWeight": "Update weight"
   },
@@ -236,6 +237,7 @@
     "placeholder": "Search foods",
     "searchLabel": "Search foods",
     "clear": "Clear search",
+    "scanBarcode": "Scan barcode",
     "context": "Adding to {{meal}} · {{date}}",
     "quickCalories": "Quick calories",
     "createCustom": "Create custom food",
@@ -276,6 +278,7 @@
     "title": "New food",
     "name": "Name*",
     "brand": "Brand",
+    "barcode": "Barcode",
     "serving": "Serving*",
     "otherUnit": "Serving unit",
     "nutrition": "Nutrition",
@@ -487,5 +490,31 @@
     "unavailable": "Open Calorie Tracker",
     "pickerLabel": "Calories left",
     "pickerDescription": "Today's calories left"
+  },
+  "barcode": {
+    "title": "Scan barcode",
+    "hint": "Point the camera at a barcode.",
+    "manualEntry": "Enter code manually",
+    "manualLabel": "Barcode",
+    "lookUp": "Look up",
+    "invalidCode": "Enter a valid barcode (8–14 digits).",
+    "torchOn": "Turn on flashlight",
+    "torchOff": "Turn off flashlight",
+    "permissionDenied": "Allow camera access to scan barcodes.",
+    "allowCamera": "Allow camera",
+    "openSettings": "Open settings",
+    "cameraUnavailable": "Camera unavailable.",
+    "lookingUp": "Looking up {{code}}…",
+    "notFound": "No food found for {{code}}.",
+    "checked": "Checked: {{sources}}.",
+    "savedFoods": "saved foods",
+    "offline": "Offline. Only saved foods were checked.",
+    "hiddenOne": "{{provider}} is turned off in Food Databases.",
+    "hiddenBoth": "Open Food Facts and USDA are turned off in Food Databases.",
+    "failed": "Couldn't check {{provider}}.",
+    "retry": "Retry",
+    "createCustom": "Create custom food",
+    "scanAgain": "Scan again",
+    "cameraPermission": "Calorie Tracker uses the camera to scan food barcodes."
   }
 }

@@ -1,6 +1,6 @@
 import type { FoodInput } from '@/data/db/repositories/foodsRepository';
 import { DEFAULT_FOOD_SEARCH_SECTIONS, type FoodSearchSections } from '@/domain/food/searchSections';
-import { NotFoundError, ProviderResponseError } from '@/shared/errors';
+import { ProviderResponseError } from '@/shared/errors';
 import { createTestServices } from '@/shared/testing/services';
 
 import { lookupBarcode } from '../barcodeLookup';
@@ -22,7 +22,7 @@ const hide = (...ids: string[]): FoodSearchSections =>
 async function setup({ usdaKey = true } = {}) {
   const { services } = await createTestServices();
   jest.spyOn(services.credentials, 'hasUsdaApiKey').mockResolvedValue(usdaKey);
-  const off = jest.spyOn(services.openFoodFacts, 'getFood').mockRejectedValue(new NotFoundError('not found'));
+  const off = jest.spyOn(services.openFoodFacts, 'findBarcode').mockResolvedValue(null);
   const usdaSearch = jest.spyOn(services.usda, 'findBarcode').mockResolvedValue(null);
   const usdaDetail = jest.spyOn(services.usda, 'getFood').mockResolvedValue(null);
   return { services, off, usdaSearch, usdaDetail };

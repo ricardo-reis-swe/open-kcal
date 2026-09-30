@@ -20,11 +20,19 @@ export default function FoodSearchRoute() {
       date={params.date}
       today={today}
       initialQuery={params.initialQuery}
+      autoFocus={!params.scan}
       onBack={back}
+      onScan={() =>
+        router.push(routes.barcodeScanner({ mealId: params.mealId, date: params.date, origin: params.origin }))
+      }
       onQuickCalories={() =>
         router.push(routes.quickCalories({ mealId: params.mealId, date: params.date, origin: 'diary' }))
       }
-      onCreateCustom={(initialName) => router.push(routes.createCustomFood({ ...params, initialName }))}
+      onCreateCustom={(initialName) =>
+        router.push(
+          routes.createCustomFood({ mealId: params.mealId, date: params.date, initialName, origin: params.origin }),
+        )
+      }
       onFoodDatabases={() => router.navigate(routes.foodDatabases())}
       onSelectFood={(food) =>
         router.push(

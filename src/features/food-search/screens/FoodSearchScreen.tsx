@@ -49,7 +49,11 @@ type Props = {
   date: LocalDate;
   today: LocalDate;
   initialQuery?: string;
+  /** False when opened for NAV-03 Scan Barcode (the scanner is pushed on top). */
+  autoFocus?: boolean;
   onBack: () => void;
+  /** UX-04 scan icon → Barcode Scanner (UX-24). */
+  onScan: () => void;
   onQuickCalories: () => void;
   onCreateCustom: (initialName: string) => void;
   onFoodDatabases?: () => void;
@@ -63,7 +67,9 @@ export function FoodSearchScreen({
   date,
   today,
   initialQuery = '',
+  autoFocus = true,
   onBack,
+  onScan,
   onQuickCalories,
   onCreateCustom,
   onSelectFood,
@@ -350,7 +356,7 @@ export function FoodSearchScreen({
                 🔍
               </AppText>
               <TextInput
-                autoFocus
+                autoFocus={autoFocus}
                 value={query}
                 onChangeText={updateQuery}
                 placeholder={t('foodSearch.placeholder')}
@@ -376,6 +382,13 @@ export function FoodSearchScreen({
                   testID="food-search-clear"
                 />
               ) : null}
+              <PressableIcon
+                icon="barcode-outline"
+                accessibilityLabel={t('foodSearch.scanBarcode')}
+                onPress={onScan}
+                color="textSecondary"
+                testID="food-search-scan"
+              />
             </View>
           </View>
         }
