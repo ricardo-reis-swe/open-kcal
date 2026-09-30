@@ -36,7 +36,7 @@ Status: **in progress** · Spec: SCOPE-01, UX-22, NAV-10, DATA-22, ARCH-23, DS-1
 
 - [x] T1 Specs.
 - [x] T2 Spike: `react-native-android-widget` 0.22.1 + plugin config + `index.ts` entry. Zenfone dev build 2026-09-30: the headless task (WorkManager, app process) opened SQLite while the app ran and rendered `v4 · 9 entries`; resize re-rendered. Spike handler in `src/features/widget/widgetTaskHandler.tsx`, replaced in T3.
-- [ ] T3 View model + task handler + i18n (en, pt-PT) + tests.
+- [x] T3 View model + task handler + i18n (en, pt-PT) + tests: `caloriesLeftViewModel.ts` (ring labels reused), `readWidgetDay.ts` (Diary `loadDay` + settings), `openWidgetDatabase()` (pragmas only, `null` unless fully migrated), `CaloriesLeftWidget.tsx` (DS-14), global library mock `androidWidgetMock.ts`; tests `caloriesLeftViewModel.test.ts`, `widgetTaskHandler.test.ts`.
 - [ ] T4 `refreshWidget` + global `MutationCache.onSuccess` + refresh after startup + tests.
 - [ ] T5 NAV-10 deep link (`+native-intent.tsx`, Diary Today at root) + tests.
 - [ ] T6 Widget JSX (DS-14) + picker preview image.

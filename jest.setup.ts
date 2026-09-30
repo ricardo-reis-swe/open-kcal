@@ -16,3 +16,6 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => require('crypto').randomUUID
 
 // ARCH-12: native connectivity is represented by the package's deterministic test implementation.
 jest.mock('@react-native-community/netinfo', () => require('@react-native-community/netinfo/jest/netinfo-mock'));
+
+// ARCH-23: the Android widget library's native module doesn't exist in Jest.
+jest.mock('react-native-android-widget', () => require('./src/shared/testing/androidWidgetMock'));

@@ -5,7 +5,7 @@ import { openDatabaseAsync, type SQLiteBindValue } from 'expo-sqlite';
 import { DatabaseError, MigrationError } from '@/shared/errors';
 
 import { MIGRATIONS } from './migrations';
-import { migrate, type MigrationOptions, type MigrationResult } from './migrations/runner';
+import { migrate, readSchemaVersion, type MigrationOptions, type MigrationResult } from './migrations/runner';
 import { applyConnectionPragmas, createSqlDatabase, type SqlDatabase, type SqlDriver, type SqlParams } from './sql';
 
 export const DATABASE_NAME = 'calorie-tracker.db';
@@ -52,4 +52,21 @@ export async function openAppDatabase(options: MigrationOptions): Promise<SqlDat
       : new DatabaseError('Database startup failed', { cause: error });
   }
   return db;
+}
+
+/**
+ * ARCH-23: the widget's connection to the app database. Pragmas only — it never migrates or seeds, so a database
+ * the app hasn't migrated yet resolves to `null` (UX-22 unavailable) instead of racing the app's startup.
+ */
+export async function openWidgetDatabase(): Promise<SqlDatabase | null> {
+  const db = createSqlDatabase(await openExpoSqliteDriver(DATABASE_NAME));
+  try {
+    await applyConnectionPragmas(db);
+    if ((await readSchemaVersion(db)) === MIGRATIONS.length) return db;
+  } catch (error) {
+    await db.close().catch(() => undefined);
+    throw error;
+  }
+  await db.close().catch(() => undefined);
+  return null;
 }

@@ -473,5 +473,8 @@
     "value": "{{value}} {{unit}}",
     "a11y": "{{name}}, {{value}} {{unit}}.",
     "partial": "Some entries don't list it."
+  },
+  "widget": {
+    "unavailable": "Open Calorie Tracker"
   }
 }

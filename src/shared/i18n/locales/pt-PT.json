@@ -473,5 +473,8 @@
     "value": "{{value}} {{unit}}",
     "a11y": "{{name}}, {{value}} {{unit}}.",
     "partial": "Alguns registos não o indicam."
+  },
+  "widget": {
+    "unavailable": "Abrir o Calorie Tracker"
   }
 }
