@@ -53,6 +53,9 @@ describe('DATA-17: first-launch init + seed', () => {
       // DATA-19 default (migration 2)
       food_search_sections:
         '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]',
+      dashboard_nutrients:
+        '[{"id":"fibre","visible":true},{"id":"sugars","visible":true},{"id":"saturated_fat","visible":true},{"id":"salt","visible":true}]',
+      dashboard_nutrients_open: 0,
     });
     expect(await db.getAll('SELECT name, sort_order FROM meals ORDER BY sort_order')).toEqual(
       EN_MEALS.map((name, sort_order) => ({ name, sort_order })),

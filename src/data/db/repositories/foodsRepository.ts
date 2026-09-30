@@ -1,5 +1,12 @@
 // Foods + servings (DATA-11, DATA-15, DATA-16). Custom and saved external foods are soft-deleted; external foods are unique by
 // (source, external_id) and re-fetching updates the existing row instead of duplicating it.
+import {
+  isNutrientId,
+  knownNutrients,
+  nutrientAmountsFromRows,
+  withSaltAndSodium,
+  type NutrientAmounts,
+} from '@/domain/nutrition/nutrientCatalog';
 import type { Nutrients } from '@/domain/nutrition/nutrients';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
 import { NotFoundError, ValidationError } from '@/shared/errors';
@@ -99,6 +106,10 @@ function validateFood(input: FoodInput): void {
     const v = input.nutrients[key];
     if (!isNonNegative(v)) bad.push(key);
   }
+  // DATA-20: catalog ids only, each a finite amount ≥ 0.
+  for (const [id, v] of Object.entries(input.nutrients.extra ?? {})) {
+    if (!isNutrientId(id) || !(typeof v === 'number' && Number.isFinite(v) && v >= 0)) bad.push(`extra.${id}`);
+  }
   // DATA-11: a serving is selectable only with full conversion data.
   if (input.servings.length === 0) bad.push('servings');
   input.servings.forEach((s, i) => {
@@ -174,12 +185,26 @@ async function mergeServings(
   }
 }
 
+/** DATA-20: the food's catalog nutrient rows are replaced as a whole; salt/sodium are completed first. */
+async function writeFoodNutrients(tx: SqlExecutor, foodId: string, extra: NutrientAmounts | undefined) {
+  await tx.run('DELETE FROM food_nutrients WHERE food_id = ?', [foodId]);
+  for (const { id, amount } of knownNutrients(withSaltAndSodium(extra ?? {}))) {
+    await tx.run('INSERT INTO food_nutrients (food_id, nutrient_id, amount) VALUES (?, ?, ?)', [foodId, id, amount]);
+  }
+}
+
 export async function readFood(db: SqlExecutor, id: string): Promise<Food | null> {
   const row = await db.getFirst<FoodRow>('SELECT * FROM foods WHERE id = ?', [id]);
   if (!row) return null;
   const servings = await db.getAll<ServingRow>(
     'SELECT id, label, quantity, unit, basis_multiplier, is_default, sort_order FROM food_servings WHERE food_id = ? ORDER BY sort_order',
     [id],
+  );
+  const extra = nutrientAmountsFromRows(
+    await db.getAll<{ nutrient_id: string; amount: number }>(
+      'SELECT nutrient_id, amount FROM food_nutrients WHERE food_id = ?',
+      [id],
+    ),
   );
   return {
     id: row.id,
@@ -194,6 +219,7 @@ export async function readFood(db: SqlExecutor, id: string): Promise<Food | null
       carbohydrateG: row.carbohydrate_g,
       proteinG: row.protein_g,
       fatG: row.fat_g,
+      ...(Object.keys(extra).length > 0 ? { extra } : {}),
     },
     isDeleted: row.is_deleted === 1,
     servings: servings.map(toServing),
@@ -297,6 +323,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
           [id, ...foodValues(input), now, now],
         );
         await insertServings(tx, ids, id, input.servings);
+        await writeFoodNutrients(tx, id, input.nutrients.extra);
         return (await readFood(tx, id))!;
       });
     },
@@ -355,6 +382,8 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
           );
           await insertServings(tx, ids, id, input.servings);
         }
+        // DATA-20: a refresh replaces the rows; a nutrient missing from the new response becomes unknown.
+        await writeFoodNutrients(tx, id, input.nutrients.extra);
         await tx.run(
           `INSERT INTO food_cache_metadata (food_id, fetched_at, expires_at, raw_payload_json, schema_version)
            VALUES (?, ?, ?, ?, ?)

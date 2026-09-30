@@ -1,4 +1,5 @@
--- Reference schema v2 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections).
+-- Reference schema v4 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
+-- v3: DATA-09 macro target mode; v4: DATA-20 nutrient rows + DATA-21 dashboard nutrients).
 -- Conventions: ids are app-generated UUID TEXT; *_at are UTC ISO-8601 with ms ("2026-09-25T14:32:18.123Z");
 -- *_date / effective_from are local dates 'YYYY-MM-DD'. Canonical units: kg, g, ml, kcal. NULL nutrient = unknown, 0 = known zero.
 -- Every connection: PRAGMA foreign_keys = ON; WAL where supported.
@@ -19,7 +20,9 @@ CREATE TABLE app_settings (
   goals_confirmed_at TEXT, -- NULL while goals are the provisional first-launch default (UX-01)
   created_at         TEXT NOT NULL,
   updated_at         TEXT NOT NULL,
-  food_search_sections TEXT NOT NULL DEFAULT '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]'
+  food_search_sections TEXT NOT NULL DEFAULT '[{"id":"custom","visible":true},{"id":"saved","visible":true},{"id":"open_food_facts","visible":true},{"id":"usda","visible":true}]',
+  dashboard_nutrients TEXT NOT NULL DEFAULT '[{"id":"fibre","visible":true},{"id":"sugars","visible":true},{"id":"saturated_fat","visible":true},{"id":"salt","visible":true}]',
+  dashboard_nutrients_open INTEGER NOT NULL DEFAULT 0 CHECK (dashboard_nutrients_open IN (0, 1))
 );
 
 -- Effective-dated. Goal for date D = row with greatest effective_from <= D.
@@ -85,6 +88,14 @@ CREATE TABLE food_servings (
 CREATE UNIQUE INDEX ux_food_servings_default ON food_servings (food_id) WHERE is_default = 1;
 CREATE INDEX idx_food_servings_food ON food_servings (food_id, sort_order);
 
+-- DATA-20 catalog nutrients per the food's basis, in the catalog unit. No row = unknown, 0 = known zero.
+CREATE TABLE food_nutrients (
+  food_id     TEXT NOT NULL REFERENCES foods (id) ON DELETE CASCADE,
+  nutrient_id TEXT NOT NULL,
+  amount      REAL NOT NULL CHECK (amount >= 0),
+  PRIMARY KEY (food_id, nutrient_id)
+) WITHOUT ROWID;
+
 -- Food entries and Quick Calories entries. Totals are computed from these snapshots, never from foods.
 CREATE TABLE diary_entries (
   id                    TEXT PRIMARY KEY,
@@ -110,6 +121,14 @@ CREATE TABLE diary_entries (
 );
 CREATE INDEX idx_diary_entries_day ON diary_entries (diary_date, meal_id, sort_order);
 CREATE INDEX idx_diary_entries_food ON diary_entries (food_id);
+
+-- DATA-20 entry snapshot of catalog nutrients (DATA-05). Deleted with its entry.
+CREATE TABLE diary_entry_nutrients (
+  entry_id    TEXT NOT NULL REFERENCES diary_entries (id) ON DELETE CASCADE,
+  nutrient_id TEXT NOT NULL,
+  amount      REAL NOT NULL CHECK (amount >= 0),
+  PRIMARY KEY (entry_id, nutrient_id)
+) WITHOUT ROWID;
 
 -- Multiple measurements per day allowed. Current weight = latest measured_at, tie-break created_at.
 CREATE TABLE weight_entries (

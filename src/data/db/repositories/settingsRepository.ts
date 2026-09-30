@@ -6,6 +6,11 @@ import {
   parseFoodSearchSections,
   type FoodSearchSections,
 } from '@/domain/food/searchSections';
+import {
+  isValidDashboardNutrients,
+  parseDashboardNutrients,
+  type DashboardNutrients,
+} from '@/domain/nutrition/dashboardNutrients';
 import type { UnitPreferences } from '@/domain/units/units';
 import { isValidWeightKg } from '@/domain/weight/weight';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
@@ -77,6 +82,42 @@ export function createSettingsRepository({ db, clock }: RepositoryDeps) {
         nowUtcIso(clock),
       ]);
       return parseFoodSearchSections(json);
+    },
+
+    /** DATA-21: tolerant read (catalog growth, bad data → the default). */
+    async getDashboardNutrients(): Promise<DashboardNutrients> {
+      const row = await db.getFirst<{ dashboard_nutrients: unknown }>(
+        'SELECT dashboard_nutrients FROM app_settings WHERE id = 1',
+      );
+      return parseDashboardNutrients(row?.dashboard_nutrients);
+    },
+
+    /** DATA-21: rejects anything but every catalog id exactly once. Zero visible is allowed. */
+    async setDashboardNutrients(items: DashboardNutrients): Promise<DashboardNutrients> {
+      if (!isValidDashboardNutrients(items))
+        throw new ValidationError('Invalid dashboard nutrients', ['dashboardNutrients']);
+      const json = JSON.stringify(items.map(({ id, visible }) => ({ id, visible })));
+      await db.run('UPDATE app_settings SET dashboard_nutrients = ?, updated_at = ? WHERE id = 1', [
+        json,
+        nowUtcIso(clock),
+      ]);
+      return parseDashboardNutrients(json);
+    },
+
+    /** DATA-21: whether the Diary nutrient panel is open (UX-02). */
+    async getDashboardNutrientsOpen(): Promise<boolean> {
+      const row = await db.getFirst<{ dashboard_nutrients_open: number }>(
+        'SELECT dashboard_nutrients_open FROM app_settings WHERE id = 1',
+      );
+      return row?.dashboard_nutrients_open === 1;
+    },
+
+    async setDashboardNutrientsOpen(open: boolean): Promise<boolean> {
+      await db.run('UPDATE app_settings SET dashboard_nutrients_open = ?, updated_at = ? WHERE id = 1', [
+        open ? 1 : 0,
+        nowUtcIso(clock),
+      ]);
+      return open;
     },
 
     /** Canonical kg; `null` clears the goal (UX-18). */

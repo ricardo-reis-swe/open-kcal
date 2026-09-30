@@ -35,7 +35,7 @@ Status: **in progress** · Spec: SCOPE-01/06/10, DATA-20/21 (+ DATA-04/05/06/16/
 ### Tasks
 
 - [x] T1 Specs (this commit).
-- [ ] T2 Catalog `nutrientCatalog.ts` + migration 4 (`food_nutrients`, `diary_entry_nutrients`, DATA-21 settings) + `schema.sql` + repositories (food rows, entry snapshots, day totals, copy/undo) + migration tests from v1–v3.
+- [x] T2 Catalog `src/domain/nutrition/nutrientCatalog.ts` + `dashboardNutrients.ts`; migration 4 (`004_nutrient_catalog.ts`: `food_nutrients`, `diary_entry_nutrients`, `dashboard_nutrients`, `dashboard_nutrients_open`) + `schema.sql` v4; `Nutrients.extra` / `NutrientTotals.extra` + `nutrientTotal`; foods (write/replace rows, salt↔sodium), diary (snapshot, edit scale/recompute, SQL per-meal totals, copy, undo), settings (DATA-21 get/set, open state); tests `nutrientCatalog.test.ts`, `repositories/__tests__/nutrients.test.ts`, migrations v1/v2/v3 → v4.
 - [ ] T3 USDA PROV-14 mapping + fixtures.
 - [ ] T4 OFF PROV-14 mapping + fixtures.
 - [ ] T5 Food Detail / Edit entry Nutrition facts (UX-05/06).

@@ -1,10 +1,18 @@
-// Diary entries and the derived diary day (DATA-05/06/07/12/14/16). Totals always come from entry snapshots, never
-// from `foods`, and are aggregated in SQL as known sum + unknown count per macro (ARCH-19).
+// Diary entries and the derived diary day (DATA-05/06/07/12/14/16/20). Totals always come from entry snapshots, never
+// from `foods`, and are aggregated in SQL as known sum + unknown count per macro and catalog nutrient (ARCH-19).
 import { normalizeNote, isValidQuickCaloriesKcal, type EntryKind } from '@/domain/diary/entries';
 import type { NutritionGoal } from '@/domain/nutrition/goals';
 import {
+  isNutrientId,
+  knownNutrients,
+  nutrientAmountsFromRows,
+  type NutrientAmounts,
+  type NutrientId,
+} from '@/domain/nutrition/nutrientCatalog';
+import {
   EMPTY_TOTALS,
   combineTotals,
+  scaleNutrients,
   servingNutrients,
   type Nutrients,
   type NutrientTotals,
@@ -73,7 +81,9 @@ type TotalsRow = {
   unknown_fat_count: number;
 };
 
-const toEntry = (r: EntryRow): DiaryEntry => ({
+type EntryNutrientRow = { entry_id: string; nutrient_id: string; amount: number };
+
+const toEntry = (r: EntryRow, extra: NutrientAmounts = {}): DiaryEntry => ({
   id: r.id,
   kind: r.entry_kind,
   diaryDate: r.diary_date,
@@ -83,7 +93,13 @@ const toEntry = (r: EntryRow): DiaryEntry => ({
   brand: r.brand_snapshot,
   servingQuantity: r.serving_quantity,
   servingUnit: r.serving_unit_snapshot,
-  nutrients: { energyKcal: r.energy_kcal, carbohydrateG: r.carbohydrate_g, proteinG: r.protein_g, fatG: r.fat_g },
+  nutrients: {
+    energyKcal: r.energy_kcal,
+    carbohydrateG: r.carbohydrate_g,
+    proteinG: r.protein_g,
+    fatG: r.fat_g,
+    ...(Object.keys(extra).length > 0 ? { extra } : {}),
+  },
   note: r.note,
   sortOrder: r.sort_order,
   createdAt: r.created_at,
@@ -100,6 +116,14 @@ const TOTALS_SQL = `
          SUM(fat_g) AS known_fat_g,
          SUM(CASE WHEN fat_g IS NULL THEN 1 ELSE 0 END) AS unknown_fat_count
   FROM diary_entries WHERE diary_date = ? GROUP BY meal_id`;
+
+// DATA-20: known sum + how many entries know each catalog nutrient; unknown = entry count − known count.
+const EXTRA_TOTALS_SQL = `
+  SELECT e.meal_id, n.nutrient_id, SUM(n.amount) AS known_sum, COUNT(*) AS known_count
+  FROM diary_entry_nutrients n JOIN diary_entries e ON e.id = n.entry_id
+  WHERE e.diary_date = ? GROUP BY e.meal_id, n.nutrient_id`;
+
+type ExtraTotalsRow = { meal_id: string; nutrient_id: string; known_sum: number; known_count: number };
 
 const toTotals = (r: TotalsRow): NutrientTotals => ({
   energyKcal: r.energy_kcal,
@@ -130,7 +154,23 @@ async function nextSortOrder(tx: SqlExecutor, date: LocalDate, mealId: string): 
 async function readEntry(db: SqlExecutor, id: string): Promise<DiaryEntry> {
   const row = await db.getFirst<EntryRow>('SELECT * FROM diary_entries WHERE id = ?', [id]);
   if (!row) throw new NotFoundError('Entry not found');
-  return toEntry(row);
+  const nutrients = await db.getAll<EntryNutrientRow>(
+    'SELECT entry_id, nutrient_id, amount FROM diary_entry_nutrients WHERE entry_id = ?',
+    [id],
+  );
+  return toEntry(row, nutrientAmountsFromRows(nutrients));
+}
+
+/** DATA-20 / DATA-05: the entry's catalog nutrient snapshot, replaced as a whole. */
+async function writeEntryNutrients(tx: SqlExecutor, entryId: string, extra: NutrientAmounts | undefined) {
+  await tx.run('DELETE FROM diary_entry_nutrients WHERE entry_id = ?', [entryId]);
+  for (const { id, amount } of knownNutrients(extra)) {
+    await tx.run('INSERT INTO diary_entry_nutrients (entry_id, nutrient_id, amount) VALUES (?, ?, ?)', [
+      entryId,
+      id,
+      amount,
+    ]);
+  }
 }
 
 /** Resolves a food serving and computes the unrounded snapshot (DATA-04/05, DATA-11). */
@@ -191,13 +231,14 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
     const base = await nextSortOrder(tx, destinationDate, destinationMealId);
     const now = nowUtcIso(clock);
     for (const [i, r] of rows.entries()) {
+      const copyId = ids.newId();
       await tx.run(
         `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
            serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
            created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          ids.newId(),
+          copyId,
           r.entry_kind,
           destinationDate,
           destinationMealId,
@@ -215,6 +256,12 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
           now,
           now,
         ],
+      );
+      // DATA-16: a copy carries the source's nutrient snapshot unchanged.
+      await tx.run(
+        `INSERT INTO diary_entry_nutrients (entry_id, nutrient_id, amount)
+         SELECT ?, nutrient_id, amount FROM diary_entry_nutrients WHERE entry_id = ?`,
+        [copyId, r.id],
       );
     }
   };
@@ -238,9 +285,27 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
           [date],
         );
         const totals = new Map((await tx.getAll<TotalsRow>(TOTALS_SQL, [date])).map((t) => [t.meal_id, toTotals(t)]));
+        for (const row of await tx.getAll<ExtraTotalsRow>(EXTRA_TOTALS_SQL, [date])) {
+          const mealTotals = totals.get(row.meal_id);
+          if (!mealTotals || !isNutrientId(row.nutrient_id)) continue;
+          mealTotals.extra = {
+            ...mealTotals.extra,
+            [row.nutrient_id as NutrientId]: { knownSum: row.known_sum, knownCount: row.known_count },
+          };
+        }
+        const entryNutrients = new Map<string, EntryNutrientRow[]>();
+        for (const row of await tx.getAll<EntryNutrientRow>(
+          `SELECT n.entry_id, n.nutrient_id, n.amount FROM diary_entry_nutrients n
+           JOIN diary_entries e ON e.id = n.entry_id WHERE e.diary_date = ?`,
+          [date],
+        )) {
+          entryNutrients.set(row.entry_id, [...(entryNutrients.get(row.entry_id) ?? []), row]);
+        }
         const dayMeals = meals.map((meal) => ({
           meal,
-          entries: rows.filter((r) => r.meal_id === meal.id).map(toEntry),
+          entries: rows
+            .filter((r) => r.meal_id === meal.id)
+            .map((r) => toEntry(r, nutrientAmountsFromRows(entryNutrients.get(r.id) ?? []))),
           totals: totals.get(meal.id) ?? EMPTY_TOTALS,
         }));
         return { date, goal, meals: dayMeals, totals: combineTotals(dayMeals.map((m) => m.totals)) };
@@ -278,6 +343,7 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
             now,
           ],
         );
+        await writeEntryNutrients(tx, id, nutrients.extra);
         await upsertRecent(tx, {
           foodId: food.id,
           servingId: serving.id,
@@ -315,15 +381,8 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
         if (servingChanged) {
           snapshot = { nutrients: chosen!.nutrients, unit: chosen!.serving.label };
         } else if (input.quantity !== entry.servingQuantity) {
-          const factor = input.quantity / entry.servingQuantity!;
-          const scale = (v: number | null) => (v === null ? null : v * factor);
           snapshot = {
-            nutrients: {
-              energyKcal: entry.nutrients.energyKcal * factor,
-              carbohydrateG: scale(entry.nutrients.carbohydrateG),
-              proteinG: scale(entry.nutrients.proteinG),
-              fatG: scale(entry.nutrients.fatG),
-            },
+            nutrients: scaleNutrients(entry.nutrients, input.quantity / entry.servingQuantity!),
             unit: entry.servingUnit!,
           };
         }
@@ -343,6 +402,7 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
               id,
             ],
           );
+          await writeEntryNutrients(tx, id, snapshot.nutrients.extra);
         } else if (input.mealId !== entry.mealId) {
           await tx.run('UPDATE diary_entries SET meal_id = ?, updated_at = ? WHERE id = ?', [input.mealId, now, id]);
         }
@@ -480,6 +540,7 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
             entry.updatedAt,
           ],
         );
+        await writeEntryNutrients(tx, entry.id, entry.nutrients.extra);
       });
     },
   };
