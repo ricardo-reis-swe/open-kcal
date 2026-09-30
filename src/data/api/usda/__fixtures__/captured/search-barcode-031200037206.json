@@ -1,0 +1,15 @@
+{
+  "totalHits": 1,
+  "currentPage": 1,
+  "totalPages": 1,
+  "foods": [
+    {
+      "fdcId": 2035482,
+      "description": "GREEK YOGURT",
+      "dataType": "Branded",
+      "gtinUpc": "031200037206",
+      "brandOwner": "Ocean Spray Cranberries, Inc.",
+      "brandName": "OCEAN SPRAY"
+    }
+  ]
+}

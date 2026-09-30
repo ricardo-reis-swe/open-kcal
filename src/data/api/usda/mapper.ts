@@ -406,3 +406,19 @@ export function mapUsdaSearch(payload: unknown): FoodSearchPage {
     pageCount: parsed.data.totalPages,
   };
 }
+
+/**
+ * PROV-15: the first Branded hit whose `gtinUpc` is the scanned GTIN-14, as an fdcId. The search is full text, so any
+ * other hit is ignored; a hit that doesn't parse is skipped rather than failing the lookup.
+ */
+export function mapUsdaBarcodeSearch(payload: unknown, gtin14: string): string | null {
+  const parsed = z.object({ foods: z.array(z.unknown()) }).safeParse(payload);
+  if (!parsed.success) throw schemaError('USDA search schema error', parsed.error);
+  for (const food of parsed.data.foods) {
+    const hit = z
+      .object({ fdcId: z.union([z.string(), z.number()]).transform(String), gtinUpc: z.string().optional() })
+      .safeParse(food);
+    if (hit.success && barcodeFromProvider(hit.data.gtinUpc) === gtin14) return hit.data.fdcId;
+  }
+  return null;
+}

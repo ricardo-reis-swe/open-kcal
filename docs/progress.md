@@ -68,7 +68,7 @@ Status: **in progress** · Spec: SCOPE-01/10, NAV-02/03/04, DATA-17/24, PROV-15,
 
 - [x] T1 Specs (this commit). User decisions: entry from Food Search + the `+` sheet; a custom food created from a scan keeps its barcode; lookup checks OFF and USDA, never a hidden or unavailable provider.
 - [x] T2 `src/domain/food/barcode.ts` (check digit, UPC-E expansion, GTIN-14, display/USDA forms); migration 6 `006_food_barcode.ts` (column + index + OFF backfill) + `schema.sql` v6; `foodsRepository` `barcode` on read/create/upsert + `findByBarcode`; OFF/USDA mappers write `barcode` (USDA `gtinUpc`, `PARSER_VERSION` 3; captured Branded fixture gained its live `gtinUpc`). Tests `barcode.test.ts`, `migrations.test.ts`, `foods-diary.test.ts`, mapper tests.
-- [ ] T3 PROV-15 lookup (`barcodeLookup.ts`, USDA barcode search).
+- [x] T3 PROV-15 lookup `src/features/food-search/barcodeLookup.ts` (saved → visible + available remote providers in DATA-19 order; hidden, keyless or offline providers get no request; failures continue to the next provider); `UsdaClient.findBarcode` + `mapUsdaBarcodeSearch` (Branded search by UPC-A/GTIN-13, `gtinUpc` must match); `saveExternalCandidate` shared with Food Detail. Fixtures `captured/search-barcode-031200037206.json` (trimmed from the 2026-09-30 live check), `synthetic-search-barcode-mismatch.json`; tests `usda/__tests__/barcode.test.ts`, `barcodeLookup.test.ts`.
 - [ ] T4 `expo-camera` + config plugin + iOS pt-PT permission text; Barcode Scanner screen + route (UX-24); Food Search scan icon; `+` sheet row; Create Custom Food `barcode` param.
 - [ ] Device check: the user's (native rebuild needed; camera permission, scanning on both OSes, USDA 13/14-digit `gtinUpc` with a real key).
 

@@ -11,7 +11,9 @@ import {
 } from '@/shared/errors';
 import { logger, type Logger } from '@/shared/logging/logger';
 
-import { mapUsdaFood, mapUsdaSearch, type FoodCandidate, type FoodSearchPage } from './mapper';
+import { usdaBarcodeQuery } from '@/domain/food/barcode';
+
+import { mapUsdaBarcodeSearch, mapUsdaFood, mapUsdaSearch, type FoodCandidate, type FoodSearchPage } from './mapper';
 
 type Fetch = typeof fetch;
 
@@ -139,6 +141,22 @@ export class UsdaClient {
           8_000,
           RETRIES.search,
         ),
+      ),
+    );
+  }
+
+  /** PROV-15: a Branded search by the code; returns the fdcId whose `gtinUpc` matches, else `null`. */
+  async findBarcode(gtin14: string, signal: AbortSignal): Promise<string | null> {
+    return this.diagnosed('search', signal, async () =>
+      mapUsdaBarcodeSearch(
+        await this.json(
+          'foods/search',
+          { query: usdaBarcodeQuery(gtin14), dataType: 'Branded', pageSize: '10' },
+          signal,
+          8_000,
+          RETRIES.search,
+        ),
+        gtin14,
       ),
     );
   }

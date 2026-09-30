@@ -7,7 +7,7 @@ import type { RecentFood } from '@/data/db/repositories/diaryRepository';
 import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { settingsKeys } from '@/features/diary/diary.queries';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
-import { PARSER_VERSION } from '@/data/api/open-food-facts/mapper';
+import { PARSER_VERSION, type FoodCandidate } from '@/data/api/open-food-facts/mapper';
 import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
 import { nowUtcIso } from '@/shared/dates';
 
@@ -200,6 +200,24 @@ export function useFood(foodId: string, enabled = true) {
   return useQuery({ queryKey: foodSearchKeys.food(foodId), queryFn: () => foods.get(foodId), enabled });
 }
 
+/** DATA-15: a provider detail read → saved food + cache metadata (PROV-09 TTL: USDA 90 days, OFF 30 days). */
+export function saveExternalCandidate(
+  services: Pick<AppServices, 'foods' | 'clock'>,
+  source: 'usda' | 'open_food_facts',
+  candidate: FoodCandidate,
+): Promise<Food> {
+  const fetchedAt = nowUtcIso(services.clock);
+  const expiresAt = new Date(
+    services.clock.now().getTime() + (source === 'usda' ? 90 : 30) * 24 * 60 * 60_000,
+  ).toISOString() as typeof fetchedAt;
+  return services.foods.upsertExternal(source, candidate.externalId, candidate.input, {
+    fetchedAt,
+    expiresAt,
+    rawPayloadJson: null,
+    schemaVersion: source === 'usda' ? USDA_PARSER_VERSION : PARSER_VERSION,
+  });
+}
+
 /** A remote search hit opens Food Detail immediately; that screen owns the provider detail read and cache upsert. */
 export function useExternalFood(source: 'usda' | 'open_food_facts', externalId: string, enabled = true) {
   const services = useServices();
@@ -211,16 +229,7 @@ export function useExternalFood(source: 'usda' | 'open_food_facts', externalId: 
           ? await services.usda.getFood(externalId, signal)
           : await services.openFoodFacts.getFood(externalId, signal);
       if (!candidate) throw new Error('External food detail unavailable');
-      const fetchedAt = nowUtcIso(services.clock);
-      const expiresAt = new Date(
-        services.clock.now().getTime() + (source === 'usda' ? 90 : 30) * 24 * 60 * 60_000,
-      ).toISOString() as typeof fetchedAt;
-      return services.foods.upsertExternal(source, candidate.externalId, candidate.input, {
-        fetchedAt,
-        expiresAt,
-        rawPayloadJson: null,
-        schemaVersion: source === 'usda' ? USDA_PARSER_VERSION : PARSER_VERSION,
-      });
+      return saveExternalCandidate(services, source, candidate);
     },
     enabled: enabled && externalId.length > 0,
   });
