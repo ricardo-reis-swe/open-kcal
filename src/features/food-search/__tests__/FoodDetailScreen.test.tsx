@@ -155,6 +155,42 @@ describe('UX-05: Food Detail / Add Entry', () => {
     expect(await screen.findByLabelText('Enter serving value, current value 2.5 oz')).toBeTruthy();
   });
 
+  it('UX-05: switching serving type keeps the same amount of food (2 nuts → grams → back)', async () => {
+    mockFood.servings.push({
+      id: 'serving-nut',
+      label: 'nut',
+      quantity: 1,
+      unit: 'nut',
+      basisMultiplier: 0.047, // one Brazil nut ≈ 4.7 g
+      isDefault: false,
+      sortOrder: 2,
+    });
+    try {
+      mockRecent = { foodId: mockFood.id, lastServingId: 'serving-nut', lastServingQuantity: 2 };
+      await renderWithProviders(
+        <FoodDetailScreen
+          mode={{
+            kind: 'add',
+            foodId: mockFood.id,
+            foodSource: 'custom',
+            mealId: 'meal-1',
+            date: '2026-09-25',
+            origin: 'diary',
+          }}
+        />,
+      );
+      expect(await screen.findByLabelText('Enter serving value, current value 2 nut')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'g' }));
+      expect(await screen.findByLabelText('Enter serving value, current value 9.4 g')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'oz' }));
+      expect(await screen.findByLabelText('Enter serving value, current value 0.33 oz')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: 'nut' }));
+      expect(await screen.findByLabelText('Enter serving value, current value 2 nut')).toBeTruthy();
+    } finally {
+      mockFood.servings.pop();
+    }
+  });
+
   it('UX-00 / UX-05: submits a direct numeric serving from the keyboard', async () => {
     await renderWithProviders(
       <FoodDetailScreen
