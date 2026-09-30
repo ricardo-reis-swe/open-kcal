@@ -47,6 +47,7 @@ describe('PROV-05 / PROV-07: Open Food Facts mapping', () => {
       input: {
         name: 'Iogurte Grego',
         basisUnit: 'g',
+        barcode: '05601009983179', // DATA-24
         nutrients: { energyKcal: 125.1, carbohydrateG: 11.3, proteinG: 2.5, fatG: 7.7 },
       },
     });

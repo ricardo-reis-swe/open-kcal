@@ -27,6 +27,7 @@ const mockFood: Food = {
   basisUnit: 'g',
   nutrients: { energyKcal: 420, carbohydrateG: 60, proteinG: 12, fatG: 14 },
   isDeleted: false,
+  barcode: null,
   servings: [
     { id: 'serving-1', label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true, sortOrder: 0 },
     {

@@ -38,6 +38,8 @@ export type Food = {
   nutrients: Nutrients;
   isDeleted: boolean;
   servings: FoodServing[];
+  /** DATA-24 GTIN-14, or `null`. */
+  barcode: string | null;
 };
 
 export type ServingInput = Omit<FoodServing, 'id' | 'sortOrder' | 'isDefault'> & { isDefault?: boolean };
@@ -49,6 +51,8 @@ export type FoodInput = {
   basisUnit: string;
   nutrients: Nutrients;
   servings: readonly ServingInput[];
+  /** DATA-24: a valid GTIN-14 (`src/domain/food/barcode.ts`); anything else is stored as NULL. */
+  barcode?: string | null;
 };
 
 export type CustomFoodInput = FoodInput;
@@ -73,6 +77,7 @@ type FoodRow = {
   carbohydrate_g: number | null;
   fat_g: number | null;
   is_deleted: number;
+  barcode: string | null;
 };
 type ServingRow = {
   id: string;
@@ -223,6 +228,7 @@ export async function readFood(db: SqlExecutor, id: string): Promise<Food | null
     },
     isDeleted: row.is_deleted === 1,
     servings: servings.map(toServing),
+    barcode: row.barcode,
   };
 }
 
@@ -235,6 +241,7 @@ const foodValues = (input: FoodInput) => [
   input.nutrients.proteinG,
   input.nutrients.carbohydrateG,
   input.nutrients.fatG,
+  input.barcode && /^\d{14}$/.test(input.barcode) ? input.barcode : null,
 ];
 
 export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
@@ -310,6 +317,21 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
     },
 
+    /** DATA-24 / PROV-15: the active food for a GTIN-14 — custom first, then most recently used, then updated. */
+    async findByBarcode(gtin14: string): Promise<Food | null> {
+      if (!/^\d{14}$/.test(gtin14)) return null;
+      const row = await db.getFirst<{ id: string }>(
+        `SELECT foods.id FROM foods
+         LEFT JOIN recent_foods ON recent_foods.food_id = foods.id
+         WHERE foods.barcode = ? AND foods.is_deleted = 0
+         ORDER BY foods.source = 'custom' DESC, recent_foods.last_used_at IS NULL, recent_foods.last_used_at DESC,
+           foods.updated_at DESC, foods.id
+         LIMIT 1`,
+        [gtin14],
+      );
+      return row ? readFood(db, row.id) : null;
+    },
+
     /** DATA-16: validate → insert `custom` food → insert ≥1 servings (one default). Does not create an entry. */
     async createCustom(input: CustomFoodInput): Promise<Food> {
       validateFood(input);
@@ -318,8 +340,8 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
         const id = ids.newId();
         await tx.run(
           `INSERT INTO foods (id, source, external_id, name, brand, basis_quantity, basis_unit, energy_kcal, protein_g,
-             carbohydrate_g, fat_g, is_deleted, created_at, updated_at)
-           VALUES (?, 'custom', NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+             carbohydrate_g, fat_g, barcode, is_deleted, created_at, updated_at)
+           VALUES (?, 'custom', NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
           [id, ...foodValues(input), now, now],
         );
         await insertServings(tx, ids, id, input.servings);
@@ -369,15 +391,15 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
         if (existing) {
           await tx.run(
             `UPDATE foods SET name = ?, brand = ?, basis_quantity = ?, basis_unit = ?, energy_kcal = ?, protein_g = ?,
-               carbohydrate_g = ?, fat_g = ?, is_deleted = 0, updated_at = ? WHERE id = ?`,
+               carbohydrate_g = ?, fat_g = ?, barcode = ?, is_deleted = 0, updated_at = ? WHERE id = ?`,
             [...foodValues(input), now, id],
           );
           await mergeServings(tx, ids, id, input.servings);
         } else {
           await tx.run(
             `INSERT INTO foods (id, source, external_id, name, brand, basis_quantity, basis_unit, energy_kcal, protein_g,
-               carbohydrate_g, fat_g, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+               carbohydrate_g, fat_g, barcode, is_deleted, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
             [id, source, externalId, ...foodValues(input), now, now],
           );
           await insertServings(tx, ids, id, input.servings);

@@ -9,6 +9,7 @@ import {
   type NutrientAmounts,
   type NutrientId,
 } from '@/domain/nutrition/nutrientCatalog';
+import { barcodeFromProvider } from '@/domain/food/barcode';
 import { ProviderResponseError } from '@/shared/errors';
 
 /** PROV-09: bump on a mapping change so cached foods refresh on their next open (2: PROV-14 nutrients). */
@@ -232,6 +233,7 @@ export function mapOpenFoodFactsProduct(payload: unknown): FoodCandidate | null 
         ...(Object.keys(extra).length > 0 ? { extra } : {}),
       },
       servings,
+      barcode: barcodeFromProvider(externalId), // DATA-24
     },
   };
 }

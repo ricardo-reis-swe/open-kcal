@@ -177,6 +177,7 @@ function snapshotFood(entry: DiaryEntry): Food {
     basisUnit: unit,
     nutrients: entry.nutrients,
     isDeleted: false,
+    barcode: null,
     servings: [
       {
         id: `snapshot-${entry.id}`,

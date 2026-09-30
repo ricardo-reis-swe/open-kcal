@@ -1,5 +1,6 @@
--- Reference schema v5 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
--- v3: DATA-09 macro target mode; v4: DATA-20 nutrient rows + DATA-21 dashboard nutrients; v5: DATA-23 theme preference).
+-- Reference schema v6 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
+-- v3: DATA-09 macro target mode; v4: DATA-20 nutrient rows + DATA-21 dashboard nutrients; v5: DATA-23 theme preference;
+-- v6: DATA-24 food barcode).
 -- Conventions: ids are app-generated UUID TEXT; *_at are UTC ISO-8601 with ms ("2026-09-25T14:32:18.123Z");
 -- *_date / effective_from are local dates 'YYYY-MM-DD'. Canonical units: kg, g, ml, kcal. NULL nutrient = unknown, 0 = known zero.
 -- Every connection: PRAGMA foreign_keys = ON; WAL where supported.
@@ -68,11 +69,14 @@ CREATE TABLE foods (
   is_deleted     INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0, 1)),
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL,
+  barcode        TEXT CHECK (barcode IS NULL OR (length(barcode) = 14 AND barcode NOT GLOB '*[^0-9]*')),
   CHECK ((source = 'custom') = (external_id IS NULL))
 );
 CREATE UNIQUE INDEX ux_foods_source_external ON foods (source, external_id) WHERE external_id IS NOT NULL;
 CREATE INDEX idx_foods_source ON foods (source, external_id);
 CREATE INDEX idx_foods_name ON foods (name);
+-- barcode: GTIN-14, the code zero-padded to 14 digits (DATA-24). Not unique: one product may exist per source.
+CREATE INDEX idx_foods_barcode ON foods (barcode) WHERE barcode IS NOT NULL;
 
 -- A unit is offered in the ruler only if it has full conversion data.
 -- entry nutrient = food basis nutrient * basis_multiplier * ruler value

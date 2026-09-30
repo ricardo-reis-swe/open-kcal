@@ -502,3 +502,57 @@ describe('PROV-09: refresh merges servings by (label, unit)', () => {
     expect((await recents.list())[0]).toMatchObject({ lastServingId: bar.id });
   });
 });
+
+describe('DATA-24: barcodes', () => {
+  const GTIN = '05601009983179';
+
+  it('stores a valid GTIN-14 on custom and external foods, and NULL for anything else', async () => {
+    const { foods } = await setup();
+    expect((await foods.createCustom({ ...eggs, barcode: GTIN })).barcode).toBe(GTIN);
+    expect((await foods.createCustom({ ...eggs, barcode: '5601009983179' })).barcode).toBeNull();
+    expect((await foods.createCustom(eggs)).barcode).toBeNull();
+    const off = await foods.upsertExternal(
+      'open_food_facts',
+      '5601009983179',
+      { ...offBar(400), barcode: GTIN },
+      cache('2026-10-25T10:00:00.000Z'),
+    );
+    expect(off.barcode).toBe(GTIN);
+    // A refresh without a barcode clears it (the upsert replaces the row's values).
+    const refreshed = await foods.upsertExternal('open_food_facts', '5601009983179', offBar(410), cache('x'));
+    expect(refreshed.barcode).toBeNull();
+  });
+
+  it('finds the active food for a barcode: custom first, then most recently used, never deleted ones', async () => {
+    const { foods, diary, breakfast } = await setup();
+    expect(await foods.findByBarcode(GTIN)).toBeNull();
+    const offA = await foods.upsertExternal(
+      'open_food_facts',
+      '5601009983179',
+      { ...offBar(400), barcode: GTIN },
+      cache('2026-10-25T10:00:00.000Z'),
+    );
+    const usda = await foods.upsertExternal(
+      'usda',
+      '999',
+      { ...offBar(300), barcode: GTIN },
+      cache('2026-10-25T10:00:00.000Z'),
+    );
+    await diary.addFoodEntry({
+      diaryDate: DAY,
+      mealId: breakfast,
+      foodId: offA.id,
+      servingId: offA.servings[0]!.id,
+      quantity: 1,
+    });
+    expect((await foods.findByBarcode(GTIN))?.id).toBe(offA.id); // used beats never used
+    const custom = await foods.createCustom({ ...eggs, barcode: GTIN });
+    expect((await foods.findByBarcode(GTIN))?.id).toBe(custom.id);
+    await foods.deleteFood(custom.id);
+    await foods.deleteFood(offA.id);
+    expect((await foods.findByBarcode(GTIN))?.id).toBe(usda.id);
+    await foods.deleteFood(usda.id);
+    expect(await foods.findByBarcode(GTIN)).toBeNull();
+    expect(await foods.findByBarcode('5601009983179')).toBeNull(); // only GTIN-14 keys
+  });
+});

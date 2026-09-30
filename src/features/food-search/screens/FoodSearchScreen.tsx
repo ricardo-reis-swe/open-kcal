@@ -246,6 +246,7 @@ export function FoodSearchScreen({
             food={{
               ...candidate.input,
               brand: candidate.input.brand ?? null,
+              barcode: candidate.input.barcode ?? null,
               id: `off-${candidate.externalId}`,
               source: 'open_food_facts',
               externalId: candidate.externalId,
@@ -299,6 +300,7 @@ export function FoodSearchScreen({
             food={{
               ...candidate.input,
               brand: candidate.input.brand ?? null,
+              barcode: candidate.input.barcode ?? null,
               id: `usda-${candidate.externalId}`,
               source: 'usda',
               externalId: candidate.externalId,

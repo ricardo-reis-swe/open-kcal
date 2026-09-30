@@ -11,10 +11,11 @@ import {
   type NutrientId,
   type NutrientUnit,
 } from '@/domain/nutrition/nutrientCatalog';
+import { barcodeFromProvider } from '@/domain/food/barcode';
 import { ProviderResponseError } from '@/shared/errors';
 
-/** PROV-09: bump on a mapping change so cached foods refresh on their next open (2: PROV-14 nutrients). */
-export const PARSER_VERSION = 2;
+/** PROV-09: bump on a mapping change so cached foods refresh on their next open (2: PROV-14 nutrients, 3: DATA-24 barcode). */
+export const PARSER_VERSION = 3;
 
 const numberLike = z.union([z.number(), z.string()]).transform((value, ctx) => {
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -47,6 +48,7 @@ const baseFoodSchema = z.object({
   dataType: z.string().optional(),
   brandOwner: z.string().optional(),
   brandName: z.string().optional(),
+  gtinUpc: z.string().optional(),
   servingSize: numberLike.optional(),
   servingSizeUnit: z.string().optional(),
   householdServingFullText: z.string().optional(),
@@ -341,6 +343,7 @@ function candidate(food: UsdaFood, values: Nutrient[], servings: ServingInput[])
       basisUnit: unit,
       nutrients: { ...nutrition, energyKcal },
       servings,
+      barcode: barcodeFromProvider(food.gtinUpc), // DATA-24
     },
   };
 }
