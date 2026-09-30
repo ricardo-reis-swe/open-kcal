@@ -50,6 +50,15 @@ export async function readSettings(db: SqlExecutor): Promise<AppSettings> {
   };
 }
 
+/** DATA-23: an unexpected stored value reads as `system` (never a crash). Also read by the widget (DS-14). */
+export async function readThemePreference(db: SqlExecutor): Promise<ThemePreference> {
+  const row = await db.getFirst<{ theme_preference: unknown }>(
+    'SELECT theme_preference FROM app_settings WHERE id = 1',
+  );
+  const parsed = z.enum(THEME_PREFERENCES).safeParse(row?.theme_preference);
+  return parsed.success ? parsed.data : 'system';
+}
+
 export function createSettingsRepository({ db, clock }: RepositoryDeps) {
   return {
     get: () => readSettings(db),
@@ -121,14 +130,7 @@ export function createSettingsRepository({ db, clock }: RepositoryDeps) {
       return open;
     },
 
-    /** DATA-23: an unexpected stored value reads as `system` (never a crash). */
-    async getThemePreference(): Promise<ThemePreference> {
-      const row = await db.getFirst<{ theme_preference: unknown }>(
-        'SELECT theme_preference FROM app_settings WHERE id = 1',
-      );
-      const parsed = z.enum(THEME_PREFERENCES).safeParse(row?.theme_preference);
-      return parsed.success ? parsed.data : 'system';
-    },
+    getThemePreference: () => readThemePreference(db),
 
     async setThemePreference(preference: ThemePreference): Promise<ThemePreference> {
       if (!THEME_PREFERENCES.includes(preference)) throw new ValidationError('Invalid theme', ['themePreference']);

@@ -93,7 +93,7 @@ MVP: light theme · iOS + Android · one phone size · default text. Check the s
 - The matrix (small + large width, large text, increased contrast, reduced motion, screenshot sets) is deferred (POST-13). DS-11 behavior still applies. **Why:** speed for the MVP proof of concept (user decision 2026-09-28).
 
 ## DS-14 Android widget (UX-22)
-- Light theme only, even when the system or UX-23 is dark (DS-03). Colors from `lightColors` in `tokens.ts`, never raw hex in widget code.
+- Follows UX-23 (user decision 2026-09-30). `System` hands the launcher a light and a dark version, so it switches with the phone's dark mode without a redraw; a forced `Light`/`Dark` draws only that one. Colors from `lightColors`/`darkColors` in `tokens.ts`, never raw hex in widget code.
 - Background `surface`, corner radius `radii.large`, no shadow or border. Padding `spacing[3]`.
 - Content left-aligned, vertically centered:
   - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `warning`, as the Diary ring (DS-03 explicit label: "over").

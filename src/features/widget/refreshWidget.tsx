@@ -5,8 +5,7 @@ import { requestWidgetUpdate } from 'react-native-android-widget';
 import { toAppError } from '@/shared/errors';
 import { logger } from '@/shared/logging/logger';
 
-import { CaloriesLeftWidget } from './CaloriesLeftWidget';
-import { loadCaloriesLeftView } from './widgetTaskHandler';
+import { renderLatestWidget } from './widgetTaskHandler';
 
 /** Must match the widget `name` in the app.json plugin config (ARCH-23). */
 export const WIDGET_NAME = 'CaloriesLeft';
@@ -15,6 +14,6 @@ export function refreshWidget(): void {
   if (Platform.OS !== 'android') return;
   requestWidgetUpdate({
     widgetName: WIDGET_NAME,
-    renderWidget: async () => <CaloriesLeftWidget view={await loadCaloriesLeftView()} />,
+    renderWidget: renderLatestWidget,
   }).catch((error: unknown) => logger.warn('widget refresh failed', { code: toAppError(error).category }));
 }

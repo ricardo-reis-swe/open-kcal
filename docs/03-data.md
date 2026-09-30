@@ -164,4 +164,4 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 
 ## DATA-23 Theme preference
 - `app_settings.theme_preference TEXT NOT NULL DEFAULT 'system' CHECK (IN ('system', 'light', 'dark'))` (UX-23). An unexpected stored value reads as `system`.
-- Read during startup, before the Router mounts (ARCH-17), so the app never shows the other scheme first. A failed read falls back to `system`.
+- Read during startup, before the Router mounts (ARCH-17), so the app never shows the other scheme first. A failed read falls back to `system`. The widget reads it on every redraw (DS-14, ARCH-23).

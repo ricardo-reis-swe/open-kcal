@@ -273,4 +273,4 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 ## UX-23 Theme
 - One segmented control `System | Light | Dark` (DS-03), with helper `System follows your phone's light or dark setting.` Default `System`.
 - Each choice saves (DATA-23) and re-themes the whole app at once, as Units; no Save button. Back → Profile. A failed save shows an inline error and keeps the previous choice.
-- The Android widget stays light (DS-14).
+- The Android widget follows it too (DS-14); a change redraws it (DATA-22).
