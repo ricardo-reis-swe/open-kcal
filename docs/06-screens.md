@@ -70,7 +70,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 ```
 - Opens with the field focused. `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
-- **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 400 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). Stale requests are cancelled.
+- **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 800 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). **Why 800 ms for USDA:** 400 ms fired mid-word requests that spend quota and risk the 10-minute 429 cooldown (user decision 2026-09-30). Stale requests are cancelled.
 - Sections with sticky labels: `My foods` (custom), `Saved` (cached external), `Open Food Facts`, `USDA`, in the order and visibility set in UX-18 `Search results`. Each remote section shows the first page (10, PROV-08) + a `Show more` row for the next page.
 - Result row (DS-09): name · brand or basis (`per 100 g`) · kcal · source label.
 - Inline section status in place of that section's results:

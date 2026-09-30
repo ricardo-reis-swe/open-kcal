@@ -42,7 +42,7 @@ import {
 
 const LOCAL_DEBOUNCE_MS = 150;
 const OFF_DEBOUNCE_MS = 800;
-const USDA_DEBOUNCE_MS = 400;
+const USDA_DEBOUNCE_MS = 800;
 
 type Props = {
   mealId: string;

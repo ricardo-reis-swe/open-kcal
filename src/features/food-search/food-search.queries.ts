@@ -45,7 +45,7 @@ export function useSetFoodSearchSections() {
   });
 }
 
-/** UX-04 / PROV-04: USDA starts after 400 ms with two characters; credentials never enter this key. */
+/** UX-04 / PROV-04: USDA starts after 800 ms with two characters; credentials never enter this key. */
 export function useUsdaSearch(query: string, pages = 1, visible = true) {
   const { usda } = useServices();
   const normalized = query.trim();

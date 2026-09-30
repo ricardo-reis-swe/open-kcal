@@ -378,7 +378,7 @@ describe('UX-18 / DATA-19: Food Search section order and visibility', () => {
       sections: sections('custom,saved,open_food_facts,usda', ['open_food_facts', 'usda']),
     });
     expect(await screen.findByText('Almond oats')).toBeTruthy();
-    await new Promise((resolve) => setTimeout(resolve, 1_000)); // past the 400 ms USDA and 800 ms OFF debounces
+    await new Promise((resolve) => setTimeout(resolve, 1_000)); // past the 800 ms USDA and OFF debounces
     expect(offSearch).not.toHaveBeenCalled();
     expect(services.usda.search).not.toHaveBeenCalled();
     expect(headerNames()).toEqual(['My foods']);

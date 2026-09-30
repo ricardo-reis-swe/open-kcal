@@ -40,7 +40,7 @@ Facts below were checked against the live APIs on 2026-09-25. Re-check against t
 **Why:** at the UX-04 debounce, typing a query can fire several OFF searches, and 10/min runs out fast.
 - Each OFF endpoint gets its own client-side limiter, with a margin: **8 searches/min, 12 product reads/min**. USDA gets none (the 1,000/h budget is enough).
 - When the search budget is spent: run only the **latest** pending query once a slot frees up, and drop the rest. The OFF section shows its loading row meanwhile.
-- OFF search starts at **≥3 characters after 800 ms idle** (USDA keeps UX-04's ≥2 characters and 400 ms).
+- OFF search starts at **≥3 characters after 800 ms idle** (USDA keeps UX-04's ≥2 characters, also after 800 ms).
 - TanStack Query caches each `(provider, query, page)` for 10 min, so backspacing or retyping doesn't spend budget.
 - If a product read is throttled, Food Detail waits for a slot for at most ~5 s, then shows its unavailable state.
 
@@ -187,7 +187,7 @@ Rules for `food_cache_metadata` (DATA-15). Expiry controls refresh only. Expired
 ## PROV-10 Timeouts, retries and cooldowns
 Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in the error-mapping step.
 
-**Debounce** (defined in UX-04 and PROV-04; don't redefine): local 150 ms · USDA ≥2 chars after 400 ms · OFF ≥3 chars after 800 ms. A request is only sent once the debounce settles.
+**Debounce** (defined in UX-04 and PROV-04; don't redefine): local 150 ms · USDA ≥2 chars after 800 ms · OFF ≥3 chars after 800 ms. A request is only sent once the debounce settles.
 
 **Timeouts** (whole request, via `AbortController`): search **8 s** · detail **10 s** · USDA key check **10 s**.
 
