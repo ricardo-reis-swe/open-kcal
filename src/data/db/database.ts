@@ -1,6 +1,6 @@
 // Opens the app database (ARCH-09): expo-sqlite connection → foreign keys ON → WAL → migrations + idempotent seed.
 // Failures surface as typed errors for the recovery screen (UX-20); the database is never deleted or reset.
-import { openDatabaseAsync, type SQLiteBindValue } from 'expo-sqlite';
+import { openDatabaseAsync, type SQLiteBindValue, type SQLiteOpenOptions } from 'expo-sqlite';
 
 import { DatabaseError, MigrationError } from '@/shared/errors';
 
@@ -12,8 +12,8 @@ export const DATABASE_NAME = 'calorie-tracker.db';
 
 const bind = (params: SqlParams | undefined): SQLiteBindValue[] => (params ? [...params] : []);
 
-async function openExpoSqliteDriver(databaseName: string): Promise<SqlDriver> {
-  const db = await openDatabaseAsync(databaseName);
+async function openExpoSqliteDriver(databaseName: string, options?: SQLiteOpenOptions): Promise<SqlDriver> {
+  const db = await openDatabaseAsync(databaseName, options);
   return {
     exec: (sql) => db.execAsync(sql),
     run: async (sql, params) => {
@@ -55,14 +55,18 @@ export async function openAppDatabase(options: MigrationOptions): Promise<SqlDat
 }
 
 /**
- * ARCH-23: the widget's connection to the app database. Pragmas only — it never migrates or seeds, so a database
+ * ARCH-23: the widget's own read-only connection to the app database. It never migrates or seeds, so a database
  * the app hasn't migrated yet resolves to `null` (UX-22 unavailable) instead of racing the app's startup.
  */
 export async function openWidgetDatabase(): Promise<SqlDatabase | null> {
-  const db = createSqlDatabase(await openExpoSqliteDriver(DATABASE_NAME));
+  // Its own connection: expo-sqlite otherwise hands back the app's cached one, which `close()` would shut.
+  const db = createSqlDatabase(await openExpoSqliteDriver(DATABASE_NAME, { useNewConnection: true }), {
+    readOnly: true,
+  });
   try {
-    await applyConnectionPragmas(db);
-    if ((await readSchemaVersion(db)) === MIGRATIONS.length) return db;
+    // Reads only, on a file the app already put in WAL mode: just wait out a concurrent app write.
+    await db.exec('PRAGMA busy_timeout = 2000');
+    if ((await readSchemaVersion(db)) === MIGRATIONS.length) return db; // every migration applied
   } catch (error) {
     await db.close().catch(() => undefined);
     throw error;

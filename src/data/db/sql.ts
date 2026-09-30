@@ -44,7 +44,11 @@ async function mapped<T>(task: () => Promise<T>): Promise<T> {
   }
 }
 
-export function createSqlDatabase(driver: SqlDriver): SqlDatabase {
+/**
+ * `readOnly` (ARCH-23 widget): transactions start DEFERRED, so under WAL the connection never takes the write lock
+ * and can't make an app write fail with "database is locked".
+ */
+export function createSqlDatabase(driver: SqlDriver, { readOnly = false }: { readOnly?: boolean } = {}): SqlDatabase {
   let queue: Promise<unknown> = Promise.resolve();
 
   function serial<T>(task: () => Promise<T>): Promise<T> {
@@ -68,7 +72,7 @@ export function createSqlDatabase(driver: SqlDriver): SqlDatabase {
     getFirst: <Row>(sql: string, params?: SqlParams) => serial(() => tx.getFirst<Row>(sql, params)),
     transaction: (task) =>
       serial(async () => {
-        await tx.exec('BEGIN IMMEDIATE');
+        await tx.exec(readOnly ? 'BEGIN DEFERRED' : 'BEGIN IMMEDIATE');
         try {
           const value = await task(tx);
           await tx.exec('COMMIT');

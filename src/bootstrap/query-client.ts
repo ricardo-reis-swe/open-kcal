@@ -2,7 +2,9 @@
 // their own and never wait for the network; remote provider queries opt into their own policies (M5/M6).
 // The cache is never persisted.
 import NetInfo from '@react-native-community/netinfo';
-import { onlineManager, QueryClient } from '@tanstack/react-query';
+import { MutationCache, onlineManager, QueryClient } from '@tanstack/react-query';
+
+import { refreshWidget } from '@/features/widget/refreshWidget';
 
 let onlineManagerConfigured = false;
 
@@ -19,6 +21,8 @@ export function configureOnlineManager(): void {
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
+    // DATA-22: every committed write redraws the Android widget; not wired per call site.
+    mutationCache: new MutationCache({ onSuccess: () => refreshWidget() }),
     defaultOptions: {
       queries: { networkMode: 'always', staleTime: Infinity, retry: false },
       mutations: { networkMode: 'always', retry: false },

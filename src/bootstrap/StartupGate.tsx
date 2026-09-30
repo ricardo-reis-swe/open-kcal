@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { LATEST_SCHEMA_VERSION } from '@/data/db/migrations';
+import { refreshWidget } from '@/features/widget/refreshWidget';
 import { toAppError, type AppError } from '@/shared/errors';
 import { logger } from '@/shared/logging/logger';
 import { useTheme } from '@/shared/theme';
@@ -43,7 +44,9 @@ export function StartupGate({ start, appVersion, copyText, children }: StartupGa
     let cancelled = false;
     start().then(
       (services) => {
-        if (!cancelled) setState({ status: 'ready', ready: { services, queryClient: createQueryClient() } });
+        if (cancelled) return;
+        setState({ status: 'ready', ready: { services, queryClient: createQueryClient() } });
+        refreshWidget(); // DATA-22: after migrations, so a widget left unavailable by an app update recovers.
       },
       (error: unknown) => {
         if (!cancelled) setState({ status: 'failed', error: toAppError(error), attempt });
@@ -60,7 +63,10 @@ export function StartupGate({ start, appVersion, copyText, children }: StartupGa
     if (!__DEV__ || !ready) return;
     return onDevSeedRequest(() => {
       seedDevFoodSearch(ready.services).then(
-        () => ready.queryClient.invalidateQueries(),
+        () => {
+          refreshWidget(); // DATA-22: the dev seed isn't a mutation.
+          return ready.queryClient.invalidateQueries();
+        },
         (error: unknown) => logger.warn('dev seed failed', { code: toAppError(error).category }),
       );
     });

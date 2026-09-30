@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 type Params = (string | number | null)[];
 const plain = (row: unknown) => (row === undefined ? null : { ...(row as Record<string, unknown>) });
 
-export async function openDatabaseAsync(_name: string) {
+export async function openDatabaseAsync(_name: string, _options?: unknown) {
   const db = new DatabaseSync(':memory:');
   return {
     execAsync: async (sql: string) => void db.exec(sql),

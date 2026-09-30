@@ -6,6 +6,7 @@ import { openWidgetDatabase } from '@/data/db/database';
 import type { SqlDatabase } from '@/data/db/sql';
 import { systemClock, type Clock } from '@/shared/dates';
 import { getAppLocale, initI18n } from '@/shared/i18n/i18n';
+import { toAppError } from '@/shared/errors';
 import { logger } from '@/shared/logging/logger';
 
 import { CaloriesLeftWidget } from './CaloriesLeftWidget';
@@ -25,7 +26,7 @@ export async function loadCaloriesLeftView({
     db = await open();
     if (db) day = await readWidgetDay(db, clock);
   } catch (error) {
-    logger.warn('widget read failed', { errorName: error instanceof Error ? error.name : typeof error });
+    logger.warn('widget read failed', { code: toAppError(error).category });
   } finally {
     await db?.close().catch(() => undefined);
   }

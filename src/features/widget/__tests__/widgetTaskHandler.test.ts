@@ -42,7 +42,7 @@ describe('ARCH-23: widget task handler', () => {
       },
     });
     expect(view).toMatchObject({ kind: 'unavailable' });
-    expect(warn).toHaveBeenCalledWith('widget read failed', { errorName: 'TypeError' });
+    expect(warn).toHaveBeenCalledWith('widget read failed', { code: 'unexpected' });
     warn.mockRestore();
   });
 });

@@ -175,6 +175,7 @@ Check the current versions: Expo [dev builds](https://docs.expo.dev/develop/deve
 - Entry: `package.json` `main` → `index.ts`, which registers the task handler then imports `expo-router/entry`. **Why:** the headless task must be registered before the app root, even when no UI starts.
 - Task handler (background JS, no UI):
   - Opens the same SQLite DB. MUST NOT run migrations or the seed; schema version ≠ app's expected version → UX-22 unavailable state.
+  - Its own read-only connection (`useNewConnection`, DEFERRED transactions, `busy_timeout`), closed after each redraw. **Why:** expo-sqlite otherwise reuses the app's cached connection (closing it breaks the app), and `BEGIN IMMEDIATE` from the widget failed with "database is locked" during app writes (found on device, 2026-09-30).
   - Reads through existing repositories + domain (goal resolution, day totals, unit conversion). MUST NOT duplicate nutrition or goal math.
   - Handles `WIDGET_ADDED`, `WIDGET_UPDATE`, `WIDGET_RESIZED`; `WIDGET_DELETED` → no-op. Initializes i18n from the device locale (ARCH-22) before rendering.
   - Any error → unavailable state + a logger warning with no diary data (ARCH-15). Never throws.

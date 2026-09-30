@@ -1,5 +1,11 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { NotFoundError } from '@/shared/errors';
-import { openTestDatabase } from '@/shared/testing/nodeSqlite';
+import { openNodeSqliteDriver, openTestDatabase } from '@/shared/testing/nodeSqlite';
+
+import { applyConnectionPragmas, createSqlDatabase } from '../sql';
 
 describe('DATA-01 / ARCH-09: SQL adapter', () => {
   it('turns foreign keys on for the connection', async () => {
@@ -88,5 +94,21 @@ describe('DATA-01 / ARCH-09: SQL adapter', () => {
     ).rejects.toMatchObject({ category: 'not_found' });
     expect(await db.getFirst('SELECT COUNT(*) AS c FROM t')).toEqual({ c: 0 });
     await db.close();
+  });
+
+  it('ARCH-23: a read-only connection reads in a transaction while another connection holds the write lock', async () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'widget-')), 'app.db');
+    const app = createSqlDatabase(openNodeSqliteDriver(path));
+    await applyConnectionPragmas(app);
+    await app.exec('CREATE TABLE t (n INTEGER); INSERT INTO t (n) VALUES (1)');
+    const widget = createSqlDatabase(openNodeSqliteDriver(path), { readOnly: true });
+    await app.exec('BEGIN IMMEDIATE');
+    await app.run('INSERT INTO t (n) VALUES (?)', [2]);
+    await expect(
+      widget.transaction((tx) => tx.getFirst<{ c: number }>('SELECT COUNT(*) AS c FROM t')),
+    ).resolves.toEqual({ c: 1 });
+    await app.exec('COMMIT');
+    await widget.close();
+    await app.close();
   });
 });
