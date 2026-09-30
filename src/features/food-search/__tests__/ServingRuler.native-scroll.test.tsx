@@ -30,6 +30,11 @@ describe('DS-09: ruler native momentum', () => {
     expect(scroll.props.alwaysBounceHorizontal).toBe(false);
     expect(scroll.props.overScrollMode).toBe('never');
     expect(scroll.props.contentInsetAdjustmentBehavior).toBe('never');
+    // Positioning at initialValue (a remount after a serving change) is not a user choice, so it reports nothing;
+    // otherwise the mount's offset-0 event set the serving to the first tick (2 nuts → 1 g).
+    await fireEvent(scroll, 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: 0, y: 0 } } });
+    expect(onValueChangeEnd).not.toHaveBeenCalled();
+    await fireEvent(scroll, 'scrollBeginDrag');
     // Settle in both directions and at zero; horizontal zero must never fall back to y.
     for (const index of [150, 50, 0]) {
       await fireEvent(scroll, 'momentumScrollEnd', {
