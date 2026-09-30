@@ -12,7 +12,6 @@ import {
   BottomSheet,
   FocusablePressable,
   InlineStatus,
-  PressableIcon,
   PrimaryButton,
   UndoToast,
 } from '@/shared/components';
@@ -178,32 +177,38 @@ function Overview({ day, unit, provisional }: { day: DiaryDayModel; unit: Energy
             />
           </View>
         </View>
-        <View>
-          <View style={styles.macroRow}>
-            <View style={styles.macros}>
-              <MacroStrip
-                totals={day.totals}
-                targets={
-                  goal
-                    ? { carbohydrateG: goal.carbohydrateTargetG, proteinG: goal.proteinTargetG, fatG: goal.fatTargetG }
-                    : null
-                }
-              />
-            </View>
-            {/* DS-08 / UX-02: no visible nutrients → no chevron and no panel. */}
-            {nutrientIds.length > 0 ? (
-              <PressableIcon
-                icon={panelOpen ? 'chevron-up' : 'chevron-down'}
-                accessibilityLabel={t(panelOpen ? 'diaryNutrients.hide' : 'diaryNutrients.show')}
-                onPress={() => setPanelOpen.mutate(!panelOpen)}
-                expanded={panelOpen}
-                color="textSecondary"
-                testID="diary-nutrients-toggle"
-              />
-            ) : null}
-          </View>
-          {panelOpen && nutrientIds.length > 0 ? <NutrientPanel totals={day.totals} ids={nutrientIds} /> : null}
-        </View>
+        <MacroStrip
+          totals={day.totals}
+          targets={
+            goal
+              ? { carbohydrateG: goal.carbohydrateTargetG, proteinG: goal.proteinTargetG, fatG: goal.fatTargetG }
+              : null
+          }
+        />
+        {/* DS-08 / UX-02: the panel opens under the strip; no visible nutrients → no handle and no panel. */}
+        {panelOpen && nutrientIds.length > 0 ? <NutrientPanel totals={day.totals} ids={nutrientIds} /> : null}
+        {nutrientIds.length > 0 ? (
+          <FocusablePressable
+            accessibilityRole="button"
+            accessibilityLabel={t(panelOpen ? 'diaryNutrients.hide' : 'diaryNutrients.show')}
+            accessibilityState={{ expanded: panelOpen }}
+            onPress={() => setPanelOpen.mutate(!panelOpen)}
+            // A compact handle keeps the overview height; hitSlop restores the full touch target (DS-09).
+            hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+            testID="diary-nutrients-toggle"
+            style={({ pressed }) => [
+              styles.nutrientHandle,
+              {
+                marginTop: -theme.spacing[2],
+                marginBottom: -theme.spacing[2],
+                borderRadius: theme.radii.pill,
+                backgroundColor: pressed ? theme.colors.primaryTint : 'transparent',
+              },
+            ]}
+          >
+            <AppIcon name={panelOpen ? 'chevron-up' : 'chevron-down'} color="textSecondary" />
+          </FocusablePressable>
+        ) : null}
       </View>
       {provisional ? (
         // UX-01: shown while goals are provisional; no dismiss. `Set goals` → Calories & Macros (UX-16).
@@ -398,8 +403,7 @@ function DashboardActionMenu({
 }
 
 const styles = StyleSheet.create({
-  macroRow: { flexDirection: 'row', alignItems: 'center' },
-  macros: { flex: 1 },
+  nutrientHandle: { width: 64, height: 28, alignItems: 'center', justifyContent: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   overview: { alignItems: 'center' },
   ringNavigation: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },

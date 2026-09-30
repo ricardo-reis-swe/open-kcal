@@ -37,8 +37,9 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 [Diary                                   📅]
 [‹ Yesterday    TODAY    Tomorrow ›  Today ]   ← days scroll sideways; "Today" only when not on today
 [  ‹     ◯ 1,731 kcal left             ›  ]   ← ring tap: Consumed 669/2,400 kcal
-[ Carbs 82/250 g │ Protein 41/150 g │ Fat 25/80 g  ⌄ ]   ← chevron: nutrient panel (DATA-21)
+[ Carbs 82/250 g │ Protein 41/150 g │ Fat 25/80 g ]
 [ Fibre 18 g · Sugars 42 g · Sat. fat 12 g · Salt 3.1 g ]   ← only while open
+[                    ⌄                    ]   ← handle: nutrient panel (DATA-21)
 [ Using default goals · Set goals           ]   ← UX-01 only
 [Breakfast                      700 kcal ⋯ + ]
 [  Scrambled eggs                         ⋯ ]
@@ -56,7 +57,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Each meal and entry has a `…` menu. Meal: `Copy meal`; entry: `Copy item`.
 - Empty meal = header (0 kcal) + one compact `textSecondary` line `No foods logged`.
 - Over goal and unknown macros: DS-08.
-- **Nutrient panel**: the macro strip's trailing chevron opens/closes the day's totals for the DATA-21 visible nutrients, in their set order (DS-08). The open state persists (DATA-21). No visible nutrients → no chevron and no panel. No targets (SCOPE-10).
+- **Nutrient panel**: the chevron handle under the macro strip opens/closes the day's totals for the DATA-21 visible nutrients, in their set order (DS-08). The open state persists (DATA-21). No visible nutrients → no chevron and no panel. No targets (SCOPE-10).
 - Error: a DB load failure is full-screen with Retry. Never an offline banner.
 - Focus order: app bar → strip days left to right (rendered ones; prev, selected, next among them) → Today → ring (one element) → carbs, protein, fat → each meal (header, menu, header +, entries and their menus).
 
@@ -247,3 +248,21 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - `Shown`: the visible nutrients in dashboard order, with drag handle + switch. Reorder as UX-17 Meals (handle drag, a11y `Move up` / `Move down`).
 - Below, the hidden nutrients grouped as UX-05, in catalog order, with a switch. Switching one on appends it to the end of `Shown`; switching off moves it back to its group.
 - Every change saves immediately (DATA-21), as Units; no Save button. Zero shown is allowed; helper: `The Diary shows no nutrient panel.`
+
+## UX-22 Android widget (calories left)
+```text
+[ 1,731        ]
+[ kcal left    ]      over goal: [ 250 / kcal over ] in `danger`
+```
+- One size, 2×1 cells, resizable horizontally only. Android only.
+- Value = the Diary overview's remaining for **today** (UX-02, DATA-09 goal for today − today's consumed). Same rounding, grouping and locale as the Diary (UX number display); energy unit follows Units (kcal|kJ).
+- States:
+  | State | Shows |
+  |---|---|
+  | Remaining ≥ 0 | `{n} kcal left` |
+  | Over goal | `{n} kcal over`, number in `danger` |
+  | Provisional goal (UX-01) | Same as above; no "default goals" hint |
+  | DB not ready / read fails | `Open Calorie Tracker` |
+- Tap anywhere → the app opens on the Diary at today (NAV-10).
+- Strings in en + pt-PT (ARCH-22). No other data on the widget: no meals, macros or food names.
+- MUST NOT show stale data after a write in the app or after local midnight beyond the limits in DATA-22.

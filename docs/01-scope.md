@@ -16,6 +16,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Unit preferences (SCOPE-08).
 - Food Search sections: reorder and show/hide `My foods`, `Saved`, `Open Food Facts`, `USDA` (UX-18, DATA-19).
 - Nutrient details beyond macros (user decision 2026-09-30): Food Detail lists every catalog nutrient a food carries; the Diary opens the day's totals for user-chosen nutrients; custom foods may carry them (DATA-20/21, UX-02, UX-05, UX-21).
+- Android home-screen widget showing today's calories left (user decision 2026-09-30; UX-22). iOS widget not in scope.
 
 ## SCOPE-02 Configurable meals
 - Defaults: Breakfast, Lunch, Dinner, Snacks.
