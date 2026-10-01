@@ -81,3 +81,12 @@ export function adjustRulerQuantity(
   const { step } = rulerSpec(serving);
   return snapRulerQuantity(quantity + (direction === 'increment' ? step : -step), serving);
 }
+
+// Serving labels that are measurement units read as `150 g`; anything else is a count: `2 × egg`.
+const MEASURE_LABELS = new Set(['g', 'kg', 'ml', 'l', 'oz', 'lb', 'fl oz', 'fl_oz']);
+
+/** DS-08 / DATA-27: a measure label (`g`, `oz`, or a recipe weight such as `g cooked`) vs a count (`egg`). */
+export function isMeasureLabel(label: string): boolean {
+  const value = label.trim().toLowerCase();
+  return MEASURE_LABELS.has(value) || MEASURE_LABELS.has(value.split(/\s+/)[0] ?? '');
+}

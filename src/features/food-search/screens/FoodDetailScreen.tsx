@@ -31,6 +31,7 @@ import { announceAddedFood } from '../addedNotice';
 import { NutritionFacts } from '../components/NutritionFacts';
 import { ServingRuler } from '../components/ServingRuler';
 import { useExternalFood, useFood, useRecentFood } from '../food-search.queries';
+import { newIngredientKey, putDraftIngredient, useRecipeDraft } from '@/features/recipes/recipeDraft';
 
 export type FoodDetailMode =
   | {
@@ -43,19 +44,35 @@ export type FoodDetailMode =
       origin: Origin;
     }
   | { kind: 'edit'; entryId: string; origin: Origin }
+  /** UX-05 ingredient mode (Ingredient Detail): writes into a UX-26 recipe draft, never logs. */
+  | {
+      kind: 'ingredient';
+      foodId: string;
+      foodSource: FoodSource;
+      externalId?: string;
+      draftId: string;
+      /** Set when editing an existing draft ingredient (`Edit ingredient`, header `Save`). */
+      ingredientKey?: string;
+      /** NAV-04: Add pops Ingredient Search too; Save (edit) pops only this screen. */
+      onDone: () => void;
+    }
   | null;
+
+type IngredientMode = Extract<NonNullable<FoodDetailMode>, { kind: 'ingredient' }>;
 
 /** UX-05/06 add and edit. Edit falls back to the entry snapshot when its source food/serving cannot resolve. */
 export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const editing = mode?.kind === 'edit';
+  const picking = mode?.kind === 'add' || mode?.kind === 'ingredient';
   const entry = useDiaryEntry(editing ? mode.entryId : '', editing);
-  const foodId = mode?.kind === 'add' ? mode.foodId : (entry.data?.foodId ?? '');
-  const externalId = mode?.kind === 'add' ? mode.externalId : undefined;
+  const foodId = picking ? mode.foodId : (entry.data?.foodId ?? '');
+  const externalId = picking ? mode.externalId : undefined;
   const storedFood = useFood(foodId, Boolean(foodId) && !externalId);
+  const draft = useRecipeDraft(mode?.kind === 'ingredient' ? mode.draftId : undefined);
   const externalFood = useExternalFood(
-    mode?.kind === 'add' && mode.foodSource !== 'custom' ? mode.foodSource : 'usda',
+    picking && mode.foodSource !== 'custom' ? mode.foodSource : 'usda',
     externalId ?? '',
     Boolean(externalId),
   );
@@ -69,9 +86,55 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   let body: React.ReactNode = null;
   let formRendered = false;
 
+  const draftIngredient =
+    mode?.kind === 'ingredient' && mode.ingredientKey
+      ? draft?.ingredients.find((item) => item.key === mode.ingredientKey)
+      : undefined;
   if (!mode || (editing && entry.data && entry.data.kind !== 'food')) body = notFound;
   else if (mode.kind === 'add' && food.data && (food.data.isDeleted || food.data.source !== mode.foodSource)) {
     body = notFound;
+  } else if (
+    mode.kind === 'ingredient' &&
+    (!draft ||
+      (mode.ingredientKey && !draftIngredient) ||
+      (food.data &&
+        // POST-15: never a recipe; a deleted food only when it is already an ingredient (UX-26).
+        (food.data.kind === 'recipe' ||
+          food.data.source !== mode.foodSource ||
+          (food.data.isDeleted && !draftIngredient))))
+  ) {
+    body = notFound;
+  } else if (mode.kind === 'ingredient' && food.data && recent.isSuccess && !recent.isFetching && settings.data) {
+    // An existing ingredient opens with its own serving + quantity; a new one as UX-05 add.
+    const own = draftIngredient?.servingId
+      ? food.data.servings.find((item) => item.id === draftIngredient.servingId)
+      : undefined;
+    const selected = own
+      ? { serving: own, quantity: draftIngredient!.quantity }
+      : initialServing(
+          food.data.servings,
+          recent.data ? { servingId: recent.data.lastServingId, quantity: recent.data.lastServingQuantity } : null,
+        );
+    const initial = selected
+      ? { serving: food.data.servings.find((item) => item.id === selected.serving.id)!, quantity: selected.quantity }
+      : null;
+    if (!initial) body = notFound;
+    else {
+      formRendered = true;
+      body = (
+        <FoodDetailForm
+          key={food.data.id}
+          mode={mode}
+          food={food.data}
+          initial={initial}
+          meals={meals.data ?? []}
+          energyUnit={settings.data.energyUnit}
+          preferredUnits={[settings.data.foodWeightUnit, settings.data.volumeUnit]}
+          allowServingChange
+          entry={null}
+        />
+      );
+    }
   } else if (
     mode.kind === 'add' &&
     food.data &&
@@ -141,10 +204,7 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
       />
     );
   }
-  if (
-    !body &&
-    (entry.isError || meals.isError || settings.isError || (mode?.kind === 'add' && (food.isError || recent.isError)))
-  )
+  if (!body && (entry.isError || meals.isError || settings.isError || (picking && (food.isError || recent.isError))))
     body = notFound;
 
   return (
@@ -154,7 +214,11 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
       ) : body ? (
         <>
           <AppBar
-            title={t(editing ? 'foodDetail.editTitle' : 'foodDetail.title')}
+            title={
+              mode?.kind === 'ingredient'
+                ? t(mode.ingredientKey ? 'recipe.editIngredientTitle' : 'recipe.ingredientTitle')
+                : t(editing ? 'foodDetail.editTitle' : 'foodDetail.title')
+            }
             back={{ label: t('common.back'), onPress: () => router.back() }}
           />
           {body}
@@ -205,7 +269,8 @@ function FoodDetailForm({
 }: {
   mode:
     | Extract<NonNullable<FoodDetailMode>, { kind: 'add' }>
-    | { kind: 'edit'; entryId: string; origin: Origin; mealId: string; date: string };
+    | { kind: 'edit'; entryId: string; origin: Origin; mealId: string; date: string }
+    | IngredientMode;
   food: Food;
   initial: { serving: FoodServing; quantity: number };
   meals: readonly { id: string; name: string }[];
@@ -219,7 +284,8 @@ function FoodDetailForm({
   const locale = useFormattingLocale();
   const { today, setDate } = useDiaryDate();
   const writes = useDiaryWrites();
-  const [mealId, setMealId] = useState(mode.mealId);
+  const ingredient = mode.kind === 'ingredient';
+  const [mealId, setMealId] = useState(mode.kind === 'ingredient' ? '' : mode.mealId);
   const [serving, setServing] = useState(initial.serving);
   const [quantity, setQuantity] = useState(initial.quantity);
   const [pickingMeal, setPickingMeal] = useState(false);
@@ -236,23 +302,29 @@ function FoodDetailForm({
     return servingNutrients(food.nutrients, serving, quantity);
   }, [entry, food.nutrients, quantity, serving]);
   const mealName = meals.find((meal) => meal.id === mealId)?.name ?? '';
-  const relative = relativeDay(mode.date, today);
-  const dateLabel = relative ? t(`diary.${relative}`) : formatShortDate(mode.date, today, locale);
-  const orderedServings = useMemo(
-    () =>
-      [...food.servings].sort((a, b) => {
-        const aRank = preferredUnits.indexOf(a.unit);
-        const bRank = preferredUnits.indexOf(b.unit);
-        return (aRank < 0 ? preferredUnits.length : aRank) - (bRank < 0 ? preferredUnits.length : bRank);
-      }),
-    [food.servings, preferredUnits],
-  );
+  const date = mode.kind === 'ingredient' ? today : mode.date;
+  const relative = relativeDay(date, today);
+  const dateLabel = relative ? t(`diary.${relative}`) : formatShortDate(date, today, locale);
+  const orderedServings = useMemo(() => orderServings(food, preferredUnits), [food, preferredUnits]);
   const chooseServing = (next: FoodServing) => {
     setQuantity(convertServingQuantity(quantity, serving, next));
     setServing(next);
   };
   const save = async () => {
     setSaveFailed(false);
+    if (mode.kind === 'ingredient') {
+      // UX-26: the draft only; SQLite is written on the recipe's Save (DATA-28).
+      putDraftIngredient(mode.draftId, {
+        key: mode.ingredientKey ?? newIngredientKey(),
+        food,
+        servingId: serving.id,
+        quantity,
+        servingUnit: serving.label,
+        basisMultiplierSnapshot: serving.basisMultiplier * quantity,
+      });
+      mode.onDone();
+      return;
+    }
     try {
       if (mode.kind === 'add') {
         await writes.addFoodEntry.mutateAsync({
@@ -304,15 +376,29 @@ function FoodDetailForm({
   return (
     <>
       <AppBar
-        title={t(mode.kind === 'edit' ? 'foodDetail.editTitle' : 'foodDetail.title')}
+        title={
+          mode.kind === 'ingredient'
+            ? t(mode.ingredientKey ? 'recipe.editIngredientTitle' : 'recipe.ingredientTitle')
+            : t(mode.kind === 'edit' ? 'foodDetail.editTitle' : 'foodDetail.title')
+        }
         back={{ label: t('common.back'), onPress: () => router.back() }}
         actions={
           <HeaderAction
-            label={mode.kind === 'add' ? t('common.add') : t('foodDetail.save')}
+            label={
+              mode.kind === 'add' || (mode.kind === 'ingredient' && !mode.ingredientKey)
+                ? t('common.add')
+                : t('foodDetail.save')
+            }
             onPress={() => void save()}
             loading={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
             disabled={writes.addFoodEntry.isPending || writes.editFoodEntry.isPending}
-            testID={mode.kind === 'add' ? 'food-detail-add' : 'food-entry-save'}
+            testID={
+              mode.kind === 'ingredient'
+                ? 'ingredient-detail-save'
+                : mode.kind === 'add'
+                  ? 'food-detail-add'
+                  : 'food-entry-save'
+            }
           />
         }
       />
@@ -328,7 +414,9 @@ function FoodDetailForm({
               </AppText>
             </View>
             <AppText color="textSecondary">
-              {food.brand || t('foodSearch.perBasis', { quantity: food.basisQuantity, unit: food.basisUnit })}
+              {food.kind === 'recipe'
+                ? `${t('foodSearch.sources.recipe')} · ${t('foodSearch.perServing')}`
+                : food.brand || t('foodSearch.perBasis', { quantity: food.basisQuantity, unit: food.basisUnit })}
             </AppText>
           </View>
           <ServingRuler
@@ -350,10 +438,12 @@ function FoodDetailForm({
             <Macro label={t('foodDetail.protein')} value={nutrients.proteinG} locale={locale} />
             <Macro label={t('foodDetail.fat')} value={nutrients.fatG} locale={locale} />
           </View>
-          <View>
-            <ListRow label={t('foodDetail.meal')} value={mealName} onPress={() => setPickingMeal(true)} navigates />
-            <ListRow label={t('foodDetail.date')} value={dateLabel} />
-          </View>
+          {ingredient ? null : (
+            <View>
+              <ListRow label={t('foodDetail.meal')} value={mealName} onPress={() => setPickingMeal(true)} navigates />
+              <ListRow label={t('foodDetail.date')} value={dateLabel} />
+            </View>
+          )}
           <NutritionFacts amounts={nutrients.extra} locale={locale} />
           {mode.kind === 'edit' ? (
             <View style={{ paddingHorizontal: theme.spacing[4] }}>
@@ -439,6 +529,23 @@ function FoodDetailForm({
       ) : null}
     </>
   );
+}
+
+/**
+ * UX-05 unit tabs: the preferred mass/volume unit first. A recipe (DATA-27) keeps `serving` first, then its cooked
+ * and raw pairs, each with the preferred weight unit first.
+ */
+function orderServings(food: Food, preferredUnits: readonly string[]): FoodServing[] {
+  const rank = (unit: string) => {
+    const index = preferredUnits.indexOf(unit);
+    return index < 0 ? preferredUnits.length : index;
+  };
+  if (food.kind === 'recipe') {
+    const group = (unit: string) => (unit === 'serving' ? 0 : unit.endsWith('_cooked') ? 1 : 2);
+    const base = (unit: string) => unit.replace(/_(cooked|raw)$/, '');
+    return [...food.servings].sort((a, b) => group(a.unit) - group(b.unit) || rank(base(a.unit)) - rank(base(b.unit)));
+  }
+  return [...food.servings].sort((a, b) => rank(a.unit) - rank(b.unit));
 }
 
 function ServingUnitTabs({

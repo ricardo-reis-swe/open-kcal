@@ -39,7 +39,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
     expect(screen.getByText('lb · g · kJ · ml')).toBeTruthy();
     expect(await screen.findByText('USDA on')).toBeTruthy();
     expect(screen.getByText('4 shown')).toBeTruthy(); // DATA-21 default
-    expect(screen.getByText('None')).toBeTruthy(); // DATA-25: no custom foods yet
+    expect(screen.getAllByText('None')).toHaveLength(2); // DATA-25 / DATA-28: no custom foods or recipes yet
     const kj = new Intl.NumberFormat('en-GB').format(Math.round(goal!.calorieTargetKcal * 4.184));
     expect(screen.getByText(`${kj} kJ`)).toBeTruthy();
   });
@@ -55,6 +55,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       onUnits: jest.fn(),
       onDashboardNutrients: jest.fn(),
       onMyFoods: jest.fn(),
+      onMyRecipes: jest.fn(),
       onFoodDatabases: jest.fn(),
       onTheme: jest.fn(),
     };
@@ -68,6 +69,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       'units',
       'dashboard-nutrients',
       'my-foods',
+      'my-recipes',
       'food-databases',
       'theme',
     ]) {

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import type { DiaryEntry } from '@/data/db/repositories/diaryRepository';
+import { isMeasureLabel } from '@/domain/food/servings';
 import type { EnergyUnit } from '@/domain/units/units';
 import { AppIcon, AppText, FocusablePressable, PressableIcon, SwipeToDelete } from '@/shared/components';
 import { formatEnergy } from '@/shared/i18n/format';
@@ -20,9 +21,6 @@ export type EntryRowProps = {
   onMenu?: () => void;
 };
 
-// Serving labels that are measurement units read as `150 g`; anything else is a count: `2 × egg`.
-const MEASURE_UNITS = new Set(['g', 'kg', 'ml', 'l', 'oz', 'lb', 'fl oz', 'fl_oz']);
-
 function formatQuantity(quantity: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(quantity);
 }
@@ -34,7 +32,7 @@ export function DiaryEntryRow({ entry, unit, onPress, onDelete, onMenu }: EntryR
   const value = formatEnergy(entry.nutrients.energyKcal, unit, locale);
   const quantity = formatQuantity(entry.servingQuantity ?? 1, locale);
   const servingUnit = entry.servingUnit ?? '';
-  const serving = t(MEASURE_UNITS.has(servingUnit.toLowerCase()) ? 'diary.entry.serving' : 'diary.entry.servings', {
+  const serving = t(isMeasureLabel(servingUnit) ? 'diary.entry.serving' : 'diary.entry.servings', {
     quantity,
     unit: servingUnit,
   });

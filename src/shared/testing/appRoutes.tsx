@@ -11,12 +11,19 @@ import EditFoodEntryRoute from '@/app/(tabs)/diary/food-entry/[entryId]';
 import FoodSearchRoute from '@/app/(tabs)/diary/food-search/index';
 import EditQuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/[entryId]';
 import QuickCaloriesRoute from '@/app/(tabs)/diary/quick-calories/index';
+import CreateRecipeRoute from '@/app/(tabs)/diary/recipe/new';
+import DiaryIngredientSearchRoute from '@/app/(tabs)/diary/ingredient-search';
+import DiaryIngredientDetailRoute from '@/app/(tabs)/diary/ingredient-detail/[foodId]';
 import ProfileStackLayout from '@/app/(tabs)/profile/_layout';
 import ProfileIndex from '@/app/(tabs)/profile/index';
 import CaloriesMacrosRoute from '@/app/(tabs)/profile/calories-macros';
 import MealsRoute from '@/app/(tabs)/profile/meals/index';
 import MyFoodsRoute from '@/app/(tabs)/profile/my-foods/index';
 import EditCustomFoodRoute from '@/app/(tabs)/profile/my-foods/[foodId]';
+import MyRecipesRoute from '@/app/(tabs)/profile/my-recipes/index';
+import EditRecipeRoute from '@/app/(tabs)/profile/my-recipes/[foodId]';
+import ProfileIngredientSearchRoute from '@/app/(tabs)/profile/ingredient-search';
+import ProfileIngredientDetailRoute from '@/app/(tabs)/profile/ingredient-detail/[foodId]';
 import AddMealRoute from '@/app/(tabs)/profile/meals/new';
 import EditMealRoute from '@/app/(tabs)/profile/meals/[mealId]';
 import DashboardNutrientsRoute from '@/app/(tabs)/profile/dashboard-nutrients';
@@ -42,6 +49,9 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/diary/create-custom-food': CreateCustomFoodRoute,
     '(tabs)/diary/quick-calories/index': QuickCaloriesRoute,
     '(tabs)/diary/quick-calories/[entryId]': EditQuickCaloriesRoute,
+    '(tabs)/diary/recipe/new': CreateRecipeRoute,
+    '(tabs)/diary/ingredient-search': DiaryIngredientSearchRoute,
+    '(tabs)/diary/ingredient-detail/[foodId]': DiaryIngredientDetailRoute,
     '(tabs)/profile/_layout': ProfileStackLayout,
     '(tabs)/profile/index': ProfileIndex,
     '(tabs)/profile/calories-macros': CaloriesMacrosRoute,
@@ -50,6 +60,10 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/profile/meals/[mealId]': EditMealRoute,
     '(tabs)/profile/my-foods/index': MyFoodsRoute,
     '(tabs)/profile/my-foods/[foodId]': EditCustomFoodRoute,
+    '(tabs)/profile/my-recipes/index': MyRecipesRoute,
+    '(tabs)/profile/my-recipes/[foodId]': EditRecipeRoute,
+    '(tabs)/profile/ingredient-search': ProfileIngredientSearchRoute,
+    '(tabs)/profile/ingredient-detail/[foodId]': ProfileIngredientDetailRoute,
     '(tabs)/profile/units': UnitsRoute,
     '(tabs)/profile/theme': ThemeRoute,
     '(tabs)/profile/dashboard-nutrients': DashboardNutrientsRoute,

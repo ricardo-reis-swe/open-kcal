@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { AppSettings } from '@/data/db/repositories/settingsRepository';
 import { visibleDashboardNutrients } from '@/domain/nutrition/dashboardNutrients';
 import { useAppSettings, useDashboardNutrients, useMeals } from '@/features/diary/diary.queries';
-import { useCustomFoodCount } from '@/features/food-search/food-search.queries';
+import { useCustomFoodCount, useRecipeCount } from '@/features/food-search/food-search.queries';
 import {
   useCurrentGoal,
   useCurrentWeight,
@@ -30,6 +30,7 @@ export type ProfileNavigation = {
   onDashboardNutrients?: () => void;
   onFoodDatabases?: () => void;
   onMyFoods?: () => void;
+  onMyRecipes?: () => void;
   onTheme?: () => void;
 };
 
@@ -46,6 +47,7 @@ export function ProfileScreen(nav: ProfileNavigation) {
   const dashboardNutrients = useDashboardNutrients().data;
   const themePreference = useThemePreference().data;
   const customFoods = useCustomFoodCount().data;
+  const recipeCount = useRecipeCount().data;
   const shownNutrients = dashboardNutrients ? visibleDashboardNutrients(dashboardNutrients).length : undefined;
 
   const unitLabel = (unit: string) => t(`units.${unit}` as 'units.kg');
@@ -134,6 +136,16 @@ export function ProfileScreen(nav: ProfileNavigation) {
               : t('profile.foodCount', { count: customFoods }),
           nav.onMyFoods,
           'profile-my-foods',
+        )}
+        {row(
+          t('profile.myRecipes'),
+          recipeCount === undefined
+            ? undefined
+            : recipeCount === 0
+              ? t('profile.recipesNone')
+              : t('profile.recipeCount', { count: recipeCount }),
+          nav.onMyRecipes,
+          'profile-my-recipes',
         )}
         {row(
           t('profile.foodDatabases'),

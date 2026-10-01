@@ -366,9 +366,9 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - SCOPE-13, DATA-27/28. User request 2026-10-01. Create from Food Search `Recipes` (Diary stack); edit from My recipes (Profile stack, UX-27).
 - Name: word autocapitalization, prefilled from `initialName`. Servings: decimal > 0, required.
 - Weights in the preferred food weight unit, stored in g. Cooked weight optional, helper `The weight of one serving once cooked.` Raw weight shows the computed value (DATA-27) as the field value with helper `From the ingredients`; typing overrides it, helper becomes `Your value` + a `Reset` text action back to computed. Not computable and not overridden → empty, helper `Add the raw weight to log in g raw.`
-- Ingredient rows (DS-09): name · amount + unit · kcal. A soft-deleted food shows `Deleted food` as its secondary text. Tap → Ingredient Detail (UX-05, edit). Swipe left → `Remove` (draft only, no Undo, no dialog). Order = add order.
+- Ingredient rows (DS-09): name · amount + unit (`· Deleted food` appended for a soft-deleted food) · kcal. Tap → Ingredient Detail (UX-05, edit). Swipe left → `Remove` (draft only, no Undo, no dialog). Order = add order.
 - `+ Add ingredient` → Ingredient Search (UX-04 ingredient mode).
-- Totals update live; unknown macros/nutrients follow DATA-06 (known sum + unknown marker).
+- Totals update live. An unknown macro (DATA-06, DATA-27) shows `—`, as in UX-05.
 - Draft: held in memory for the editor and its ingredient screens until Save; never written to SQLite before Save. Dirty exit → `Discard changes?` (UX-00).
 - Save enabled when valid (name, servings, ≥1 ingredient) and, in edit mode, changed. Create → NAV-04 (Food Detail for the recipe). Edit → My recipes.
 - Edit mode: title `Edit recipe`, filled from `getRecipe`; `Delete recipe` at the end (UX-19). Diary entries keep their snapshots.

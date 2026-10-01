@@ -126,7 +126,11 @@
     "myFoods": "My foods",
     "foodCount_one": "{{count}} food",
     "foodCount_other": "{{count}} foods",
-    "foodsNone": "None"
+    "foodsNone": "None",
+    "myRecipes": "My recipes",
+    "recipeCount_one": "{{count}} recipe",
+    "recipeCount_other": "{{count}} recipes",
+    "recipesNone": "None"
   },
   "caloriesMacros": {
     "title": "Calories & macros",
@@ -271,7 +275,8 @@
     "sources": {
       "custom": "Custom",
       "open_food_facts": "Open Food Facts",
-      "usda": "USDA"
+      "usda": "USDA",
+      "recipe": "Recipe"
     },
     "delete": "Delete",
     "deleteFood": "Delete food",
@@ -284,7 +289,8 @@
       "label": "Food lists",
       "all": "All",
       "recent": "Recent",
-      "custom": "My foods"
+      "custom": "My foods",
+      "recipes": "Recipes"
     },
     "select": {
       "toggle": "Select multiple",
@@ -293,7 +299,12 @@
       "count_other": "{{count}} selected",
       "add": "Add to {{meal}}",
       "addError": "Couldn't add foods. Try again."
-    }
+    },
+    "createRecipe": "Create recipe",
+    "emptyRecipes": "No recipes yet.",
+    "ingredientContext": "Adding to {{recipe}}",
+    "ingredientContextNew": "Adding to new recipe",
+    "perServing": "per serving"
   },
   "customFood": {
     "title": "New food",
@@ -545,5 +556,49 @@
   "myFoods": {
     "title": "My foods",
     "empty": "No custom foods yet. Create them from Food Search."
+  },
+  "recipe": {
+    "title": "New recipe",
+    "editTitle": "Edit recipe",
+    "name": "Name*",
+    "servings": "Servings*",
+    "cookedWeight": "Cooked weight",
+    "cookedHelper": "The weight of one serving once cooked.",
+    "rawWeight": "Raw weight",
+    "rawComputed": "From the ingredients",
+    "rawOverride": "Your value",
+    "rawUnknown": "Add the raw weight to log in {{unit}}.",
+    "reset": "Reset",
+    "perServingUnit": "{{unit}} per serving",
+    "ingredients": "Ingredients",
+    "addIngredient": "Add ingredient",
+    "noIngredients": "Add at least one ingredient.",
+    "deletedFood": "Deleted food",
+    "remove": "Remove",
+    "perServing": "Per serving",
+    "wholeRecipe": "Whole recipe",
+    "save": "Save",
+    "saveError": "Couldn't save. Try again.",
+    "delete": "Delete recipe",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "Your diary entries keep their nutrition.",
+    "ingredientTitle": "Add ingredient",
+    "editIngredientTitle": "Edit ingredient",
+    "errors": {
+      "name": "Enter a name up to 80 characters.",
+      "servings": "Enter a number of servings above 0.",
+      "weight": "Enter a weight above 0."
+    },
+    "units": {
+      "serving": "serving",
+      "g_cooked": "g cooked",
+      "oz_cooked": "oz cooked",
+      "g_raw": "g raw",
+      "oz_raw": "oz raw"
+    }
+  },
+  "myRecipes": {
+    "title": "My recipes",
+    "empty": "No recipes yet. Create them from Food Search."
   }
 }

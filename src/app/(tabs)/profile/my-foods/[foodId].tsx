@@ -16,7 +16,7 @@ export default function EditCustomFoodRoute() {
   // The form keeps the food it opened with: the refetch after this screen's own save or delete must not swap the
   // form or flash the not-found state while it leaves.
   const [opened, setOpened] = useState<Food | null>(null);
-  const valid = food.data && !food.data.isDeleted && food.data.source === 'custom';
+  const valid = food.data && !food.data.isDeleted && food.data.source === 'custom' && food.data.kind === 'food';
   if (!opened && valid) setOpened(food.data!);
   if (opened)
     return (
@@ -27,7 +27,7 @@ export default function EditCustomFoodRoute() {
         onDeleted={() => router.back()}
       />
     );
-  // UX-00: bad params, or a deleted / non-custom food.
+  // UX-00: bad params, or a deleted / non-custom food (a recipe opens the UX-26 editor instead).
   if (!params || food.isError || (food.data && !valid))
     return (
       <NotFoundState actionLabel={t('common.backToProfile')} onAction={() => router.dismissTo(routes.profile())} />

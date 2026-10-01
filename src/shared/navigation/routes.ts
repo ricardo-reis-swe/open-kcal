@@ -43,7 +43,25 @@ export type RouteParams = {
   dashboardNutrients: undefined;
   editCustomFood: { foodId: Uuid };
   weightGoal: undefined;
+  /** UX-26 create, from the Food Search `Recipes` tab (Diary stack). */
+  createRecipe: { mealId: Uuid; date: LocalDate; initialName?: string; origin?: Origin };
+  /** UX-26 edit, from My recipes (Profile stack). */
+  editRecipe: { foodId: Uuid };
+  /** UX-04 ingredient mode, in the stack of the editor that opened it (NAV-02). */
+  ingredientSearch: { stack: RecipeStack; draftId: string };
+  /** UX-05 ingredient mode; `ingredientKey` edits an existing draft ingredient. */
+  ingredientDetail: {
+    stack: RecipeStack;
+    draftId: string;
+    foodId: Uuid;
+    foodSource: FoodSource;
+    externalId?: string;
+    ingredientKey?: string;
+  };
 };
+
+/** NAV-02: the recipe editor's stack; its ingredient screens live in the same one. */
+export type RecipeStack = 'diary' | 'profile';
 
 export type RouteName = keyof RouteParams;
 
@@ -91,6 +109,21 @@ const paramSchemas = {
   editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   foodDatabases: z.object({}),
   editCustomFood: z.object({ foodId: idSchema }),
+  createRecipe: z.object({
+    mealId: idSchema,
+    date: dateSchema,
+    initialName: z.string().optional(),
+    origin: originSchema.default('diary'),
+  }),
+  editRecipe: z.object({ foodId: idSchema }),
+  ingredientSearch: z.object({ draftId: idSchema }),
+  ingredientDetail: z.object({
+    draftId: idSchema,
+    foodId: idSchema,
+    foodSource: z.enum(['custom', 'usda', 'open_food_facts']),
+    externalId: idSchema.optional(),
+    ingredientKey: idSchema.optional(),
+  }),
   /** NAV-06 Edit Meal (`/profile/meals/[mealId]`); create mode has its own route without params. */
   mealEdit: z.object({ mealId: idSchema }),
 };
@@ -124,6 +157,35 @@ export const routes = {
   /** UX-25: a custom food's details, editable (UX-08 edit mode, DATA-26). */
   editCustomFood: (p: RouteParams['editCustomFood']): Href =>
     ({ pathname: '/profile/my-foods/[foodId]', params: { foodId: p.foodId } }) as unknown as Href,
+  /** NAV-06 / UX-27 My recipes. */
+  myRecipes: (): Href => '/profile/my-recipes' as Href,
+  /** UX-27 → UX-26 edit mode (DATA-28). */
+  editRecipe: (p: RouteParams['editRecipe']): Href =>
+    ({ pathname: '/profile/my-recipes/[foodId]', params: { foodId: p.foodId } }) as unknown as Href,
+  /** NAV-04 Create Recipe (UX-26). */
+  createRecipe: (p: RouteParams['createRecipe']): Href =>
+    ({
+      pathname: '/diary/recipe/new',
+      params: {
+        mealId: p.mealId,
+        date: p.date,
+        ...(p.initialName ? { initialName: p.initialName } : {}),
+        origin: p.origin ?? 'diary',
+      },
+    }) as unknown as Href,
+  ingredientSearch: (p: RouteParams['ingredientSearch']): Href =>
+    ({ pathname: `/${p.stack}/ingredient-search`, params: { draftId: p.draftId } }) as unknown as Href,
+  ingredientDetail: (p: RouteParams['ingredientDetail']): Href =>
+    ({
+      pathname: `/${p.stack}/ingredient-detail/[foodId]`,
+      params: {
+        draftId: p.draftId,
+        foodId: p.foodId,
+        foodSource: p.foodSource,
+        ...(p.externalId ? { externalId: p.externalId } : {}),
+        ...(p.ingredientKey ? { ingredientKey: p.ingredientKey } : {}),
+      },
+    }) as unknown as Href,
   /** NAV-06 / UX-17 Meals list. */
   meals: (): Href => '/profile/meals' as Href,
   /** NAV-06 Add / Edit Meal: create mode, or edit by `mealId`. */

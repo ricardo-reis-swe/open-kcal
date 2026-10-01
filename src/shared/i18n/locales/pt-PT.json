@@ -126,7 +126,11 @@
     "myFoods": "Os meus alimentos",
     "foodCount_one": "{{count}} alimento",
     "foodCount_other": "{{count}} alimentos",
-    "foodsNone": "Nenhum"
+    "foodsNone": "Nenhum",
+    "myRecipes": "As minhas receitas",
+    "recipeCount_one": "{{count}} receita",
+    "recipeCount_other": "{{count}} receitas",
+    "recipesNone": "Nenhuma"
   },
   "caloriesMacros": {
     "title": "Calorias e macros",
@@ -271,7 +275,8 @@
     "sources": {
       "custom": "Personalizado",
       "open_food_facts": "Open Food Facts",
-      "usda": "USDA"
+      "usda": "USDA",
+      "recipe": "Receita"
     },
     "delete": "Eliminar",
     "deleteFood": "Eliminar alimento",
@@ -284,7 +289,8 @@
       "label": "Listas de alimentos",
       "all": "Todos",
       "recent": "Recentes",
-      "custom": "Os meus alimentos"
+      "custom": "Os meus alimentos",
+      "recipes": "Receitas"
     },
     "select": {
       "toggle": "Selecionar vários",
@@ -293,7 +299,12 @@
       "count_other": "{{count}} selecionados",
       "add": "Adicionar a {{meal}}",
       "addError": "Não foi possível adicionar os alimentos. Tente novamente."
-    }
+    },
+    "createRecipe": "Criar receita",
+    "emptyRecipes": "Ainda não há receitas.",
+    "ingredientContext": "A adicionar a {{recipe}}",
+    "ingredientContextNew": "A adicionar à nova receita",
+    "perServing": "por porção"
   },
   "customFood": {
     "title": "Novo alimento",
@@ -545,5 +556,49 @@
   "myFoods": {
     "title": "Os meus alimentos",
     "empty": "Ainda não há alimentos personalizados. Crie-os na pesquisa de alimentos."
+  },
+  "recipe": {
+    "title": "Nova receita",
+    "editTitle": "Editar receita",
+    "name": "Nome*",
+    "servings": "Porções*",
+    "cookedWeight": "Peso cozinhado",
+    "cookedHelper": "O peso de uma porção depois de cozinhada.",
+    "rawWeight": "Peso cru",
+    "rawComputed": "Calculado a partir dos ingredientes",
+    "rawOverride": "O seu valor",
+    "rawUnknown": "Indique o peso cru para registar em {{unit}}.",
+    "reset": "Repor",
+    "perServingUnit": "{{unit}} por porção",
+    "ingredients": "Ingredientes",
+    "addIngredient": "Adicionar ingrediente",
+    "noIngredients": "Adicione pelo menos um ingrediente.",
+    "deletedFood": "Alimento eliminado",
+    "remove": "Remover",
+    "perServing": "Por porção",
+    "wholeRecipe": "Receita completa",
+    "save": "Guardar",
+    "saveError": "Não foi possível guardar. Tente novamente.",
+    "delete": "Eliminar receita",
+    "deleteTitle": "Eliminar {{name}}?",
+    "deleteBody": "Os registos do diário mantêm a sua informação nutricional.",
+    "ingredientTitle": "Adicionar ingrediente",
+    "editIngredientTitle": "Editar ingrediente",
+    "errors": {
+      "name": "Introduza um nome até 80 caracteres.",
+      "servings": "Introduza um número de porções superior a 0.",
+      "weight": "Introduza um peso superior a 0."
+    },
+    "units": {
+      "serving": "porção",
+      "g_cooked": "g cozinhado",
+      "oz_cooked": "oz cozinhado",
+      "g_raw": "g cru",
+      "oz_raw": "oz cru"
+    }
+  },
+  "myRecipes": {
+    "title": "As minhas receitas",
+    "empty": "Ainda não há receitas. Crie-as na pesquisa de alimentos."
   }
 }

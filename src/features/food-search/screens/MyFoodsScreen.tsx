@@ -9,23 +9,29 @@ import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
 import { useTheme } from '@/shared/theme';
 
 import { FoodResultRow } from '../components/FoodResultRow';
-import { useCustomFoodList, useLocalFoodWrites } from '../food-search.queries';
+import { useCustomFoodList, useLocalFoodWrites, useRecipeList } from '../food-search.queries';
 
 type Props = {
   onBack: () => void;
-  /** UX-25: the food's details, editable (UX-08 edit mode). */
+  /** UX-25: the food's details, editable (UX-08 edit mode); UX-27: the recipe editor (UX-26 edit mode). */
   onOpenFood: (food: Food) => void;
+  /** UX-27 My recipes lists recipes (DATA-28) with the same rows and swipe-delete. */
+  variant?: 'foods' | 'recipes';
 };
 
-/** UX-25 / NAV-06 My foods: every custom food (DATA-25); tap → details/edit; swipe → Delete + Undo. */
-export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
+/** UX-25 / NAV-06 My foods (UX-27 My recipes): DATA-25/28 order; tap → details/edit; swipe → Delete + Undo. */
+export function MyFoodsScreen({ onBack, onOpenFood, variant = 'foods' }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
   const settings = useAppSettings();
   const writes = useLocalFoodWrites();
   const [pages, setPages] = useState(1);
-  const list = useCustomFoodList(pages);
+  const recipes = variant === 'recipes';
+  const customList = useCustomFoodList(pages, !recipes);
+  const recipeList = useRecipeList(pages, recipes);
+  const list = recipes ? recipeList : customList;
+  const strings = recipes ? 'myRecipes' : 'myFoods';
   const [deletedFood, setDeletedFood] = useState<Food | null>(null);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const deleteFood = async (food: Food): Promise<boolean> => {
@@ -52,9 +58,12 @@ export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
-      <AppBar title={t('myFoods.title')} back={{ label: t('common.back'), onPress: onBack }} />
+      <AppBar title={t(`${strings}.title`)} back={{ label: t('common.back'), onPress: onBack }} />
       {settings.data && list.isSuccess ? (
-        <ScrollView contentContainerStyle={{ paddingBottom: theme.spacing[6] }} testID="my-foods">
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: theme.spacing[6] }}
+          testID={recipes ? 'my-recipes' : 'my-foods'}
+        >
           {deleteFailed ? (
             <View style={{ padding: theme.spacing[4] }}>
               <InlineStatus tone="error" message={t('foodSearch.deleteError')} />
@@ -62,7 +71,7 @@ export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
           ) : null}
           {foods.length === 0 ? (
             <AppText color="textSecondary" style={{ padding: theme.spacing[4] }}>
-              {t('myFoods.empty')}
+              {t(`${strings}.empty`)}
             </AppText>
           ) : (
             foods.map((food) => (

@@ -38,6 +38,8 @@ import {
   useOpenFoodFactsSearch,
   useOnlineStatus,
   useRecentFoods,
+  useRecipeList,
+  useRecipeSearch,
   refreshSavedFood,
   useSavedFoodSearch,
   useUsdaSearch,
@@ -48,7 +50,7 @@ const OFF_DEBOUNCE_MS = 800;
 const USDA_DEBOUNCE_MS = 800;
 
 /** UX-04 tabs. `all` is the sectioned search; the others are local lists that never call a provider. */
-type SearchTab = 'all' | 'recent' | 'custom';
+type SearchTab = 'all' | 'recent' | 'custom' | 'recipes';
 
 /** UX-04 select mode: Back (system back, swipe-back) while it's on leaves select mode instead of the screen. */
 export type SelectBackGuard = (enabled: boolean, onAttempt: () => void) => void;
@@ -72,6 +74,13 @@ type Props = {
   /** UX-04 select mode `Add to <meal>` committed (NAV-04: → Diary on the target date). */
   onAddedSelection: () => void;
   useSelectBackGuard?: SelectBackGuard;
+  /** UX-04 `Recipes` tab `Create recipe` → Create Recipe (UX-26), `initialName` = current query. */
+  onCreateRecipe?: (initialName: string) => void;
+  /**
+   * UX-04 ingredient mode (Ingredient Search over a UX-26 editor): tabs All · Recent · My foods, recipes excluded, no
+   * scan / ⚡ / select mode / create / swipe-delete. `mealId` and `date` are unused.
+   */
+  ingredientFor?: { recipeName: string };
 };
 
 /** UX-04 M4 subset: focused search, Recents without a query, and local custom-food results after 150 ms. */
@@ -90,7 +99,10 @@ export function FoodSearchScreen({
   onFoodDatabases,
   onAddedSelection,
   useSelectBackGuard = noBackGuard,
+  onCreateRecipe,
+  ingredientFor,
 }: Props) {
+  const ingredientMode = ingredientFor !== undefined;
   const { t, i18n } = useTranslation();
   const locale = useFormattingLocale();
   const theme = useTheme();
@@ -110,6 +122,7 @@ export function FoodSearchScreen({
   const [usdaQuery, setUsdaQuery] = useState(initialQuery.trim());
   const [offPages, setOffPages] = useState(1);
   const [customPages, setCustomPages] = useState(1);
+  const [recipePages, setRecipePages] = useState(1);
   const [savedPages, setSavedPages] = useState(1);
   const [usdaPages, setUsdaPages] = useState(1);
   const [tab, setTab] = useState<SearchTab>('all');
@@ -154,6 +167,8 @@ export function FoodSearchScreen({
   const shows = (id: FoodSearchSectionId) => tab === 'all' && visibleSections.includes(id);
   const custom = useCustomFoodSearch(debouncedQuery, customPages, shows('custom') || tab === 'custom');
   const customList = useCustomFoodList(customPages, tab === 'custom' && debouncedQuery.length === 0);
+  const recipeList = useRecipeList(recipePages, tab === 'recipes' && debouncedQuery.length === 0);
+  const recipeSearch = useRecipeSearch(debouncedQuery, recipePages, tab === 'recipes');
   const saved = useSavedFoodSearch(debouncedQuery, savedPages, shows('saved'));
   const off = useOpenFoodFactsSearch(
     offQuery,
@@ -164,12 +179,22 @@ export function FoodSearchScreen({
   const usda = useUsdaSearch(usdaQuery, usdaPages, shows('usda'));
   const online = useOnlineStatus();
   const meal = meals.data?.find((candidate) => candidate.id === mealId);
-  if (!meal || !settings.data || !sections.data) return null;
+  if ((!meal && !ingredientMode) || !settings.data || !sections.data) return null;
   const relative = relativeDay(date, today);
   const dateLabel = relative ? t(`diary.${relative}`) : formatShortDate(date, today, locale);
   const hasQuery = query.trim().length > 0;
   const searching = hasQuery && query.trim() !== debouncedQuery;
-  const customFoods = shows('custom') ? (custom.data ?? []) : [];
+  // POST-15: recipes are never ingredients, so ingredient mode leaves them out of Recents too.
+  const recentFoods = (recents.data ?? [])
+    .map(({ food }) => food)
+    .filter((food) => !ingredientMode || food.kind !== 'recipe');
+  const searchedCustom = shows('custom') ? (custom.data ?? []) : [];
+  // UX-04 / DATA-28: on `All` a recipe shows only while it is in Recents, inside the `My foods` section.
+  const recentRecipes =
+    shows('custom') && !ingredientMode
+      ? recentFoods.filter((food) => food.kind === 'recipe' && matchesFoodQuery(food, debouncedQuery))
+      : [];
+  const customFoods = [...searchedCustom, ...recentRecipes];
   // UX-18: while `Saved` is hidden there is no PROV-08 dedupe, so cached remote hits show in their remote section.
   const savedFoods = shows('saved') ? (saved.data ?? []) : [];
   const savedExternalIds = new Set(
@@ -185,6 +210,7 @@ export function FoodSearchScreen({
     if (value.trim() !== offQuery) {
       setOffPages(1);
       setCustomPages(1);
+      setRecipePages(1);
       setSavedPages(1);
       setUsdaPages(1);
     }
@@ -192,6 +218,7 @@ export function FoodSearchScreen({
   };
   const chooseTab = (next: SearchTab) => {
     setCustomPages(1);
+    setRecipePages(1);
     setTab(next);
   };
   const leaveSearch = () => {
@@ -206,7 +233,7 @@ export function FoodSearchScreen({
   const storedRowProps = (food: Food, open: () => void, onDelete?: () => Promise<boolean>) =>
     selecting
       ? { selected: selection.some((item) => item.id === food.id), onPress: () => toggleSelected(food) }
-      : { onPress: open, onDelete };
+      : { onPress: open, onDelete: ingredientMode ? undefined : onDelete };
   const addSelection = async () => {
     setAddFailed(false);
     try {
@@ -263,7 +290,7 @@ export function FoodSearchScreen({
             )}
           />
         ))}
-        {customFoods.length === customPages * 20 ? (
+        {searchedCustom.length === customPages * 20 ? (
           <TextAction
             icon="add"
             label={t('foodSearch.showMore')}
@@ -434,7 +461,6 @@ export function FoodSearchScreen({
     </AppText>
   );
   const noResults = <AppText style={padded}>{t('foodSearch.noResults', { query: query.trim() })}</AppText>;
-  const recentFoods = (recents.data ?? []).map(({ food }) => food);
   // UX-04 Recent tab: the ≤20 Recents (DATA-14), filtered in memory with the PROV-08 token rule.
   const recentTab = searching ? (
     searchingRow
@@ -498,8 +524,60 @@ export function FoodSearchScreen({
   );
   const customTab = (
     <>
-      {selecting ? null : createCustom}
+      {selecting || ingredientMode ? null : createCustom}
       {customRows}
+    </>
+  );
+  // UX-04 Recipes tab: every recipe (DATA-28 order) without a query; `searchRecipes` with one.
+  const recipes = (hasQuery ? recipeSearch.data : recipeList.data) ?? [];
+  const recipesLoaded = hasQuery ? recipeSearch.isSuccess : recipeList.isSuccess;
+  const recipesTab = (
+    <>
+      {selecting ? null : (
+        <View style={padded}>
+          <TextAction
+            icon="add"
+            label={t('foodSearch.createRecipe')}
+            onPress={() => onCreateRecipe?.(query.trim())}
+            testID="food-create-recipe"
+          />
+        </View>
+      )}
+      {searching ? (
+        searchingRow
+      ) : !recipesLoaded ? null : recipes.length === 0 ? (
+        hasQuery ? (
+          noResults
+        ) : (
+          <AppText color="textSecondary" style={padded}>
+            {t('foodSearch.emptyRecipes')}
+          </AppText>
+        )
+      ) : (
+        <>
+          {recipes.map((food) => (
+            <FoodResultRow
+              key={food.id}
+              food={food}
+              locale={locale}
+              energyUnit={settings.data.energyUnit}
+              {...storedRowProps(
+                food,
+                () => onSelectFood(food),
+                () => deleteFood(food),
+              )}
+            />
+          ))}
+          {recipes.length === recipePages * 20 ? (
+            <TextAction
+              icon="add"
+              label={t('foodSearch.showMore')}
+              onPress={() => setRecipePages((current) => current + 1)}
+              testID="food-search-recipes-show-more"
+            />
+          ) : null}
+        </>
+      )}
     </>
   );
 
@@ -550,14 +628,16 @@ export function FoodSearchScreen({
                   testID="food-search-clear"
                 />
               ) : null}
-              <PressableIcon
-                icon="barcode-outline"
-                accessibilityLabel={t('foodSearch.scanBarcode')}
-                onPress={onScan}
-                disabled={selecting}
-                color="textSecondary"
-                testID="food-search-scan"
-              />
+              {ingredientMode ? null : (
+                <PressableIcon
+                  icon="barcode-outline"
+                  accessibilityLabel={t('foodSearch.scanBarcode')}
+                  onPress={onScan}
+                  disabled={selecting}
+                  color="textSecondary"
+                  testID="food-search-scan"
+                />
+              )}
             </View>
           </View>
         }
@@ -577,25 +657,33 @@ export function FoodSearchScreen({
             paddingTop: theme.spacing[1],
           }}
         >
-          <AppText variant="compact" color="textSecondary" style={{ flex: 1 }}>
-            {t('foodSearch.context', { meal: meal.name, date: dateLabel })}
+          <AppText variant="compact" color="textSecondary" style={{ flex: 1 }} testID="food-search-context">
+            {ingredientFor
+              ? ingredientFor.recipeName
+                ? t('foodSearch.ingredientContext', { recipe: ingredientFor.recipeName })
+                : t('foodSearch.ingredientContextNew')
+              : t('foodSearch.context', { meal: meal!.name, date: dateLabel })}
           </AppText>
-          <PressableIcon
-            icon={selecting ? 'checkmark-done-circle' : 'checkmark-done-outline'}
-            accessibilityLabel={t('foodSearch.select.toggle')}
-            onPress={() => (selecting ? leaveSelectMode() : setSelecting(true))}
-            selected={selecting}
-            color={selecting ? 'primary' : 'textSecondary'}
-            testID="food-search-select"
-          />
-          <PressableIcon
-            icon="flash-outline"
-            accessibilityLabel={t('foodSearch.quickCalories')}
-            onPress={onQuickCalories}
-            disabled={selecting}
-            color="textSecondary"
-            testID="food-search-quick-calories"
-          />
+          {ingredientMode ? null : (
+            <>
+              <PressableIcon
+                icon={selecting ? 'checkmark-done-circle' : 'checkmark-done-outline'}
+                accessibilityLabel={t('foodSearch.select.toggle')}
+                onPress={() => (selecting ? leaveSelectMode() : setSelecting(true))}
+                selected={selecting}
+                color={selecting ? 'primary' : 'textSecondary'}
+                testID="food-search-select"
+              />
+              <PressableIcon
+                icon="flash-outline"
+                accessibilityLabel={t('foodSearch.quickCalories')}
+                onPress={onQuickCalories}
+                disabled={selecting}
+                color="textSecondary"
+                testID="food-search-quick-calories"
+              />
+            </>
+          )}
         </View>
         <View style={{ paddingTop: theme.spacing[2] }}>
           <TabStrip
@@ -603,6 +691,7 @@ export function FoodSearchScreen({
               { id: 'all', label: t('foodSearch.tabs.all') },
               { id: 'recent', label: t('foodSearch.tabs.recent') },
               { id: 'custom', label: t('foodSearch.tabs.custom') },
+              ...(ingredientMode ? [] : [{ id: 'recipes' as const, label: t('foodSearch.tabs.recipes') }]),
             ]}
             selected={tab}
             onSelect={chooseTab}
@@ -619,6 +708,8 @@ export function FoodSearchScreen({
           <View style={{ paddingTop: theme.spacing[2] }}>{recentTab}</View>
         ) : tab === 'custom' ? (
           <View style={{ paddingTop: theme.spacing[2] }}>{customTab}</View>
+        ) : tab === 'recipes' ? (
+          <View style={{ paddingTop: theme.spacing[2] }}>{recipesTab}</View>
         ) : hasQuery ? (
           <>
             {searching ? (
@@ -675,7 +766,7 @@ export function FoodSearchScreen({
               {t('foodSearch.select.count', { count: selection.length })}
             </AppText>
             <PrimaryButton
-              label={t('foodSearch.select.add', { meal: meal.name })}
+              label={t('foodSearch.select.add', { meal: meal?.name ?? '' })}
               onPress={() => void addSelection()}
               disabled={selection.length === 0}
               loading={diaryWrites.addFoodEntries.isPending}

@@ -17,7 +17,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | Nutrient details (user-requested) | awaiting user device check |
 | Barcode scanning (user-requested) | awaiting user device check |
 | My foods (user-requested) | awaiting user device check |
-| Recipes (user-requested) | in progress |
+| Recipes (user-requested) | awaiting user device check |
 
 Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new UX-23 Theme screen (`System | Light | Dark`, default System) from a Profile `APP › Theme` row (UX-15, NAV-06), DATA-23 `theme_preference` (migration 5), the widget follows the theme too (DS-14: both versions on `System`). Needs a native rebuild (`userInterfaceStyle: automatic`); not checked on a device. 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -33,18 +33,20 @@ Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new U
 
 ## Recipes (user-requested, 2026-10-01)
 
-Status: **in progress** · Spec: SCOPE-13, NAV-02/04/06/08, DATA-17/25/27/28, UX-04/05/15/19/26/27, POST-14/15 · In-session, no device tests, gate on `npm run check`.
+Status: **agent work done; device check and pt-PT review are the user's** · Spec: SCOPE-13, NAV-02/04/06/08, DATA-17/25/27/28, UX-04/05/15/19/26/27, POST-14/15 · In-session, no device tests, gate on `npm run check`.
 
 ### Tasks
 
 - [x] T1 Specs: recipe = `foods.kind = 'recipe'` with stored per-serving nutrition; required servings, optional cooked g/serving, raw g/serving auto from ingredients with override; units `serving` · `g cooked` · `g raw`; ingredient edits recompute recipes; no nesting (POST-15); Food Search `Recipes` tab, `All` shows recipes only while recent; Profile › My recipes.
 - [x] T2 Migration 7 + `schema.sql` (`foods.kind`, `recipes`, `recipe_ingredients`); recipe math in `domain/` (factor, unknowns, raw weight, servings rows); migration + domain tests.
 - [x] T3 Repository: `createRecipe` / `updateRecipe` / `getRecipe` / `listRecipes` / `countRecipes` / `searchRecipes`; recompute on ingredient food change (DATA-26 edit, DATA-15 upsert); recipes out of `listCustom` / `searchCustom` / `findByBarcode`; recent recipes in `All` › `My foods`.
-- [ ] T4 Recipe editor (UX-26) + in-memory draft + routes `createRecipe` / `editRecipe`.
-- [ ] T5 Ingredient Search / Detail (UX-04/05 ingredient mode) in both stacks.
-- [ ] T6 Food Search `Recipes` tab; Food Detail recipe units.
-- [ ] T7 Profile › My recipes (UX-27), Profile row, delete + Undo; en + pt-PT strings.
-- [ ] Device check: the user's.
+- [x] T4 Recipe editor (UX-26) + in-memory draft + routes `createRecipe` / `editRecipe`.
+- [x] T5 Ingredient Search / Detail (UX-04/05 ingredient mode) in both stacks.
+- [x] T6 Food Search `Recipes` tab; Food Detail recipe units.
+- [x] T7 Profile › My recipes (UX-27), Profile row, delete + Undo; en + pt-PT strings.
+- [x] Tests: `recipe.test.ts` (math), `recipes.test.ts` (repository), `migrations.test.ts` (v7), `recipes.nav.test.tsx` (create → ingredient → save → log; `All` only while recent; My recipes edit), `servings.test.ts` (`isMeasureLabel`).
+- Notes: recipe serving units are `serving` / `g_cooked` / `oz_cooked` / `g_raw` / `oz_raw` with labels localized at save (DATA-27); the draft is an in-memory store keyed by id (`features/recipes/recipeDraft.ts`); Ingredient Search / Detail reuse `FoodSearchScreen` / `FoodDetailScreen` in ingredient mode. Under full-suite load the existing `select-mode.nav` and Add/Edit Meal delete tests hit the 5 s Jest timeout now and then (pass alone and on rerun).
+- [ ] Device check: the user's (4 tabs on a 360 dp phone incl. pt-PT, recipe editor keyboard + raw weight Reset, ingredient flow in both stacks, Diary rows `350 g cooked`).
 
 ## Multi-add select mode (user-requested, 2026-10-01)
 

@@ -2,6 +2,7 @@ import {
   adjustRulerQuantity,
   convertServingQuantity,
   initialServing,
+  isMeasureLabel,
   rulerSpec,
   snapRulerQuantity,
   type ServingLike,
@@ -63,5 +64,19 @@ describe('UX-05 / DS-09 / DS-11: ruler rules', () => {
     expect(adjustRulerQuantity(2, 'increment', servings[2]!)).toBe(2.25);
     expect(adjustRulerQuantity(0.25, 'decrement', servings[2]!)).toBe(0.25);
     expect(adjustRulerQuantity(1.2, 'decrement', servings[1]!)).toBe(1.1);
+  });
+});
+
+describe('DS-08 / DATA-27: measure labels', () => {
+  it('reads g / oz / fl oz and recipe weights as measures, anything else as a count', () => {
+    expect(['g', 'oz', 'fl oz', 'g cooked', 'oz raw', 'g cozinhado'].map(isMeasureLabel)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(['egg', 'serving', 'slice'].map(isMeasureLabel)).toEqual([false, false, false]);
   });
 });

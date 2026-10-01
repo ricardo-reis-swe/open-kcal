@@ -39,6 +39,11 @@ export default function FoodSearchRoute() {
           routes.createCustomFood({ mealId: params.mealId, date: params.date, initialName, origin: params.origin }),
         )
       }
+      onCreateRecipe={(initialName) =>
+        router.push(
+          routes.createRecipe({ mealId: params.mealId, date: params.date, initialName, origin: params.origin }),
+        )
+      }
       onFoodDatabases={() => router.navigate(routes.foodDatabases())}
       useSelectBackGuard={useSelectBackGuard}
       onAddedSelection={() => {

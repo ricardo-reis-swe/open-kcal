@@ -35,7 +35,12 @@ export function FoodResultRow({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const basis = food.brand || t('foodSearch.perBasis', { quantity: food.basisQuantity, unit: food.basisUnit });
+  // UX-04 / UX-27: a recipe reads `per serving · Recipe` (DATA-27 stores it per 1 serving).
+  const recipe = food.kind === 'recipe';
+  const basis = recipe
+    ? t('foodSearch.perServing')
+    : food.brand || t('foodSearch.perBasis', { quantity: food.basisQuantity, unit: food.basisUnit });
+  const sourceLabel = t(recipe ? 'foodSearch.sources.recipe' : `foodSearch.sources.${food.source}`);
   const energy = t('foodSearch.energy', {
     value: formatEnergy(food.nutrients.energyKcal, energyUnit, locale),
     unit: t(`diary.units.${energyUnit}`),
@@ -73,7 +78,7 @@ export function FoodResultRow({
             {food.name}
           </AppText>
           <AppText variant="compact" color={dimmed ? 'textTertiary' : 'textSecondary'} numberOfLines={1}>
-            {basis} · {t(`foodSearch.sources.${food.source}`)}
+            {basis} · {sourceLabel}
           </AppText>
         </View>
         <View style={{ width: 64, flexShrink: 0, alignItems: 'flex-end', marginLeft: theme.spacing[2] }}>
