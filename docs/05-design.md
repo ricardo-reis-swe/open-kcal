@@ -74,6 +74,7 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 - Offline: inline provider status in Food Search, local/cached results kept. No Diary offline banner unless the current action is affected.
 - Error: field errors at the field; provider errors in the provider section; full screen only if the screen can't work.
 - Success: return to the updated screen. Toast/banner only when the result isn't visible (e.g. meal copied to another date), except the temporary Undo toast after a swipe-revealed Delete.
+- Toasts: a horizontal swipe (either way) past ~35% of the width, or a fling, dismisses a toast; a short swipe springs back. Dismissing = timing out, never Undo. The timer pauses while held and restarts on spring-back. Reduced motion fades it out instead of sliding. Non-gesture alternative: auto-dismiss + the screen-reader escape/`Close` action (DS-11).
 - Motion: durations in `motionMs`, platform easing, interruptible. Animate only the changed row + progress, never the whole Diary. Reduced motion: no big translations or decorative progress animation, use fades/instant updates, keep all info and states.
 - Haptics only for: meaningful ruler ticks, a successful barcode read, save success when not otherwise obvious, destructive confirmation where the platform supports it.
 
