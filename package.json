@@ -9,6 +9,7 @@
     "android": "expo run:android",
     "android:usb": "REACT_NATIVE_PACKAGER_HOSTNAME=localhost expo run:android",
     "android:phone": "expo run:android --variant release --device $ANDROID_DEVICE_NAME --no-bundler && \"${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb\" -s $ANDROID_DEVICE_SERIAL shell am start -n com.ricardoreis.calorietracker/.MainActivity",
+    "ios:phone": "NETRC=$(mktemp) LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios --configuration Release --device $IOS_DEVICE_ID --no-bundler && xcrun devicectl device process launch --device $IOS_DEVICE_ID com.ricardoreis.calorietracker",
     "lint": "expo lint --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "jest",
