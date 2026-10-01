@@ -17,6 +17,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | Nutrient details (user-requested) | awaiting user device check |
 | Barcode scanning (user-requested) | awaiting user device check |
 | My foods (user-requested) | awaiting user device check |
+| Recipes (user-requested) | in progress |
 
 Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new UX-23 Theme screen (`System | Light | Dark`, default System) from a Profile `APP › Theme` row (UX-15, NAV-06), DATA-23 `theme_preference` (migration 5), the widget follows the theme too (DS-14: both versions on `System`). Needs a native rebuild (`userInterfaceStyle: automatic`); not checked on a device. 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -29,6 +30,21 @@ Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new U
 2026-09-28 (user-approved, commit "feat(food-search): separate provider sections, 10 per page") UX-04/PROV-08: reverted the merged `Online` list (4a3df52) to separate `Open Food Facts` and `USDA` sections, each with its own `Show more` and inline status (OFF now also shows its busy state); remote page size 10 (cap 5 pages = 50 per section); kept `keyboardShouldPersistTaps`, the `food-search-create-custom` testID and the m4 top-action tap (`FoodSearchScreen.tsx`, `usda/client.ts`, `open-food-facts/client.ts`; tests `FoodSearchScreen.test.tsx`, client tests); live Android `egg` checked.
 
 2026-09-28 (user-approved, commit "docs(spec): Food Search section order and visibility") SCOPE-01/UX-18/UX-04/DATA-19/ROAD-01/ROAD-02: new MVP feature for M9, reorder and show/hide the 4 Food Search sections on Food Databases (spec only; migration 2 + `schema.sql` change come with the code).
+
+## Recipes (user-requested, 2026-10-01)
+
+Status: **in progress** · Spec: SCOPE-13, NAV-02/04/06/08, DATA-17/25/27/28, UX-04/05/15/19/26/27, POST-14/15 · In-session, no device tests, gate on `npm run check`.
+
+### Tasks
+
+- [x] T1 Specs: recipe = `foods.kind = 'recipe'` with stored per-serving nutrition; required servings, optional cooked g/serving, raw g/serving auto from ingredients with override; units `serving` · `g cooked` · `g raw`; ingredient edits recompute recipes; no nesting (POST-15); Food Search `Recipes` tab, `All` shows recipes only while recent; Profile › My recipes.
+- [ ] T2 Migration 7 + `schema.sql` (`foods.kind`, `recipes`, `recipe_ingredients`); recipe math in `domain/` (factor, unknowns, raw weight, servings rows); migration + domain tests.
+- [ ] T3 Repository: `createRecipe` / `updateRecipe` / `getRecipe` / `listRecipes` / `countRecipes` / `searchRecipes`; recompute on ingredient food change (DATA-26 edit, DATA-15 upsert); recipes out of `listCustom` / `searchCustom` / `findByBarcode`; recent recipes in `All` › `My foods`.
+- [ ] T4 Recipe editor (UX-26) + in-memory draft + routes `createRecipe` / `editRecipe`.
+- [ ] T5 Ingredient Search / Detail (UX-04/05 ingredient mode) in both stacks.
+- [ ] T6 Food Search `Recipes` tab; Food Detail recipe units.
+- [ ] T7 Profile › My recipes (UX-27), Profile row, delete + Undo; en + pt-PT strings.
+- [ ] Device check: the user's.
 
 ## Multi-add select mode (user-requested, 2026-10-01)
 

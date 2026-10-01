@@ -12,13 +12,16 @@ Read when: adding routes, wiring save/cancel/back, or changing where a flow retu
 App Root
 ├── Tabs: Diary | + (action) | Profile
 │   ├── Diary Stack: Diary, Food Search, Barcode Scanner, Food Detail / Add Entry,
-│   │                Edit Food Entry, Quick Calories, Edit Quick Calories, Create Custom Food
+│   │                Edit Food Entry, Quick Calories, Edit Quick Calories, Create Custom Food,
+│   │                Create Recipe, Ingredient Search, Ingredient Detail
 │   └── Profile Stack: Profile, Calories & Macros, Meals, Add / Edit Meal, Units,
 │                      Weight Goal, Weight History, Food Databases / USDA API Key,
-│                      My Foods, Edit Custom Food
+│                      My Foods, Edit Custom Food, My Recipes, Edit Recipe,
+│                      Ingredient Search, Ingredient Detail
 └── App-level overlays: Add Action Sheet, Date Picker, Meal Picker, Serving Unit Picker,
                         Dashboard Action Sheet, Copy Sheet, Weight Entry Sheet, Confirmation Dialogs
 ```
+- Ingredient Search / Detail are registered in both stacks and always live in the stack of the recipe editor that opened them (UX-26).
 - Bottom bar has exactly 3 items: `Diary  +  Profile`. `+` owns no stack and is never shown as selected.
 - Each tab keeps its own stack when switching tabs. Tapping the already-selected tab pops it to root.
 - Diary tab tapped while deeper → root, same date. Tapped while at root → scroll to top.
@@ -41,13 +44,16 @@ App Root
 | Screen | Shows / does | Exits |
 |---|---|---|
 | Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, `+` per meal header. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → reveals Delete; tap deletes. Meal/entry `…` → dashboard actions. Meal `+` → Food Search(meal, date). |
-| Food Search | Search input; tabs `All` · `Recent` · `My foods` (UX-04); recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. Scan icon in the field. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Scan icon → Barcode Scanner (meal, date). Create Custom Food → keeps date + meal. Select mode `Add to <meal>` (UX-04) → Diary on the target date, totals refreshed; search is left. Back → leaves select mode if on; else origin, nothing created. |
+| Food Search | Search input; tabs `All` · `Recent` · `My foods` · `Recipes` (UX-04); recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. Scan icon in the field. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Scan icon → Barcode Scanner (meal, date). Create Custom Food / Create recipe → keeps date + meal. Select mode `Add to <meal>` (UX-04) → Diary on the target date, totals refreshed; search is left. Back → leaves select mode if on; else origin, nothing created. |
 | Barcode Scanner | Camera, torch, manual code entry; looks the code up (PROV-15). UX-24. | Found → **replaces** itself with Food Detail (so Save/back land on Food Search). Not found → `Create custom food` **replaces** itself with Create Custom Food (barcode kept, DATA-24). Back → Food Search, query and results intact. |
 | Food Detail / Add Entry | Food identity, units, ruler, live kcal/macros, target meal (changeable via Meal Picker), target date. | Save → writes, returns to Food Search (query and results intact) with `Added <food> to <meal>` (DS-10); the Diary is already on the target date when search is left (user decision 2026-09-30). Cancel/back → nothing saved. |
 | Edit Food Entry | Loads date, meal, food, serving and nutrition from `entryId`. Ruler, unit, reassign meal, Save, Delete. | Save/delete → Diary, totals refreshed. |
 | Quick Calories | Meal (changeable via Meal Picker), calories, optional note, Add. Macros unknown. | Add → origin, totals refreshed. |
 | Edit Quick Calories | Meal, calories, note; Save, Delete. | Same return and delete rules as Edit Food Entry. |
 | Create Custom Food | Fields from SCOPE-06; optional `barcode` param from the scanner. | Save → stores food → Food Detail with that food, original date + meal. Does NOT log automatically. Cancel → Food Search with query and results intact. |
+| Create Recipe | UX-26 editor, from the Food Search `Recipes` tab. | Save → stores recipe → **replaces** itself with Food Detail for that recipe, original date + meal. Does NOT log automatically. Back → Food Search with query and results intact (dirty → `Discard changes?`). |
+| Ingredient Search | UX-04 ingredient mode, over a recipe editor. | Result → Ingredient Detail. Back → recipe editor, draft intact. |
+| Ingredient Detail | UX-05 ingredient mode. | Add → recipe editor (pops Ingredient Search too), ingredient appended. Save (existing ingredient) → recipe editor. Back → previous screen, draft unchanged. |
 
 ## NAV-05 Date
 - The selected date is owned by the Diary stack (not a component). It survives search, add/edit and tab switches. Fresh launch = today.
@@ -57,7 +63,7 @@ App Root
 ## NAV-06 Profile stack screens
 | Screen | Behavior |
 |---|---|
-| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, My Foods, Food Databases, Theme. |
+| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, My Foods, My Recipes, Food Databases, Theme. |
 | Calories & Macros | Edit kcal/carb/protein/fat goals. Save → Profile; diary targets update immediately. |
 | Meals | Meals in saved order. Reorder in the list; tap → Add/Edit Meal; add new; delete via confirmation. Defaults are ordinary records. |
 | Add / Edit Meal | Create or rename. Save → Meals. Delete only in edit mode (protected, NAV-08). |
@@ -68,6 +74,8 @@ App Root
 | Theme | System / Light / Dark (UX-23). Each change saves immediately; back → Profile. |
 | My Foods | Every custom food (UX-25). Row → Edit Custom Food. Swipe → Delete + Undo (UX-04). Back → Profile. Logging stays a Diary flow (`+`, Food Search). |
 | Edit Custom Food | The UX-08 form filled with the food (UX-25). Save → My Foods. `Delete food` (confirmed) → My Foods. Dirty back → `Discard changes?`. |
+| My Recipes | Every recipe (UX-27). Row → Edit Recipe. Swipe → Delete + Undo (UX-04). Back → Profile. |
+| Edit Recipe | UX-26 editor filled with the recipe. Add ingredient → Ingredient Search (Profile stack). Save → My Recipes. `Delete recipe` (confirmed) → My Recipes. Dirty back → `Discard changes?`. |
 | Food Databases | Lists Open Food Facts + USDA. Add, replace or remove USDA key; shows whether USDA search is available. Key goes to secure storage; never shown in full after saving. |
 
 ## NAV-07 Sheets
@@ -78,11 +86,11 @@ App Root
 - **Weight Entry Sheet** (from `+`, Profile, Weight History): date, weight, configured unit, Save, Delete (edit only). Date ≤ today. Create mode defaults to today and the configured unit; edit mode loads the record. Save → close, refresh Profile/History.
 
 ## NAV-08 Confirmation required before
-Deleting a food entry from its edit screen · deleting a Quick Calories entry from its edit screen · deleting a custom food from its edit screen · deleting a weight entry · deleting a meal · removing the USDA key.
+Deleting a food entry from its edit screen · deleting a Quick Calories entry from its edit screen · deleting a custom food from its edit screen · deleting a recipe from its edit screen · deleting a weight entry · deleting a meal · removing the USDA key.
 - The dialog names the object; the destructive action is visually distinct.
 - Deleting a meal that has entries MUST require picking another existing meal to reassign them to. Never silently delete diary history.
 - Not in this list, so no dialog: the swipe-revealed Delete on a Diary entry or saved food. The row deletes immediately and offers a temporary Undo toast.
-- Also confirmed: leaving a dirty Create / Edit Custom Food or Calories & Macros form (`Discard changes?`, UX-00).
+- Also confirmed: leaving a dirty Create / Edit Custom Food, Create / Edit Recipe or Calories & Macros form (`Discard changes?`, UX-00).
 
 ## NAV-09 Route rules
 - Routes pass IDs and lightweight context only, never DB objects.

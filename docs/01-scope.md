@@ -8,6 +8,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Log foods into meals; search USDA FoodData Central + Open Food Facts.
 - Quick Calories: calories without a food (SCOPE-05).
 - Custom foods (SCOPE-06).
+- Recipes: custom foods made of other foods (SCOPE-13).
 - Ruler serving selector with live kcal/macro updates (SCOPE-07).
 - Diary per date: date-strip or large overview chevrons change days; Today action and calendar jump. Past, today and future dates all editable.
 - Entries shown directly under their meal; tap any entry on the Diary to edit it.
@@ -68,7 +69,7 @@ Scrambled eggs
 - Weight history is stored from day one, even if the first UI is simple.
 
 ## SCOPE-10 Out of MVP — MUST NOT build or add placeholders for
-Accounts · cloud sync · social · recipes · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
+Accounts · cloud sync · social · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
 
 Other docs refer to this list instead of repeating it.
 
@@ -81,3 +82,11 @@ Other docs refer to this list instead of repeating it.
 - UI in **English** (default and fallback) and **European Portuguese (pt-PT)**. The app follows the device/OS per-app language; there is no in-app switcher.
 - Primary market: Portugal. Units, decimals and dates follow the device locale.
 - User data (food and meal names, notes) is never translated.
+
+## SCOPE-13 Recipes
+- User request 2026-10-01 (was POST-14). A recipe is a custom food made of other foods: any stored food or Food Search result, never another recipe.
+- Required: name, number of servings, ≥1 ingredient (food + amount in any of its valid servings). Optional: cooked weight per serving; raw weight per serving (filled automatically when the ingredients' raw weight is known, user can override).
+- Example (user decision 2026-10-01): 1 kg of raw ingredients → 4 servings, each 350 g cooked = 250 g raw. A portion logs as `1 serving`, `350 g cooked` or `250 g raw`, all with the same nutrition.
+- Nutrition = the sum of the ingredients ÷ servings. Logged like any food in `serving`, plus `g cooked` / `g raw` when that weight is known (DATA-27).
+- Editing an ingredient food updates every recipe that uses it. Diary entries keep their snapshots (DATA-05).
+- Created from Food Search › `Recipes` (UX-04, UX-26); viewed, edited and deleted from Profile › My recipes (UX-27). On Food Search `All` a recipe shows only while it is in Recents.

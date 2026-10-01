@@ -68,7 +68,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 ```text
 [‹ [🔍 Search foods            ✕ ▥]       ]
 [Adding to Lunch · Today            ✓✓ ⚡ ]
-[   All   |   Recent   |   My foods       ]
+[  All  | Recent | My foods | Recipes    ]
 [RECENT / results by section…             ]
 ```
 - Opens with the field focused (not when opened for NAV-03 Scan Barcode). Trailing field icon: scan (a11y `Scan barcode`) → Barcode Scanner (UX-24). Quick-calories ⚡ (a11y `Quick calories`) trails the `Adding to <meal> · <date>` line (user request 2026-10-01) → Quick Calories (same meal/date; back returns here). No action row above the tabs. `Create custom food` → Create Custom Food (`initialName` = current query); it MUST appear only on the `My foods` tab.
@@ -91,19 +91,22 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Tapping an expired cached food opens it immediately with cached values; a background refresh (when online) updates it for next time and never changes values on an open screen.
 - **Delete saved food**: a left swipe on any stored-food row (`My foods`, `Saved` or Recent) reveals a `Delete` button (DS-08); tapping it soft-deletes the food (DATA-11) and shows `<food> deleted · Undo` for 5 seconds. A short swipe springs closed; no dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. Remote provider rows (not yet saved) have no swipe action. Custom foods are edited from Profile › My foods (UX-25).
 - Clearing the field returns to the no-query state. Returning from Food Detail keeps the query and results. Search key = `search`.
-- **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods`, under the search field. Opens on `All`; switching keeps the query. Outside select mode, Scan, Quick calories and swipe-delete work on every tab.
+- **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods` · `Recipes`, under the search field. Opens on `All`; switching keeps the query. Outside select mode, Scan, Quick calories and swipe-delete work on every tab.
   | Tab | No query | Query |
   |---|---|---|
   | All | Recent (above) | the sections above |
   | Recent | the ≤20 Recents (DATA-14) | those Recents filtered in memory, PROV-08 token rule |
-  | My foods | every custom food, DATA-25 order, 20 per page + `Show more` | `searchCustom` (PROV-08 rank), 20 per page |
-- `Recent` and `My foods` are local only: no provider request, no offline row. UX-18 `Search results` visibility applies to `All` only (a hidden `My foods` section still has its tab).
-- `My foods` tab: a `Create custom food` row always comes first, above the list or empty state.
-- Empty: Recent `No recent foods yet.`; My foods `No custom foods yet.`; a query with no match → `No foods found for "<q>".`
-- Recipes (POST-14) would be a 4th tab; MUST NOT be added as a placeholder.
+  | My foods | every custom food (no recipes), DATA-25 order, 20 per page + `Show more` | `searchCustom` (PROV-08 rank), 20 per page |
+  | Recipes | every recipe, DATA-28 `listRecipes`, 20 per page + `Show more` | `searchRecipes`, 20 per page |
+- Recipes on `All` (user decision 2026-10-01): only while they are in Recents. No query → the Recent list as usual; query → matching recent recipes in the `My foods` section (DATA-28). Never just because they exist.
+- `Recent`, `My foods` and `Recipes` are local only: no provider request, no offline row. UX-18 `Search results` visibility applies to `All` only (a hidden `My foods` section still has its tab).
+- `My foods` tab: a `Create custom food` row always comes first, above the list or empty state. `Recipes` tab: a `Create recipe` row first → Create Recipe (UX-26, `initialName` = current query); hidden in select mode.
+- Empty: Recent `No recent foods yet.`; My foods `No custom foods yet.`; Recipes `No recipes yet.`; a query with no match → `No foods found for "<q>".`
+- Recipe rows: source label `Recipe`, basis `per serving`.
+- **Ingredient mode** (Ingredient Search, NAV-04; UX-26 `Add ingredient`): same screen with tabs `All` · `Recent` · `My foods` only; recipes are excluded everywhere (POST-15). Context line `Adding to <recipe name>` (`Adding to new recipe` while unnamed). No scan, no ⚡, no select mode, no `Create custom food`, no swipe-delete. Result → Ingredient Detail (UX-05 ingredient mode). Remote results upsert on open as usual (DATA-15).
 - **Select mode** (multi-add, user request 2026-10-01):
   - Toggle: `checkmark-done` icon (a11y `Select multiple`, `selected` state) directly before ⚡ on the context line. Tap → select mode; tap again or Back → leaves select mode and clears the selection (Back does not leave the screen while select mode is on).
-  - Selectable: stored foods only (Recent, `My foods`, `Saved` rows). Remote rows not yet saved are dimmed and inert. **Why:** no network read at Add, works offline, no partial failures.
+  - Selectable: stored foods only (Recent, `My foods`, `Saved`, `Recipes` rows). Remote rows not yet saved are dimmed and inert. **Why:** no network read at Add, works offline, no partial failures.
   - Tapping a selectable row toggles it; it MUST NOT open Food Detail. Selected = `primaryTint` row tint + trailing check icon; no checkboxes. Row a11y: `selected` state; hint `Double tap to select`.
   - Off while active: swipe-delete, scan, Quick calories (disabled). `Create custom food` row hidden. Tabs, query, `Show more` keep working.
   - Selection keyed by `food_id`, kept in tap order across tabs and query changes; a food on two tabs is one item. Soft-deleted elsewhere → dropped from the selection.
@@ -130,6 +133,8 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Tapping the value chip → direct numeric entry (up to 2 decimals).
 - Ruler a11y: role `adjustable`, increment/decrement = one step, label `Serving, 2, egg, 156 kilocalories`.
 - Header action label: `Add`. The Meal row already makes the target explicit. Returns per NAV-04.
+- **Recipes** (DATA-27): unit tabs `serving`, then `g cooked` / `g raw` when known, in the preferred food weight unit (no plain g/oz). Subtitle `Recipe · per serving`. Initial serving as above (default = 1 serving).
+- **Ingredient mode** (Ingredient Detail): title `Add ingredient`, header action `Add`; no Meal or Date rows; nothing is logged and Recents aren't touched. Opened from an existing ingredient row (UX-26): title `Edit ingredient`, header `Save`, the ingredient's serving + quantity preselected. Add/Save writes into the UX-26 draft, not SQLite.
 - **Nutrition facts** (below Date, always shown): every catalog nutrient the food has (DATA-20), grouped (`Carbs & fats`, `Minerals`, `Vitamins`, `Other`) in catalog order, scaled live to the chosen serving like the macros; unknown nutrients are left out. Nothing known: `No other nutrients listed.` Compact rows per DS-09.
 
 ## UX-06 Edit Food Entry
@@ -211,12 +216,13 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 [Dashboard nutrients           4 shown › ]
 [FOOD DATA                                ]
 [My foods                     12 foods   › ]
+[My recipes                    3 recipes › ]
 [Food databases              USDA on     › ]
 [APP                                      ]
 [Theme                          System   › ]
 ```
 - No weight yet: `No weight logged yet`. No goal: `Goal —`.
-- `My foods` value: `<n> food(s)` (DATA-25 count); none → `None`.
+- `My foods` value: `<n> food(s)` (DATA-25 count); none → `None`. `My recipes` value: `<n> recipe(s)` (DATA-28 count); none → `None`.
 
 ## UX-16 Calories & Macros
 - Fields: Calories, Carbs, Protein, Fat. `Set macros by` toggles `Fixed grams` / `Percentages` and is persisted with the goal.
@@ -252,6 +258,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 | Delete weight | `Delete weight entry?` | `<weight> on <date>.` | `Delete weight` |
 | Delete meal, no entries | `Delete <meal>?` | — | `Delete meal` |
 | Delete custom food (UX-25 edit) | `Delete <food>?` | `Your diary entries keep their nutrition.` | `Delete food` |
+| Delete recipe (UX-26 edit) | `Delete <recipe>?` | `Your diary entries keep their nutrition.` | `Delete recipe` |
 | Remove USDA key | `Remove USDA API key?` | `USDA search will stop. Saved foods stay.` | `Remove key` |
 | Dirty exit (UX-00) | `Discard changes?` | — | `Discard` (other button: `Keep editing`) |
 - **Delete meal with entries** uses a sheet, not a dialog: `Delete <meal>? It has <n> entries. Move them to:` + radio list of the other meals + danger `Delete and move entries` (disabled until a meal is picked). Implements NAV-08 and DATA-10.
@@ -340,3 +347,33 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - Tap → the food's details in the UX-08 form, edit mode (user decision 2026-10-01: Profile is for viewing and editing, not logging). Save edits the food (DATA-26) → My foods. Returns per NAV-06.
 - Swipe left → `Delete` + `<food> deleted · Undo` (UX-04 rules, DATA-11).
 - Empty: `No custom foods yet. Create them from Food Search.`
+
+## UX-26 Create / Edit Recipe
+```text
+[‹  New recipe                       Save ]
+[Name*            [                     ] ]
+[Servings*        [ 4    ]                ]
+[Cooked weight    [ 350  ] g per serving  ]
+[Raw weight       [ 250  ] g per serving  ]   auto · Reset when overridden
+[INGREDIENTS                              ]
+[Rice                     400 g   1,440 kcal]
+[Chicken breast           600 g     990 kcal]
+[+ Add ingredient                         ]
+[PER SERVING   608 kcal                   ]
+[Carbs 72 g │ Protein 46 g │ Fat 9 g      ]
+[Whole recipe  2,430 kcal                 ]
+```
+- SCOPE-13, DATA-27/28. User request 2026-10-01. Create from Food Search `Recipes` (Diary stack); edit from My recipes (Profile stack, UX-27).
+- Name: word autocapitalization, prefilled from `initialName`. Servings: decimal > 0, required.
+- Weights in the preferred food weight unit, stored in g. Cooked weight optional, helper `The weight of one serving once cooked.` Raw weight shows the computed value (DATA-27) as the field value with helper `From the ingredients`; typing overrides it, helper becomes `Your value` + a `Reset` text action back to computed. Not computable and not overridden → empty, helper `Add the raw weight to log in g raw.`
+- Ingredient rows (DS-09): name · amount + unit · kcal. A soft-deleted food shows `Deleted food` as its secondary text. Tap → Ingredient Detail (UX-05, edit). Swipe left → `Remove` (draft only, no Undo, no dialog). Order = add order.
+- `+ Add ingredient` → Ingredient Search (UX-04 ingredient mode).
+- Totals update live; unknown macros/nutrients follow DATA-06 (known sum + unknown marker).
+- Draft: held in memory for the editor and its ingredient screens until Save; never written to SQLite before Save. Dirty exit → `Discard changes?` (UX-00).
+- Save enabled when valid (name, servings, ≥1 ingredient) and, in edit mode, changed. Create → NAV-04 (Food Detail for the recipe). Edit → My recipes.
+- Edit mode: title `Edit recipe`, filled from `getRecipe`; `Delete recipe` at the end (UX-19). Diary entries keep their snapshots.
+
+## UX-27 My Recipes
+- Profile › `My recipes` (UX-15). As UX-25 with recipe rows (`per serving · Recipe`), DATA-28 `listRecipes` order, 20 per page + `Show more`. No search, no create (create from Food Search `Recipes`).
+- Tap → UX-26 edit mode. Swipe left → `Delete` + `<recipe> deleted · Undo` (UX-04 rules, DATA-11).
+- Empty: `No recipes yet. Create them from Food Search.`

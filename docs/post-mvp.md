@@ -28,7 +28,7 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 - An optional provider behind the logger interface (ARCH-15). It must exclude health data and secrets, and its privacy impact must be documented.
 
 ## POST-07 Purge soft-deleted foods
-- Physically remove unreferenced soft-deleted custom foods during maintenance (DATA-11).
+- Physically remove unreferenced soft-deleted custom foods during maintenance (DATA-11). A food used as a recipe ingredient is referenced (DATA-27).
 
 ## POST-08 Scheduled live API contract check
 - A weekly CI job runs the provider Zod schemas (PROV-13) against the live USDA and OFF APIs, with a CI-secret USDA key. A failure opens an issue and never blocks PRs or normal test runs.
@@ -57,4 +57,8 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 - The full DS-13 matrix: small + large phone widths, large text, increased contrast, reduced motion, and screenshot sets per screen. The MVP runs the reduced DS-13 check only.
 
 ## POST-14 Recipes
-- Recipes are excluded from the MVP (SCOPE-10). When built, they get a 4th Food Search tab next to `My foods` (UX-04). User request 2026-10-01.
+- Moved into the MVP 2026-10-01 (user request): SCOPE-13. ID kept so it is not reused.
+
+## POST-15 Recipe extras
+- Recipes as ingredients of other recipes (nesting). Needs cycle checks and multi-level recompute (DATA-28). Deferred by user decision 2026-10-01.
+- Scan a barcode or create a custom food while picking ingredients (UX-04 ingredient mode hides both).

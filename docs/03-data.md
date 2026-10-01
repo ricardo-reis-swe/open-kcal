@@ -102,6 +102,7 @@ FROM diary_entries WHERE diary_date = ?;
 | Delete custom / saved food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
 | Edit custom food | DATA-26. |
+| Create / edit recipe | DATA-28. |
 | Update goals | DATA-09. |
 
 ## DATA-17 Initialization and migrations
@@ -111,6 +112,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Migration 4 adds `food_nutrients`, `diary_entry_nutrients` (DATA-20) and the DATA-21 settings columns. Existing foods and entries get no rows (unknown); nothing is backfilled.
 - Migration 5 adds DATA-23 `theme_preference`; existing installs get `system`.
 - Migration 6 adds DATA-24 `foods.barcode` + its index and backfills saved OFF foods.
+- Migration 7 adds DATA-27 `foods.kind`, `recipes` and `recipe_ingredients`. Existing foods get `kind = 'food'`.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.
 
@@ -185,10 +187,44 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 - Barcodes are diary-adjacent data: MUST NOT be logged (ARCH-15).
 
 ## DATA-25 Custom food list
-- `listCustom(limit, offset)`: active custom foods (`source = 'custom' AND is_deleted = 0`), ordered `recent_foods.last_used_at` DESC (never used last), then `foods.created_at` DESC, then `id`. Pages of 20. `countCustom()` counts the same set. No schema change.
+- `listCustom(limit, offset)`: active custom foods (`source = 'custom' AND kind = 'food' AND is_deleted = 0`; recipes are listed by DATA-28 `listRecipes`), ordered `recent_foods.last_used_at` DESC (never used last), then `foods.created_at` DESC, then `id`. Pages of 20. `countCustom()` counts the same set. No schema change.
 - Used by the UX-04 `My foods` tab without a query and by UX-25; Profile shows the count (UX-15).
 - An added entry invalidates Recents and this list, so a logged food moves to the top.
 
 ## DATA-26 Edit custom food
 - `updateCustom(id, input)`: active `custom` foods only (else not found). Tx: validate as create → update name, brand, basis, kcal/macros, `updated_at` → merge servings by `(label, unit)` as PROV-09 (matched IDs survive, so `recent_foods.last_serving_id` stays; removed servings set it NULL) → replace nutrient rows (DATA-20). `barcode` is kept.
 - Diary entries are never touched: their snapshots stay (DATA-05). Only later adds use the new values.
+
+## DATA-27 Recipes
+- A recipe (SCOPE-13) is a `foods` row with `kind = 'recipe'`, `source = 'custom'`, `barcode` NULL. Its kcal, macros and `food_nutrients` rows are **stored**, so logging, Recents, select mode and snapshots treat it as any food.
+- **Why a column, not a new `source`:** changing the `source` CHECK means rebuilding `foods`, which other tables reference.
+- Schema (migration 7, DATA-17; `schema.sql` updated in the same change):
+  - `foods.kind TEXT NOT NULL DEFAULT 'food' CHECK (kind IN ('food', 'recipe'))`, and `kind = 'recipe'` requires `source = 'custom'`.
+  - `recipes(food_id PK → foods ON DELETE CASCADE, servings_count REAL NOT NULL > 0, cooked_serving_g REAL NULL > 0, raw_serving_g_override REAL NULL > 0)`.
+  - `recipe_ingredients(id PK, recipe_id → foods ON DELETE CASCADE, food_id → foods ON DELETE RESTRICT, serving_id → food_servings ON DELETE SET NULL, quantity REAL > 0, serving_unit_snapshot TEXT NOT NULL, basis_multiplier_snapshot REAL > 0, sort_order INTEGER ≥ 0)`, index `(food_id)`.
+- Ingredient factor = `serving.basis_multiplier × quantity` when `serving_id` resolves, else `basis_multiplier_snapshot` (the factor at the last recipe save). An ingredient food is never another recipe (POST-15).
+- Ingredient raw grams = `factor × basis_quantity` when the ingredient food's `basis_unit = 'g'`; otherwise unknown (ml or count basis).
+- Recipe math (unrounded, DATA-04):
+  - `total = Σ ingredient basis value × factor`. Stored per 1 serving: `basis_quantity = 1`, `basis_unit = 'serving'`, value = `total ÷ servings_count`.
+  - Raw weight per serving = `raw_serving_g_override` if set, else `Σ raw grams ÷ servings_count` when every ingredient's raw grams are known, else unknown. The computed value follows ingredient changes; an override doesn't.
+- Unknown (DATA-06): a macro is NULL when any ingredient's is NULL. A catalog nutrient row exists only when every ingredient has one. **Why:** a known partial sum would understate the recipe.
+- Servings (`food_servings`, matched by `(label, unit)` on edit):
+  | label | unit | basis_multiplier | When |
+  |---|---|---|---|
+  | `serving` | `serving` | 1 | always, `is_default = 1` |
+  | `cooked` | `g` | `1 ÷ cooked_serving_g` | `cooked_serving_g` set |
+  | `raw` | `g` | `1 ÷ raw weight per serving` | raw weight known |
+- The UI shows `cooked` / `raw` as `g cooked` / `g raw` in the preferred food weight unit (oz converts, DATA-04); the entry snapshot keeps the label so the Diary reads `350 g cooked`. These are not the plain DATA-11 `g`/`oz` units: a recipe has no plain mass unit.
+- A soft-deleted ingredient food stays in the recipe and keeps counting.
+
+## DATA-28 Recipe operations
+| Operation | Rules |
+|---|---|
+| `createRecipe(input)` | Tx: validate (name, `servings_count > 0`, `cooked_serving_g` / `raw_serving_g_override` NULL or > 0, ≥1 ingredient, no ingredient with `kind = 'recipe'`) → compute (DATA-27) → insert food + servings + nutrient rows + `recipes` + ingredient rows. Does not create an entry. |
+| `updateRecipe(id, input)` | Active recipes only (else not found). Tx: validate as create → update food, `recipes`, recompute → merge servings by `(label, unit)` as DATA-26 → replace nutrient and ingredient rows. Diary entries are never touched (DATA-05). |
+| `getRecipe(id)` | Food + `recipes` + ingredients in `sort_order`, each with its food (deleted ones too) and current factor. |
+| Ingredient food changes | Any write that changes a food's basis, kcal/macros, servings or nutrient rows (DATA-26 edit, DATA-15 upsert/refresh) recomputes every recipe using it, in the same Tx. |
+| `listRecipes` / `countRecipes` | As DATA-25 `listCustom` / `countCustom`, with `kind = 'recipe'`. |
+| `searchRecipes(q)` | PROV-08 local match + rank over active recipes. |
+| Delete recipe | `is_deleted = 1` (DATA-11), Undo as DATA-11. Ingredient rows are kept. |
+| Search | `searchCustom` and `findByBarcode` exclude recipes. The UX-04 `All` › `My foods` section adds matching recipes that are in Recents (DATA-14). |
