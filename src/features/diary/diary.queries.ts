@@ -99,7 +99,14 @@ export function useDiaryWrites() {
   });
   const addFoodEntry = useMutation({
     mutationFn: (input: AddFoodEntryInput) => diary.addFoodEntry(input),
-    onSuccess: refresh,
+    // DATA-14 / DATA-25: an add moves the food to the top of Recent and My foods (`foodSearchKeys.recents` and
+    // `.customList`). Not all of `foodSearch`: refetching the open Food Detail's own queries would unmount its form.
+    onSuccess: () =>
+      Promise.all([
+        refresh(),
+        client.invalidateQueries({ queryKey: ['foodSearch', 'recents'] }),
+        client.invalidateQueries({ queryKey: ['foodSearch', 'customList'] }),
+      ]),
   });
   const editFoodEntry = useMutation({
     mutationFn: ({ id, ...input }: EditFoodEntryInput & { id: string }) => diary.editFoodEntry(id, input),

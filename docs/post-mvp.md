@@ -55,3 +55,6 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 
 ## POST-13 Visual QA matrix
 - The full DS-13 matrix: small + large phone widths, large text, increased contrast, reduced motion, and screenshot sets per screen. The MVP runs the reduced DS-13 check only.
+
+## POST-14 Recipes
+- Recipes are excluded from the MVP (SCOPE-10). When built, they get a 4th Food Search tab next to `My foods` (UX-04). User request 2026-10-01.

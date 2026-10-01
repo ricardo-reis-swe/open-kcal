@@ -7,7 +7,8 @@
     "undo": "Undo",
     "back": "Back",
     "notFound": "This item no longer exists.",
-    "backToDiary": "Back to Diary"
+    "backToDiary": "Back to Diary",
+    "backToProfile": "Back to Profile"
   },
   "tabs": {
     "diary": "Diary",
@@ -121,7 +122,11 @@
     "nutrientsShown_other": "{{count}} shown",
     "nutrientsNone": "None",
     "appSection": "App",
-    "theme": "Theme"
+    "theme": "Theme",
+    "myFoods": "My foods",
+    "foodCount_one": "{{count}} food",
+    "foodCount_other": "{{count}} foods",
+    "foodsNone": "None"
   },
   "caloriesMacros": {
     "title": "Calories & macros",
@@ -272,7 +277,15 @@
     "deleteFood": "Delete food",
     "deleted": "{{name}} deleted",
     "added": "Added {{name}} to {{meal}}",
-    "deleteError": "Couldn't delete this food. Try again."
+    "deleteError": "Couldn't delete this food. Try again.",
+    "emptyRecentTab": "No recent foods yet.",
+    "emptyCustom": "No custom foods yet.",
+    "tabs": {
+      "label": "Food lists",
+      "all": "All",
+      "recent": "Recent",
+      "custom": "My foods"
+    }
   },
   "customFood": {
     "title": "New food",
@@ -516,5 +529,9 @@
     "createCustom": "Create custom food",
     "scanAgain": "Scan again",
     "cameraPermission": "Calorie Tracker uses the camera to scan food barcodes."
+  },
+  "myFoods": {
+    "title": "My foods",
+    "empty": "No custom foods yet. Create them from Food Search."
   }
 }

@@ -59,6 +59,33 @@ describe('DATA-11 / DATA-16: foods repository', () => {
     expect(noDefault.servings[0]!.isDefault).toBe(true);
   });
 
+  it('DATA-25: lists active custom foods by last use, then newest created, and counts them', async () => {
+    const { deps, foods } = await setup();
+    const old = await foods.createCustom({ ...eggs, name: 'Old' });
+    const newer = await foods.createCustom({ ...eggs, name: 'Newer' });
+    const used = await foods.createCustom({ ...eggs, name: 'Used' });
+    const usedLatest = await foods.createCustom({ ...eggs, name: 'Used latest' });
+    const gone = await foods.createCustom({ ...eggs, name: 'Gone' });
+    await foods.upsertExternal('open_food_facts', '1', offBar(100), cache('2026-10-25T10:00:00.000Z'));
+    for (const [food, createdAt] of [
+      [old, '2026-09-01T00:00:00.000Z'],
+      [newer, '2026-09-10T00:00:00.000Z'],
+    ] as const) {
+      await deps.db.run('UPDATE foods SET created_at = ? WHERE id = ?', [createdAt, food.id]);
+    }
+    await deps.db.run('INSERT INTO recent_foods (food_id, last_used_at, use_count) VALUES (?, ?, 1), (?, ?, 1)', [
+      used.id,
+      '2026-09-20T00:00:00.000Z',
+      usedLatest.id,
+      '2026-09-24T00:00:00.000Z',
+    ]);
+    await foods.deleteFood(gone.id);
+
+    expect((await foods.listCustom()).map((food) => food.name)).toEqual(['Used latest', 'Used', 'Newer', 'Old']);
+    expect((await foods.listCustom(2, 2)).map((food) => food.name)).toEqual(['Newer', 'Old']);
+    expect(await foods.countCustom()).toBe(4);
+  });
+
   it('PROV-08: custom search requires every token and ranks exact, prefix, word starts, then remaining matches', async () => {
     const { deps, foods } = await setup();
     const exact = await foods.createCustom({ ...eggs, name: 'Apple pie' });

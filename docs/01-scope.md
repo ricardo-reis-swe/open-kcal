@@ -52,6 +52,7 @@ Scrambled eggs
 ## SCOPE-06 Custom foods
 - Required: name, calories, serving amount, serving unit, protein, carbs, fat. Optional: brand, catalog nutrients (DATA-20, UX-08).
 - Stored locally; appear in future searches and in recents.
+- Listed in full in the Food Search `My foods` tab (UX-04) and in Profile › My foods (UX-25), most recently used first (DATA-25). User request 2026-10-01.
 
 ## SCOPE-07 Ruler
 - Value fixed at center; ruler moves underneath.

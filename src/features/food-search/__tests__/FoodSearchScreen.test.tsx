@@ -434,3 +434,73 @@ describe('UX-18 / DATA-19: Food Search section order and visibility', () => {
     expect(screen.getAllByText('Offline. Showing saved foods only.')).toHaveLength(1);
   });
 });
+
+describe('UX-04: Food Search tabs', () => {
+  const sections = (order: string, hidden: string[] = []) =>
+    order.split(',').map((id) => ({ id, visible: !hidden.includes(id) })) as FoodSearchSections;
+  const pressTab = async (id: 'all' | 'recent' | 'custom') => {
+    await act(async () => {
+      fireEvent.press(await screen.findByTestId(`food-search-tab-${id}`));
+    });
+  };
+
+  it('opens on All; the tabs have tab semantics', async () => {
+    await setup();
+    expect(await screen.findByRole('tab', { name: 'All', selected: true })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Recent', selected: false })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'My foods', selected: false })).toBeTruthy();
+  });
+
+  it('My foods lists every custom food without a query (DATA-25), pages by 20, even when hidden in UX-18', async () => {
+    const { food, onSelectFood } = await setup({
+      localPaging: true,
+      sections: sections('custom,saved,open_food_facts,usda', ['custom']),
+    });
+    await pressTab('custom');
+    expect(await screen.findByTestId('food-search-custom-show-more')).toBeTruthy();
+    expect(screen.getAllByTestId(/^food-result-/)).toHaveLength(20);
+    expect(screen.queryByText('Al saved 0')).toBeNull();
+    fireEvent.press(screen.getByTestId('food-search-custom-show-more'));
+    await waitFor(() => expect(screen.getAllByTestId(/^food-result-/)).toHaveLength(21));
+    fireEvent.press(screen.getByTestId(`food-result-${food.id}`));
+    expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
+  });
+
+  it('My foods with a query searches custom foods only and never calls a provider', async () => {
+    const { services } = await setup({ withCachedExternal: true });
+    const off = jest.spyOn(services.openFoodFacts, 'search');
+    const usda = jest.spyOn(services.usda, 'search');
+    await pressTab('custom');
+    fireEvent.changeText(screen.getByLabelText('Search foods'), 'almond');
+    expect(await screen.findByText('Almond oats', {}, { timeout: 3_000 })).toBeTruthy();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    });
+    expect(screen.queryByText('Cached almond yoghurt')).toBeNull();
+    expect(off).not.toHaveBeenCalled();
+    expect(usda).not.toHaveBeenCalled();
+    fireEvent.changeText(screen.getByLabelText('Search foods'), 'pizza');
+    expect(await screen.findByText('No foods found for “pizza”.')).toBeTruthy();
+  });
+
+  it('Recent shows the recents, filtered by the query; empty states per tab', async () => {
+    const { food } = await setup({ withRecent: true });
+    await pressTab('recent');
+    expect(await screen.findByTestId(`food-result-${food.id}`)).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('Search foods'), 'oats morning');
+    await waitFor(() => expect(screen.getByTestId(`food-result-${food.id}`)).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Search foods'), 'pizza');
+    expect(await screen.findByText('No foods found for “pizza”.')).toBeTruthy();
+  });
+
+  it('empty Recent and My foods tabs explain themselves', async () => {
+    const { services, food, onCreateCustom } = await setup();
+    await pressTab('recent');
+    expect(await screen.findByText('No recent foods yet.')).toBeTruthy();
+    await services.foods.deleteFood(food.id);
+    await pressTab('custom');
+    expect(await screen.findByText('No custom foods yet.')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('food-create-custom'));
+    expect(onCreateCustom).toHaveBeenCalledWith('');
+  });
+});

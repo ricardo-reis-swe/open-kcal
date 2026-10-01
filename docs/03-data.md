@@ -181,3 +181,8 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 - `findByBarcode(gtin14)`: active foods only (`is_deleted = 0`); custom first, then the most recently used (`recent_foods.last_used_at`), then `updated_at` DESC. The first row wins.
 - **Why GTIN-14:** a UPC-A and the same product's EAN-13 (leading `0`) are one key after padding.
 - Barcodes are diary-adjacent data: MUST NOT be logged (ARCH-15).
+
+## DATA-25 Custom food list
+- `listCustom(limit, offset)`: active custom foods (`source = 'custom' AND is_deleted = 0`), ordered `recent_foods.last_used_at` DESC (never used last), then `foods.created_at` DESC, then `id`. Pages of 20. `countCustom()` counts the same set. No schema change.
+- Used by the UX-04 `My foods` tab without a query and by UX-25; Profile shows the count (UX-15).
+- An added entry invalidates Recents and this list, so a logged food moves to the top.

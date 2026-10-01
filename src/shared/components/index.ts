@@ -17,3 +17,4 @@ export { SwipeToDelete, type SwipeToDeleteProps } from './SwipeToDelete';
 export { TextAction, type TextActionProps } from './TextAction';
 export { UndoToast, type UndoToastProps } from './UndoToast';
 export { NotFoundState, type NotFoundStateProps } from './NotFoundState';
+export { TabStrip, type TabStripProps } from './TabStrip';

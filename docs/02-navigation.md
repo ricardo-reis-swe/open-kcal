@@ -14,7 +14,8 @@ App Root
 │   ├── Diary Stack: Diary, Food Search, Barcode Scanner, Food Detail / Add Entry,
 │   │                Edit Food Entry, Quick Calories, Edit Quick Calories, Create Custom Food
 │   └── Profile Stack: Profile, Calories & Macros, Meals, Add / Edit Meal, Units,
-│                      Weight Goal, Weight History, Food Databases / USDA API Key
+│                      Weight Goal, Weight History, Food Databases / USDA API Key,
+│                      My Foods, Food Detail / Add Entry (from My Foods)
 └── App-level overlays: Add Action Sheet, Date Picker, Meal Picker, Serving Unit Picker,
                         Dashboard Action Sheet, Copy Sheet, Weight Entry Sheet, Confirmation Dialogs
 ```
@@ -40,7 +41,7 @@ App Root
 | Screen | Shows / does | Exits |
 |---|---|---|
 | Diary | Date nav, calendar action, Today (when ≠ today), progress, meals in saved order, entries under meals, `+` per meal header. Day content MUST NOT page on horizontal swipes; the date strip remains horizontally scrollable. | Food row → matching edit screen. Swipe entry left → reveals Delete; tap deletes. Meal/entry `…` → dashboard actions. Meal `+` → Food Search(meal, date). |
-| Food Search | Search input; recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. Scan icon in the field. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Scan icon → Barcode Scanner (meal, date). Create Custom Food → keeps date + meal. Back → origin, nothing created. |
+| Food Search | Search input; tabs `All` · `Recent` · `My foods` (UX-04); recents before a query; custom foods; USDA (if configured); Open Food Facts; Create Custom Food. Results show their source. Scan icon in the field. Swipe a custom or saved food → reveals Delete; tap soft-deletes (UX-04). | Result → Food Detail. Scan icon → Barcode Scanner (meal, date). Create Custom Food → keeps date + meal. Back → origin, nothing created. |
 | Barcode Scanner | Camera, torch, manual code entry; looks the code up (PROV-15). UX-24. | Found → **replaces** itself with Food Detail (so Save/back land on Food Search). Not found → `Create custom food` **replaces** itself with Create Custom Food (barcode kept, DATA-24). Back → Food Search, query and results intact. |
 | Food Detail / Add Entry | Food identity, units, ruler, live kcal/macros, target meal (changeable via Meal Picker), target date. | Save → writes, returns to Food Search (query and results intact) with `Added <food> to <meal>` (DS-10); the Diary is already on the target date when search is left (user decision 2026-09-30). Cancel/back → nothing saved. |
 | Edit Food Entry | Loads date, meal, food, serving and nutrition from `entryId`. Ruler, unit, reassign meal, Save, Delete. | Save/delete → Diary, totals refreshed. |
@@ -56,7 +57,7 @@ App Root
 ## NAV-06 Profile stack screens
 | Screen | Behavior |
 |---|---|
-| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, Food Databases, Theme. |
+| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, My Foods, Food Databases, Theme. |
 | Calories & Macros | Edit kcal/carb/protein/fat goals. Save → Profile; diary targets update immediately. |
 | Meals | Meals in saved order. Reorder in the list; tap → Add/Edit Meal; add new; delete via confirmation. Defaults are ordinary records. |
 | Add / Edit Meal | Create or rename. Save → Meals. Delete only in edit mode (protected, NAV-08). |
@@ -65,6 +66,7 @@ App Root
 | Weight Goal | View/edit goal in the configured unit. Save → Profile. |
 | Weight History | Dated entries + Update Weight. Row → Weight Entry Sheet (edit mode). |
 | Theme | System / Light / Dark (UX-23). Each change saves immediately; back → Profile. |
+| My Foods | Every custom food (UX-25). Row → Meal Picker (skipped with one meal) → Food Detail / Add Entry on the Profile stack, date = the Diary's selected date (NAV-05). Add → back to My Foods with `Added <food> to <meal>` (DS-10); back → My Foods, nothing saved. Swipe → Delete + Undo (UX-04). Back → Profile. |
 | Food Databases | Lists Open Food Facts + USDA. Add, replace or remove USDA key; shows whether USDA search is available. Key goes to secure storage; never shown in full after saving. |
 
 ## NAV-07 Sheets

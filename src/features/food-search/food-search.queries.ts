@@ -18,6 +18,8 @@ export const foodSearchKeys = {
   recents: ['foodSearch', 'recents'] as const,
   recent: (foodId: string) => ['foodSearch', 'recent', foodId] as const,
   custom: (query: string) => ['foodSearch', 'custom', query.trim().toLocaleLowerCase()] as const,
+  customList: ['foodSearch', 'customList'] as const,
+  customCount: ['foodSearch', 'customCount'] as const,
   saved: (query: string) => ['foodSearch', 'saved', query.trim().toLocaleLowerCase()] as const,
   off: (query: string, page: number) => ['foodSearch', 'openFoodFacts', query.trim(), page] as const,
   usda: (query: string, page: number) => ['foodSearch', 'usda', query.trim(), page] as const,
@@ -110,6 +112,25 @@ export function useCustomFoodSearch(query: string, pages = 1, visible = true) {
     },
     enabled: visible && normalized.length > 0,
   });
+}
+
+/** DATA-25: all custom foods by last use, 20 per page (UX-04 `My foods` tab without a query, UX-25). */
+export function useCustomFoodList(pages = 1, enabled = true) {
+  const { foods } = useServices();
+  return useQuery({
+    queryKey: [...foodSearchKeys.customList, pages],
+    queryFn: async () => {
+      const results = await Promise.all(Array.from({ length: pages }, (_, page) => foods.listCustom(20, page * 20)));
+      return results.flat();
+    },
+    enabled,
+  });
+}
+
+/** DATA-25 / UX-15: the Profile `My foods` row count. */
+export function useCustomFoodCount() {
+  const { foods } = useServices();
+  return useQuery({ queryKey: foodSearchKeys.customCount, queryFn: () => foods.countCustom() });
 }
 
 /** DATA-15 / PROV-08: cached external foods are local results and work while offline. */

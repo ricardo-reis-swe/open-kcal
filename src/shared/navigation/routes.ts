@@ -117,6 +117,14 @@ export const routes = {
   weightGoal: (): Href => '/profile/weight-goal' as Href,
   /** NAV-06 / UX-18 Weight History (rows and `+` open the app-level Weight Entry Sheet, NAV-07). */
   weightHistory: (): Href => '/profile/weight-history' as Href,
+  /** NAV-06 / UX-25 My foods. */
+  myFoods: (): Href => '/profile/my-foods' as Href,
+  /** UX-25: Food Detail (add) on the Profile stack; params as `foodDetail`, always a custom food. */
+  myFoodDetail: (p: { foodId: Uuid; mealId: Uuid; date: LocalDate }): Href =>
+    ({
+      pathname: '/profile/my-foods/[foodId]',
+      params: { foodId: p.foodId, foodSource: 'custom', mealId: p.mealId, date: p.date, origin: 'profile' },
+    }) as unknown as Href,
   /** NAV-06 / UX-17 Meals list. */
   meals: (): Href => '/profile/meals' as Href,
   /** NAV-06 Add / Edit Meal: create mode, or edit by `mealId`. */

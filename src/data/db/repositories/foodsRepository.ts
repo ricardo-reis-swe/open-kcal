@@ -285,6 +285,28 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
     },
 
+    /** DATA-25: every active custom food, most recently used first, then the newest created (UX-04 tab, UX-25). */
+    async listCustom(limit = 20, offset = 0): Promise<Food[]> {
+      if (!Number.isInteger(limit) || limit <= 0 || !Number.isInteger(offset) || offset < 0) return [];
+      const rows = await db.getAll<{ id: string }>(
+        `SELECT foods.id FROM foods
+         LEFT JOIN recent_foods ON recent_foods.food_id = foods.id
+         WHERE foods.source = 'custom' AND foods.is_deleted = 0
+         ORDER BY recent_foods.last_used_at IS NULL, recent_foods.last_used_at DESC, foods.created_at DESC, foods.id
+         LIMIT ? OFFSET ?`,
+        [limit, offset],
+      );
+      return Promise.all(rows.map(async ({ id }) => (await readFood(db, id))!));
+    },
+
+    /** DATA-25: the Profile `My foods` row count (UX-15). */
+    async countCustom(): Promise<number> {
+      const row = await db.getFirst<{ count: number }>(
+        "SELECT COUNT(*) AS count FROM foods WHERE source = 'custom' AND is_deleted = 0",
+      );
+      return row?.count ?? 0;
+    },
+
     /** PROV-08 / DATA-15: cached external foods remain searchable even when their refresh TTL has expired. */
     async searchExternal(query: string, limit = 20, offset = 0): Promise<Food[]> {
       const tokens = query.trim().split(/\s+/).filter(Boolean);

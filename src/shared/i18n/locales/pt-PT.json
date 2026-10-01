@@ -7,7 +7,8 @@
     "undo": "Anular",
     "back": "Voltar",
     "notFound": "Este item já não existe.",
-    "backToDiary": "Voltar ao diário"
+    "backToDiary": "Voltar ao diário",
+    "backToProfile": "Voltar ao perfil"
   },
   "tabs": {
     "diary": "Diário",
@@ -121,7 +122,11 @@
     "nutrientsShown_other": "{{count}} visíveis",
     "nutrientsNone": "Nenhum",
     "appSection": "Aplicação",
-    "theme": "Tema"
+    "theme": "Tema",
+    "myFoods": "Os meus alimentos",
+    "foodCount_one": "{{count}} alimento",
+    "foodCount_other": "{{count}} alimentos",
+    "foodsNone": "Nenhum"
   },
   "caloriesMacros": {
     "title": "Calorias e macros",
@@ -272,7 +277,15 @@
     "deleteFood": "Eliminar alimento",
     "deleted": "{{name}} eliminado",
     "added": "{{name}} adicionado a {{meal}}",
-    "deleteError": "Não foi possível eliminar este alimento. Tente novamente."
+    "deleteError": "Não foi possível eliminar este alimento. Tente novamente.",
+    "emptyRecentTab": "Ainda não há alimentos recentes.",
+    "emptyCustom": "Ainda não há alimentos personalizados.",
+    "tabs": {
+      "label": "Listas de alimentos",
+      "all": "Todos",
+      "recent": "Recentes",
+      "custom": "Os meus alimentos"
+    }
   },
   "customFood": {
     "title": "Novo alimento",
@@ -516,5 +529,9 @@
     "createCustom": "Criar alimento personalizado",
     "scanAgain": "Ler novamente",
     "cameraPermission": "O Calorie Tracker usa a câmara para ler códigos de barras de alimentos."
+  },
+  "myFoods": {
+    "title": "Os meus alimentos",
+    "empty": "Ainda não há alimentos personalizados. Crie-os na pesquisa de alimentos."
   }
 }

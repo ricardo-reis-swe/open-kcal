@@ -72,6 +72,6 @@ describe('NAV-06 / UX-21: Dashboard nutrients', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await flush();
     expect(app.getPathname()).toBe('/profile');
-    expect(await screen.findByText('None')).toBeOnTheScreen();
+    expect(within(await screen.findByTestId('profile-dashboard-nutrients')).getByText('None')).toBeOnTheScreen();
   });
 });

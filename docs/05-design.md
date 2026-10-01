@@ -86,7 +86,7 @@ Name: **Modern Balance, compact density**. An original system inspired by Runtas
 
 ## DS-12 Theme implementation
 - Components use semantic tokens (`textPrimary`, `macroProtein`), never raw palette values.
-- Primitives own theme, type, focus, press, disabled and a11y: `AppText, AppIcon, PressableIcon, HeaderAction, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus`.
+- Primitives own theme, type, focus, press, disabled and a11y: `AppText, AppIcon, PressableIcon, HeaderAction, PrimaryButton, TextAction, FormField, ListRow, SectionHeader, ProgressTrack, BottomSheet, ConfirmationDialog, InlineStatus, TabStrip`.
 - Feature components build on them: `CalorieRing, MacroStrip, DiaryDateStrip, MealHeader, DiaryEntryRow, QuickCaloriesRow, ServingRuler, WeightSummary`. They don't re-implement primitive behavior.
 
 ## DS-13 Visual QA (per component, before done)
@@ -103,3 +103,7 @@ MVP: light theme · iOS + Android · one phone size · default text. Check the s
 - Single line each. The number MUST NOT truncate; the label may ellipsize (pt-PT is longer).
 - Accessibility: the whole widget is one tap target with one content description, e.g. `1,731 kcal left`, `250 kcal over`.
 - Picker preview: a static PNG in `assets/` (en, a typical value), shown in the launcher's widget picker.
+
+## DS-15 Tab strip
+- In-screen tabs (UX-04): `TabStrip`, a full-width row of equal-width text tabs, `compactStrong`, selected = `primary` text + the DS-09 2px underline, others `textSecondary`. Hairline `divider` under the row. 48 targets; labels may wrap to 2 lines (pt-PT), never truncate.
+- A11y: container `tablist` with a label, each tab role `tab` with `selected` state (DS-11).

@@ -45,8 +45,11 @@ export type FoodDetailMode =
   | { kind: 'edit'; entryId: string; origin: Origin }
   | null;
 
-/** UX-05/06 add and edit. Edit falls back to the entry snapshot when its source food/serving cannot resolve. */
-export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
+/**
+ * UX-05/06 add and edit. Edit falls back to the entry snapshot when its source food/serving cannot resolve.
+ * `stack`: the tab stack it is pushed on (UX-25 opens it on the Profile stack), for the UX-00 not-found action.
+ */
+export function FoodDetailScreen({ mode, stack = 'diary' }: { mode: FoodDetailMode; stack?: 'diary' | 'profile' }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const editing = mode?.kind === 'edit';
@@ -63,9 +66,12 @@ export function FoodDetailScreen({ mode }: { mode: FoodDetailMode }) {
   const recent = useRecentFood(foodId, Boolean(foodId));
   const meals = useMeals();
   const settings = useAppSettings();
-  const notFound = (
-    <NotFoundState actionLabel={t('common.backToDiary')} onAction={() => router.dismissTo(routes.diary())} />
-  );
+  const notFound =
+    stack === 'profile' ? (
+      <NotFoundState actionLabel={t('common.backToProfile')} onAction={() => router.dismissTo(routes.profile())} />
+    ) : (
+      <NotFoundState actionLabel={t('common.backToDiary')} onAction={() => router.dismissTo(routes.diary())} />
+    );
   let body: React.ReactNode = null;
   let formRendered = false;
 

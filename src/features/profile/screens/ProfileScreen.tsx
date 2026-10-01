@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { AppSettings } from '@/data/db/repositories/settingsRepository';
 import { visibleDashboardNutrients } from '@/domain/nutrition/dashboardNutrients';
 import { useAppSettings, useDashboardNutrients, useMeals } from '@/features/diary/diary.queries';
+import { useCustomFoodCount } from '@/features/food-search/food-search.queries';
 import {
   useCurrentGoal,
   useCurrentWeight,
@@ -28,6 +29,7 @@ export type ProfileNavigation = {
   onUnits?: () => void;
   onDashboardNutrients?: () => void;
   onFoodDatabases?: () => void;
+  onMyFoods?: () => void;
   onTheme?: () => void;
 };
 
@@ -43,6 +45,7 @@ export function ProfileScreen(nav: ProfileNavigation) {
   const usda = useUsdaKeyConfigured().data;
   const dashboardNutrients = useDashboardNutrients().data;
   const themePreference = useThemePreference().data;
+  const customFoods = useCustomFoodCount().data;
   const shownNutrients = dashboardNutrients ? visibleDashboardNutrients(dashboardNutrients).length : undefined;
 
   const unitLabel = (unit: string) => t(`units.${unit}` as 'units.kg');
@@ -122,6 +125,16 @@ export function ProfileScreen(nav: ProfileNavigation) {
         )}
 
         <SectionHeader label={t('profile.foodDataSection')} uppercase />
+        {row(
+          t('profile.myFoods'),
+          customFoods === undefined
+            ? undefined
+            : customFoods === 0
+              ? t('profile.foodsNone')
+              : t('profile.foodCount', { count: customFoods }),
+          nav.onMyFoods,
+          'profile-my-foods',
+        )}
         {row(
           t('profile.foodDatabases'),
           usda === undefined ? undefined : t(usda ? 'profile.usdaOn' : 'profile.usdaOff'),

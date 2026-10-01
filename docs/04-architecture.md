@@ -64,7 +64,7 @@ src/
 ```
 - Features may import domain + shared. Domain imports nothing above it. A feature must not reach into another feature's internals; move shared logic to domain/shared behind an interface.
 - Path aliases only for top-level boundaries.
-- Route tree (conceptual): `(tabs)/diary/{index, meal/[mealId], food-search, food/[foodId], entry/[entryId], quick-calories, quick-calories/[entryId], custom-food}`, `(tabs)/profile/{index, goals, meals/{index,[mealId]}, units, weight-goal, weight-history, food-databases}`, top-level modals `date-picker, meal-picker, serving-unit-picker, copy-meal, weight-entry`.
+- Route tree (conceptual): `(tabs)/diary/{index, meal/[mealId], food-search, food/[foodId], entry/[entryId], quick-calories, quick-calories/[entryId], custom-food}`, `(tabs)/profile/{index, goals, meals/{index,[mealId]}, units, weight-goal, weight-history, food-databases, my-foods/{index,[foodId]}}`, top-level modals `date-picker, meal-picker, serving-unit-picker, copy-meal, weight-entry`.
 
 ## ARCH-06 Navigation implementation
 - Custom tab bar: Diary + Profile are tab routes; `+` is a custom button opening the Add Action Sheet, never selected.
