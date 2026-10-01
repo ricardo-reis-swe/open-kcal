@@ -263,6 +263,53 @@ describe('DATA-11 / DATA-16: foods repository', () => {
   });
 });
 
+describe('DATA-26: edit a custom food', () => {
+  it('updates in place, keeps serving ids, recents, barcode and entry snapshots', async () => {
+    const { foods, diary, recents, breakfast } = await setup();
+    const food = await foods.createCustom({ ...eggs, barcode: '05601009983179' });
+    const entry = await diary.addFoodEntry({
+      diaryDate: DAY,
+      mealId: breakfast,
+      foodId: food.id,
+      servingId: food.servings[1]!.id,
+      quantity: 2,
+    });
+    const updated = await foods.updateCustom(food.id, {
+      ...eggs,
+      name: 'Fluffy eggs',
+      brand: 'Home',
+      nutrients: { energyKcal: 200, carbohydrateG: null, proteinG: 12, fatG: 14, extra: { salt: 1 } },
+      servings: [
+        { label: 'egg', quantity: 1, unit: 'egg', basisMultiplier: 0.5, isDefault: true },
+        { label: 'slice', quantity: 1, unit: 'slice', basisMultiplier: 0.25 },
+      ],
+    });
+    expect(updated).toMatchObject({
+      id: food.id,
+      name: 'Fluffy eggs',
+      brand: 'Home',
+      barcode: '05601009983179',
+      nutrients: { energyKcal: 200, carbohydrateG: null, extra: { salt: 1, sodium: 400 } }, // sodium in mg
+    });
+    expect(updated.servings.map((serving) => serving.label)).toEqual(['egg', 'slice']);
+    expect(updated.servings[0]!.id).toBe(food.servings[1]!.id);
+    expect((await recents.get(food.id))?.lastServingId).toBe(food.servings[1]!.id);
+    expect(await diary.getEntry(entry.id)).toMatchObject({ name: 'Scrambled eggs', nutrients: { energyKcal: 150 } });
+  });
+
+  it('refuses deleted, external or invalid foods', async () => {
+    const { foods } = await setup();
+    const food = await foods.createCustom(eggs);
+    await expect(foods.updateCustom(food.id, { ...eggs, name: ' ' })).rejects.toMatchObject({
+      category: 'validation',
+    });
+    const off = await foods.upsertExternal('open_food_facts', '9', offBar(100), cache('2026-10-25T10:00:00.000Z'));
+    await expect(foods.updateCustom(off.id, eggs)).rejects.toMatchObject({ category: 'not_found' });
+    await foods.deleteFood(food.id);
+    await expect(foods.updateCustom(food.id, eggs)).rejects.toMatchObject({ category: 'not_found' });
+  });
+});
+
 describe('DATA-05 / DATA-06 / DATA-16: diary repository', () => {
   it('DATA-07: an empty day shows every meal with zero totals and the effective goal', async () => {
     const { diary } = await setup();

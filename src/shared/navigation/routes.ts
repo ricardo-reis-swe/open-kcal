@@ -41,6 +41,7 @@ export type RouteParams = {
   units: undefined;
   theme: undefined;
   dashboardNutrients: undefined;
+  editCustomFood: { foodId: Uuid };
   weightGoal: undefined;
 };
 
@@ -89,6 +90,7 @@ const paramSchemas = {
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   foodDatabases: z.object({}),
+  editCustomFood: z.object({ foodId: idSchema }),
   /** NAV-06 Edit Meal (`/profile/meals/[mealId]`); create mode has its own route without params. */
   mealEdit: z.object({ mealId: idSchema }),
 };
@@ -119,12 +121,9 @@ export const routes = {
   weightHistory: (): Href => '/profile/weight-history' as Href,
   /** NAV-06 / UX-25 My foods. */
   myFoods: (): Href => '/profile/my-foods' as Href,
-  /** UX-25: Food Detail (add) on the Profile stack; params as `foodDetail`, always a custom food. */
-  myFoodDetail: (p: { foodId: Uuid; mealId: Uuid; date: LocalDate }): Href =>
-    ({
-      pathname: '/profile/my-foods/[foodId]',
-      params: { foodId: p.foodId, foodSource: 'custom', mealId: p.mealId, date: p.date, origin: 'profile' },
-    }) as unknown as Href,
+  /** UX-25: a custom food's details, editable (UX-08 edit mode, DATA-26). */
+  editCustomFood: (p: RouteParams['editCustomFood']): Href =>
+    ({ pathname: '/profile/my-foods/[foodId]', params: { foodId: p.foodId } }) as unknown as Href,
   /** NAV-06 / UX-17 Meals list. */
   meals: (): Href => '/profile/meals' as Href,
   /** NAV-06 Add / Edit Meal: create mode, or edit by `mealId`. */

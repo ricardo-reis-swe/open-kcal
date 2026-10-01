@@ -1,7 +1,9 @@
+import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
 import { G_PER_OZ, ML_PER_FL_OZ } from '@/domain/units/units';
 
 import {
   CUSTOM_FOOD_NUTRIENT_IDS,
+  customFoodFormFromFood,
   customFoodFormSchema,
   customFoodInputFromForm,
   parseLocalizedDecimal,
@@ -128,5 +130,58 @@ describe('DATA-04 / DATA-11 / UX-08: custom-food command', () => {
     expect(issues({ alcohol: '5' } as never)).toEqual(['extra.alcohol']);
     expect(CUSTOM_FOOD_NUTRIENT_IDS).not.toContain('sodium');
     expect(CUSTOM_FOOD_NUTRIENT_IDS).toHaveLength(27);
+  });
+});
+
+describe('UX-25 / DATA-26: edit form values from a stored custom food', () => {
+  const stored = (input: CustomFoodInput): Food => ({
+    ...input,
+    brand: input.brand ?? null,
+    barcode: null,
+    id: 'food-1',
+    source: 'custom',
+    externalId: null,
+    isDeleted: false,
+    servings: input.servings.map((serving, index) => ({
+      ...serving,
+      id: `serving-${index}`,
+      isDefault: serving.isDefault ?? index === 0,
+      sortOrder: index,
+    })),
+  });
+  const cases: [string, CustomFoodFormValues, string, 'kcal' | 'kJ'][] = [
+    ['other unit', valid, 'en-GB', 'kcal'],
+    [
+      'oz with unknown macros, pt-PT',
+      { ...valid, servingAmount: '1,5', servingUnit: 'oz', otherUnit: '', carbohydrate: '', energy: '200,25' },
+      'pt-PT',
+      'kcal',
+    ],
+    [
+      'fl oz in kJ',
+      { ...valid, servingAmount: '8', servingUnit: 'fl_oz', otherUnit: '', energy: '500' },
+      'en-GB',
+      'kJ',
+    ],
+    [
+      'g with more nutrients',
+      {
+        ...valid,
+        brand: 'Home',
+        servingAmount: '100',
+        servingUnit: 'g',
+        otherUnit: '',
+        extra: { fibre: '2.5', salt: '0.3' },
+      },
+      'en-GB',
+      'kcal',
+    ],
+  ];
+
+  it.each(cases)('%s: maps back to the values that created it', (_name, form, locale, energyUnit) => {
+    const input = customFoodInputFromForm(form, locale, energyUnit)!;
+    const values = customFoodFormFromFood(stored(input), locale, energyUnit);
+    expect(values).toEqual({ extra: {}, ...form });
+    expect(customFoodInputFromForm(values, locale, energyUnit)).toEqual(input);
   });
 });

@@ -322,7 +322,11 @@
       "nutrient": "Enter an amount from 0 to {{max}} {{unit}}."
     },
     "moreNutrients": "More nutrients",
-    "moreNutrientsHint": "Optional, per the serving above."
+    "moreNutrientsHint": "Optional, per the serving above.",
+    "editTitle": "Edit food",
+    "delete": "Delete food",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "Your diary entries keep their nutrition."
   },
   "servingRuler": {
     "a11y": "Serving, {{quantity}}, {{serving}}, {{energy}} {{unit}}",

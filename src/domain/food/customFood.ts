@@ -1,7 +1,7 @@
 // Create Custom Food form boundary and canonical command mapping (ARCH-03, DATA-04/11, UX-08).
 import { z } from 'zod';
 
-import type { CustomFoodInput, ServingInput } from '@/data/db/repositories/foodsRepository';
+import type { CustomFoodInput, Food, ServingInput } from '@/data/db/repositories/foodsRepository';
 import {
   NUTRIENT_IDS,
   catalogNutrient,
@@ -10,7 +10,7 @@ import {
   type NutrientAmounts,
   type NutrientId,
 } from '@/domain/nutrition/nutrientCatalog';
-import { G_PER_OZ, ML_PER_FL_OZ, energyToKcal, type EnergyUnit } from '@/domain/units/units';
+import { G_PER_OZ, ML_PER_FL_OZ, energyFromKcal, energyToKcal, type EnergyUnit } from '@/domain/units/units';
 
 export const CUSTOM_FOOD_NAME_MAX = 80;
 export const CUSTOM_FOOD_AMOUNT_MAX = 10_000;
@@ -191,5 +191,46 @@ export function customFoodInputFromForm(
       ...(Object.keys(extra).length > 0 ? { extra } : {}),
     },
     servings,
+  };
+}
+
+/** A form value the parser accepts: at most two decimals, the locale separator, no grouping (UX-00). */
+function formDecimal(value: number, locale: string): string {
+  return String(Math.round(value * 100) / 100).replace('.', decimalSeparator(locale));
+}
+
+const formMacro = (value: number | null, locale: string) => (value === null ? '' : formDecimal(value, locale));
+
+/**
+ * UX-25 edit: the stored custom food back in UX-08 form values (display units). The serving unit is the default
+ * serving's; amounts round to two decimals, so an unchanged form maps back to the same food (within rounding).
+ */
+export function customFoodFormFromFood(food: Food, locale: string, energyUnit: EnergyUnit): CustomFoodFormValues {
+  const defaultUnit = (food.servings.find((serving) => serving.isDefault) ?? food.servings[0])?.unit;
+  let servingUnit: CustomServingUnit;
+  let amount = food.basisQuantity;
+  if (food.basisUnit === 'g') {
+    servingUnit = defaultUnit === 'oz' ? 'oz' : 'g';
+    if (servingUnit === 'oz') amount = food.basisQuantity / G_PER_OZ;
+  } else if (food.basisUnit === 'ml') {
+    servingUnit = defaultUnit === 'fl_oz' ? 'fl_oz' : 'ml';
+    if (servingUnit === 'fl_oz') amount = food.basisQuantity / ML_PER_FL_OZ;
+  } else servingUnit = 'other';
+  const extra: Partial<Record<NutrientId, string>> = {};
+  for (const id of CUSTOM_FOOD_NUTRIENT_IDS) {
+    const value = food.nutrients.extra?.[id];
+    if (value !== undefined && value !== null) extra[id] = formDecimal(value, locale);
+  }
+  return {
+    name: food.name,
+    brand: food.brand ?? '',
+    servingAmount: formDecimal(amount, locale),
+    servingUnit,
+    otherUnit: servingUnit === 'other' ? food.basisUnit : '',
+    energy: formDecimal(energyFromKcal(food.nutrients.energyKcal, energyUnit), locale),
+    protein: formMacro(food.nutrients.proteinG, locale),
+    carbohydrate: formMacro(food.nutrients.carbohydrateG, locale),
+    fat: formMacro(food.nutrients.fatG, locale),
+    extra,
   };
 }

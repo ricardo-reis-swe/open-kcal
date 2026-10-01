@@ -100,6 +100,7 @@ FROM diary_entries WHERE diary_date = ?;
 | Copy item / meal, Undo delete | Copy / reinsert the entry's nutrient rows with it. |
 | Delete custom / saved food | Set `is_deleted = 1` (DATA-11). Triggered from Food Search (UX-04). |
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
+| Edit custom food | DATA-26. |
 | Update goals | DATA-09. |
 
 ## DATA-17 Initialization and migrations
@@ -186,3 +187,7 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 - `listCustom(limit, offset)`: active custom foods (`source = 'custom' AND is_deleted = 0`), ordered `recent_foods.last_used_at` DESC (never used last), then `foods.created_at` DESC, then `id`. Pages of 20. `countCustom()` counts the same set. No schema change.
 - Used by the UX-04 `My foods` tab without a query and by UX-25; Profile shows the count (UX-15).
 - An added entry invalidates Recents and this list, so a logged food moves to the top.
+
+## DATA-26 Edit custom food
+- `updateCustom(id, input)`: active `custom` foods only (else not found). Tx: validate as create → update name, brand, basis, kcal/macros, `updated_at` → merge servings by `(label, unit)` as PROV-09 (matched IDs survive, so `recent_foods.last_serving_id` stays; removed servings set it NULL) → replace nutrient rows (DATA-20). `barcode` is kept.
+- Diary entries are never touched: their snapshots stay (DATA-05). Only later adds use the new values.

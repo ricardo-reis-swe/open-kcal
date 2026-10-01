@@ -16,7 +16,7 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 - It's a new data source: check licensing, the import format, and how it fits DATA-15 search.
 
 ## POST-03 Edit custom foods
-- The MVP only soft-deletes custom foods (UX-04 swipe). Editing needs a screen and a rule for existing entries (snapshots stay unchanged, DATA-05).
+- Moved into the MVP 2026-10-01 (user request): UX-25, DATA-26. ID kept so it is not reused.
 
 ## POST-04 Choose the goal effective date
 - The schema supports goals effective on any date (DATA-09). The MVP UI always uses today.

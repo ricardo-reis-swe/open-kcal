@@ -11,6 +11,7 @@ import {
   CUSTOM_FOOD_MACRO_MAX_G,
   CUSTOM_FOOD_NAME_MAX,
   CUSTOM_FOOD_NUTRIENT_IDS,
+  customFoodFormFromFood,
   customFoodFormSchema,
   customFoodNutrientMax,
   customFoodInputFromForm,
@@ -30,6 +31,7 @@ import {
   InlineStatus,
   ListRow,
   SectionHeader,
+  TextAction,
 } from '@/shared/components';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { formatInteger } from '@/shared/i18n/format';
@@ -42,14 +44,18 @@ type Props = {
   initialName?: string;
   /** DATA-24: GTIN-14 from the Barcode Scanner (UX-24); saved with the food. */
   barcode?: string;
+  /** UX-25 edit mode: the custom food to show and edit (DATA-26). Create mode without it. */
+  food?: Food;
   onCancel: () => void;
   onSaved: (food: Food) => void;
+  /** UX-25: after the confirmed `Delete food` (edit mode only). */
+  onDeleted?: () => void;
 };
 
 const SERVING_UNITS: readonly CustomServingUnit[] = ['g', 'oz', 'ml', 'fl_oz', 'other'];
 
 /** UX-08 Create Custom Food. Saving creates the food only; the route continues to Food Detail (NAV-04). */
-export function CreateCustomFoodScreen({ initialName = '', barcode, onCancel, onSaved }: Props) {
+export function CreateCustomFoodScreen({ initialName = '', barcode, food, onCancel, onSaved, onDeleted }: Props) {
   const theme = useTheme();
   const settings = useAppSettings();
   return (
@@ -57,11 +63,13 @@ export function CreateCustomFoodScreen({ initialName = '', barcode, onCancel, on
       {settings.data ? (
         <CustomFoodForm
           initialName={initialName}
-          barcode={barcode}
+          barcode={food ? (food.barcode ?? undefined) : barcode}
+          food={food}
           energyUnit={settings.data.energyUnit}
           initialServingUnit={settings.data.foodWeightUnit}
           onCancel={onCancel}
           onSaved={onSaved}
+          onDeleted={onDeleted}
         />
       ) : null}
     </View>
@@ -71,17 +79,21 @@ export function CreateCustomFoodScreen({ initialName = '', barcode, onCancel, on
 function CustomFoodForm({
   initialName,
   barcode,
+  food,
   energyUnit,
   initialServingUnit,
   onCancel,
   onSaved,
+  onDeleted,
 }: {
   initialName: string;
   barcode: string | undefined;
+  food: Food | undefined;
   energyUnit: 'kcal' | 'kJ';
   initialServingUnit: 'g' | 'oz';
   onCancel: () => void;
   onSaved: (food: Food) => void;
+  onDeleted?: () => void;
 }) {
   const { t } = useTranslation();
   const locale = useFormattingLocale();
@@ -108,18 +120,20 @@ function CustomFoodForm({
     setValue,
     formState: { errors, isDirty, isSubmitting, isValid, submitCount, touchedFields },
   } = useForm<CustomFoodFormValues>({
-    defaultValues: {
-      name: initialName,
-      brand: '',
-      servingAmount: '',
-      servingUnit: initialServingUnit,
-      otherUnit: '',
-      energy: '',
-      protein: '',
-      carbohydrate: '',
-      fat: '',
-      extra: {},
-    },
+    defaultValues: food
+      ? customFoodFormFromFood(food, locale, energyUnit)
+      : {
+          name: initialName,
+          brand: '',
+          servingAmount: '',
+          servingUnit: initialServingUnit,
+          otherUnit: '',
+          energy: '',
+          protein: '',
+          carbohydrate: '',
+          fat: '',
+          extra: {},
+        },
     // UX-00: surface feedback both when a field loses focus and as soon as it becomes valid again.
     mode: 'all',
     resolver,
@@ -129,7 +143,10 @@ function CustomFoodForm({
   const otherUnit = useWatch({ control, name: 'otherUnit' });
   const [discarding, setDiscarding] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
+  // UX-08: More nutrients opens when any value is set (an edited food may carry some).
+  const [moreOpen, setMoreOpen] = useState(Object.keys(food?.nutrients.extra ?? {}).length > 0);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
 
   const fieldError = (field: Exclude<keyof CustomFoodFormValues, 'extra'>, message: string) =>
     errors[field] && (touchedFields[field] || submitCount > 0) ? message : undefined;
@@ -152,22 +169,37 @@ function CustomFoodForm({
     if (!input) return;
     setSaveFailed(false);
     try {
-      onSaved(await writes.createCustom.mutateAsync(barcode ? { ...input, barcode } : input));
+      onSaved(
+        food
+          ? await writes.updateCustom.mutateAsync({ id: food.id, input })
+          : await writes.createCustom.mutateAsync(barcode ? { ...input, barcode } : input),
+      );
     } catch {
       setSaveFailed(true);
+    }
+  };
+  const remove = async () => {
+    setConfirmingDelete(false);
+    setDeleteFailed(false);
+    try {
+      await writes.deleteFood.mutateAsync(food!.id);
+      onDeleted?.();
+    } catch {
+      setDeleteFailed(true);
     }
   };
 
   return (
     <View style={{ flex: 1 }}>
       <AppBar
-        title={t('customFood.title')}
+        title={t(food ? 'customFood.editTitle' : 'customFood.title')}
         back={{ label: t('common.back'), onPress: requestCancel }}
         actions={
           <HeaderAction
             label={t('customFood.save')}
             onPress={() => void handleSubmit(submit)()}
-            disabled={!isValid || isSubmitting}
+            // UX-00: in edit mode also disabled until something changed.
+            disabled={!isValid || isSubmitting || (food !== undefined && !isDirty)}
             loading={isSubmitting}
             testID="custom-food-save"
           />
@@ -191,7 +223,7 @@ function CustomFoodForm({
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
                   autoCapitalize="words"
-                  autoFocus
+                  autoFocus={!food}
                   maxLength={CUSTOM_FOOD_NAME_MAX}
                   error={fieldError('name', t('customFood.errors.name'))}
                   testID="custom-food-name"
@@ -359,6 +391,17 @@ function CustomFoodForm({
               <InlineStatus tone="error" message={t('customFood.saveError')} />
             </View>
           ) : null}
+          {food ? (
+            <View style={{ paddingHorizontal: theme.spacing[4], gap: theme.spacing[2] }}>
+              {deleteFailed ? <InlineStatus tone="error" message={t('foodSearch.deleteError')} /> : null}
+              <TextAction
+                label={t('customFood.delete')}
+                tone="danger"
+                onPress={() => setConfirmingDelete(true)}
+                testID="custom-food-delete"
+              />
+            </View>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
       <ConfirmationDialog
@@ -371,6 +414,19 @@ function CustomFoodForm({
         onCancel={() => setDiscarding(false)}
         testID="custom-food-discard"
       />
+      {food ? (
+        <ConfirmationDialog
+          visible={confirmingDelete}
+          title={t('customFood.deleteTitle', { name: food.name })}
+          body={t('customFood.deleteBody')}
+          confirmLabel={t('customFood.delete')}
+          cancelLabel={t('common.cancel')}
+          destructive
+          onConfirm={() => void remove()}
+          onCancel={() => setConfirmingDelete(false)}
+          testID="custom-food-delete-dialog"
+        />
+      ) : null}
     </View>
   );
 }

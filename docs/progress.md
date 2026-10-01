@@ -32,7 +32,7 @@ Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new U
 
 ## My foods (user-requested, 2026-10-01)
 
-Status: **agent work done; device check and pt-PT review are the user's** · Spec: SCOPE-06, NAV-02/04/06, UX-04/15/25, DATA-25, DS-15, ARCH-05, POST-14 · In-session, no device tests, gate on `npm run check`.
+Status: **agent work done; device check and pt-PT review are the user's** · Spec: SCOPE-06, NAV-02/04/06/08, UX-04/08/15/19/25, DATA-25/26, DS-15, ARCH-05, POST-03/14 · In-session, no device tests, gate on `npm run check`.
 
 ### Tasks
 
@@ -40,7 +40,8 @@ Status: **agent work done; device check and pt-PT review are the user's** · Spe
 - [x] T2 Data: `foodsRepository.listCustom` / `countCustom`, hooks `useCustomFoodList` / `useCustomFoodCount`; an added entry invalidates Recents + the list (`diary.queries.ts`); `matchesFoodQuery` (`domain/food/foodQuery.ts`) for the Recent tab; tests `foods-diary.test.ts`, `foodQuery.test.ts`.
 - [x] T3 `TabStrip` (shared) + Food Search tabs (`FoodSearchScreen.tsx`; `FoodResultRow` extracted to `components/`); tests in `FoodSearchScreen.test.tsx`.
 - [x] T4 `MyFoodsScreen.tsx`, routes `profile/my-foods/{index,[foodId]}` + `routes.myFoods/myFoodDetail`, Profile row, Food Detail `stack="profile"` not-found action; en + pt-PT strings; tests `my-foods.nav.test.tsx`, `ProfileScreen.test.tsx`.
-- [ ] Device check: the user's (tabs on a 360 dp phone incl. pt-PT `Os meus alimentos` wrapping, Profile › My foods → add).
+- [x] T5 (user correction 2026-10-01) Profile › My foods opens the food's details to view/edit, not to log: `updateCustom` (DATA-26, servings merged by `(label, unit)`), `customFoodFormFromFood`, `CreateCustomFoodScreen` edit mode (`Edit food`, Save disabled until changed, confirmed `Delete food`), route `profile/my-foods/[foodId]` = edit; Meal Picker + Food Detail removed from My foods; tests `foods-diary.test.ts`, `customFood.test.ts`, `my-foods.nav.test.tsx`.
+- [ ] Device check: the user's (tabs on a 360 dp phone incl. pt-PT `Os meus alimentos` wrapping, Profile › My foods → edit → save/delete).
 
 ## Android widget (user-requested, 2026-09-30)
 

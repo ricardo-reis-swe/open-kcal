@@ -53,6 +53,7 @@ Scrambled eggs
 - Required: name, calories, serving amount, serving unit, protein, carbs, fat. Optional: brand, catalog nutrients (DATA-20, UX-08).
 - Stored locally; appear in future searches and in recents.
 - Listed in full in the Food Search `My foods` tab (UX-04) and in Profile › My foods (UX-25), most recently used first (DATA-25). User request 2026-10-01.
+- Viewed and edited from Profile › My foods (UX-25, DATA-26; was POST-03). Existing diary entries keep their snapshots (DATA-05).
 
 ## SCOPE-07 Ruler
 - Value fixed at center; ruler moves underneath.

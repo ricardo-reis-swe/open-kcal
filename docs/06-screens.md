@@ -90,7 +90,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Nothing anywhere: `No foods found for "<q>".` + `Create custom food`.
 - Tapping a remote result opens Food Detail immediately. Food Detail performs the provider detail read and upsert (DATA-15); Food Search MUST NOT replace the row with a loading label.
 - Tapping an expired cached food opens it immediately with cached values; a background refresh (when online) updates it for next time and never changes values on an open screen.
-- **Delete saved food**: a left swipe on any stored-food row (`My foods`, `Saved` or Recent) reveals a `Delete` button (DS-08); tapping it soft-deletes the food (DATA-11) and shows `<food> deleted · Undo` for 5 seconds. A short swipe springs closed; no dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. Remote provider rows (not yet saved) have no swipe action. Custom foods can't be edited in the MVP.
+- **Delete saved food**: a left swipe on any stored-food row (`My foods`, `Saved` or Recent) reveals a `Delete` button (DS-08); tapping it soft-deletes the food (DATA-11) and shows `<food> deleted · Undo` for 5 seconds. A short swipe springs closed; no dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. Remote provider rows (not yet saved) have no swipe action. Custom foods are edited from Profile › My foods (UX-25).
 - Clearing the field returns to the no-query state. Returning from Food Detail keeps the query and results. Search key = `search`.
 - **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods`, under the compact actions. Opens on `All`; switching keeps the query. Scan, Quick calories, Create custom food and swipe-delete work on every tab.
   | Tab | No query | Query |
@@ -157,6 +157,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - **More nutrients**: a collapsed disclosure under the macros with one optional field per catalog nutrient (DATA-20), grouped as UX-05, in the catalog unit (g / mg / µg), per the entered serving like the macros. `Salt` is offered and `sodium` is derived (EU labels list salt). Empty = unknown. Collapsed by default; opens when any value is set.
 - **From a scan** (`barcode` param, DATA-24): a display-only `Barcode  5601009983179` row under Brand; the code is saved with the food. Name starts empty.
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
+- **Edit mode** (UX-25): title `Edit food`; every field filled from the food (the default serving's unit; amounts to 2 decimals; More nutrients open when any is set); the barcode row when it has one (not editable); `Save` disabled until something changed (UX-00); `Delete food` at the end (UX-19).
 
 ## UX-09 Add Action Sheet
 Rows: `Add food` · `Scan barcode` · `Quick calories` · `Update weight` (icon + label). No title. Behavior: NAV-03.
@@ -241,6 +242,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 | Delete quick entry | `Delete quick calories?` | `<kcal> from <meal> on <date>.` | `Delete entry` |
 | Delete weight | `Delete weight entry?` | `<weight> on <date>.` | `Delete weight` |
 | Delete meal, no entries | `Delete <meal>?` | — | `Delete meal` |
+| Delete custom food (UX-25 edit) | `Delete <food>?` | `Your diary entries keep their nutrition.` | `Delete food` |
 | Remove USDA key | `Remove USDA API key?` | `USDA search will stop. Saved foods stay.` | `Remove key` |
 | Dirty exit (UX-00) | `Discard changes?` | — | `Discard` (other button: `Keep editing`) |
 - **Delete meal with entries** uses a sheet, not a dialog: `Delete <meal>? It has <n> entries. Move them to:` + radio list of the other meals + danger `Delete and move entries` (disabled until a meal is picked). Implements NAV-08 and DATA-10.
@@ -326,6 +328,6 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 [Show more                                ]
 ```
 - Profile › `My foods` (UX-15). User request 2026-10-01. Rows as UX-04 results (DS-09), DATA-25 order, 20 per page + `Show more`. No search field and no create action (create from Food Search).
-- Tap → Meal Picker (UX-10; skipped with one meal) → Food Detail / Add Entry (UX-05) for the Diary's selected date. Returns per NAV-06.
+- Tap → the food's details in the UX-08 form, edit mode (user decision 2026-10-01: Profile is for viewing and editing, not logging). Save edits the food (DATA-26) → My foods. Returns per NAV-06.
 - Swipe left → `Delete` + `<food> deleted · Undo` (UX-04 rules, DATA-11).
 - Empty: `No custom foods yet. Create them from Food Search.`

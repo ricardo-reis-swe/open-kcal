@@ -372,6 +372,26 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       });
     },
 
+    /**
+     * DATA-26 / UX-25: edit an active custom food in place. Servings merge by `(label, unit)` (IDs, and so recents'
+     * last serving, survive); nutrient rows are replaced; the barcode is kept. Diary snapshots never change (DATA-05).
+     */
+    async updateCustom(id: string, input: CustomFoodInput): Promise<Food> {
+      validateFood(input);
+      return db.transaction(async (tx) => {
+        const { changes } = await tx.run(
+          `UPDATE foods SET name = ?, brand = ?, basis_quantity = ?, basis_unit = ?, energy_kcal = ?, protein_g = ?,
+             carbohydrate_g = ?, fat_g = ?, updated_at = ?
+           WHERE id = ? AND source = 'custom' AND is_deleted = 0`,
+          [...foodValues(input).slice(0, 8), nowUtcIso(clock), id],
+        );
+        if (changes === 0) throw new NotFoundError('Custom food not found');
+        await mergeServings(tx, ids, id, input.servings);
+        await writeFoodNutrients(tx, id, input.nutrients.extra);
+        return (await readFood(tx, id))!;
+      });
+    },
+
     /** DATA-11: soft delete of a custom or saved external food. Entries keep their snapshots; it leaves search and recents. */
     async deleteFood(id: string): Promise<void> {
       const { changes } = await db.run('UPDATE foods SET is_deleted = 1, updated_at = ? WHERE id = ?', [

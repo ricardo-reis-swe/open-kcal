@@ -1,52 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
-import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
+import { useAppSettings } from '@/features/diary/diary.queries';
 import { AppBar, AppText, InlineStatus, TextAction, UndoToast } from '@/shared/components';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
-import { MealPicker } from '@/shared/navigation/MealPicker';
 import { useTheme } from '@/shared/theme';
 
-import { clearAddedFood, useAddedFoodNotice } from '../addedNotice';
 import { FoodResultRow } from '../components/FoodResultRow';
 import { useCustomFoodList, useLocalFoodWrites } from '../food-search.queries';
 
 type Props = {
   onBack: () => void;
-  /** UX-25: after the Meal Picker, Food Detail (add) for this food and meal on the Diary's selected date. */
-  onOpenFood: (food: Food, mealId: string) => void;
+  /** UX-25: the food's details, editable (UX-08 edit mode). */
+  onOpenFood: (food: Food) => void;
 };
 
-/** UX-25 / NAV-06 My foods: every custom food (DATA-25); tap → Meal Picker → Food Detail; swipe → Delete + Undo. */
+/** UX-25 / NAV-06 My foods: every custom food (DATA-25); tap → details/edit; swipe → Delete + Undo. */
 export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
   const settings = useAppSettings();
-  const meals = useMeals();
   const writes = useLocalFoodWrites();
   const [pages, setPages] = useState(1);
   const list = useCustomFoodList(pages);
-  const [picking, setPicking] = useState(false);
-  // The sheet closes fully before the route opens (NAV-03), so the choice waits in refs until `onDismissed`.
-  const pickingFood = useRef<Food | null>(null);
-  const pickedMeal = useRef<string | null>(null);
   const [deletedFood, setDeletedFood] = useState<Food | null>(null);
   const [deleteFailed, setDeleteFailed] = useState(false);
-  const added = useAddedFoodNotice();
-  useEffect(() => () => void (added && clearAddedFood(added.key)), [added]);
-
-  const open = (food: Food) => {
-    const options = meals.data ?? [];
-    // UX-10: with exactly one meal the picker is skipped.
-    if (options.length === 1) onOpenFood(food, options[0]!.id);
-    else {
-      pickingFood.current = food;
-      setPicking(true);
-    }
-  };
   const deleteFood = async (food: Food): Promise<boolean> => {
     setDeleteFailed(false);
     try {
@@ -90,7 +71,7 @@ export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
                 food={food}
                 locale={locale}
                 energyUnit={settings.data.energyUnit}
-                onPress={() => open(food)}
+                onPress={() => onOpenFood(food)}
                 onDelete={() => deleteFood(food)}
               />
             ))
@@ -105,25 +86,6 @@ export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
           ) : null}
         </ScrollView>
       ) : null}
-      <MealPicker
-        visible={picking}
-        meals={meals.data ?? []}
-        onSelect={(mealId) => {
-          pickedMeal.current = mealId;
-          setPicking(false);
-        }}
-        onClose={() => {
-          pickedMeal.current = null;
-          setPicking(false);
-        }}
-        onDismissed={() => {
-          const mealId = pickedMeal.current;
-          const food = pickingFood.current;
-          pickedMeal.current = null;
-          pickingFood.current = null;
-          if (mealId && food) onOpenFood(food, mealId);
-        }}
-      />
       {deletedFood ? (
         <UndoToast
           key={deletedFood.id}
@@ -132,14 +94,6 @@ export function MyFoodsScreen({ onBack, onOpenFood }: Props) {
           onUndo={() => void undoDelete()}
           onDismiss={() => setDeletedFood(null)}
           testID="food-delete-undo"
-        />
-      ) : null}
-      {added && !deletedFood ? (
-        <UndoToast
-          key={added.key}
-          message={t('foodSearch.added', { name: added.foodName, meal: added.mealName })}
-          onDismiss={() => clearAddedFood(added.key)}
-          testID="food-added-toast"
         />
       ) : null}
     </View>

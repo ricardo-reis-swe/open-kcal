@@ -38,36 +38,67 @@ async function createCustomFood(name: string, kcal: string) {
   await flush();
 }
 
+async function openMyFoods() {
+  await fireEvent.press(screen.getByRole('tab', { name: 'Profile' }));
+  await flush();
+  await fireEvent.press(await screen.findByTestId('profile-my-foods'));
+  await flush();
+}
+
 describe('UX-25 / NAV-06: Profile › My foods', () => {
-  it('lists custom foods; tap → Meal Picker → Food Detail on the Profile stack → Add returns to My foods', async () => {
+  it('a tap shows the food in the edit form; Save updates it, entries keep their snapshot (DATA-26)', async () => {
     const app = await renderApp('/diary');
     await createCustomFood('Profile porridge', '300');
-    expect(app.getPathname()).toBe('/diary');
-
-    await fireEvent.press(screen.getByRole('tab', { name: 'Profile' }));
+    // Log it once, so the edit must leave this entry alone (DATA-05).
+    await fireEvent.press(activeDay().getByRole('button', { name: 'Add food to Lunch' }));
     await flush();
-    expect(await within(await screen.findByTestId('profile-my-foods')).findByText('1 food')).toBeOnTheScreen();
-    await fireEvent.press(screen.getByTestId('profile-my-foods'));
-    await flush();
-    expect(app.getPathname()).toBe('/profile/my-foods');
-    expect(await screen.findByRole('header', { name: 'My foods' })).toBeOnTheScreen();
-
+    await fireEvent.press(screen.getByTestId('food-search-tab-custom')); // UX-04: lists it with no query
     await fireEvent.press(await screen.findByText('Profile porridge'));
     await flush();
-    const picker = await screen.findByTestId('meal-picker');
-    await fireEvent.press(within(picker).getByRole('button', { name: 'Lunch' }));
-    await flush();
-    expect(app.getPathname()).toMatch(/^\/profile\/my-foods\/.+/);
-    expect(await screen.findByText('Profile porridge')).toBeOnTheScreen();
-
     await fireEvent.press(screen.getByTestId('food-detail-add'));
     await flush();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    await flush();
+
+    await openMyFoods();
     expect(app.getPathname()).toBe('/profile/my-foods');
-    expect(await screen.findByTestId('food-added-toast')).toHaveTextContent('Added Profile porridge to Lunch');
+    await fireEvent.press(await screen.findByText('Profile porridge'));
+    await flush();
+    expect(app.getPathname()).toMatch(/^\/profile\/my-foods\/.+/);
+    expect(await screen.findByRole('header', { name: 'Edit food' })).toBeOnTheScreen();
+    expect(screen.getByTestId('custom-food-name').props.value).toBe('Profile porridge');
+    expect(screen.getByTestId('custom-food-serving').props.value).toBe('100');
+    expect(screen.getByTestId('custom-food-energy').props.value).toBe('300');
+    expect(screen.getByTestId('custom-food-save')).toBeDisabled(); // UX-00: nothing changed yet
+
+    await fireEvent.changeText(screen.getByTestId('custom-food-name'), 'Oat porridge');
+    await fireEvent.changeText(screen.getByTestId('custom-food-energy'), '350');
+    await waitFor(() => expect(screen.getByTestId('custom-food-save')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('custom-food-save'));
+    await flush();
+    expect(app.getPathname()).toBe('/profile/my-foods');
+    expect(await screen.findByText('Oat porridge')).toBeOnTheScreen();
+    expect(screen.queryByText('Profile porridge')).toBeNull();
 
     await fireEvent.press(screen.getByRole('tab', { name: 'Diary' }));
     await flush();
     expect(await activeDay().findByRole('header', { name: 'Lunch, 300 kilocalories' })).toBeOnTheScreen();
+  });
+
+  it('Delete food asks first, then removes it from the list', async () => {
+    const app = await renderApp('/diary');
+    await createCustomFood('Back test bread', '250');
+    await openMyFoods();
+    await fireEvent.press(await screen.findByText('Back test bread'));
+    await flush();
+    await fireEvent.press(await screen.findByTestId('custom-food-delete'));
+    expect(await screen.findByText('Delete Back test bread?')).toBeOnTheScreen();
+    await fireEvent.press(
+      within(screen.getByTestId('custom-food-delete-dialog')).getByRole('button', { name: 'Delete food' }),
+    );
+    await flush();
+    expect(app.getPathname()).toBe('/profile/my-foods');
+    expect(await screen.findByText('No custom foods yet. Create them from Food Search.')).toBeOnTheScreen();
   });
 
   it('with no custom foods the row says None and the list explains where foods come from', async () => {
@@ -77,23 +108,5 @@ describe('UX-25 / NAV-06: Profile › My foods', () => {
     await flush();
     expect(await screen.findByText('No custom foods yet. Create them from Food Search.')).toBeOnTheScreen();
     expect(app.getPathname()).toBe('/profile/my-foods');
-  });
-
-  it('back from Food Detail returns to My foods without logging', async () => {
-    const app = await renderApp('/diary');
-    await createCustomFood('Back test bread', '250');
-    await fireEvent.press(screen.getByRole('tab', { name: 'Profile' }));
-    await flush();
-    await fireEvent.press(await screen.findByTestId('profile-my-foods'));
-    await flush();
-    await fireEvent.press(await screen.findByText('Back test bread'));
-    await flush();
-    await fireEvent.press(within(await screen.findByTestId('meal-picker')).getByRole('button', { name: 'Dinner' }));
-    await flush();
-    await screen.findByTestId('food-detail-add');
-    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
-    await flush();
-    expect(app.getPathname()).toBe('/profile/my-foods');
-    expect(screen.queryByTestId('food-added-toast')).toBeNull();
   });
 });
