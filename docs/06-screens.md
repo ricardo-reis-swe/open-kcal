@@ -82,7 +82,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 |---|---|
 | Loading | spinner row |
 | Offline | `Offline. Showing saved foods only.` (once, above the remote sections) |
-| USDA key missing | `Add a USDA API key to search USDA` → switches to Profile tab › Food Databases (Diary stack kept) |
+| USDA key missing | Section hidden: no header, row or request (its UX-18 switch is off). Only if the key vanishes mid-search: `Add a USDA API key to search USDA` → switches to Profile tab › Food Databases (Diary stack kept) |
 | Error / timeout | `USDA search failed.` + `Retry` |
 | Rate limited | `USDA is busy. Try again later.` |
 

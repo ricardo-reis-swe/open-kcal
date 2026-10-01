@@ -12,6 +12,7 @@ import {
 import { useServices } from '@/bootstrap/services';
 import { ProviderConfigurationError, RateLimitError } from '@/shared/errors';
 import { useAppSettings, useDiaryWrites, useMeals } from '@/features/diary/diary.queries';
+import { useUsdaKeyConfigured } from '@/features/profile/profile.queries';
 import {
   AppBar,
   AppText,
@@ -162,7 +163,11 @@ export function FoodSearchScreen({
   }, [usdaQuery, query]);
   // DATA-19 / UX-18: until the setting loads nothing is visible, so a hidden remote section never sends a request.
   const sections = useFoodSearchSections();
-  const visibleSections = sections.data ? visibleFoodSearchSections(sections.data) : [];
+  // UX-18: without a USDA key its switch reads off, so the section is hidden here too (no key-missing row, no request).
+  const usdaAvailable = useUsdaKeyConfigured().data === true;
+  const visibleSections = sections.data
+    ? visibleFoodSearchSections(sections.data).filter((id) => id !== 'usda' || usdaAvailable)
+    : [];
   // UX-04: only `All` follows UX-18 visibility and searches providers; `My foods` always lists custom foods.
   const shows = (id: FoodSearchSectionId) => tab === 'all' && visibleSections.includes(id);
   const custom = useCustomFoodSearch(debouncedQuery, customPages, shows('custom') || tab === 'custom');

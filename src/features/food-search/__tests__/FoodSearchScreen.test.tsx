@@ -39,9 +39,11 @@ async function setup(
     }>;
     onFoodDatabases?: () => void;
     sections?: FoodSearchSections;
+    usdaKey?: boolean;
   } = {},
 ) {
   const { services } = await createTestServices();
+  jest.spyOn(services.credentials, 'hasUsdaApiKey').mockResolvedValue(options.usdaKey ?? true);
   if (options.sections) await services.settings.setFoodSearchSections(options.sections);
   const [meal] = await services.meals.list();
   const food = await services.foods.createCustom(almonds);
@@ -386,6 +388,18 @@ describe('UX-18 / DATA-19: Food Search section order and visibility', () => {
       .map((node) => node.props.children);
   const sections = (order: string, hidden: string[] = []) =>
     order.split(',').map((id) => ({ id, visible: !hidden.includes(id) })) as FoodSearchSections;
+
+  it('UX-18: without a USDA key the USDA section is hidden, sends no request and shows no key status', async () => {
+    const { services } = await setup({
+      initialQuery: 'eg',
+      usdaKey: false,
+      usdaError: new ProviderConfigurationError('key state', 'usda_key_missing'),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1_000)); // past the 800 ms USDA debounce
+    expect(services.usda.search).not.toHaveBeenCalled();
+    expect(screen.queryByRole('header', { name: 'USDA' })).toBeNull();
+    expect(screen.queryByText('Add a USDA API key to search USDA', { exact: false })).toBeNull();
+  });
 
   it('ROAD-02 M9: hidden remote sections send no requests and render nothing, not even the USDA key status', async () => {
     const offSearch = jest.fn(async () => ({ candidates: [hit('o1', 'Almond OFF')], page: 1, pageCount: 1 }));
