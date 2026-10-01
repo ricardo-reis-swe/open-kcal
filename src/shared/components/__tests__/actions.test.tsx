@@ -1,5 +1,7 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { i18next } from '@/shared/i18n/i18n';
 import { renderWithProviders } from '@/shared/testing/render';
@@ -7,6 +9,17 @@ import { lightTheme } from '@/shared/theme';
 import { lightColors } from '@/shared/theme/tokens';
 
 import { AppBar, HeaderAction, ListRow, PressableIcon, PrimaryButton, TextAction, UndoToast } from '..';
+import { shouldDismissToast } from '../UndoToast';
+
+const swipeToast = (testID: string, dx: number, velocityX = 0) =>
+  act(async () => {
+    fireGestureHandler(getByGestureTestId(`${testID}-pan`), [
+      { state: State.BEGAN, translationX: 0, velocityX: 0 },
+      { state: State.ACTIVE, translationX: dx / 2, velocityX },
+      { state: State.ACTIVE, translationX: dx, velocityX },
+      { state: State.END, translationX: dx, velocityX },
+    ]);
+  });
 
 describe('DS-12: PrimaryButton', () => {
   it('DS-09: is a labelled button that calls onPress', async () => {
@@ -105,6 +118,37 @@ describe('DS-10: UndoToast', () => {
     expect(screen.getByText('Copied 1 item')).toBeOnTheScreen();
     expect(screen.queryByRole('button')).toBeNull();
     await waitFor(() => expect(onDismiss).toHaveBeenCalledTimes(1));
+  });
+
+  it('a long horizontal swipe dismisses it like a timeout, never Undo', async () => {
+    const onUndo = jest.fn();
+    const onDismiss = jest.fn();
+    await renderWithProviders(
+      <UndoToast message="Eggs deleted" undoLabel="Undo" onUndo={onUndo} onDismiss={onDismiss} testID="toast" />,
+    );
+    await swipeToast('toast', 200);
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledTimes(1));
+    expect(onUndo).not.toHaveBeenCalled();
+  });
+
+  it('a short swipe springs back and restarts the timer', async () => {
+    const onDismiss = jest.fn();
+    await renderWithProviders(
+      <UndoToast message="Copied 1 item" onDismiss={onDismiss} durationMs={300} testID="toast" />,
+    );
+    await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
+    await swipeToast('toast', 20);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+    expect(onDismiss).not.toHaveBeenCalled();
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledTimes(1));
+  });
+
+  it('dismisses on a fling or past ~35% of its width', () => {
+    expect(shouldDismissToast(-130, 0, 360)).toBe(true);
+    expect(shouldDismissToast(120, 0, 360)).toBe(false);
+    expect(shouldDismissToast(30, 1200, 360)).toBe(true);
+    expect(shouldDismissToast(30, -1200, 360)).toBe(false);
+    expect(shouldDismissToast(64, 0, 0)).toBe(true);
   });
 });
 
