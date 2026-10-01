@@ -2,12 +2,15 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
-import { AppText, SwipeToDelete } from '@/shared/components';
+import { AppIcon, AppText, SwipeToDelete } from '@/shared/components';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { formatEnergy } from '@/shared/i18n/format';
 import { useTheme } from '@/shared/theme';
 
-/** DS-09 food result row (UX-04, UX-25): name, brand or basis, source, kcal; optional swipe-revealed Delete. */
+/**
+ * DS-09 food result row (UX-04, UX-25): name, brand or basis, source, kcal; optional swipe-revealed Delete. In UX-04
+ * select mode `selected` is set (tint + trailing check, a11y `selected`) and unselectable remote rows are `dimmed`.
+ */
 export function FoodResultRow({
   food,
   locale,
@@ -15,6 +18,8 @@ export function FoodResultRow({
   onPress,
   onDelete,
   disabled = false,
+  selected,
+  dimmed = false,
 }: {
   food: Food;
   locale: string;
@@ -23,6 +28,10 @@ export function FoodResultRow({
   /** Revealed Delete button tap. Resolving `false` (the delete failed) closes the row again. */
   onDelete?: () => Promise<boolean>;
   disabled?: boolean;
+  /** UX-04 select mode only; undefined outside it. */
+  selected?: boolean;
+  /** UX-04 select mode: a remote row that can't be selected (inert). */
+  dimmed?: boolean;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -42,7 +51,11 @@ export function FoodResultRow({
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'delete') onDelete?.();
         }}
-        disabled={disabled}
+        accessibilityState={
+          selected === undefined ? { disabled: disabled || dimmed } : { selected, disabled: disabled || dimmed }
+        }
+        accessibilityHint={selected === undefined || dimmed ? undefined : t('foodSearch.select.rowHint')}
+        disabled={disabled || dimmed}
         onPress={onPress}
         testID={`food-result-${food.id}`}
         style={({ pressed }) => ({
@@ -52,12 +65,14 @@ export function FoodResultRow({
           gap: theme.spacing[3],
           paddingHorizontal: theme.spacing[4],
           paddingVertical: theme.spacing[2],
-          backgroundColor: pressed ? theme.colors.primaryTint : theme.colors.surface,
+          backgroundColor: pressed || selected ? theme.colors.primaryTint : theme.colors.surface,
         })}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <AppText numberOfLines={1}>{food.name}</AppText>
-          <AppText variant="compact" color="textSecondary" numberOfLines={1}>
+          <AppText numberOfLines={1} color={dimmed ? 'textSecondary' : 'textPrimary'}>
+            {food.name}
+          </AppText>
+          <AppText variant="compact" color={dimmed ? 'textTertiary' : 'textSecondary'} numberOfLines={1}>
             {basis} · {t(`foodSearch.sources.${food.source}`)}
           </AppText>
         </View>
@@ -69,6 +84,7 @@ export function FoodResultRow({
             {energyUnitLabel}
           </AppText>
         </View>
+        {selected ? <AppIcon name="checkmark" color="primary" testID={`food-selected-${food.id}`} /> : null}
       </FocusablePressable>
     </SwipeToDelete>
   );

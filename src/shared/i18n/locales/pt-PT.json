@@ -285,6 +285,14 @@
       "all": "Todos",
       "recent": "Recentes",
       "custom": "Os meus alimentos"
+    },
+    "select": {
+      "toggle": "Selecionar vários",
+      "rowHint": "Toque duas vezes para selecionar",
+      "count_one": "{{count}} selecionado",
+      "count_other": "{{count}} selecionados",
+      "add": "Adicionar a {{meal}}",
+      "addError": "Não foi possível adicionar os alimentos. Tente novamente."
     }
   },
   "customFood": {

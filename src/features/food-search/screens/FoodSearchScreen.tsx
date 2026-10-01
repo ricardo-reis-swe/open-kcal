@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import { matchesFoodQuery } from '@/domain/food/foodQuery';
@@ -11,12 +11,13 @@ import {
 } from '@/domain/food/searchSections';
 import { useServices } from '@/bootstrap/services';
 import { ProviderConfigurationError, RateLimitError } from '@/shared/errors';
-import { useAppSettings, useMeals } from '@/features/diary/diary.queries';
+import { useAppSettings, useDiaryWrites, useMeals } from '@/features/diary/diary.queries';
 import {
   AppBar,
   AppText,
   InlineStatus,
   PressableIcon,
+  PrimaryButton,
   SectionHeader,
   TabStrip,
   TextAction,
@@ -49,6 +50,10 @@ const USDA_DEBOUNCE_MS = 800;
 /** UX-04 tabs. `all` is the sectioned search; the others are local lists that never call a provider. */
 type SearchTab = 'all' | 'recent' | 'custom';
 
+/** UX-04 select mode: Back (system back, swipe-back) while it's on leaves select mode instead of the screen. */
+export type SelectBackGuard = (enabled: boolean, onAttempt: () => void) => void;
+const noBackGuard: SelectBackGuard = () => {};
+
 type Props = {
   mealId: string;
   date: LocalDate;
@@ -64,6 +69,9 @@ type Props = {
   onFoodDatabases?: () => void;
   onSelectFood: (food: Food) => void;
   onSelectExternal: (source: 'usda' | 'open_food_facts', externalId: string) => void;
+  /** UX-04 select mode `Add to <meal>` committed (NAV-04: → Diary on the target date). */
+  onAddedSelection: () => void;
+  useSelectBackGuard?: SelectBackGuard;
 };
 
 /** UX-04 M4 subset: focused search, Recents without a query, and local custom-food results after 150 ms. */
@@ -80,6 +88,8 @@ export function FoodSearchScreen({
   onSelectFood,
   onSelectExternal,
   onFoodDatabases,
+  onAddedSelection,
+  useSelectBackGuard = noBackGuard,
 }: Props) {
   const { t, i18n } = useTranslation();
   const locale = useFormattingLocale();
@@ -103,6 +113,25 @@ export function FoodSearchScreen({
   const [savedPages, setSavedPages] = useState(1);
   const [usdaPages, setUsdaPages] = useState(1);
   const [tab, setTab] = useState<SearchTab>('all');
+  // UX-04 select mode: stored foods in tap order, kept across tabs and query changes.
+  const [selecting, setSelecting] = useState(false);
+  const [selection, setSelection] = useState<Food[]>([]);
+  const [addFailed, setAddFailed] = useState(false);
+  const diaryWrites = useDiaryWrites();
+  const leaveSelectMode = () => {
+    setSelecting(false);
+    setSelection([]);
+    setAddFailed(false);
+  };
+  useSelectBackGuard(selecting, leaveSelectMode);
+  // NAV-04: after a select-mode add, leave only once select mode is off, so the back guard lets the exit through.
+  const [addedSelection, setAddedSelection] = useState(false);
+  const leftAfterAdd = useRef(false);
+  useEffect(() => {
+    if (!addedSelection || leftAfterAdd.current) return;
+    leftAfterAdd.current = true;
+    onAddedSelection();
+  }, [addedSelection, onAddedSelection]);
   useEffect(() => {
     if (query.trim() === debouncedQuery) return;
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), LOCAL_DEBOUNCE_MS);
@@ -166,7 +195,32 @@ export function FoodSearchScreen({
     setTab(next);
   };
   const leaveSearch = () => {
-    onBack();
+    if (selecting) leaveSelectMode();
+    else onBack();
+  };
+  const toggleSelected = (food: Food) =>
+    setSelection((current) =>
+      current.some((item) => item.id === food.id) ? current.filter((item) => item.id !== food.id) : [...current, food],
+    );
+  /** UX-04: a stored row opens Food Detail and swipe-deletes, or toggles its selection in select mode. */
+  const storedRowProps = (food: Food, open: () => void, onDelete?: () => Promise<boolean>) =>
+    selecting
+      ? { selected: selection.some((item) => item.id === food.id), onPress: () => toggleSelected(food) }
+      : { onPress: open, onDelete };
+  const addSelection = async () => {
+    setAddFailed(false);
+    try {
+      await diaryWrites.addFoodEntries.mutateAsync({
+        diaryDate: date,
+        mealId,
+        foodIds: selection.map((food) => food.id),
+      });
+      setSelecting(false);
+      setSelection([]);
+      setAddedSelection(true);
+    } catch {
+      setAddFailed(true);
+    }
   };
   const deleteFood = async (food: Food): Promise<boolean> => {
     setDeleteFailed(false);
@@ -202,8 +256,11 @@ export function FoodSearchScreen({
             food={food}
             locale={locale}
             energyUnit={settings.data.energyUnit}
-            onPress={() => onSelectFood(food)}
-            onDelete={food.source === 'custom' ? () => deleteFood(food) : undefined}
+            {...storedRowProps(
+              food,
+              () => onSelectFood(food),
+              food.source === 'custom' ? () => deleteFood(food) : undefined,
+            )}
           />
         ))}
         {customFoods.length === customPages * 20 ? (
@@ -225,11 +282,14 @@ export function FoodSearchScreen({
             food={food}
             locale={locale}
             energyUnit={settings.data.energyUnit}
-            onPress={() => {
-              void refreshSavedFood(services, food);
-              onSelectFood(food);
-            }}
-            onDelete={() => deleteFood(food)}
+            {...storedRowProps(
+              food,
+              () => {
+                void refreshSavedFood(services, food);
+                onSelectFood(food);
+              },
+              () => deleteFood(food),
+            )}
           />
         ))}
         {savedFoods.length === savedPages * 20 ? (
@@ -273,6 +333,7 @@ export function FoodSearchScreen({
             }}
             locale={locale}
             energyUnit={settings.data.energyUnit}
+            dimmed={selecting}
             onPress={() => onSelectExternal('open_food_facts', candidate.externalId)}
           />
         ))}
@@ -327,6 +388,7 @@ export function FoodSearchScreen({
             }}
             locale={locale}
             energyUnit={settings.data.energyUnit}
+            dimmed={selecting}
             onPress={() => onSelectExternal('usda', candidate.externalId)}
           />
         ))}
@@ -353,11 +415,14 @@ export function FoodSearchScreen({
       food={food}
       locale={locale}
       energyUnit={settings.data.energyUnit}
-      onPress={() => {
-        void refreshSavedFood(services, food); // PROV-09: Recent opens refresh too
-        onSelectFood(food);
-      }}
-      onDelete={() => deleteFood(food)}
+      {...storedRowProps(
+        food,
+        () => {
+          void refreshSavedFood(services, food); // PROV-09: Recent opens refresh too
+          onSelectFood(food);
+        },
+        () => deleteFood(food),
+      )}
     />
   );
   const padded = { paddingHorizontal: theme.spacing[4] };
@@ -412,8 +477,11 @@ export function FoodSearchScreen({
           food={food}
           locale={locale}
           energyUnit={settings.data.energyUnit}
-          onPress={() => onSelectFood(food)}
-          onDelete={() => deleteFood(food)}
+          {...storedRowProps(
+            food,
+            () => onSelectFood(food),
+            () => deleteFood(food),
+          )}
         />
       ))}
       {myFoods.length === customPages * 20 ? (
@@ -428,7 +496,7 @@ export function FoodSearchScreen({
   );
   const customTab = (
     <>
-      {createCustom}
+      {selecting ? null : createCustom}
       {customRows}
     </>
   );
@@ -484,6 +552,7 @@ export function FoodSearchScreen({
                 icon="barcode-outline"
                 accessibilityLabel={t('foodSearch.scanBarcode')}
                 onPress={onScan}
+                disabled={selecting}
                 color="textSecondary"
                 testID="food-search-scan"
               />
@@ -496,7 +565,7 @@ export function FoodSearchScreen({
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: theme.spacing[6] }}
       >
-        {/* UX-04: quick calories ⚡ trails the meal/date context line. */}
+        {/* UX-04: the select-mode toggle, then quick calories ⚡, trail the meal/date context line. */}
         <View
           style={{
             flexDirection: 'row',
@@ -510,9 +579,18 @@ export function FoodSearchScreen({
             {t('foodSearch.context', { meal: meal.name, date: dateLabel })}
           </AppText>
           <PressableIcon
+            icon={selecting ? 'checkmark-done-circle' : 'checkmark-done-outline'}
+            accessibilityLabel={t('foodSearch.select.toggle')}
+            onPress={() => (selecting ? leaveSelectMode() : setSelecting(true))}
+            selected={selecting}
+            color={selecting ? 'primary' : 'textSecondary'}
+            testID="food-search-select"
+          />
+          <PressableIcon
             icon="flash-outline"
             accessibilityLabel={t('foodSearch.quickCalories')}
             onPress={onQuickCalories}
+            disabled={selecting}
             color="textSecondary"
             testID="food-search-quick-calories"
           />
@@ -578,6 +656,32 @@ export function FoodSearchScreen({
           </>
         )}
       </ScrollView>
+      {selecting ? (
+        <View
+          style={{
+            gap: theme.spacing[2],
+            paddingHorizontal: theme.spacing[4],
+            paddingVertical: theme.spacing[3],
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: theme.colors.divider,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
+          {addFailed ? <InlineStatus tone="error" message={t('foodSearch.select.addError')} /> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing[3] }}>
+            <AppText style={{ flex: 1 }} testID="food-search-selected-count">
+              {t('foodSearch.select.count', { count: selection.length })}
+            </AppText>
+            <PrimaryButton
+              label={t('foodSearch.select.add', { meal: meal.name })}
+              onPress={() => void addSelection()}
+              disabled={selection.length === 0}
+              loading={diaryWrites.addFoodEntries.isPending}
+              testID="food-search-add-selected"
+            />
+          </View>
+        </View>
+      ) : null}
       {deletedFood ? (
         <UndoToast
           key={deletedFood.id}

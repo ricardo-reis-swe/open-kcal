@@ -30,6 +30,16 @@ Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new U
 
 2026-09-28 (user-approved, commit "docs(spec): Food Search section order and visibility") SCOPE-01/UX-18/UX-04/DATA-19/ROAD-01/ROAD-02: new MVP feature for M9, reorder and show/hide the 4 Food Search sections on Food Databases (spec only; migration 2 + `schema.sql` change come with the code).
 
+## Multi-add select mode (user-requested, 2026-10-01)
+
+Status: **agent work done; device check is the user's** · Spec: UX-04 Select mode, DATA-16 `Add food entries (batch)`, NAV-04 · In-session, no device tests, gate on `npm run check`.
+
+### Tasks
+
+- [x] T1 Specs (`30a6c35`): `checkmark-done` toggle before ⚡; stored foods only (remote rows dimmed); selection across tabs; sticky `<n> selected` + `Add to <meal>`; UX-05 initial serving, no review step; Add → Diary on the target date.
+- [x] T2 `diaryRepository.addFoodEntries` (one Tx, `initialServing` per food, soft-deleted skipped, rollback otherwise) + `useDiaryWrites().addFoodEntries`; `FoodResultRow` `selected`/`dimmed`; `PressableIcon` `selected`; `FoodSearchScreen` select state, bottom bar, back guard (`usePreventRemove` in the route); en + pt-PT `foodSearch.select.*`; tests `batch-add.test.ts`, `FoodSearchScreen.test.tsx`, `select-mode.nav.test.tsx`.
+- [ ] Device check: the user's (toggle + ⚡ on the context line, selected tint, bottom bar above the home indicator, Android back / iOS swipe-back leave select mode).
+
 ## My foods (user-requested, 2026-10-01)
 
 Status: **agent work done; device check and pt-PT review are the user's** · Spec: SCOPE-06, NAV-02/04/06/08, UX-04/08/15/19/25, DATA-25/26, DS-15, ARCH-05, POST-03/14 · In-session, no device tests, gate on `npm run check`.

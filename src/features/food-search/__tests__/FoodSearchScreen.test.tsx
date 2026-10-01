@@ -153,19 +153,22 @@ async function setup(
     );
   }
   const onQuickCalories = jest.fn();
+  const onBack = jest.fn();
+  const onAddedSelection = jest.fn();
   const view = await renderWithServices(
     <FoodSearchScreen
       mealId={meal!.id}
       date="2026-09-25"
       today="2026-09-25"
       initialQuery={options.initialQuery}
-      onBack={jest.fn()}
+      onBack={onBack}
       onScan={onScan}
       onQuickCalories={onQuickCalories}
       onCreateCustom={onCreateCustom}
       onSelectFood={onSelectFood}
       onSelectExternal={onSelectExternal}
       onFoodDatabases={options.onFoodDatabases}
+      onAddedSelection={onAddedSelection}
     />,
     services,
     { language: options.language },
@@ -178,6 +181,9 @@ async function setup(
     onCreateCustom,
     onScan,
     onQuickCalories,
+    onBack,
+    onAddedSelection,
+    meal: meal!,
     view,
     productSignal: () => productSignal,
     resolvePendingProduct,
@@ -511,5 +517,67 @@ describe('UX-04: Food Search tabs', () => {
     expect(await screen.findByText('No custom foods yet.')).toBeTruthy();
     fireEvent.press(screen.getByTestId('food-create-custom'));
     expect(onCreateCustom).toHaveBeenCalledWith('');
+  });
+});
+
+describe('UX-04: select mode (multi-add)', () => {
+  const banana: CustomFoodInput = {
+    ...almonds,
+    name: 'Banana',
+    brand: null,
+    servings: [{ label: 'banana', quantity: 1, unit: 'banana', basisMultiplier: 1.2, isDefault: true }],
+  };
+
+  it('selects stored foods across tabs and adds them all with their last servings (DATA-16 batch)', async () => {
+    const { services, food, meal, onSelectFood, onAddedSelection } = await setup({ withRecent: true });
+    const other = await services.foods.createCustom(banana);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Select multiple' }));
+    expect(screen.getByRole('button', { name: 'Select multiple', selected: true })).toBeTruthy();
+    expect(screen.getByText('0 selected')).toBeTruthy();
+    expect(screen.getByTestId('food-search-add-selected')).toBeDisabled();
+    await fireEvent.press(await screen.findByTestId(`food-result-${food.id}`));
+    expect(onSelectFood).not.toHaveBeenCalled();
+    expect(screen.getByTestId(`food-result-${food.id}`)).toBeSelected();
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('food-search-tab-custom'));
+    });
+    expect(screen.queryByTestId('food-create-custom')).toBeNull();
+    // The same food on another tab is the same selection.
+    expect(await screen.findByTestId(`food-result-${food.id}`)).toBeSelected();
+    await fireEvent.press(await screen.findByTestId(`food-result-${other.id}`));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    await act(async () => {
+      await fireEvent.press(screen.getByRole('button', { name: 'Add to Breakfast' }));
+    });
+    await waitFor(() => expect(onAddedSelection).toHaveBeenCalledTimes(1));
+    const day = await services.diary.loadDay('2026-09-25');
+    const entries = day.meals.find((m) => m.meal.id === meal.id)!.entries;
+    expect(entries.map((e) => [e.name, e.servingQuantity, e.servingUnit])).toEqual([
+      ['Almond oats', 50, 'g'], // the withRecent add
+      ['Almond oats', 50, 'g'], // last serving
+      ['Banana', 1, 'banana'], // default serving
+    ]);
+  });
+
+  it('turns off scan, Quick calories and remote rows; Back leaves select mode, not the screen', async () => {
+    const { food, onBack, onSelectExternal, onSelectFood } = await setup({
+      initialQuery: 'al',
+      usdaCandidates: [{ externalId: 'u1', input: { ...almonds, name: 'Almond USDA' } }],
+    });
+    await fireEvent.press(await screen.findByRole('button', { name: 'Select multiple' }));
+    expect(screen.getByLabelText('Scan barcode')).toBeDisabled();
+    expect(screen.getByLabelText('Quick calories')).toBeDisabled();
+    expect(await screen.findByText('Almond USDA')).toBeTruthy();
+    expect(screen.getByTestId('food-result-usda-u1')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('food-result-usda-u1'));
+    expect(onSelectExternal).not.toHaveBeenCalled();
+    await fireEvent.press(await screen.findByTestId(`food-result-${food.id}`));
+    expect(screen.getByText('1 selected')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(onBack).not.toHaveBeenCalled();
+    expect(screen.queryByText('1 selected')).toBeNull();
+    expect(screen.getByTestId(`food-result-${food.id}`)).not.toBeSelected();
+    await fireEvent.press(screen.getByTestId(`food-result-${food.id}`));
+    expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
   });
 });

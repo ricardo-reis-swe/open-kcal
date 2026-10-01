@@ -15,6 +15,8 @@ export type PressableIconProps = {
   disabled?: boolean;
   /** Disclosure toggles expose their state (DS-11). */
   expanded?: boolean;
+  /** Toggles (e.g. UX-04 select mode) expose their on state. */
+  selected?: boolean;
   testID?: string;
 };
 
@@ -27,6 +29,7 @@ export function PressableIcon({
   color = 'textPrimary',
   disabled = false,
   expanded,
+  selected,
   testID,
 }: PressableIconProps) {
   const theme = useTheme();
@@ -38,7 +41,11 @@ export function PressableIcon({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityState={expanded === undefined ? { disabled } : { disabled, expanded }}
+      accessibilityState={{
+        disabled,
+        ...(expanded === undefined ? {} : { expanded }),
+        ...(selected === undefined ? {} : { selected }),
+      }}
       style={({ pressed }) => [
         styles.base,
         { minWidth: theme.touchMin, minHeight: theme.touchMin, borderRadius: theme.radii.pill },

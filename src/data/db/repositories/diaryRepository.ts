@@ -1,6 +1,7 @@
 // Diary entries and the derived diary day (DATA-05/06/07/12/14/16/20). Totals always come from entry snapshots, never
 // from `foods`, and are aggregated in SQL as known sum + unknown count per macro and catalog nutrient (ARCH-19).
 import { normalizeNote, isValidQuickCaloriesKcal, type EntryKind } from '@/domain/diary/entries';
+import { initialServing } from '@/domain/food/servings';
 import type { NutritionGoal } from '@/domain/nutrition/goals';
 import {
   isNutrientId,
@@ -210,6 +211,8 @@ export type AddFoodEntryInput = {
   servingId: string;
   quantity: number;
 };
+/** UX-04 select mode: stored foods in selection order, each logged with its UX-05 initial serving. */
+export type AddFoodEntriesInput = { diaryDate: LocalDate; mealId: string; foodIds: readonly string[] };
 /** The serving currently chosen in the editor (optional); the repository decides whether it changed. */
 export type EditFoodEntryInput = { mealId: string; quantity: number; servingId?: string };
 export type QuickCaloriesInput = { diaryDate: LocalDate; mealId: string; energyKcal: number; note?: string | null };
@@ -266,6 +269,45 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
     }
   };
 
+  /** DATA-16 Add food entry steps inside the caller's transaction (meal already validated). */
+  const insertFoodEntry = async (tx: SqlExecutor, input: AddFoodEntryInput): Promise<DiaryEntry> => {
+    const { food, serving, nutrients } = await snapshotFor(tx, input.foodId, input.servingId, input.quantity);
+    const now = nowUtcIso(clock);
+    const id = ids.newId();
+    await tx.run(
+      `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
+         serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
+         created_at, updated_at)
+       VALUES (?, 'food', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+      [
+        id,
+        input.diaryDate,
+        input.mealId,
+        food.id,
+        food.name,
+        food.brand,
+        input.quantity,
+        serving.label,
+        nutrients.energyKcal,
+        nutrients.proteinG,
+        nutrients.carbohydrateG,
+        nutrients.fatG,
+        await nextSortOrder(tx, input.diaryDate, input.mealId),
+        now,
+        now,
+      ],
+    );
+    await writeEntryNutrients(tx, id, nutrients.extra);
+    await upsertRecent(tx, {
+      foodId: food.id,
+      servingId: serving.id,
+      quantity: input.quantity,
+      mealId: input.mealId,
+      at: now,
+    });
+    return readEntry(tx, id);
+  };
+
   return {
     getEntry: (id: string) => readEntry(db, id),
 
@@ -317,41 +359,43 @@ export function createDiaryRepository({ db, clock, ids }: RepositoryDeps) {
       assertDate(input.diaryDate);
       return db.transaction(async (tx) => {
         await assertMeal(tx, input.mealId);
-        const { food, serving, nutrients } = await snapshotFor(tx, input.foodId, input.servingId, input.quantity);
-        const now = nowUtcIso(clock);
-        const id = ids.newId();
-        await tx.run(
-          `INSERT INTO diary_entries (id, entry_kind, diary_date, meal_id, food_id, food_name_snapshot, brand_snapshot,
-             serving_quantity, serving_unit_snapshot, energy_kcal, protein_g, carbohydrate_g, fat_g, note, sort_order,
-             created_at, updated_at)
-           VALUES (?, 'food', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
-          [
-            id,
-            input.diaryDate,
-            input.mealId,
-            food.id,
-            food.name,
-            food.brand,
-            input.quantity,
-            serving.label,
-            nutrients.energyKcal,
-            nutrients.proteinG,
-            nutrients.carbohydrateG,
-            nutrients.fatG,
-            await nextSortOrder(tx, input.diaryDate, input.mealId),
-            now,
-            now,
-          ],
-        );
-        await writeEntryNutrients(tx, id, nutrients.extra);
-        await upsertRecent(tx, {
-          foodId: food.id,
-          servingId: serving.id,
-          quantity: input.quantity,
-          mealId: input.mealId,
-          at: now,
-        });
-        return readEntry(tx, id);
+        return insertFoodEntry(tx, input);
+      });
+    },
+
+    /**
+     * DATA-16 Add food entries (batch), UX-04 select mode: one transaction, each food in selection order with its
+     * UX-05 initial serving (last serving if still valid, else the default). Foods soft-deleted since they were
+     * selected are skipped; any other failure rolls back every entry.
+     */
+    async addFoodEntries(input: AddFoodEntriesInput): Promise<DiaryEntry[]> {
+      assertDate(input.diaryDate);
+      return db.transaction(async (tx) => {
+        await assertMeal(tx, input.mealId);
+        const added: DiaryEntry[] = [];
+        for (const foodId of new Set(input.foodIds)) {
+          const food = await readFood(tx, foodId);
+          if (!food || food.isDeleted) continue;
+          const recent = await tx.getFirst<{ last_serving_id: string | null; last_serving_quantity: number | null }>(
+            'SELECT last_serving_id, last_serving_quantity FROM recent_foods WHERE food_id = ?',
+            [foodId],
+          );
+          const chosen = initialServing(
+            food.servings,
+            recent ? { servingId: recent.last_serving_id, quantity: recent.last_serving_quantity } : null,
+          );
+          if (!chosen) throw new ValidationError('Food has no serving', ['servingId']);
+          added.push(
+            await insertFoodEntry(tx, {
+              diaryDate: input.diaryDate,
+              mealId: input.mealId,
+              foodId,
+              servingId: chosen.serving.id,
+              quantity: chosen.quantity,
+            }),
+          );
+        }
+        return added;
       });
     },
 

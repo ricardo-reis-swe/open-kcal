@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/bootstrap/services';
 import type {
+  AddFoodEntriesInput,
   AddFoodEntryInput,
   CopyEntryInput,
   CopyMealInput,
@@ -108,6 +109,16 @@ export function useDiaryWrites() {
         client.invalidateQueries({ queryKey: ['foodSearch', 'customList'] }),
       ]),
   });
+  // UX-04 select mode: same invalidation as a single add.
+  const addFoodEntries = useMutation({
+    mutationFn: (input: AddFoodEntriesInput) => diary.addFoodEntries(input),
+    onSuccess: () =>
+      Promise.all([
+        refresh(),
+        client.invalidateQueries({ queryKey: ['foodSearch', 'recents'] }),
+        client.invalidateQueries({ queryKey: ['foodSearch', 'customList'] }),
+      ]),
+  });
   const editFoodEntry = useMutation({
     mutationFn: ({ id, ...input }: EditFoodEntryInput & { id: string }) => diary.editFoodEntry(id, input),
     onSuccess: refresh,
@@ -140,6 +151,7 @@ export function useDiaryWrites() {
   });
   return {
     addFoodEntry,
+    addFoodEntries,
     editFoodEntry,
     addQuickCalories,
     editQuickCalories,
