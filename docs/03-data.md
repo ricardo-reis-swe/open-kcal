@@ -208,20 +208,21 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
   - `total = Σ ingredient basis value × factor`. Stored per 1 serving: `basis_quantity = 1`, `basis_unit = 'serving'`, value = `total ÷ servings_count`.
   - Raw weight per serving = `raw_serving_g_override` if set, else `Σ raw grams ÷ servings_count` when every ingredient's raw grams are known, else unknown. The computed value follows ingredient changes; an override doesn't.
 - Unknown (DATA-06): a macro is NULL when any ingredient's is NULL. A catalog nutrient row exists only when every ingredient has one. **Why:** a known partial sum would understate the recipe.
-- Servings (`food_servings`, matched by `(label, unit)` on edit):
-  | label | unit | basis_multiplier | When |
-  |---|---|---|---|
-  | `serving` | `serving` | 1 | always, `is_default = 1` |
-  | `cooked` | `g` | `1 ÷ cooked_serving_g` | `cooked_serving_g` set |
-  | `raw` | `g` | `1 ÷ raw weight per serving` | raw weight known |
-- The UI shows `cooked` / `raw` as `g cooked` / `g raw` in the preferred food weight unit (oz converts, DATA-04); the entry snapshot keeps the label so the Diary reads `350 g cooked`. These are not the plain DATA-11 `g`/`oz` units: a recipe has no plain mass unit.
+- Servings (`food_servings`; `src/domain/food/recipe.ts`). `unit` is the role key; `label` is localized at save time and never re-translated (like DATA-10 meal names), so the entry snapshot reads e.g. `350 g cooked`:
+  | unit | basis_multiplier | When |
+  |---|---|---|
+  | `serving` | 1 | always, `is_default = 1` |
+  | `g_cooked` / `oz_cooked` | `1 ÷ cooked_serving_g` / `G_PER_OZ ÷ cooked_serving_g` | `cooked_serving_g` set |
+  | `g_raw` / `oz_raw` | the same with the raw weight per serving | raw weight known |
+- A recipe has no plain `g`/`oz` unit. The ruler treats `*_cooked` / `*_raw` like g / oz (UX-05).
+- A recompute triggered by an ingredient food (DATA-28) updates or removes serving rows but never adds one; a newly known raw weight gets its rows on the next recipe save. **Why:** labels need the app language, which the data layer doesn't have.
 - A soft-deleted ingredient food stays in the recipe and keeps counting.
 
 ## DATA-28 Recipe operations
 | Operation | Rules |
 |---|---|
 | `createRecipe(input)` | Tx: validate (name, `servings_count > 0`, `cooked_serving_g` / `raw_serving_g_override` NULL or > 0, ≥1 ingredient, no ingredient with `kind = 'recipe'`) → compute (DATA-27) → insert food + servings + nutrient rows + `recipes` + ingredient rows. Does not create an entry. |
-| `updateRecipe(id, input)` | Active recipes only (else not found). Tx: validate as create → update food, `recipes`, recompute → merge servings by `(label, unit)` as DATA-26 → replace nutrient and ingredient rows. Diary entries are never touched (DATA-05). |
+| `updateRecipe(id, input)` | Active recipes only (else not found). Tx: validate as create → update food, `recipes`, recompute → merge servings by `unit` (labels refreshed) → replace nutrient and ingredient rows. Diary entries are never touched (DATA-05). |
 | `getRecipe(id)` | Food + `recipes` + ingredients in `sort_order`, each with its food (deleted ones too) and current factor. |
 | Ingredient food changes | Any write that changes a food's basis, kcal/macros, servings or nutrient rows (DATA-26 edit, DATA-15 upsert/refresh) recomputes every recipe using it, in the same Tx. |
 | `listRecipes` / `countRecipes` | As DATA-25 `listCustom` / `countCustom`, with `kind = 'recipe'`. |

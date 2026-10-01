@@ -12,11 +12,19 @@ export type RecentServing = { servingId: string | null; quantity: number | null 
 
 export type RulerSpec = { step: number; majorStep: number };
 
+const G_SPEC: RulerSpec = { step: 1, majorStep: 10 };
+const OZ_SPEC: RulerSpec = { step: 0.1, majorStep: 1 };
+
 const RULER_SPECS: Readonly<Record<string, RulerSpec>> = {
-  g: { step: 1, majorStep: 10 },
-  oz: { step: 0.1, majorStep: 1 },
+  g: G_SPEC,
+  oz: OZ_SPEC,
   ml: { step: 5, majorStep: 50 },
   fl_oz: { step: 0.1, majorStep: 1 },
+  // DATA-27 recipe weights ruler like plain g / oz.
+  g_cooked: G_SPEC,
+  g_raw: G_SPEC,
+  oz_cooked: OZ_SPEC,
+  oz_raw: OZ_SPEC,
 };
 
 function normalizedUnit(serving: Pick<ServingLike, 'label' | 'unit'>): string {

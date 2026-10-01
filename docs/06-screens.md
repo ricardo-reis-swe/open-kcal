@@ -133,7 +133,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Tapping the value chip → direct numeric entry (up to 2 decimals).
 - Ruler a11y: role `adjustable`, increment/decrement = one step, label `Serving, 2, egg, 156 kilocalories`.
 - Header action label: `Add`. The Meal row already makes the target explicit. Returns per NAV-04.
-- **Recipes** (DATA-27): unit tabs `serving`, then `g cooked` / `g raw` when known, in the preferred food weight unit (no plain g/oz). Subtitle `Recipe · per serving`. Initial serving as above (default = 1 serving).
+- **Recipes** (DATA-27): unit tabs `serving`, then `g cooked` / `oz cooked` and `g raw` / `oz raw` when known, the preferred weight unit first in each pair (no plain g/oz). Subtitle `Recipe · per serving`. Initial serving as above (default = 1 serving).
 - **Ingredient mode** (Ingredient Detail): title `Add ingredient`, header action `Add`; no Meal or Date rows; nothing is logged and Recents aren't touched. Opened from an existing ingredient row (UX-26): title `Edit ingredient`, header `Save`, the ingredient's serving + quantity preselected. Add/Save writes into the UX-26 draft, not SQLite.
 - **Nutrition facts** (below Date, always shown): every catalog nutrient the food has (DATA-20), grouped (`Carbs & fats`, `Minerals`, `Vitamins`, `Other`) in catalog order, scaled live to the chosen serving like the macros; unknown nutrients are left out. Nothing known: `No other nutrients listed.` Compact rows per DS-09.
 

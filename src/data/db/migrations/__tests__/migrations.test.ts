@@ -31,8 +31,8 @@ describe('DATA-17: migrations', () => {
     const reference = await openTestDatabase();
     await reference.exec(readFileSync(join(__dirname, '../../schema/schema.sql'), 'utf8'));
     expect(await schemaOf(migrated)).toEqual(await schemaOf(reference));
-    expect(await readSchemaVersion(migrated)).toBe(6);
-    expect(LATEST_SCHEMA_VERSION).toBe(6);
+    expect(await readSchemaVersion(migrated)).toBe(7);
+    expect(LATEST_SCHEMA_VERSION).toBe(7);
   });
 
   it('DATA-19: migration 2 adds food_search_sections with the default, preserving existing settings', async () => {
@@ -80,7 +80,7 @@ describe('DATA-17: migrations', () => {
     await insert('offText', 'open_food_facts', 'abc1234567890');
     await insert('usda', 'usda', '2035482');
     await insert('custom', 'custom', null);
-    expect(await migrate(db, MIGRATIONS, { clock, logger: quietLogger() })).toEqual({
+    expect(await migrate(db, MIGRATIONS.slice(0, 6), { clock, logger: quietLogger() })).toEqual({
       fromVersion: 5,
       toVersion: 6,
       applied: [6],
@@ -96,6 +96,24 @@ describe('DATA-17: migrations', () => {
       usda: null,
     });
     await expect(db.run("UPDATE foods SET barcode = '123' WHERE id = 'custom'")).rejects.toThrow();
+  });
+
+  it('DATA-27: migration 7 adds foods.kind (existing foods = food) and the recipe tables', async () => {
+    const db = await openTestDatabase();
+    await migrate(db, MIGRATIONS.slice(0, 6), { clock, logger: quietLogger() });
+    await db.run(
+      `INSERT INTO foods (id, source, external_id, name, basis_quantity, basis_unit, energy_kcal, created_at, updated_at)
+       VALUES ('f1', 'open_food_facts', '123', 'Food', 100, 'g', 100, 'x', 'x')`,
+    );
+    expect(await migrate(db, MIGRATIONS.slice(0, 7), { clock, logger: quietLogger() })).toEqual({
+      fromVersion: 6,
+      toVersion: 7,
+      applied: [7],
+    });
+    expect(await db.getFirst('SELECT kind FROM foods WHERE id = ?', ['f1'])).toEqual({ kind: 'food' });
+    // A recipe must be a custom food.
+    await expect(db.run("UPDATE foods SET kind = 'recipe' WHERE id = 'f1'")).rejects.toThrow();
+    await expect(db.run("INSERT INTO recipes (food_id, servings_count) VALUES ('f1', 0)")).rejects.toThrow();
   });
 
   it('DATA-09: migration 3 preserves existing goals as fixed-gram targets', async () => {
@@ -174,8 +192,8 @@ describe('DATA-17: migrations', () => {
     const logger = quietLogger();
     const first = await migrate(db, MIGRATIONS, { clock, logger });
     const second = await migrate(db, MIGRATIONS, { clock, logger });
-    expect(first.applied).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(second).toEqual({ fromVersion: 6, toVersion: 6, applied: [] });
+    expect(first.applied).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(second).toEqual({ fromVersion: 7, toVersion: 7, applied: [] });
     expect(await db.getAll('SELECT version FROM schema_version ORDER BY version')).toEqual([
       { version: 1 },
       { version: 2 },
@@ -183,6 +201,7 @@ describe('DATA-17: migrations', () => {
       { version: 4 },
       { version: 5 },
       { version: 6 },
+      { version: 7 },
     ]);
   });
 

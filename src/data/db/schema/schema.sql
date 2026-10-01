@@ -1,6 +1,6 @@
--- Reference schema v6 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
+-- Reference schema v7 (DATA doc). Source of truth for table shape; migrations 1..n build it (v2: DATA-19 food_search_sections;
 -- v3: DATA-09 macro target mode; v4: DATA-20 nutrient rows + DATA-21 dashboard nutrients; v5: DATA-23 theme preference;
--- v6: DATA-24 food barcode).
+-- v6: DATA-24 food barcode; v7: DATA-27 recipes).
 -- Conventions: ids are app-generated UUID TEXT; *_at are UTC ISO-8601 with ms ("2026-09-25T14:32:18.123Z");
 -- *_date / effective_from are local dates 'YYYY-MM-DD'. Canonical units: kg, g, ml, kcal. NULL nutrient = unknown, 0 = known zero.
 -- Every connection: PRAGMA foreign_keys = ON; WAL where supported.
@@ -70,6 +70,7 @@ CREATE TABLE foods (
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL,
   barcode        TEXT CHECK (barcode IS NULL OR (length(barcode) = 14 AND barcode NOT GLOB '*[^0-9]*')),
+  kind           TEXT NOT NULL DEFAULT 'food' CHECK (kind IN ('food', 'recipe')) CHECK (kind = 'food' OR source = 'custom'),
   CHECK ((source = 'custom') = (external_id IS NULL))
 );
 CREATE UNIQUE INDEX ux_foods_source_external ON foods (source, external_id) WHERE external_id IS NOT NULL;
@@ -100,6 +101,29 @@ CREATE TABLE food_nutrients (
   amount      REAL NOT NULL CHECK (amount >= 0),
   PRIMARY KEY (food_id, nutrient_id)
 ) WITHOUT ROWID;
+
+-- DATA-27 recipe (a `foods` row with kind = 'recipe'). Nutrition is stored on the food per 1 serving.
+CREATE TABLE recipes (
+  food_id                TEXT PRIMARY KEY REFERENCES foods (id) ON DELETE CASCADE,
+  servings_count         REAL NOT NULL CHECK (servings_count > 0),
+  cooked_serving_g       REAL CHECK (cooked_serving_g IS NULL OR cooked_serving_g > 0),
+  raw_serving_g_override REAL CHECK (raw_serving_g_override IS NULL OR raw_serving_g_override > 0)
+);
+
+-- DATA-27 ingredient amounts. factor = serving.basis_multiplier * quantity, else basis_multiplier_snapshot.
+-- An ingredient food can't be hard-deleted while used (RESTRICT); soft-deleted foods keep counting.
+CREATE TABLE recipe_ingredients (
+  id                        TEXT PRIMARY KEY,
+  recipe_id                 TEXT NOT NULL REFERENCES foods (id) ON DELETE CASCADE,
+  food_id                   TEXT NOT NULL REFERENCES foods (id) ON DELETE RESTRICT,
+  serving_id                TEXT REFERENCES food_servings (id) ON DELETE SET NULL,
+  quantity                  REAL NOT NULL CHECK (quantity > 0),
+  serving_unit_snapshot     TEXT NOT NULL,
+  basis_multiplier_snapshot REAL NOT NULL CHECK (basis_multiplier_snapshot > 0),
+  sort_order                INTEGER NOT NULL CHECK (sort_order >= 0)
+);
+CREATE INDEX idx_recipe_ingredients_recipe ON recipe_ingredients (recipe_id, sort_order);
+CREATE INDEX idx_recipe_ingredients_food ON recipe_ingredients (food_id);
 
 -- Food entries and Quick Calories entries. Totals are computed from these snapshots, never from foods.
 CREATE TABLE diary_entries (
