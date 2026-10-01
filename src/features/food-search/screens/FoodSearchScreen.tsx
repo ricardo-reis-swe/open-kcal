@@ -481,13 +481,6 @@ export function FoodSearchScreen({
                 />
               ) : null}
               <PressableIcon
-                icon="flash-outline"
-                accessibilityLabel={t('foodSearch.quickCalories')}
-                onPress={onQuickCalories}
-                color="textSecondary"
-                testID="food-search-quick-calories"
-              />
-              <PressableIcon
                 icon="barcode-outline"
                 accessibilityLabel={t('foodSearch.scanBarcode')}
                 onPress={onScan}
@@ -503,13 +496,27 @@ export function FoodSearchScreen({
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: theme.spacing[6] }}
       >
-        <AppText
-          variant="compact"
-          color="textSecondary"
-          style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3] }}
+        {/* UX-04: quick calories ⚡ trails the meal/date context line. */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingLeft: theme.spacing[4],
+            paddingRight: theme.spacing[2],
+            paddingTop: theme.spacing[1],
+          }}
         >
-          {t('foodSearch.context', { meal: meal.name, date: dateLabel })}
-        </AppText>
+          <AppText variant="compact" color="textSecondary" style={{ flex: 1 }}>
+            {t('foodSearch.context', { meal: meal.name, date: dateLabel })}
+          </AppText>
+          <PressableIcon
+            icon="flash-outline"
+            accessibilityLabel={t('foodSearch.quickCalories')}
+            onPress={onQuickCalories}
+            color="textSecondary"
+            testID="food-search-quick-calories"
+          />
+        </View>
         <View style={{ paddingTop: theme.spacing[2] }}>
           <TabStrip
             tabs={[

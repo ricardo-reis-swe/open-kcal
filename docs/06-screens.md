@@ -66,12 +66,12 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 
 ## UX-04 Food Search
 ```text
-[‹ [🔍 Search foods          ✕ ⚡ ▥]      ]
-[Adding to Lunch · Today                  ]
+[‹ [🔍 Search foods            ✕ ▥]       ]
+[Adding to Lunch · Today               ⚡ ]
 [   All   |   Recent   |   My foods       ]
 [RECENT / results by section…             ]
 ```
-- Opens with the field focused (not when opened for NAV-03 Scan Barcode). Trailing field icons (user request 2026-10-01): quick-calories ⚡ (a11y `Quick calories`) → Quick Calories (same meal/date; back returns here), then scan (a11y `Scan barcode`) → Barcode Scanner (UX-24). No action row above the tabs. `Create custom food` → Create Custom Food (`initialName` = current query); it MUST appear only on the `My foods` tab.
+- Opens with the field focused (not when opened for NAV-03 Scan Barcode). Trailing field icon: scan (a11y `Scan barcode`) → Barcode Scanner (UX-24). Quick-calories ⚡ (a11y `Quick calories`) trails the `Adding to <meal> · <date>` line (user request 2026-10-01) → Quick Calories (same meal/date; back returns here). No action row above the tabs. `Create custom food` → Create Custom Food (`initialName` = current query); it MUST appear only on the `My foods` tab.
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
 - **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 800 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). **Why 800 ms for USDA:** 400 ms fired mid-word requests that spend quota and risk the 10-minute 429 cooldown (user decision 2026-09-30). Stale requests are cancelled.
 - Sections with sticky labels: `My foods` (custom), `Saved` (cached external), `Open Food Facts`, `USDA`, in the order and visibility set in UX-18 `Search results`. Each remote section shows the first page (10, PROV-08) + a `Show more` row for the next page.
