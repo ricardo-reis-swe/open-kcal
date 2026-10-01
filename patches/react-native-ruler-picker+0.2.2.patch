@@ -1,8 +1,8 @@
 diff --git a/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js b/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js
-index 62148c1..d06cec3 100644
+index 62148c1..d4a50ec 100644
 --- a/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js
 +++ b/node_modules/react-native-ruler-picker/lib/commonjs/components/RulerPicker.js
-@@ -9,53 +9,64 @@ var _reactNative = require("react-native");
+@@ -9,53 +9,68 @@ var _reactNative = require("react-native");
  var _flashList = require("@shopify/flash-list");
  var _RulerPickerItem = require("./RulerPickerItem");
  var _utils = require("../utils/");
@@ -77,6 +77,9 @@ index 62148c1..d06cec3 100644
 +  const snapToOffsets = (0, _react.useMemo)(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
    const listRef = (0, _react.useRef)(null);
 +  const userScrolled = (0, _react.useRef)(false);
++  // DS-09: the offset that puts initialValue under the pointer, and the offset the scroll view last reported.
++  const initialOffset = Math.floor((initialValue - min) / step) * (stepWidth + gapBetweenSteps);
++  const reportedOffset = (0, _react.useRef)(0);
 +  const onScrollBeginDrag = (0, _react.useCallback)(() => {
 +    userScrolled.current = true;
 +  }, []);
@@ -91,6 +94,7 @@ index 62148c1..d06cec3 100644
 +  const valueCallback = (0, _react.useCallback)(({
 +    value
 +  }) => {
++    reportedOffset.current = value;
      const newStep = (0, _utils.calculateCurrentValue)(value, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
 -    if (prevValue.current !== newStep) {
 -      var _stepTextRef$current;
@@ -103,7 +107,7 @@ index 62148c1..d06cec3 100644
          text: newStep
        });
      }
-@@ -81,10 +92,9 @@ const RulerPicker = _ref => {
+@@ -81,10 +96,9 @@ const RulerPicker = _ref => {
        width: width * 0.5 - stepWidth * 0.5
      }
    }), [stepWidth, width]);
@@ -117,7 +121,7 @@ index 62148c1..d06cec3 100644
      return /*#__PURE__*/_react.default.createElement(_RulerPickerItem.RulerPickerItem, {
        isLast: index === arrData.length - 1,
        index: index,
-@@ -93,20 +103,28 @@ const RulerPicker = _ref => {
+@@ -93,30 +107,49 @@ const RulerPicker = _ref => {
        gapBetweenSteps: gapBetweenSteps,
        stepWidth: stepWidth,
        shortStepColor: shortStepColor,
@@ -143,17 +147,34 @@ index 62148c1..d06cec3 100644
      }
      prevMomentumValue.current = newStep;
    }, [fractionDigits, gapBetweenSteps, stepWidth, max, min, onValueChangeEnd, step]);
++  const positionAtInitialValue = (0, _react.useCallback)(() => {
++    // DS-09: layout changes during a fling must not restore the initial value.
++    if (userScrolled.current || Math.abs(reportedOffset.current - initialOffset) < 1) return;
++    listRef.current?.scrollToOffset({ offset: initialOffset, animated: false });
++  }, [initialOffset]);
++  // DS-09: a single scroll on a screen that is still opening can be dropped natively, leaving the first tick under
++  // the pointer while the app shows the stored value. Keep positioning until the scroll view reports the offset.
++  (0, _react.useEffect)(() => {
++    let attempts = 0;
++    const timer = setInterval(() => {
++      attempts += 1;
++      const reached = Math.abs(reportedOffset.current - initialOffset) < 1;
++      if (userScrolled.current || (reached && attempts >= 20) || attempts >= 60) clearInterval(timer);
++      else positionAtInitialValue();
++    }, 50);
++    return () => clearInterval(timer);
++  }, [initialOffset, positionAtInitialValue]);
    function onContentSizeChange() {
 -    var _listRef$current;
-+    // DS-09: layout changes during a fling must not restore the initial value.
-+    if (userScrolled.current) return;
-     const initialIndex = Math.floor((initialValue - min) / step);
+-    const initialIndex = Math.floor((initialValue - min) / step);
 -    (_listRef$current = listRef.current) === null || _listRef$current === void 0 ? void 0 : _listRef$current.scrollToOffset({
-+    listRef.current?.scrollToOffset({
-       offset: initialIndex * (stepWidth + gapBetweenSteps),
-       animated: false
-     });
-@@ -116,7 +134,7 @@ const RulerPicker = _ref => {
+-      offset: initialIndex * (stepWidth + gapBetweenSteps),
+-      animated: false
+-    });
++    positionAtInitialValue();
+   }
+   return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+     style: {
        width,
        height
      }
@@ -162,7 +183,7 @@ index 62148c1..d06cec3 100644
      ref: listRef,
      data: arrData,
      keyExtractor: (_, index) => index.toString(),
-@@ -125,42 +143,52 @@ const RulerPicker = _ref => {
+@@ -125,42 +158,52 @@ const RulerPicker = _ref => {
      ListFooterComponent: renderSeparator,
      onScroll: scrollHandler,
      onMomentumScrollEnd: onMomentumScrollEnd,
@@ -225,7 +246,7 @@ index 62148c1..d06cec3 100644
      }, styles.unitText, unitTextStyle]
    }, unit)), /*#__PURE__*/_react.default.createElement(_reactNative.View, {
      style: [{
-@@ -198,4 +226,3 @@ const styles = _reactNative.StyleSheet.create({
+@@ -198,4 +241,3 @@ const styles = _reactNative.StyleSheet.create({
      marginLeft: 6
    }
  });
@@ -311,10 +332,10 @@ index 2451f41..20eec83 100644
 -//# sourceMappingURL=RulerPickerItem.js.map
 \ No newline at end of file
 diff --git a/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js b/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js
-index be03a9c..78e6810 100644
+index be03a9c..2980c31 100644
 --- a/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js
 +++ b/node_modules/react-native-ruler-picker/lib/module/components/RulerPicker.js
-@@ -1,53 +1,66 @@
+@@ -1,53 +1,70 @@
 -import React, { useCallback, useEffect, useRef } from 'react';
 +import React, { useCallback, useEffect, useMemo, useRef } from 'react';
  import { Dimensions, StyleSheet, View, Text, Animated, TextInput } from 'react-native';
@@ -390,6 +411,9 @@ index be03a9c..78e6810 100644
 +  const snapToOffsets = useMemo(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
    const listRef = useRef(null);
 +  const userScrolled = useRef(false);
++  // DS-09: the offset that puts initialValue under the pointer, and the offset the scroll view last reported.
++  const initialOffset = Math.floor((initialValue - min) / step) * (stepWidth + gapBetweenSteps);
++  const reportedOffset = useRef(0);
 +  const onScrollBeginDrag = useCallback(() => {
 +    userScrolled.current = true;
 +  }, []);
@@ -404,6 +428,7 @@ index be03a9c..78e6810 100644
 +  const valueCallback = useCallback(({
 +    value
 +  }) => {
++    reportedOffset.current = value;
      const newStep = calculateCurrentValue(value, stepWidth, gapBetweenSteps, min, max, step, fractionDigits);
 -    if (prevValue.current !== newStep) {
 -      var _stepTextRef$current;
@@ -416,7 +441,7 @@ index be03a9c..78e6810 100644
          text: newStep
        });
      }
-@@ -73,10 +86,9 @@ export const RulerPicker = _ref => {
+@@ -73,10 +90,9 @@ export const RulerPicker = _ref => {
        width: width * 0.5 - stepWidth * 0.5
      }
    }), [stepWidth, width]);
@@ -430,7 +455,7 @@ index be03a9c..78e6810 100644
      return /*#__PURE__*/React.createElement(RulerPickerItem, {
        isLast: index === arrData.length - 1,
        index: index,
-@@ -85,20 +97,28 @@ export const RulerPicker = _ref => {
+@@ -85,30 +101,49 @@ export const RulerPicker = _ref => {
        gapBetweenSteps: gapBetweenSteps,
        stepWidth: stepWidth,
        shortStepColor: shortStepColor,
@@ -456,17 +481,34 @@ index be03a9c..78e6810 100644
      }
      prevMomentumValue.current = newStep;
    }, [fractionDigits, gapBetweenSteps, stepWidth, max, min, onValueChangeEnd, step]);
++  const positionAtInitialValue = useCallback(() => {
++    // DS-09: layout changes during a fling must not restore the initial value.
++    if (userScrolled.current || Math.abs(reportedOffset.current - initialOffset) < 1) return;
++    listRef.current?.scrollToOffset({ offset: initialOffset, animated: false });
++  }, [initialOffset]);
++  // DS-09: a single scroll on a screen that is still opening can be dropped natively, leaving the first tick under
++  // the pointer while the app shows the stored value. Keep positioning until the scroll view reports the offset.
++  useEffect(() => {
++    let attempts = 0;
++    const timer = setInterval(() => {
++      attempts += 1;
++      const reached = Math.abs(reportedOffset.current - initialOffset) < 1;
++      if (userScrolled.current || (reached && attempts >= 20) || attempts >= 60) clearInterval(timer);
++      else positionAtInitialValue();
++    }, 50);
++    return () => clearInterval(timer);
++  }, [initialOffset, positionAtInitialValue]);
    function onContentSizeChange() {
 -    var _listRef$current;
-+    // DS-09: layout changes during a fling must not restore the initial value.
-+    if (userScrolled.current) return;
-     const initialIndex = Math.floor((initialValue - min) / step);
+-    const initialIndex = Math.floor((initialValue - min) / step);
 -    (_listRef$current = listRef.current) === null || _listRef$current === void 0 ? void 0 : _listRef$current.scrollToOffset({
-+    listRef.current?.scrollToOffset({
-       offset: initialIndex * (stepWidth + gapBetweenSteps),
-       animated: false
-     });
-@@ -108,7 +128,7 @@ export const RulerPicker = _ref => {
+-      offset: initialIndex * (stepWidth + gapBetweenSteps),
+-      animated: false
+-    });
++    positionAtInitialValue();
+   }
+   return /*#__PURE__*/React.createElement(View, {
+     style: {
        width,
        height
      }
@@ -475,7 +517,7 @@ index be03a9c..78e6810 100644
      ref: listRef,
      data: arrData,
      keyExtractor: (_, index) => index.toString(),
-@@ -117,42 +137,52 @@ export const RulerPicker = _ref => {
+@@ -117,42 +152,52 @@ export const RulerPicker = _ref => {
      ListFooterComponent: renderSeparator,
      onScroll: scrollHandler,
      onMomentumScrollEnd: onMomentumScrollEnd,
@@ -538,7 +580,7 @@ index be03a9c..78e6810 100644
      }, styles.unitText, unitTextStyle]
    }, unit)), /*#__PURE__*/React.createElement(View, {
      style: [{
-@@ -189,4 +219,3 @@ const styles = StyleSheet.create({
+@@ -189,4 +234,3 @@ const styles = StyleSheet.create({
      marginLeft: 6
    }
  });
@@ -668,7 +710,7 @@ index eed0f9e..67aa937 100644
 \ No newline at end of file
 +export declare const RulerPickerItem: React.MemoExoticComponent<(props: Props) => React.ReactElement>;
 diff --git a/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx b/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx
-index 8d1f0d1..38e863c 100644
+index 8d1f0d1..73538e7 100644
 --- a/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx
 +++ b/node_modules/react-native-ruler-picker/src/components/RulerPicker.tsx
 @@ -1,4 +1,4 @@
@@ -710,7 +752,7 @@ index 8d1f0d1..38e863c 100644
  } & Partial<RulerPickerItemProps>;
  
  export const RulerPicker = ({
-@@ -142,10 +153,20 @@ export const RulerPicker = ({
+@@ -142,10 +153,23 @@ export const RulerPicker = ({
    decelerationRate = 'normal',
    onValueChange,
    onValueChangeEnd,
@@ -729,11 +771,22 @@ index 8d1f0d1..38e863c 100644
 +  const snapToOffsets = useMemo(() => arrData.map((_, index) => index * (stepWidth + gapBetweenSteps)), [arrData, stepWidth, gapBetweenSteps]);
 +  const listRef = useRef<FlashListRef<number>>(null);
 +  const userScrolled = useRef(false);
++  // DS-09: the offset that puts initialValue under the pointer, and the offset the scroll view last reported.
++  const initialOffset = Math.floor((initialValue - min) / step) * (stepWidth + gapBetweenSteps);
++  const reportedOffset = useRef(0);
 +  const onScrollBeginDrag = useCallback(() => { userScrolled.current = true; }, []);
  
    const stepTextRef = useRef<TextInput>(null);
    const prevValue = useRef<string>(initialValue.toFixed(fractionDigits));
-@@ -166,7 +187,8 @@ export const RulerPicker = ({
+@@ -156,6 +180,7 @@ export const RulerPicker = ({
+ 
+   const valueCallback: Animated.ValueListenerCallback = useCallback(
+     ({ value }) => {
++      reportedOffset.current = value;
+       const newStep = calculateCurrentValue(
+         value,
+         stepWidth,
+@@ -166,7 +191,8 @@ export const RulerPicker = ({
          fractionDigits
        );
  
@@ -743,7 +796,7 @@ index 8d1f0d1..38e863c 100644
          onValueChange?.(newStep);
          stepTextRef.current?.setNativeProps({ text: newStep });
        }
-@@ -216,6 +238,13 @@ export const RulerPicker = ({
+@@ -216,6 +242,13 @@ export const RulerPicker = ({
            stepWidth={stepWidth}
            shortStepColor={shortStepColor}
            longStepColor={longStepColor}
@@ -757,7 +810,7 @@ index 8d1f0d1..38e863c 100644
          />
        );
      },
-@@ -227,13 +256,14 @@ export const RulerPicker = ({
+@@ -227,13 +260,14 @@ export const RulerPicker = ({
        longStepHeight,
        shortStepColor,
        shortStepHeight,
@@ -773,7 +826,7 @@ index 8d1f0d1..38e863c 100644
          stepWidth,
          gapBetweenSteps,
          min,
-@@ -242,7 +272,7 @@ export const RulerPicker = ({
+@@ -242,7 +276,7 @@ export const RulerPicker = ({
          fractionDigits
        );
  
@@ -782,16 +835,35 @@ index 8d1f0d1..38e863c 100644
          onValueChangeEnd?.(newStep);
        }
  
-@@ -259,6 +289,8 @@ export const RulerPicker = ({
+@@ -258,17 +292,30 @@ export const RulerPicker = ({
+       step,
      ]
    );
-   function onContentSizeChange() {
++  const positionAtInitialValue = useCallback(() => {
 +    // DS-09: layout changes during a fling must not restore the initial value.
-+    if (userScrolled.current) return;
-     const initialIndex = Math.floor((initialValue - min) / step);
-     listRef.current?.scrollToOffset({
-       offset: initialIndex * (stepWidth + gapBetweenSteps),
-@@ -268,7 +300,7 @@ export const RulerPicker = ({
++    if (userScrolled.current || Math.abs(reportedOffset.current - initialOffset) < 1) return;
++    listRef.current?.scrollToOffset({ offset: initialOffset, animated: false });
++  }, [initialOffset]);
++  // DS-09: a single scroll on a screen that is still opening can be dropped natively, leaving the first tick under
++  // the pointer while the app shows the stored value. Keep positioning until the scroll view reports the offset.
++  useEffect(() => {
++    let attempts = 0;
++    const timer = setInterval(() => {
++      attempts += 1;
++      const reached = Math.abs(reportedOffset.current - initialOffset) < 1;
++      if (userScrolled.current || (reached && attempts >= 20) || attempts >= 60) clearInterval(timer);
++      else positionAtInitialValue();
++    }, 50);
++    return () => clearInterval(timer);
++  }, [initialOffset, positionAtInitialValue]);
+   function onContentSizeChange() {
+-    const initialIndex = Math.floor((initialValue - min) / step);
+-    listRef.current?.scrollToOffset({
+-      offset: initialIndex * (stepWidth + gapBetweenSteps),
+-      animated: false,
+-    });
++    positionAtInitialValue();
+   }
  
    return (
      <View style={{ width, height }}>
@@ -800,7 +872,7 @@ index 8d1f0d1..38e863c 100644
          ref={listRef}
          data={arrData}
          keyExtractor={(_, index) => index.toString()}
-@@ -277,20 +309,24 @@ export const RulerPicker = ({
+@@ -277,20 +324,24 @@ export const RulerPicker = ({
          ListFooterComponent={renderSeparator}
          onScroll={scrollHandler}
          onMomentumScrollEnd={onMomentumScrollEnd}
@@ -831,7 +903,7 @@ index 8d1f0d1..38e863c 100644
          pointerEvents="none"
          style={[
            styles.indicator,
-@@ -358,7 +394,7 @@ export const RulerPicker = ({
+@@ -358,7 +409,7 @@ export const RulerPicker = ({
              },
            ]}
          />

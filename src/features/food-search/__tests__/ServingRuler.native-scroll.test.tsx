@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { ScrollView } from 'react-native';
 import { RulerPicker } from 'react-native-ruler-picker';
 
 // Keep both the picker and FlashList real: mocking either hides native scroll configuration.
@@ -42,5 +43,31 @@ describe('DS-09: ruler native momentum', () => {
       });
       expect(onValueChangeEnd).toHaveBeenLastCalledWith(String(index));
     }
+  });
+});
+
+describe('DS-09: ruler opens at its initial value', () => {
+  afterEach(() => jest.useRealTimers());
+
+  it('keeps positioning until the user drags, so a scroll dropped while the screen opens is retried', async () => {
+    jest.useFakeTimers();
+    const scrollTo = ScrollView.prototype.scrollTo as jest.Mock;
+    scrollTo.mockClear();
+    await render(
+      <RulerPicker min={0} max={2000} initialValue={100} fractionDigits={0} stepWidth={1} gapBetweenSteps={23} />,
+    );
+    // Opening a recent food at 100 g: the native view never reports offset 2400, so the ruler tries again.
+    await act(() => jest.advanceTimersByTime(200));
+    const attempts = scrollTo.mock.calls.length;
+    expect(attempts).toBeGreaterThan(1);
+    expect(scrollTo).toHaveBeenLastCalledWith({ x: 100 * 24, y: 0, animated: false });
+
+    const scroll = screen.container.queryAll(
+      (node) => node.props.horizontal === true && typeof node.props.onScroll === 'function',
+    )[0]!;
+    await fireEvent(scroll, 'scrollBeginDrag');
+    await act(() => jest.advanceTimersByTime(1_000));
+    // A drag is the user's choice; the initial value must not pull the ruler back.
+    expect(scrollTo).toHaveBeenCalledTimes(attempts);
   });
 });
