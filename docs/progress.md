@@ -39,7 +39,7 @@ Status: **in progress** · Spec: SCOPE-13, NAV-02/04/06/08, DATA-17/25/27/28, UX
 
 - [x] T1 Specs: recipe = `foods.kind = 'recipe'` with stored per-serving nutrition; required servings, optional cooked g/serving, raw g/serving auto from ingredients with override; units `serving` · `g cooked` · `g raw`; ingredient edits recompute recipes; no nesting (POST-15); Food Search `Recipes` tab, `All` shows recipes only while recent; Profile › My recipes.
 - [x] T2 Migration 7 + `schema.sql` (`foods.kind`, `recipes`, `recipe_ingredients`); recipe math in `domain/` (factor, unknowns, raw weight, servings rows); migration + domain tests.
-- [ ] T3 Repository: `createRecipe` / `updateRecipe` / `getRecipe` / `listRecipes` / `countRecipes` / `searchRecipes`; recompute on ingredient food change (DATA-26 edit, DATA-15 upsert); recipes out of `listCustom` / `searchCustom` / `findByBarcode`; recent recipes in `All` › `My foods`.
+- [x] T3 Repository: `createRecipe` / `updateRecipe` / `getRecipe` / `listRecipes` / `countRecipes` / `searchRecipes`; recompute on ingredient food change (DATA-26 edit, DATA-15 upsert); recipes out of `listCustom` / `searchCustom` / `findByBarcode`; recent recipes in `All` › `My foods`.
 - [ ] T4 Recipe editor (UX-26) + in-memory draft + routes `createRecipe` / `editRecipe`.
 - [ ] T5 Ingredient Search / Detail (UX-04/05 ingredient mode) in both stacks.
 - [ ] T6 Food Search `Recipes` tab; Food Detail recipe units.

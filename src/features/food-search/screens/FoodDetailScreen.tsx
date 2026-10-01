@@ -170,6 +170,7 @@ function snapshotFood(entry: DiaryEntry): Food {
   return {
     id: entry.foodId ?? `snapshot-${entry.id}`,
     source: 'custom',
+    kind: 'food',
     externalId: null,
     name: entry.name,
     brand: entry.brand,

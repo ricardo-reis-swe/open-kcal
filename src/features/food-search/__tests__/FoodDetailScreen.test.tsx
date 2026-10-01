@@ -20,6 +20,7 @@ let mockRecent = { foodId: 'food-1', lastServingId: 'serving-1', lastServingQuan
 const mockFood: Food = {
   id: 'food-1',
   source: 'custom',
+  kind: 'food',
   externalId: null,
   name: 'Almond oats',
   brand: 'Morning Foods',

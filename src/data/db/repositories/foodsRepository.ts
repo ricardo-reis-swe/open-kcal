@@ -8,6 +8,13 @@ import {
   type NutrientAmounts,
 } from '@/domain/nutrition/nutrientCatalog';
 import type { Nutrients } from '@/domain/nutrition/nutrients';
+import {
+  computeRecipe,
+  isRecipeUnit,
+  recipeServingRows,
+  type IngredientAmount,
+  type RecipeServingLabels,
+} from '@/domain/food/recipe';
 import { nowUtcIso, type UtcIso } from '@/shared/dates';
 import { NotFoundError, ValidationError } from '@/shared/errors';
 
@@ -16,6 +23,8 @@ import type { RepositoryDeps } from './deps';
 
 export type FoodSource = 'custom' | 'usda' | 'open_food_facts';
 export type ExternalSource = Exclude<FoodSource, 'custom'>;
+/** DATA-27: a recipe is a custom food made of other foods. */
+export type FoodKind = 'food' | 'recipe';
 
 export type FoodServing = {
   id: string;
@@ -30,6 +39,7 @@ export type FoodServing = {
 export type Food = {
   id: string;
   source: FoodSource;
+  kind: FoodKind;
   externalId: string | null;
   name: string;
   brand: string | null;
@@ -78,6 +88,7 @@ type FoodRow = {
   fat_g: number | null;
   is_deleted: number;
   barcode: string | null;
+  kind: FoodKind;
 };
 type ServingRow = {
   id: string;
@@ -191,7 +202,7 @@ async function mergeServings(
 }
 
 /** DATA-20: the food's catalog nutrient rows are replaced as a whole; salt/sodium are completed first. */
-async function writeFoodNutrients(tx: SqlExecutor, foodId: string, extra: NutrientAmounts | undefined) {
+export async function writeFoodNutrients(tx: SqlExecutor, foodId: string, extra: NutrientAmounts | undefined) {
   await tx.run('DELETE FROM food_nutrients WHERE food_id = ?', [foodId]);
   for (const { id, amount } of knownNutrients(withSaltAndSodium(extra ?? {}))) {
     await tx.run('INSERT INTO food_nutrients (food_id, nutrient_id, amount) VALUES (?, ?, ?)', [foodId, id, amount]);
@@ -214,6 +225,7 @@ export async function readFood(db: SqlExecutor, id: string): Promise<Food | null
   return {
     id: row.id,
     source: row.source,
+    kind: row.kind,
     externalId: row.external_id,
     name: row.name,
     brand: row.brand,
@@ -230,6 +242,133 @@ export async function readFood(db: SqlExecutor, id: string): Promise<Food | null
     servings: servings.map(toServing),
     barcode: row.barcode,
   };
+}
+
+type IngredientRow = {
+  id: string;
+  food_id: string;
+  serving_id: string | null;
+  quantity: number;
+  serving_unit_snapshot: string;
+  basis_multiplier_snapshot: number;
+  sort_order: number;
+  serving_basis_multiplier: number | null;
+  serving_label: string | null;
+};
+
+export type RecipeRow = {
+  servings_count: number;
+  cooked_serving_g: number | null;
+  raw_serving_g_override: number | null;
+};
+
+/** DATA-27: a recipe's ingredient rows (deleted foods too) with each food and its current serving, in order. */
+export async function readRecipeIngredients(
+  db: SqlExecutor,
+  recipeId: string,
+): Promise<(IngredientRow & { food: Food; amount: IngredientAmount })[]> {
+  const rows = await db.getAll<IngredientRow>(
+    `SELECT i.*, s.basis_multiplier AS serving_basis_multiplier, s.label AS serving_label
+     FROM recipe_ingredients i LEFT JOIN food_servings s ON s.id = i.serving_id
+     WHERE i.recipe_id = ? ORDER BY i.sort_order`,
+    [recipeId],
+  );
+  return Promise.all(
+    rows.map(async (row) => {
+      const food = (await readFood(db, row.food_id))!;
+      return {
+        ...row,
+        food,
+        amount: {
+          food,
+          servingBasisMultiplier: row.serving_basis_multiplier,
+          quantity: row.quantity,
+          basisMultiplierSnapshot: row.basis_multiplier_snapshot,
+        },
+      };
+    }),
+  );
+}
+
+/**
+ * DATA-27 servings, matched by `unit` (the role key) so their IDs, and so recents' last serving, survive. With `labels`
+ * (a recipe save) every row is written with fresh labels; without (an ingredient-driven recompute) existing rows are
+ * updated or removed and none is added.
+ */
+async function mergeRecipeServings(
+  tx: SqlExecutor,
+  ids: RepositoryDeps['ids'],
+  recipeId: string,
+  cookedServingG: number | null,
+  rawServingG: number | null,
+  labels: RecipeServingLabels | null,
+) {
+  const existing = await tx.getAll<{ id: string; label: string; unit: string }>(
+    'SELECT id, label, unit FROM food_servings WHERE food_id = ?',
+    [recipeId],
+  );
+  const byUnit = new Map(existing.filter((e) => isRecipeUnit(e.unit)).map((e) => [e.unit, e]));
+  const fallback = { serving: '', g_cooked: '', oz_cooked: '', g_raw: '', oz_raw: '' };
+  const rows = recipeServingRows(cookedServingG, rawServingG, labels ?? fallback);
+  await tx.run('UPDATE food_servings SET is_default = 0 WHERE food_id = ?', [recipeId]);
+  const kept = new Set<string>();
+  for (const [i, row] of rows.entries()) {
+    const match = byUnit.get(row.unit);
+    if (match) {
+      kept.add(match.id);
+      await tx.run(
+        'UPDATE food_servings SET label = ?, quantity = ?, basis_multiplier = ?, is_default = ?, sort_order = ? WHERE id = ?',
+        [labels ? row.label : match.label, row.quantity, row.basisMultiplier, row.isDefault ? 1 : 0, i, match.id],
+      );
+    } else if (labels) {
+      await tx.run(
+        `INSERT INTO food_servings (id, food_id, label, quantity, unit, basis_multiplier, is_default, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [ids.newId(), recipeId, row.label, row.quantity, row.unit, row.basisMultiplier, row.isDefault ? 1 : 0, i],
+      );
+    }
+  }
+  for (const e of existing) {
+    if (!kept.has(e.id)) await tx.run('DELETE FROM food_servings WHERE id = ?', [e.id]); // recents' serving → NULL
+  }
+}
+
+/** DATA-27/28: recompute a recipe's stored per-serving nutrition, servings and nutrient rows from its ingredients. */
+export async function recomputeRecipe(
+  tx: SqlExecutor,
+  ids: RepositoryDeps['ids'],
+  recipeId: string,
+  now: UtcIso,
+  labels: RecipeServingLabels | null,
+): Promise<void> {
+  const recipe = await tx.getFirst<RecipeRow>('SELECT * FROM recipes WHERE food_id = ?', [recipeId]);
+  if (!recipe) return;
+  const ingredients = await readRecipeIngredients(tx, recipeId);
+  const computed = computeRecipe(
+    ingredients.map((i) => i.amount),
+    {
+      servingsCount: recipe.servings_count,
+      cookedServingG: recipe.cooked_serving_g,
+      rawServingGOverride: recipe.raw_serving_g_override,
+    },
+  );
+  const n = computed.perServing;
+  await tx.run(
+    `UPDATE foods SET basis_quantity = 1, basis_unit = 'serving', energy_kcal = ?, protein_g = ?, carbohydrate_g = ?,
+       fat_g = ?, updated_at = ? WHERE id = ?`,
+    [n.energyKcal, n.proteinG, n.carbohydrateG, n.fatG, now, recipeId],
+  );
+  await mergeRecipeServings(tx, ids, recipeId, recipe.cooked_serving_g, computed.rawServingG, labels);
+  await writeFoodNutrients(tx, recipeId, n.extra);
+}
+
+/** DATA-28: an ingredient food's values changed → every recipe using it is recomputed in the same transaction. */
+async function recomputeRecipesUsing(tx: SqlExecutor, ids: RepositoryDeps['ids'], foodId: string, now: UtcIso) {
+  const recipes = await tx.getAll<{ recipe_id: string }>(
+    'SELECT DISTINCT recipe_id FROM recipe_ingredients WHERE food_id = ?',
+    [foodId],
+  );
+  for (const { recipe_id } of recipes) await recomputeRecipe(tx, ids, recipe_id, now, null);
 }
 
 const foodValues = (input: FoodInput) => [
@@ -270,7 +409,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       const rows = await db.getAll<{ id: string }>(
         `SELECT foods.id FROM foods
          LEFT JOIN recent_foods ON recent_foods.food_id = foods.id
-         WHERE foods.source = 'custom' AND foods.is_deleted = 0 AND ${matches}
+         WHERE foods.source = 'custom' AND foods.kind = 'food' AND foods.is_deleted = 0 AND ${matches}
          ORDER BY CASE
            WHEN lower(foods.name) = lower(?) THEN 0
            WHEN lower(foods.name) LIKE lower(?) THEN 1
@@ -291,7 +430,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
       const rows = await db.getAll<{ id: string }>(
         `SELECT foods.id FROM foods
          LEFT JOIN recent_foods ON recent_foods.food_id = foods.id
-         WHERE foods.source = 'custom' AND foods.is_deleted = 0
+         WHERE foods.source = 'custom' AND foods.kind = 'food' AND foods.is_deleted = 0
          ORDER BY recent_foods.last_used_at IS NULL, recent_foods.last_used_at DESC, foods.created_at DESC, foods.id
          LIMIT ? OFFSET ?`,
         [limit, offset],
@@ -302,7 +441,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
     /** DATA-25: the Profile `My foods` row count (UX-15). */
     async countCustom(): Promise<number> {
       const row = await db.getFirst<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM foods WHERE source = 'custom' AND is_deleted = 0",
+        "SELECT COUNT(*) AS count FROM foods WHERE source = 'custom' AND kind = 'food' AND is_deleted = 0",
       );
       return row?.count ?? 0;
     },
@@ -382,12 +521,13 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
         const { changes } = await tx.run(
           `UPDATE foods SET name = ?, brand = ?, basis_quantity = ?, basis_unit = ?, energy_kcal = ?, protein_g = ?,
              carbohydrate_g = ?, fat_g = ?, updated_at = ?
-           WHERE id = ? AND source = 'custom' AND is_deleted = 0`,
+           WHERE id = ? AND source = 'custom' AND kind = 'food' AND is_deleted = 0`,
           [...foodValues(input).slice(0, 8), nowUtcIso(clock), id],
         );
         if (changes === 0) throw new NotFoundError('Custom food not found');
         await mergeServings(tx, ids, id, input.servings);
         await writeFoodNutrients(tx, id, input.nutrients.extra);
+        await recomputeRecipesUsing(tx, ids, id, nowUtcIso(clock)); // DATA-28
         return (await readFood(tx, id))!;
       });
     },
@@ -448,6 +588,7 @@ export function createFoodsRepository({ db, clock, ids }: RepositoryDeps) {
         }
         // DATA-20: a refresh replaces the rows; a nutrient missing from the new response becomes unknown.
         await writeFoodNutrients(tx, id, input.nutrients.extra);
+        if (existing) await recomputeRecipesUsing(tx, ids, id, now); // DATA-28
         await tx.run(
           `INSERT INTO food_cache_metadata (food_id, fetched_at, expires_at, raw_payload_json, schema_version)
            VALUES (?, ?, ?, ?, ?)

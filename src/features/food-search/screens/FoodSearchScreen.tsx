@@ -323,6 +323,7 @@ export function FoodSearchScreen({
             key={`off-${candidate.externalId}`}
             food={{
               ...candidate.input,
+              kind: 'food',
               brand: candidate.input.brand ?? null,
               barcode: candidate.input.barcode ?? null,
               id: `off-${candidate.externalId}`,
@@ -378,6 +379,7 @@ export function FoodSearchScreen({
             key={`usda-${candidate.externalId}`}
             food={{
               ...candidate.input,
+              kind: 'food',
               brand: candidate.input.brand ?? null,
               barcode: candidate.input.barcode ?? null,
               id: `usda-${candidate.externalId}`,

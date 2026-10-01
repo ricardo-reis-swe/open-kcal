@@ -136,6 +136,7 @@ describe('DATA-04 / DATA-11 / UX-08: custom-food command', () => {
 describe('UX-25 / DATA-26: edit form values from a stored custom food', () => {
   const stored = (input: CustomFoodInput): Food => ({
     ...input,
+    kind: 'food',
     brand: input.brand ?? null,
     barcode: null,
     id: 'food-1',

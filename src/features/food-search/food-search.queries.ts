@@ -7,6 +7,7 @@ import type { RecentFood } from '@/data/db/repositories/diaryRepository';
 import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { settingsKeys } from '@/features/diary/diary.queries';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
+import type { RecipeInput } from '@/data/db/repositories/recipesRepository';
 import { PARSER_VERSION, type FoodCandidate } from '@/data/api/open-food-facts/mapper';
 import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
 import { nowUtcIso } from '@/shared/dates';
@@ -20,6 +21,10 @@ export const foodSearchKeys = {
   custom: (query: string) => ['foodSearch', 'custom', query.trim().toLocaleLowerCase()] as const,
   customList: ['foodSearch', 'customList'] as const,
   customCount: ['foodSearch', 'customCount'] as const,
+  recipes: (query: string) => ['foodSearch', 'recipes', query.trim().toLocaleLowerCase()] as const,
+  recipeList: ['foodSearch', 'recipeList'] as const,
+  recipeCount: ['foodSearch', 'recipeCount'] as const,
+  recipe: (id: string) => ['foodSearch', 'recipe', id] as const,
   saved: (query: string) => ['foodSearch', 'saved', query.trim().toLocaleLowerCase()] as const,
   off: (query: string, page: number) => ['foodSearch', 'openFoodFacts', query.trim(), page] as const,
   usda: (query: string, page: number) => ['foodSearch', 'usda', query.trim(), page] as const,
@@ -131,6 +136,47 @@ export function useCustomFoodList(pages = 1, enabled = true) {
 export function useCustomFoodCount() {
   const { foods } = useServices();
   return useQuery({ queryKey: foodSearchKeys.customCount, queryFn: () => foods.countCustom() });
+}
+
+/** DATA-28: every recipe by last use, 20 per page (UX-04 `Recipes` tab without a query, UX-27). */
+export function useRecipeList(pages = 1, enabled = true) {
+  const { recipes } = useServices();
+  return useQuery({
+    queryKey: [...foodSearchKeys.recipeList, pages],
+    queryFn: async () => {
+      const results = await Promise.all(Array.from({ length: pages }, (_, page) => recipes.list(20, page * 20)));
+      return results.flat();
+    },
+    enabled,
+  });
+}
+
+/** DATA-28 `searchRecipes` (UX-04 `Recipes` tab with a query). */
+export function useRecipeSearch(query: string, pages = 1, enabled = true) {
+  const { recipes } = useServices();
+  const normalized = query.trim();
+  return useQuery({
+    queryKey: [...foodSearchKeys.recipes(normalized), pages],
+    queryFn: async () => {
+      const results = await Promise.all(
+        Array.from({ length: pages }, (_, page) => recipes.search(normalized, 20, page * 20)),
+      );
+      return results.flat();
+    },
+    enabled: enabled && normalized.length > 0,
+  });
+}
+
+/** UX-15: the Profile `My recipes` row count. */
+export function useRecipeCount() {
+  const { recipes } = useServices();
+  return useQuery({ queryKey: foodSearchKeys.recipeCount, queryFn: () => recipes.count() });
+}
+
+/** UX-26 edit mode: the recipe with its ingredients. */
+export function useRecipe(id: string, enabled = true) {
+  const { recipes } = useServices();
+  return useQuery({ queryKey: foodSearchKeys.recipe(id), queryFn: () => recipes.get(id), enabled });
 }
 
 /** DATA-15 / PROV-08: cached external foods are local results and work while offline. */
@@ -258,7 +304,8 @@ export function useExternalFood(source: 'usda' | 'open_food_facts', externalId: 
 
 /** Local-food writes refresh every local Food Search section after the transaction commits (ARCH-08). */
 export function useLocalFoodWrites() {
-  const { foods } = useServices();
+  const services = useServices();
+  const { foods } = services;
   const client = useQueryClient();
   const refresh = () => client.invalidateQueries({ queryKey: foodSearchKeys.all });
   const createCustom = useMutation({
@@ -269,7 +316,15 @@ export function useLocalFoodWrites() {
     mutationFn: ({ id, input }: { id: string; input: CustomFoodInput }) => foods.updateCustom(id, input),
     onSuccess: refresh,
   });
+  const createRecipe = useMutation({
+    mutationFn: (input: RecipeInput) => services.recipes.create(input),
+    onSuccess: refresh,
+  });
+  const updateRecipe = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: RecipeInput }) => services.recipes.update(id, input),
+    onSuccess: refresh,
+  });
   const deleteFood = useMutation({ mutationFn: (id: string) => foods.deleteFood(id), onSuccess: refresh });
   const restoreFood = useMutation({ mutationFn: (id: string) => foods.restoreFood(id), onSuccess: refresh });
-  return { createCustom, updateCustom, deleteFood, restoreFood };
+  return { createCustom, updateCustom, createRecipe, updateRecipe, deleteFood, restoreFood };
 }

@@ -6,6 +6,7 @@ import { createDiaryRepository, createRecentsRepository } from '@/data/db/reposi
 import { createFoodsRepository } from '@/data/db/repositories/foodsRepository';
 import { createGoalsRepository } from '@/data/db/repositories/goalsRepository';
 import { createMealsRepository } from '@/data/db/repositories/mealsRepository';
+import { createRecipesRepository } from '@/data/db/repositories/recipesRepository';
 import { createSettingsRepository } from '@/data/db/repositories/settingsRepository';
 import { createWeightRepository } from '@/data/db/repositories/weightRepository';
 import { OpenFoodFactsClient } from '@/data/api/open-food-facts/client';
@@ -38,6 +39,7 @@ export function createServices({
     goals: createGoalsRepository(deps),
     meals: createMealsRepository(deps),
     foods: createFoodsRepository(deps),
+    recipes: createRecipesRepository(deps),
     diary: createDiaryRepository(deps),
     recents: createRecentsRepository(deps),
     weight: createWeightRepository(deps),
