@@ -19,32 +19,77 @@ const noJitter = () => 0;
 const searchPage = () => new Response(JSON.stringify({ foods: [food], currentPage: 1, totalPages: 1 }));
 
 describe('PROV-10: USDA retries', () => {
-  it('retries a search once after USDA’s intermittent 400 and returns the second answer', async () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  /** Runs a call while advancing past its retry pauses (search pauses 1–2 s each). */
+  async function settle<T>(call: Promise<T>): Promise<T> {
+    const settled = call.then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    );
+    await jest.advanceTimersByTimeAsync(10_000);
+    const result = await settled;
+    if ('error' in result) throw result.error;
+    return result.value;
+  }
+
+  it('retries a search after USDA’s intermittent 400 and returns the next answer', async () => {
     const request = jest
       .fn()
       .mockResolvedValueOnce(new Response('<html>400 Bad Request</html>', { status: 400 }))
       .mockResolvedValueOnce(searchPage());
     const client = new UsdaClient(config, credentials, request, undefined, noJitter);
-    await expect(client.search('egg', 1, new AbortController().signal)).resolves.toMatchObject({
+    await expect(settle(client.search('egg', 1, new AbortController().signal))).resolves.toMatchObject({
       candidates: [expect.objectContaining({ externalId: '1' })],
     });
     expect(request).toHaveBeenCalledTimes(2);
   });
 
-  it('search retries once and detail twice on 5xx, then reports the failure', async () => {
+  it('search and detail each retry twice on 5xx, then report the failure', async () => {
     const failing = jest.fn().mockImplementation(() => Promise.resolve(new Response('', { status: 502 })));
     const client = new UsdaClient(config, credentials, failing, undefined, noJitter);
-    await expect(client.search('egg', 1, new AbortController().signal)).rejects.toBeInstanceOf(ProviderResponseError);
-    expect(failing).toHaveBeenCalledTimes(2);
-    failing.mockClear();
-    await expect(client.getFood('1', new AbortController().signal)).rejects.toBeInstanceOf(ProviderResponseError);
+    await expect(settle(client.search('egg', 1, new AbortController().signal))).rejects.toBeInstanceOf(
+      ProviderResponseError,
+    );
     expect(failing).toHaveBeenCalledTimes(3);
+    failing.mockClear();
+    await expect(settle(client.getFood('1', new AbortController().signal))).rejects.toBeInstanceOf(
+      ProviderResponseError,
+    );
+    expect(failing).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    [0, 1_000],
+    [1, 2_000],
+  ])('search waits 1–2 s before a retry (random %d → %d ms)', async (random, pauseMs) => {
+    const request = jest
+      .fn()
+      .mockResolvedValueOnce(new Response('<html>400 Bad Request</html>', { status: 400 }))
+      .mockResolvedValueOnce(searchPage());
+    const pending = new UsdaClient(config, credentials, request, undefined, () => random).search(
+      'egg',
+      1,
+      new AbortController().signal,
+    );
+    await jest.advanceTimersByTimeAsync(pauseMs - 1);
+    expect(request).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(1);
+    await expect(pending).resolves.toBeDefined();
+    expect(request).toHaveBeenCalledTimes(2);
   });
 
   it.each([401, 404, 429])('never retries HTTP %i', async (status) => {
     const request = jest.fn().mockImplementation(() => Promise.resolve(new Response('', { status })));
     await expect(
-      new UsdaClient(config, credentials, request, undefined, noJitter).search('egg', 1, new AbortController().signal),
+      settle(
+        new UsdaClient(config, credentials, request, undefined, noJitter).search(
+          'egg',
+          1,
+          new AbortController().signal,
+        ),
+      ),
     ).rejects.toBeDefined();
     expect(request).toHaveBeenCalledTimes(1);
   });
@@ -65,7 +110,7 @@ describe('PROV-10: USDA retries', () => {
       1,
       controller.signal,
     );
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await jest.advanceTimersByTimeAsync(10);
     controller.abort();
     await expect(pending).rejects.toBeInstanceOf(ProviderResponseError);
     expect(request).toHaveBeenCalledTimes(1);
@@ -251,10 +296,10 @@ describe('PROV-01 / PROV-02 / PROV-12: USDA client', () => {
     const timedOut = client.search('egg', 1, new AbortController().signal);
     const timeoutExpectation = expect(timedOut).rejects.toBeInstanceOf(TimeoutError);
     await Promise.resolve();
-    // PROV-10: a timed-out search is retried once before it fails.
-    await jest.advanceTimersByTimeAsync(20_000); // two 8 s attempts + a zero backoff
+    // PROV-10: a timed-out search is retried twice before it fails.
+    await jest.advanceTimersByTimeAsync(30_000); // three 8 s attempts + two 1 s pauses
     await timeoutExpectation;
-    expect(pendingRequest).toHaveBeenCalledTimes(2);
+    expect(pendingRequest).toHaveBeenCalledTimes(3);
     jest.useRealTimers();
 
     const invalidJson = new UsdaClient(

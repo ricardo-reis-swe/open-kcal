@@ -22,11 +22,16 @@ type Fetch = typeof fetch;
  * (seen 2026-09-30: the same URL alternates 200/400), so for USDA a 400 is transient too.
  */
 const TRANSIENT_STATUSES = new Set([400, 500, 502, 503, 504]);
-/** PROV-10 retry budgets: search 1 × base 500 ms; detail 2 × 500 ms · 2ⁿ, cap 4 s; full jitter. */
-const RETRIES = { search: { max: 1, baseMs: 500 }, detail: { max: 2, baseMs: 500 } } as const;
-const BACKOFF_CAP_MS = 4_000;
+type Retry = { max: number; delayMs: (attempt: number, random: number) => number };
 
-type Retry = (typeof RETRIES)[keyof typeof RETRIES];
+/**
+ * PROV-10 retry budgets. Search: 2 × a uniform 1–2 s pause, so USDA's intermittent 400 has time to clear.
+ * Detail: 2 × full jitter on 500 ms · 2ⁿ, cap 4 s.
+ */
+const RETRIES = {
+  search: { max: 2, delayMs: (_attempt, random) => 1_000 + random * 1_000 },
+  detail: { max: 2, delayMs: (attempt, random) => random * Math.min(4_000, 500 * 2 ** attempt) },
+} satisfies Record<string, Retry>;
 
 export class UsdaClient {
   constructor(
@@ -70,8 +75,7 @@ export class UsdaClient {
       const result = await this.attempt(path, query, signal, timeoutMs);
       if (result.ok) return result.value;
       if (!result.transient || attempt >= retry.max || signal.aborted) throw result.error;
-      const backoff = this.random() * Math.min(BACKOFF_CAP_MS, retry.baseMs * 2 ** attempt);
-      if (!(await wait(backoff, signal))) throw result.error;
+      if (!(await wait(retry.delayMs(attempt, this.random()), signal))) throw result.error;
     }
   }
 

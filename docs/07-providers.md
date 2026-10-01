@@ -194,13 +194,14 @@ Values for the shared HTTP wrapper (ARCH-11). Error types and user text come in 
 **Retries**
 | Call | Max retries | Backoff |
 |---|---|---|
-| Search | 1 | full jitter, base 500 ms |
+| Search, USDA | 2 | uniform random 1–2 s before each retry |
+| Search, OFF | 1 | full jitter, base 500 ms |
 | Detail on tap | 2 | full jitter, base 500 ms × 2ⁿ, cap 4 s |
 | Background refresh (PROV-09) | 0 | the next open retries |
 | USDA key check | 0 | the user retries |
 - Retry only transient failures: network error while online, timeout, and HTTP 500/502/504. Also USDA 503 and USDA 400.
 - Never retry: 400 (except USDA), 401, 403, 404, schema/parse failures, offline, or anything rate-limited (below).
-- **Why USDA 400:** USDA's nginx front intermittently answers a valid search with a bare HTML 400; the same URL alternates 200/400 (seen 2026-09-30, user decision). A real bad-parameter 400 fails the retry too and still surfaces.
+- **Why USDA 400:** USDA's nginx front intermittently answers a valid search with a bare HTML 400; the same URL alternates 200/400 (seen 2026-09-30, user decision). A real bad-parameter 400 fails the retries too and still surfaces. On 2026-10-01 about half of identical searches got a 400, so USDA search gets 2 retries with a 1–2 s pause (user decision).
 - Each OFF retry spends a budget slot (PROV-04).
 
 **Rate-limited responses → provider cooldown**
