@@ -24,6 +24,9 @@ async function createCustomFood(name: string, kcal: string) {
   await fireEvent.press(activeDay().getByRole('button', { name: 'Add food to Breakfast' }));
   await flush();
   // No query: typing in Food Search would start provider searches.
+  // UX-04: Create custom food lives on the My foods tab.
+  await fireEvent.press(screen.getByTestId('food-search-tab-custom'));
+  await flush();
   await fireEvent.press(screen.getByRole('button', { name: 'Create custom food' }));
   await flush();
   await fireEvent.changeText(screen.getByTestId('custom-food-name'), name);

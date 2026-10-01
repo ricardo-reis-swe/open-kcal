@@ -366,17 +366,7 @@ export function FoodSearchScreen({
       {t('foodSearch.searching')}
     </AppText>
   );
-  const noResults = (
-    <View style={{ ...padded, gap: theme.spacing[2] }}>
-      <AppText>{t('foodSearch.noResults', { query: query.trim() })}</AppText>
-      <TextAction
-        icon="add"
-        label={t('foodSearch.createCustom')}
-        onPress={() => onCreateCustom(query.trim())}
-        testID="food-create-custom"
-      />
-    </View>
-  );
+  const noResults = <AppText style={padded}>{t('foodSearch.noResults', { query: query.trim() })}</AppText>;
   const recentFoods = (recents.data ?? []).map(({ food }) => food);
   // UX-04 Recent tab: the ≤20 Recents (DATA-14), filtered in memory with the PROV-08 token rule.
   const recentTab = searching ? (
@@ -393,21 +383,26 @@ export function FoodSearchScreen({
   // UX-04 My foods tab: every custom food (DATA-25) without a query; the PROV-08 custom search with one.
   const myFoods = (hasQuery ? custom.data : customList.data) ?? [];
   const myFoodsLoaded = hasQuery ? custom.isSuccess : customList.isSuccess;
-  const customTab = searching ? (
+  // UX-04: `Create custom food` lives on this tab only, always first (initialName = current query).
+  const createCustom = (
+    <View style={padded}>
+      <TextAction
+        icon="add"
+        label={t('foodSearch.createCustom')}
+        onPress={() => onCreateCustom(query.trim())}
+        testID="food-create-custom"
+      />
+    </View>
+  );
+  const customRows = searching ? (
     searchingRow
   ) : !myFoodsLoaded ? null : myFoods.length === 0 ? (
     hasQuery ? (
       noResults
     ) : (
-      <View style={{ ...padded, gap: theme.spacing[2] }}>
-        <AppText color="textSecondary">{t('foodSearch.emptyCustom')}</AppText>
-        <TextAction
-          icon="add"
-          label={t('foodSearch.createCustom')}
-          onPress={() => onCreateCustom('')}
-          testID="food-create-custom"
-        />
-      </View>
+      <AppText color="textSecondary" style={padded}>
+        {t('foodSearch.emptyCustom')}
+      </AppText>
     )
   ) : (
     <>
@@ -429,6 +424,12 @@ export function FoodSearchScreen({
           testID="food-search-custom-show-more"
         />
       ) : null}
+    </>
+  );
+  const customTab = (
+    <>
+      {createCustom}
+      {customRows}
     </>
   );
 
@@ -480,6 +481,13 @@ export function FoodSearchScreen({
                 />
               ) : null}
               <PressableIcon
+                icon="flash-outline"
+                accessibilityLabel={t('foodSearch.quickCalories')}
+                onPress={onQuickCalories}
+                color="textSecondary"
+                testID="food-search-quick-calories"
+              />
+              <PressableIcon
                 icon="barcode-outline"
                 accessibilityLabel={t('foodSearch.scanBarcode')}
                 onPress={onScan}
@@ -502,23 +510,6 @@ export function FoodSearchScreen({
         >
           {t('foodSearch.context', { meal: meal.name, date: dateLabel })}
         </AppText>
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: theme.spacing[3],
-            paddingHorizontal: theme.spacing[4],
-            paddingTop: theme.spacing[3],
-          }}
-        >
-          <TextAction icon="flash-outline" label={t('foodSearch.quickCalories')} onPress={onQuickCalories} />
-          <TextAction
-            icon="add"
-            label={t('foodSearch.createCustom')}
-            onPress={() => onCreateCustom(query.trim())}
-            testID="food-search-create-custom"
-          />
-        </View>
         <View style={{ paddingTop: theme.spacing[2] }}>
           <TabStrip
             tabs={[

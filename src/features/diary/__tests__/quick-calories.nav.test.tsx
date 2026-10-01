@@ -90,6 +90,9 @@ describe('NAV-03 / UX-09: + Add Action Sheet', () => {
     await fireEvent.press(activeDay().getByRole('button', { name: 'Add food to Breakfast' }));
     await flush();
     await fireEvent.changeText(screen.getByTestId('food-search-input'), 'Navigation oats');
+    // UX-04: Create custom food lives on the My foods tab.
+    await fireEvent.press(screen.getByTestId('food-search-tab-custom'));
+    await flush();
     await fireEvent.press(screen.getByRole('button', { name: 'Create custom food' }));
     await flush();
     expect(app.getPathname()).toBe('/diary/create-custom-food');

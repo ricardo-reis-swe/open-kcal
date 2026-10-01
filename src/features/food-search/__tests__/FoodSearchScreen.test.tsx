@@ -152,6 +152,7 @@ async function setup(
         }),
     );
   }
+  const onQuickCalories = jest.fn();
   const view = await renderWithServices(
     <FoodSearchScreen
       mealId={meal!.id}
@@ -160,7 +161,7 @@ async function setup(
       initialQuery={options.initialQuery}
       onBack={jest.fn()}
       onScan={onScan}
-      onQuickCalories={jest.fn()}
+      onQuickCalories={onQuickCalories}
       onCreateCustom={onCreateCustom}
       onSelectFood={onSelectFood}
       onSelectExternal={onSelectExternal}
@@ -176,6 +177,7 @@ async function setup(
     onSelectExternal,
     onCreateCustom,
     onScan,
+    onQuickCalories,
     view,
     productSignal: () => productSignal,
     resolvePendingProduct,
@@ -189,13 +191,16 @@ afterEach(async () => {
 });
 
 describe('UX-04: local Food Search screen', () => {
-  it('focuses the search field and shows the empty Recent state plus compact actions', async () => {
-    await setup();
+  it('focuses the search field and shows the empty Recent state plus the field icons', async () => {
+    const { onQuickCalories } = await setup();
     expect(await screen.findByText('Search for a food to add it.')).toBeTruthy();
     expect(screen.getByLabelText('Search foods')).toBeTruthy();
     expect(screen.getByText('Adding to Breakfast · Today')).toBeTruthy();
-    expect(screen.getByText('Quick calories')).toBeTruthy();
-    expect(screen.getByText('Create custom food')).toBeTruthy();
+    expect(screen.getByLabelText('Scan barcode')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Quick calories'));
+    expect(onQuickCalories).toHaveBeenCalled();
+    // UX-04: `Create custom food` lives on the My foods tab only.
+    expect(screen.queryByText('Create custom food')).toBeNull();
   });
 
   it('shows hydrated recents and selects one', async () => {
@@ -247,10 +252,14 @@ describe('UX-04: local Food Search screen', () => {
     );
   });
 
-  it('forwards the current no-results query when creating a custom food', async () => {
+  it('forwards the current no-results query when creating a custom food from My foods', async () => {
     const { onCreateCustom } = await setup({ initialQuery: 'new food' });
     expect(await screen.findByText('No foods found for “new food”.')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('food-create-custom'));
+    expect(screen.queryByTestId('food-create-custom')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('food-search-tab-custom'));
+    });
+    fireEvent.press(await screen.findByTestId('food-create-custom'));
     expect(onCreateCustom).toHaveBeenCalledWith('new food');
   });
 

@@ -66,13 +66,12 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 
 ## UX-04 Food Search
 ```text
-[‹ [🔍 Search foods             ✕]        ]
+[‹ [🔍 Search foods          ✕ ⚡ ▥]      ]
 [Adding to Lunch · Today                  ]
-[⚡ Quick calories    ＋ Create custom food ]
 [   All   |   Recent   |   My foods       ]
 [RECENT / results by section…             ]
 ```
-- Opens with the field focused (not when opened for NAV-03 Scan Barcode). Trailing scan icon (a11y `Scan barcode`) → Barcode Scanner (UX-24). `Quick calories` → Quick Calories (same meal/date; back returns here). `Create custom food` → Create Custom Food (`initialName` = current query).
+- Opens with the field focused (not when opened for NAV-03 Scan Barcode). Trailing field icons (user request 2026-10-01): quick-calories ⚡ (a11y `Quick calories`) → Quick Calories (same meal/date; back returns here), then scan (a11y `Scan barcode`) → Barcode Scanner (UX-24). No action row above the tabs. `Create custom food` → Create Custom Food (`initialName` = current query); it MUST appear only on the `My foods` tab.
 - **No query**: Recent (≤20, DATA-14). No recents → `Search for a food to add it.`
 - **Query**: local sources search on each keystroke (150 ms debounce). Remote: USDA ≥2 chars / 800 ms, Open Food Facts ≥3 chars / 800 ms with a request budget (PROV-04). **Why 800 ms for USDA:** 400 ms fired mid-word requests that spend quota and risk the 10-minute 429 cooldown (user decision 2026-09-30). Stale requests are cancelled.
 - Sections with sticky labels: `My foods` (custom), `Saved` (cached external), `Open Food Facts`, `USDA`, in the order and visibility set in UX-18 `Search results`. Each remote section shows the first page (10, PROV-08) + a `Show more` row for the next page.
@@ -87,19 +86,20 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 | Error / timeout | `USDA search failed.` + `Retry` |
 | Rate limited | `USDA is busy. Try again later.` |
 
-- Nothing anywhere: `No foods found for "<q>".` + `Create custom food`.
+- Nothing anywhere: `No foods found for "<q>".`
 - Tapping a remote result opens Food Detail immediately. Food Detail performs the provider detail read and upsert (DATA-15); Food Search MUST NOT replace the row with a loading label.
 - Tapping an expired cached food opens it immediately with cached values; a background refresh (when online) updates it for next time and never changes values on an open screen.
 - **Delete saved food**: a left swipe on any stored-food row (`My foods`, `Saved` or Recent) reveals a `Delete` button (DS-08); tapping it soft-deletes the food (DATA-11) and shows `<food> deleted · Undo` for 5 seconds. A short swipe springs closed; no dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. Remote provider rows (not yet saved) have no swipe action. Custom foods are edited from Profile › My foods (UX-25).
 - Clearing the field returns to the no-query state. Returning from Food Detail keeps the query and results. Search key = `search`.
-- **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods`, under the compact actions. Opens on `All`; switching keeps the query. Scan, Quick calories, Create custom food and swipe-delete work on every tab.
+- **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods`, under the search field. Opens on `All`; switching keeps the query. Scan, Quick calories and swipe-delete work on every tab.
   | Tab | No query | Query |
   |---|---|---|
   | All | Recent (above) | the sections above |
   | Recent | the ≤20 Recents (DATA-14) | those Recents filtered in memory, PROV-08 token rule |
   | My foods | every custom food, DATA-25 order, 20 per page + `Show more` | `searchCustom` (PROV-08 rank), 20 per page |
 - `Recent` and `My foods` are local only: no provider request, no offline row. UX-18 `Search results` visibility applies to `All` only (a hidden `My foods` section still has its tab).
-- Empty: Recent `No recent foods yet.`; My foods `No custom foods yet.` + `Create custom food`; a query with no match → `No foods found for "<q>".` + `Create custom food`.
+- `My foods` tab: a `Create custom food` row always comes first, above the list or empty state.
+- Empty: Recent `No recent foods yet.`; My foods `No custom foods yet.`; a query with no match → `No foods found for "<q>".`
 - Recipes (POST-14) would be a 4th tab; MUST NOT be added as a placeholder.
 
 ## UX-05 Food Detail / Add Entry
