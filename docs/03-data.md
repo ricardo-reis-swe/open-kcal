@@ -93,6 +93,7 @@ FROM diary_entries WHERE diary_date = ?;
 |---|---|
 | Load day | Effective goal → meals by `sort_order` (all shown, even empty) → entries by meal + `sort_order` → per-meal and per-day totals with unknown flags. |
 | Add food entry | Tx: validate meal/date/food/serving/qty → compute unrounded nutrition → insert snapshot → upsert recent. UI reloads after commit. |
+| Add food entries (batch) | UX-04 select mode. One Tx: for each food in selection order, the `Add food entry` steps (incl. nutrient rows), appended after the meal's existing `sort_order`. Any failure rolls back all. UI reloads after commit. |
 | Edit food entry | Load by ID → validate serving/meal → recompute snapshot only if serving changed → upsert recent after save. |
 | Add/edit Quick Calories | Validate meal, date, kcal ≥ 0 (the UI requires ≥ 1, UX-07). Macros + serving NULL. Trim note. |
 | Copy item / meal | Tx: read the source entry or source meal/date entries in order → new UUID(s) → copy snapshots exactly → chosen destination date + meal → append after existing `sort_order`. Copies are independent of the originals. |

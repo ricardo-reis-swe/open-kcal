@@ -67,7 +67,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 ## UX-04 Food Search
 ```text
 [‹ [🔍 Search foods            ✕ ▥]       ]
-[Adding to Lunch · Today               ⚡ ]
+[Adding to Lunch · Today            ✓✓ ⚡ ]
 [   All   |   Recent   |   My foods       ]
 [RECENT / results by section…             ]
 ```
@@ -91,7 +91,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Tapping an expired cached food opens it immediately with cached values; a background refresh (when online) updates it for next time and never changes values on an open screen.
 - **Delete saved food**: a left swipe on any stored-food row (`My foods`, `Saved` or Recent) reveals a `Delete` button (DS-08); tapping it soft-deletes the food (DATA-11) and shows `<food> deleted · Undo` for 5 seconds. A short swipe springs closed; no dialog. Existing diary entries keep their snapshots. Non-gesture alternative: the row's accessibility action `Delete food` (DS-11), with the same Undo toast. Remote provider rows (not yet saved) have no swipe action. Custom foods are edited from Profile › My foods (UX-25).
 - Clearing the field returns to the no-query state. Returning from Food Detail keeps the query and results. Search key = `search`.
-- **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods`, under the search field. Opens on `All`; switching keeps the query. Scan, Quick calories and swipe-delete work on every tab.
+- **Tabs** (DS-15, user request 2026-10-01): `All` · `Recent` · `My foods`, under the search field. Opens on `All`; switching keeps the query. Outside select mode, Scan, Quick calories and swipe-delete work on every tab.
   | Tab | No query | Query |
   |---|---|---|
   | All | Recent (above) | the sections above |
@@ -101,6 +101,15 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - `My foods` tab: a `Create custom food` row always comes first, above the list or empty state.
 - Empty: Recent `No recent foods yet.`; My foods `No custom foods yet.`; a query with no match → `No foods found for "<q>".`
 - Recipes (POST-14) would be a 4th tab; MUST NOT be added as a placeholder.
+- **Select mode** (multi-add, user request 2026-10-01):
+  - Toggle: `checkmark-done` icon (a11y `Select multiple`, `selected` state) directly before ⚡ on the context line. Tap → select mode; tap again or Back → leaves select mode and clears the selection (Back does not leave the screen while select mode is on).
+  - Selectable: stored foods only (Recent, `My foods`, `Saved` rows). Remote rows not yet saved are dimmed and inert. **Why:** no network read at Add, works offline, no partial failures.
+  - Tapping a selectable row toggles it; it MUST NOT open Food Detail. Selected = `primaryTint` row tint + trailing check icon; no checkboxes. Row a11y: `selected` state; hint `Double tap to select`.
+  - Off while active: swipe-delete, scan, Quick calories (disabled). `Create custom food` row hidden. Tabs, query, `Show more` keep working.
+  - Selection keyed by `food_id`, kept in tap order across tabs and query changes; a food on two tabs is one item. Soft-deleted elsewhere → dropped from the selection.
+  - Sticky bottom bar: `<n> selected` + filled primary `Add to <meal>` (DS-09 in-content primary), disabled at 0.
+  - Each food is logged with its UX-05 initial serving (last serving if valid, else the default). No review step; adjust via Edit entry (UX-06).
+  - Add → DATA-16 `Add food entries (batch)` → exit per NAV-04. Failure: stays in select mode, selection kept, `Couldn't add foods. Try again.`; nothing saved.
 
 ## UX-05 Food Detail / Add Entry
 ```text
