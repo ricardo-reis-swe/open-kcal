@@ -8,9 +8,44 @@ const outputDirectory = new URL('../src/data/api/usda/__fixtures__/captured/', i
 const baseUrl = 'https://api.nal.usda.gov/fdc/v1';
 // PROV-05 energy/macros + PROV-14 catalog numbers.
 const mappedNutrientNumbers = new Set([
-  '208', '958', '957', '268', '203', '204', '205', '205.2', '291',
-  '269', '269.3', '539', '606', '645', '646', '605', '601', '307', '306', '301', '303', '304', '305', '309',
-  '320', '401', '328', '324', '323', '430', '404', '405', '406', '415', '418', '435', '417', '262',
+  '208',
+  '958',
+  '957',
+  '268',
+  '203',
+  '204',
+  '205',
+  '205.2',
+  '291',
+  '269',
+  '269.3',
+  '539',
+  '606',
+  '645',
+  '646',
+  '605',
+  '601',
+  '307',
+  '306',
+  '301',
+  '303',
+  '304',
+  '305',
+  '309',
+  '320',
+  '401',
+  '328',
+  '324',
+  '323',
+  '430',
+  '404',
+  '405',
+  '406',
+  '415',
+  '418',
+  '435',
+  '417',
+  '262',
 ]);
 
 const scalar = (value) => (typeof value === 'string' || typeof value === 'number' ? value : undefined);
@@ -21,7 +56,11 @@ function searchNutrients(values) {
   return Array.isArray(values)
     ? values
         .map((value) => object(value))
-        .map((value) => ({ nutrientNumber: scalar(value.nutrientNumber), unitName: text(value.unitName), value: scalar(value.value) }))
+        .map((value) => ({
+          nutrientNumber: scalar(value.nutrientNumber),
+          unitName: text(value.unitName),
+          value: scalar(value.value),
+        }))
         .filter(
           (value) =>
             value.nutrientNumber !== undefined &&
@@ -73,8 +112,20 @@ function labelNutrients(value) {
   const labels = object(value);
   const result = {};
   for (const name of [
-    'calories', 'protein', 'fat', 'carbohydrates', 'fiber', 'sugars', 'addedSugar', 'saturatedFat', 'transFat',
-    'cholesterol', 'sodium', 'potassium', 'calcium', 'iron',
+    'calories',
+    'protein',
+    'fat',
+    'carbohydrates',
+    'fiber',
+    'sugars',
+    'addedSugar',
+    'saturatedFat',
+    'transFat',
+    'cholesterol',
+    'sodium',
+    'potassium',
+    'calcium',
+    'iron',
   ]) {
     const item = object(labels[name]);
     if (scalar(item.value) !== undefined) result[name] = { value: scalar(item.value) };
@@ -95,8 +146,10 @@ function trimDetail(value) {
         const measure = object(portion.measureUnit);
         return Object.fromEntries(
           [
-            ['amount', scalar(portion.amount)], ['gramWeight', scalar(portion.gramWeight)],
-            ['modifier', text(portion.modifier)], ['portionDescription', text(portion.portionDescription)],
+            ['amount', scalar(portion.amount)],
+            ['gramWeight', scalar(portion.gramWeight)],
+            ['modifier', text(portion.modifier)],
+            ['portionDescription', text(portion.portionDescription)],
             ['measureUnit', text(measure.name) === undefined ? undefined : { name: text(measure.name) }],
           ].filter(([, value]) => value !== undefined),
         );
@@ -106,7 +159,9 @@ function trimDetail(value) {
     ...common(item),
     foodNutrients: detailNutrients(item.foodNutrients),
     foodPortions: portions,
-    ...(labelNutrients(item.labelNutrients) === undefined ? {} : { labelNutrients: labelNutrients(item.labelNutrients) }),
+    ...(labelNutrients(item.labelNutrients) === undefined
+      ? {}
+      : { labelNutrients: labelNutrients(item.labelNutrients) }),
   };
 }
 
@@ -130,7 +185,11 @@ if (process.argv.includes('--sanitize-existing')) {
   }
 } else {
   if (!key || !key.trim()) throw new Error('USDA_CAPTURE_KEY is required');
-  const search = object(await request('/foods/search?query=egg&dataType=Foundation%2CSR%20Legacy%2CSurvey%20(FNDDS)%2CBranded&pageSize=20&pageNumber=1'));
+  const search = object(
+    await request(
+      '/foods/search?query=egg&dataType=Foundation%2CSR%20Legacy%2CSurvey%20(FNDDS)%2CBranded&pageSize=20&pageNumber=1',
+    ),
+  );
   const searchFixture = {
     foods: (Array.isArray(search.foods) ? search.foods : []).map(trimSearchFood),
     currentPage: scalar(search.currentPage),

@@ -6,6 +6,11 @@
     { "fdcId": 111, "description": "Text match only", "dataType": "Branded", "gtinUpc": "031200037213" },
     { "fdcId": 112, "description": "No gtinUpc", "dataType": "Branded" },
     { "description": "No fdcId", "dataType": "Branded", "gtinUpc": "031200037206" },
-    { "fdcId": 113, "description": "Same product as a 14-digit GTIN", "dataType": "Branded", "gtinUpc": "00031200037206" }
+    {
+      "fdcId": 113,
+      "description": "Same product as a 14-digit GTIN",
+      "dataType": "Branded",
+      "gtinUpc": "00031200037206"
+    }
   ]
 }

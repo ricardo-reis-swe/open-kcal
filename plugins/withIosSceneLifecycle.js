@@ -17,11 +17,19 @@ const LEGACY_WINDOW_START = `#if os(iOS) || os(tvOS)
 function adoptSceneDelegate(contents) {
   if (contents.includes('ExpoReactNativeFactoryProvider')) return contents;
   if (!contents.includes(LEGACY_WINDOW_START) || !contents.includes('class AppDelegate: ExpoAppDelegate {')) {
-    throw new Error('withIosSceneLifecycle: AppDelegate.swift no longer matches the SDK 57 template; update the plugin.');
+    throw new Error(
+      'withIosSceneLifecycle: AppDelegate.swift no longer matches the SDK 57 template; update the plugin.',
+    );
   }
   return contents
-    .replace('class AppDelegate: ExpoAppDelegate {', 'class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {')
-    .replace(LEGACY_WINDOW_START, '    // The window and React Native start in ExpoAppSceneDelegate (UIScene life cycle).');
+    .replace(
+      'class AppDelegate: ExpoAppDelegate {',
+      'class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {',
+    )
+    .replace(
+      LEGACY_WINDOW_START,
+      '    // The window and React Native start in ExpoAppSceneDelegate (UIScene life cycle).',
+    );
 }
 
 module.exports = function withIosSceneLifecycle(config) {
