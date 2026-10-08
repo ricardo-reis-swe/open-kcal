@@ -174,7 +174,23 @@ export function FoodDatabasesScreen({ onBack }: { onBack: () => void }) {
         contentContainerStyle={{ padding: theme.spacing[4], gap: theme.spacing[3] }}
         keyboardDismissMode="on-drag"
       >
-        <ListRow label={t('foodDatabases.openFoodFacts')} value={t('foodDatabases.alwaysOn')} />
+        <View>
+          <ListRow label={t('foodDatabases.openFoodFacts')} value={t('foodDatabases.alwaysOn')} />
+          {/* UX-18: ODbL attribution, shown even when the Open Food Facts section is hidden. */}
+          <AppText variant="compact" color="textSecondary">
+            {t('foodDatabases.offAttribution')}
+          </AppText>
+          <TextAction
+            icon="open-outline"
+            label={t('foodDatabases.offWebsite')}
+            onPress={() => void Linking.openURL('https://world.openfoodfacts.org')}
+          />
+          <TextAction
+            icon="open-outline"
+            label={t('foodDatabases.odbl')}
+            onPress={() => void Linking.openURL('https://opendatacommons.org/licenses/odbl/1-0/')}
+          />
+        </View>
         <View style={[styles.providerCard, { borderColor: theme.colors.divider, borderRadius: theme.radii.medium }]}>
           <ListRow
             label={t('foodDatabases.usda')}

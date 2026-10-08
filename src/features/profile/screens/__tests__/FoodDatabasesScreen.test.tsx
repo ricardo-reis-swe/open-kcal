@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { onlineManager } from '@tanstack/react-query';
+import { Linking } from 'react-native';
 
 import { UsdaClient } from '@/data/api/usda/client';
 import type { CredentialsService } from '@/data/secure-storage/credentialsService';
@@ -38,6 +39,18 @@ afterEach(async () => {
 });
 
 describe('UX-18 / UX-19: Food Databases', () => {
+  it('UX-18: credits Open Food Facts under the ODbL with links to the site and the license', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    await setup();
+    expect(
+      await screen.findByText('Food data from Open Food Facts, available under the Open Database License (ODbL).'),
+    ).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Open Food Facts website' }));
+    expect(openURL).toHaveBeenCalledWith('https://world.openfoodfacts.org');
+    await fireEvent.press(screen.getByRole('button', { name: 'Open Database License' }));
+    expect(openURL).toHaveBeenCalledWith('https://opendatacommons.org/licenses/odbl/1-0/');
+  });
+
   it('uses secure input, masks a saved key, and returns with the app-bar back action', async () => {
     const { onBack } = await setup({ key: 'abcd1234' });
     await screen.findByText('Saved · will check when online');
