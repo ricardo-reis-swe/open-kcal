@@ -2,6 +2,13 @@
 
 A local-first calorie and food diary for iOS and Android, built with React Native (Expo). Everything is stored on the device in SQLite. There is no account, no backend and no tracking.
 
+<p align="center">
+  <img src="docs/screenshots/diary.png" width="200" alt="Diary with today's calories left, macros and meals">
+  <img src="docs/screenshots/food-search.png" width="200" alt="Food search with Open Food Facts results">
+  <img src="docs/screenshots/add-food.png" width="200" alt="Adding a food with the ruler serving selector">
+  <img src="docs/screenshots/profile-dark.png" width="200" alt="Profile in dark mode">
+</p>
+
 ## Features
 
 - Daily calorie, carb, protein and fat goals, with a diary per date (past, today and future).
