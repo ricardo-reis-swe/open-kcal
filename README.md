@@ -1,4 +1,6 @@
-# Calorie Tracker
+# Open Kcal
+
+[![CI](https://github.com/ricardo-reis-swe/open-kcal/actions/workflows/ci.yml/badge.svg)](https://github.com/ricardo-reis-swe/open-kcal/actions/workflows/ci.yml)
 
 A local-first calorie and food diary for iOS and Android, built with React Native (Expo). Everything is stored on the device in SQLite. There is no account, no backend and no tracking.
 
@@ -27,6 +29,8 @@ A local-first calorie and food diary for iOS and Android, built with React Nativ
 Requirements: Node.js, plus Xcode (iOS) and/or Android Studio (Android). The app uses native modules, so it runs as a development build, not in Expo Go.
 
 ```bash
+git clone https://github.com/ricardo-reis-swe/open-kcal.git
+cd open-kcal
 npm ci
 cp .env.example .env
 npm run ios        # or: npm run android
