@@ -41,17 +41,19 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 - App Store and Play production listing: privacy labels (health data stays on device), screenshots in en + pt-PT, store copy, support URL, review submission. Depends on POST-12. The MVP has no distribution (ROAD-04).
 
 ## POST-11 Continuous integration
-- A hosted pipeline running `npm run check` on every push. The remote is Gitea, so this means Gitea Actions (GitHub-compatible workflow syntax in `.gitea/workflows/`), which needs a runner on the Gitea server. Maestro E2E in CI is a later extension.
+- Moved into the MVP 2026-10-09 (user request): ROAD-05, on GitHub Actions. ID kept so it is not reused.
+- Still deferred: Maestro E2E in CI.
 
 ## POST-12 Distribution
+- Sideload releases on GitHub Releases moved into the MVP 2026-10-09 (user request): ROAD-06. Still deferred:
+- TestFlight (public link) and the Play internal testing track. Needs an Expo account, the Apple Developer Program and a Google Play Console account, all under ricardo_reis@live.com.
 - EAS Build profiles in `eas.json`:
   - `development`: `com.ricardoreis.calorietracker.dev`, "Calorie Tracker (Dev)"
   - `preview`: `.preview`, "Calorie Tracker (Preview)"
   - `production`: `com.ricardoreis.calorietracker`
 - Per-profile `EXPO_PUBLIC_*` env. Separate IDs let the builds coexist without sharing data (ARCH-14).
-- Versioning: semver `version` bumped per release; `buildNumber`/`versionCode` from EAS (`appVersionSource: remote`, `autoIncrement` on production).
-- Builds run manually or on a `v*` tag. `eas submit` to TestFlight (internal) and the Play internal testing track.
-- Accounts, all under ricardo_reis@live.com: Expo, Apple Developer Program, Google Play Console. Signing credentials EAS-managed; keep a backup of the Android upload key.
+- Build numbers stay derived from the version (ROAD-06). The production Android key is the ROAD-06 release key, so existing installs keep updating.
+- F-Droid main repo: needs a from-source build with no proprietary dependencies, checked first.
 
 ## POST-13 Visual QA matrix
 - The full DS-13 matrix: small + large phone widths, large text, increased contrast, reduced motion, and screenshot sets per screen. The MVP runs the reduced DS-13 check only.

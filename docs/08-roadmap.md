@@ -99,8 +99,8 @@ Once a milestone is accepted, its section moves to `docs/progress-archive.md`; `
 
 The milestone is done only after the user accepts it.
 
-## ROAD-04 Local builds (no CI, no distribution)
-The MVP has **no CI and no distribution**: no hosted pipelines, EAS builds, store submission or build-number automation. All of that is deferred (POST-11, POST-12).
+## ROAD-04 Local builds
+Local checks and builds. Hosted CI is ROAD-05 and sideload releases are ROAD-06. EAS builds, TestFlight and store submission stay deferred (POST-10, POST-12).
 
 **Checks** run locally before every commit, via package scripts:
 - `npm run lint` · `npm run typecheck` (`tsc`) · `npm test` (Jest, including the i18n key-parity test)
@@ -111,7 +111,8 @@ The MVP has **no CI and no distribution**: no hosted pipelines, EAS builds, stor
 - Dev builds: `npx expo run:ios` and `npx expo run:android`, on the simulator/emulator or a USB-connected phone.
 - A real iPhone uses free personal signing with the Apple ID **ricardo_reis@live.com**. No Apple Developer Program, Google Play or Expo account is needed.
 - Release-config build (M9 smoke test): `npx expo run:ios --configuration Release` and `npx expo run:android --variant release`.
-- One app ID: `com.ricardoreis.calorietracker`, display name `Calorie Tracker`. Separate dev/preview IDs come with distribution (ARCH-14, POST-12).
+- One app ID: `com.ricardoreis.calorietracker`, display name `Calorie Tracker`. Separate dev/preview IDs stay deferred (ARCH-14, POST-12); see the ROAD-06 signing note.
+- Local release builds are signed with the debug key unless the ROAD-06 `ANDROID_KEYSTORE_*` env vars are set.
 - Public config goes in the local `.env` (from `.env.example`): OFF contact email `ricardo_reis@live.com` (the PROV-01 `User-Agent`) and base URLs. No secrets; the USDA key is entered in the app.
 - Never use or mention any other account or email in code, config, docs or commits.
 
@@ -121,3 +122,43 @@ The MVP has **no CI and no distribution**: no hosted pipelines, EAS builds, stor
 3. Install a release-config build on the user's iPhone and/or Android phone.
 4. Smoke test: first launch, add Quick Calories, log an OFF food, go offline and log a saved food, relaunch and check the data persisted.
 5. Report to the user (ROAD-03 acceptance).
+
+## ROAD-05 Continuous integration
+- GitHub Actions on `origin` (`ricardo-reis-swe/open-kcal`): `.github/workflows/ci.yml`. The Gitea remote has no CI.
+- Runs on every push to `main` and every PR. It is also the Release gate (ROAD-06, `workflow_call`).
+- Steps: `npm ci` → `npm run format:check` → `npm run check`. Ubuntu, Node 24.
+- No native builds or Maestro in CI. Maestro in CI stays deferred (POST-11).
+
+## ROAD-06 Releases
+Sideload releases on GitHub Releases. No store, no paid Apple or Google account (store release: POST-10). Copy-paste steps: `docs/releasing.md`.
+
+- MUST run only by hand: Actions → **Release** → Run workflow, on `main` (`.github/workflows/release.yml`). Never on push or tag.
+- It builds the commit it runs on at the `app.json` `version`, after CI passes, and creates a **draft** release `v<version>`. Publishing the draft creates the tag.
+
+**Steps**
+1. Bump `version` in `app.json` and `package.json` (semver `MAJOR.MINOR.PATCH`, MINOR and PATCH below 100). Commit and push; CI green.
+2. Run **Release**. It fails if `v<version>` already exists.
+3. Install the draft's APK and/or IPA and run the ROAD-04 smoke test.
+4. Publish the draft on GitHub.
+
+**Build numbers** come from the version: `MAJOR * 10000 + MINOR * 100 + PATCH` (`plugins/withBuildNumbers.js`). MUST NOT be set by hand. **Why:** Android and Obtainium only update to a higher `versionCode`.
+
+**Release assets**
+| File | What |
+|---|---|
+| `open-kcal-<version>.apk` | Android, signed with the release key. Phone ABIs only (`armeabi-v7a`, `arm64-v8a`). |
+| `open-kcal-<version>.ipa` | iOS, **unsigned**. The user signs it with AltStore, SideStore or Sideloadly and a free Apple ID (7-day signing, refreshed by the tool). |
+| `altstore-source.json` | AltStore / SideStore source. Stable URL: `https://github.com/ricardo-reis-swe/open-kcal/releases/latest/download/altstore-source.json`. Made by `scripts/altstore-source.mjs`. |
+| `SHA256SUMS.txt` | Checksums of the files above. |
+
+The release notes show the Android signing certificate SHA-256.
+
+**Channels.** GitHub Releases is the single source. Obtainium tracks it. IzzyOnDroid lists the APK after a one-time request by the user once the first release is published. TestFlight and the F-Droid main repo are deferred (POST-12).
+
+**Android signing**
+- One release key for the app's lifetime. It MUST NOT be committed (`*.jks` is gitignored) and MUST have a backup outside GitHub. **Why:** a new key means users must uninstall to update, which deletes their diary.
+- GitHub secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The workflow fails if the keystore is missing or the APK is debug-signed.
+- `plugins/withAndroidReleaseSigning.js` reads the `ANDROID_KEYSTORE_*` env vars at build time.
+- The release and local builds share the app ID (ROAD-04), so a release can't install over a local debug-key build. Uninstalling first deletes local data.
+
+**Build config.** CI copies `.env.example` to `.env` (public values only, ARCH-14). There are no app secrets. Runners: `ubuntu-latest` (Android), `macos-26` (iOS).
