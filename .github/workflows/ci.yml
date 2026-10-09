@@ -1,12 +1,15 @@
 name: CI
 
+# ROAD-05: every push to main and every PR. The Release workflow reuses it as its gate (workflow_call).
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # `github.workflow` is the caller's name under workflow_call, so a push never cancels a release's gate.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

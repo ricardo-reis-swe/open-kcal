@@ -1,0 +1,172 @@
+name: Release
+
+# ROAD-06: manual only (Actions → Release → Run workflow, on main). Builds a signed Android APK and an unsigned
+# iOS IPA at the app.json version and creates a draft GitHub Release v<version>. Publishing the draft is manual.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - name: Require main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run the Release workflow on main."
+          exit 1
+      - uses: actions/checkout@v4
+      - id: read
+        name: Read the version; fail if v<version> exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./app.json').expo.version")
+          if gh release view "v$version" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "::error::v$version already exists. Bump the version in app.json and package.json first."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  android:
+    name: Android APK
+    needs: [check, version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      APK: open-kcal-${{ needs.version.outputs.version }}.apk
+    outputs:
+      certificate: ${{ steps.verify.outputs.certificate }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Public build config (ARCH-14)
+        run: cp .env.example .env
+      - name: Release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::Missing the ANDROID_KEYSTORE_BASE64 secret (ROAD-06)."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+      - run: npx expo prebuild --platform android --no-install
+      - name: Build
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        # Phones only: no x86 emulator ABIs in the shipped APK.
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
+      - id: verify
+        name: Verify the release signature
+        run: |
+          mv android/app/build/outputs/apk/release/app-release.apk "$APK"
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$apksigner" verify --print-certs "$APK" | tee "$RUNNER_TEMP/cert.txt"
+          if grep -q "CN=Android Debug" "$RUNNER_TEMP/cert.txt"; then
+            echo "::error::The APK is signed with the debug key."
+            exit 1
+          fi
+          echo "certificate=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/cert.txt")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: ${{ env.APK }}
+          if-no-files-found: error
+
+  ios:
+    name: iOS IPA (unsigned)
+    needs: [check, version]
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      IPA: open-kcal-${{ needs.version.outputs.version }}.ipa
+      # CocoaPods needs a UTF-8 locale.
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Public build config (ARCH-14)
+        run: cp .env.example .env
+      - run: npx expo prebuild --platform ios
+      - name: Archive without signing
+        run: |
+          echo "ARCHIVE=$RUNNER_TEMP/CalorieTracker.xcarchive" >> "$GITHUB_ENV"
+          xcodebuild archive -quiet \
+            -workspace ios/CalorieTracker.xcworkspace -scheme CalorieTracker -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/CalorieTracker.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Package the IPA and the AltStore source
+        run: |
+          app="$ARCHIVE/Products/Applications/CalorieTracker.app"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$app" "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/$IPA" Payload)
+          node scripts/altstore-source.mjs "$IPA" "$app/Info.plist" > altstore-source.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: |
+            ${{ env.IPA }}
+            altstore-source.json
+          if-no-files-found: error
+
+  release:
+    name: Draft GitHub Release
+    needs: [version, android, ios]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      CERTIFICATE: ${{ needs.android.outputs.certificate }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the draft
+        run: |
+          (cd dist && sha256sum * > SHA256SUMS.txt)
+          cat > notes.md <<EOF
+          Android: install \`open-kcal-$VERSION.apk\`, or track this repo in Obtainium.
+          iOS: add the AltStore / SideStore source \`https://github.com/$GITHUB_REPOSITORY/releases/latest/download/altstore-source.json\`, or sideload \`open-kcal-$VERSION.ipa\`.
+
+          Android signing certificate SHA-256: \`$CERTIFICATE\`
+          EOF
+          gh release create "v$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" \
+            --title "v$VERSION" --notes-file notes.md --generate-notes
