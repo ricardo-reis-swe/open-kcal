@@ -14,8 +14,9 @@ describe('camera permission text', () => {
     });
   });
 
-  it('localizes NSCameraUsageDescription for pt-PT', () => {
+  it('localizes NSCameraUsageDescription for pt-PT, on iOS only', () => {
+    // Under `ios` so Expo doesn't also write it to Android strings.xml, which fails release lint (ROAD-06).
     expect(app.expo.locales['pt-PT']).toBe('./locales/ios/pt-PT.json');
-    expect(iosPt).toEqual({ NSCameraUsageDescription: pt.barcode.cameraPermission });
+    expect(iosPt).toEqual({ ios: { NSCameraUsageDescription: pt.barcode.cameraPermission } });
   });
 });
