@@ -2,6 +2,8 @@
 
 Single place for implementation status. Updated in the same commit as the work it describes. Accepted milestones' sections are in [progress-archive.md](progress-archive.md).
 
+2026-10-09 release readiness: the user confirms device validation through daily app use; earlier outstanding device-check handoffs below are satisfied by that confirmation. Maestro remains deferred; no automated device-test results are claimed. CI fix (ARCH-18, ROAD-05): recipe navigation tests now inherit the shared 30 s timeout instead of overriding it with 20 s; `npm run format:check` + `npm run check` pass (104 suites / 724 tests).
+
 | Milestone | Status |
 |---|---|
 | M0 Skeleton | done |
