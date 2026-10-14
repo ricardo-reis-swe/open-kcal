@@ -111,7 +111,7 @@ Local checks and builds. Hosted CI is ROAD-05 and sideload releases are ROAD-06.
 - Dev builds: `npx expo run:ios` and `npx expo run:android`, on the simulator/emulator or a USB-connected phone.
 - A real iPhone uses free personal signing with the Apple ID **ricardo_reis@live.com**. No Apple Developer Program, Google Play or Expo account is needed.
 - Release-config build (M9 smoke test): `npx expo run:ios --configuration Release` and `npx expo run:android --variant release`.
-- One app ID: `com.ricardoreis.calorietracker`, display name `Calorie Tracker`. Separate dev/preview IDs stay deferred (ARCH-14, POST-12); see the ROAD-06 signing note.
+- One app ID: `com.ricardoreis.calorietracker`, display name `Open Kcal`. Separate dev/preview IDs stay deferred (ARCH-14, POST-12); see the ROAD-06 signing note.
 - Local release builds are signed with the debug key unless the ROAD-06 `ANDROID_KEYSTORE_*` env vars are set.
 - Public config goes in the local `.env` (from `.env.example`): OFF contact email `ricardo_reis@live.com` (the PROV-01 `User-Agent`) and base URLs. No secrets; the USDA key is entered in the app.
 - Never use or mention any other account or email in code, config, docs or commits.

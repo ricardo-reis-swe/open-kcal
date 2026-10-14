@@ -161,3 +161,8 @@ Left for the user:
 ### Open questions
 
 - None.
+
+
+## App icon and display name (2026-10-14)
+
+- Applied the approved white apple icon to the app and Android launcher assets; changed the launcher display name to Open Kcal, and removed the old product name from the widget fallback label. Package ID remains stable for updates. Obtainium continues to use the signed GitHub Release APK workflow (ROAD-06).

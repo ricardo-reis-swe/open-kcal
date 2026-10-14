@@ -49,8 +49,8 @@ describe('UX-22: widget view model', () => {
   it('shows the unavailable state without data', () => {
     expect(caloriesLeftView(null, t, 'en-US')).toEqual({
       kind: 'unavailable',
-      label: 'Open Calorie Tracker',
-      a11y: 'Open Calorie Tracker',
+      label: 'Open app',
+      a11y: 'Open app',
     });
   });
 
@@ -60,6 +60,6 @@ describe('UX-22: widget view model', () => {
       value: new Intl.NumberFormat('pt-PT').format(11331), // grouped with a narrow no-break space
       label: 'kcal restantes',
     });
-    expect(caloriesLeftView(null, t, 'pt-PT').label).toBe('Abrir o Calorie Tracker');
+    expect(caloriesLeftView(null, t, 'pt-PT').label).toBe('Abrir aplicação');
   });
 });

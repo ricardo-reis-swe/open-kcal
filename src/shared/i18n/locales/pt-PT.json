@@ -526,7 +526,7 @@
     "partial": "Alguns registos não o indicam."
   },
   "widget": {
-    "unavailable": "Abrir o Calorie Tracker",
+    "unavailable": "Abrir aplicação",
     "pickerLabel": "Calorias restantes",
     "pickerDescription": "Calorias restantes de hoje"
   },
@@ -554,7 +554,7 @@
     "retry": "Tentar novamente",
     "createCustom": "Criar alimento personalizado",
     "scanAgain": "Ler novamente",
-    "cameraPermission": "O Calorie Tracker usa a câmara para ler códigos de barras de alimentos."
+    "cameraPermission": "A aplicação Open Kcal usa a câmara para ler códigos de barras de alimentos."
   },
   "myFoods": {
     "title": "Os meus alimentos",

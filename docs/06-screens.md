@@ -297,7 +297,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
   | Over goal | `{n} kcal over`, number in `warning` (as the ring, DS-03) |
   | No goal applies to today (DATA-09) | `{n} kcal eaten`, as the ring |
   | Provisional goal (UX-01) | Same as above; no "default goals" hint |
-  | DB not ready / read fails | `Open Calorie Tracker` |
+  | DB not ready / read fails | `Open app` |
 - Tap anywhere → the app opens on the Diary at today (NAV-10).
 - Strings in en + pt-PT (ARCH-22). No other data on the widget: no meals, macros or food names.
 - MUST NOT show stale data after a write in the app or after local midnight beyond the limits in DATA-22.

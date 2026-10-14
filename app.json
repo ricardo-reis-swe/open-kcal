@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Calorie Tracker",
+    "name": "Open Kcal",
     "slug": "calorie-tracker",
     "version": "0.1.0",
     "scheme": "calorietracker",
@@ -14,7 +14,7 @@
     "android": {
       "package": "com.ricardoreis.calorietracker",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#185C34",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -41,7 +41,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Calorie Tracker uses the camera to scan food barcodes.",
+          "cameraPermission": "Open Kcal uses the camera to scan food barcodes.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

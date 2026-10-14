@@ -526,7 +526,7 @@
     "partial": "Some entries don't list it."
   },
   "widget": {
-    "unavailable": "Open Calorie Tracker",
+    "unavailable": "Open app",
     "pickerLabel": "Calories left",
     "pickerDescription": "Today's calories left"
   },
@@ -554,7 +554,7 @@
     "retry": "Retry",
     "createCustom": "Create custom food",
     "scanAgain": "Scan again",
-    "cameraPermission": "Calorie Tracker uses the camera to scan food barcodes."
+    "cameraPermission": "Open Kcal uses the camera to scan food barcodes."
   },
   "myFoods": {
     "title": "My foods",

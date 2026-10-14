@@ -107,7 +107,7 @@ Request an IzzyOnDroid listing once: open an issue at `https://gitlab.com/IzzyOn
 
 **iOS** (free Apple ID; the app is re-signed every 7 days by the tool)
 
-- Install AltStore or SideStore, then add the source `https://github.com/ricardo-reis-swe/open-kcal/releases/latest/download/altstore-source.json` and install Calorie Tracker from it.
+- Install AltStore or SideStore, then add the source `https://github.com/ricardo-reis-swe/open-kcal/releases/latest/download/altstore-source.json` and install Open Kcal from it.
 - Or sideload `open-kcal-<version>.ipa` with Sideloadly.
 
 **Note:** a release can't install over a local development build on the same phone (different signing keys). Uninstall the local build first; that deletes its data.

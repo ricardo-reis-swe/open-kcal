@@ -100,7 +100,7 @@ MVP: light theme · iOS + Android · one phone size · default text. Check the s
 - Content centered horizontally and vertically (user decision 2026-09-30):
   - Number: `typography.displayNumber`, tabular figures, `textPrimary`; over goal → `warning`, as the Diary ring (DS-03 explicit label: "over").
   - Label (`kcal left` / `kcal over`, or kJ): `typography.compact`, `textSecondary`.
-  - Unavailable: `Open Calorie Tracker` in `compact`, `textSecondary`, no number.
+  - Unavailable: `Open app` in `compact`, `textSecondary`, no number.
 - Single line each. The number MUST NOT truncate; the label may ellipsize (pt-PT is longer).
 - Accessibility: the whole widget is one tap target with one content description, e.g. `1,731 kcal left`, `250 kcal over`.
 - Picker preview: a static PNG in `assets/` (en, a typical value), shown in the launcher's widget picker.
