@@ -103,7 +103,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - `My foods` tab: a `Create custom food` row always comes first, above the list or empty state. `Recipes` tab: a `Create recipe` row first → Create Recipe (UX-26, `initialName` = current query); hidden in select mode.
 - Empty: Recent `No recent foods yet.`; My foods `No custom foods yet.`; Recipes `No recipes yet.`; a query with no match → `No foods found for "<q>".`
 - Recipe rows: source label `Recipe`, basis `per serving`.
-- **Ingredient mode** (Ingredient Search, NAV-04; UX-26 `Add ingredient`): same screen with tabs `All` · `Recent` · `My foods` only; recipes are excluded everywhere (POST-15). Context line `Adding to <recipe name>` (`Adding to new recipe` while unnamed). No scan, no ⚡, no select mode, no `Create custom food`, no swipe-delete. Result → Ingredient Detail (UX-05 ingredient mode). Remote results upsert on open as usual (DATA-15).
+- **Ingredient mode** (Ingredient Search, NAV-04; UX-26 `Add ingredient`): same screen with tabs `All` · `Recent` · `My foods` only; recipes are excluded everywhere (POST-15). Context line `Adding to <recipe name>` (`Adding to new recipe` while unnamed). No ⚡, no select mode, no `Create custom food`, no swipe-delete. Scan (POST-15, Diary stack only): the scan icon opens the Barcode Scanner; a found product → Ingredient Detail (added to the draft), a missing code → Create Custom Food (ingredient mode). Result → Ingredient Detail (UX-05 ingredient mode). Remote results upsert on open as usual (DATA-15).
 - **Select mode** (multi-add, user request 2026-10-01):
   - Toggle: `checkmark-done` icon (a11y `Select multiple`, `selected` state) directly before ⚡ on the context line. Tap → select mode; tap again or Back → leaves select mode and clears the selection (Back does not leave the screen while select mode is on).
   - Selectable: stored foods only (Recent, `My foods`, `Saved`, `Recipes` rows). Remote rows not yet saved are dimmed and inert. **Why:** no network read at Add, works offline, no partial failures.
@@ -170,6 +170,7 @@ Read when: building a specific screen, sheet or dialog. Only screen-specific beh
 - Protein, carbs and fat are optional; an empty field saves as unknown (DATA-06).
 - **More nutrients**: a collapsed disclosure under the macros with one optional field per catalog nutrient (DATA-20), grouped as UX-05, in the catalog unit (g / mg / µg), per the entered serving like the macros. `Salt` is offered and `sodium` is derived (EU labels list salt). Empty = unknown. Collapsed by default; opens when any value is set.
 - **From a scan** (`barcode` param, DATA-24): a display-only `Barcode  5601009983179` row under Brand; the code is saved with the food. Name starts empty.
+- **Scan** (create mode only, UX-24): a barcode icon in the header opens the Barcode Scanner over the form (NAV-04 outcomes: found → Food Detail; not found → `Create custom food` with the barcode, DATA-24).
 - Save → NAV-04 (continues to Food Detail). Dirty exit → Discard dialog.
 - **Edit mode** (UX-25): title `Edit food`; every field filled from the food (the default serving's unit; amounts to 2 decimals; More nutrients open when any is set); the barcode row when it has one (not editable); `Save` disabled until something changed (UX-00); `Delete food` at the end (UX-19).
 
@@ -334,6 +335,7 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - `<sources>` lists what PROV-15 actually checked, e.g. `saved foods, Open Food Facts, USDA`. Notes: `Offline. Only saved foods were checked.`, or per provider hidden in UX-18 `<Provider> is turned off in Food Databases.` (both: `Open Food Facts and USDA are turned off in Food Databases.`). USDA without a key is simply not listed.
 - `<code>` shows the GTIN-13 (or EAN-8) form, digits only.
 - Back → Food Search. `Scan again` returns to Scanning. Leaving mid-lookup cancels it (PROV-15).
+- **Ingredient mode** (POST-15, `ingredientDraftId`, Diary stack): opened from Ingredient Search. A found product replaces the scanner with Ingredient Detail for the draft (pick the amount, then it is added to the recipe); a missing code offers `Create custom food` in ingredient mode (the saved food becomes an ingredient). Back → Ingredient Search.
 - Strings in en + pt-PT (ARCH-22), including the camera permission text (ARCH-24).
 
 ## UX-25 My Foods
@@ -368,13 +370,21 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - Name: word autocapitalization, prefilled from `initialName`. Servings: decimal > 0, required.
 - Weights in the preferred food weight unit, stored in g. Cooked weight optional, helper `The weight of one serving once cooked.` Raw weight shows the computed value (DATA-27) as the field value with helper `From the ingredients`; typing overrides it, helper becomes `Your value` + a `Reset` text action back to computed. Not computable and not overridden → empty, helper `Add the raw weight to log in g raw.`
 - Ingredient rows (DS-09): name · amount + unit (`· Deleted food` appended for a soft-deleted food) · kcal. Tap → Ingredient Detail (UX-05, edit). Swipe left → `Remove` (draft only, no Undo, no dialog). Order = add order.
-- `+ Add ingredient` → Ingredient Search (UX-04 ingredient mode).
+- `+ Add ingredient` → Ingredient Search (UX-04 ingredient mode), where the scan icon (POST-15, Diary stack) adds a scanned product as an ingredient.
 - Totals update live. An unknown macro (DATA-06, DATA-27) shows `—`, as in UX-05.
 - Draft: held in memory for the editor and its ingredient screens until Save; never written to SQLite before Save. Dirty exit → `Discard changes?` (UX-00).
 - Save enabled when valid (name, servings, ≥1 ingredient) and, in edit mode, changed. Create → NAV-04 (Food Detail for the recipe). Edit → My recipes.
-- Edit mode: title `Edit recipe`, filled from `getRecipe`; `Delete recipe` at the end (UX-19). Diary entries keep their snapshots.
+- Edit mode: title `Edit recipe`, filled from `getRecipe`; `Delete recipe` at the end (UX-19). Diary entries keep their snapshots. A share icon opens `Copy recipe text` / `Share recipe`; text comes from the saved recipe.
 
 ## UX-27 My Recipes
 - Profile › `My recipes` (UX-15). As UX-25 with recipe rows (`per serving · Recipe`), DATA-28 `listRecipes` order, 20 per page + `Show more`. No search, no create (create from Food Search `Recipes`).
 - Tap → UX-26 edit mode. Swipe left → `Delete` + `<recipe> deleted · Undo` (UX-04 rules, DATA-11).
-- Empty: `No recipes yet. Create them from Food Search.`
+- Empty: `No recipes yet. Create them from Food Search, or import one.`
+- `Import recipe` is also shown above a populated list and opens UX-28.
+
+
+## UX-28 Import Recipe
+- Opened from My recipes after an explicit tap. Read the clipboard once; if it contains a valid v1 envelope, show the preview. Clipboard denial, empty text or invalid text falls back to a multiline paste field and `Paste` action.
+- Preview includes recipe name, servings, cooked/raw weights, ingredient quantities, and sender nutrition labeled “sent by the other phone, unverified”.
+- `Import` confirms the preview and writes the recipe plus independent kcal-only ingredient snapshots in one transaction (DATA-29); the recipe keeps the sender's meal-level nutrition, so its macros stay unknown until the recipe is edited (which recomputes them as unknown). Success returns to My recipes with a toast. Invalid text or write failure shows an inline recovery message and keeps the text.
+- Back with non-empty text → `Discard changes?` (NAV-08).

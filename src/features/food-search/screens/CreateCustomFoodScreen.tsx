@@ -30,6 +30,7 @@ import {
   HeaderAction,
   InlineStatus,
   ListRow,
+  PressableIcon,
   SectionHeader,
   TextAction,
 } from '@/shared/components';
@@ -46,6 +47,8 @@ type Props = {
   barcode?: string;
   /** UX-25 edit mode: the custom food to show and edit (DATA-26). Create mode without it. */
   food?: Food;
+  /** Create mode: opens the Barcode Scanner (UX-24) from the form. */
+  onScan?: () => void;
   onCancel: () => void;
   onSaved: (food: Food) => void;
   /** UX-25: after the confirmed `Delete food` (edit mode only). */
@@ -55,7 +58,15 @@ type Props = {
 const SERVING_UNITS: readonly CustomServingUnit[] = ['g', 'oz', 'ml', 'fl_oz', 'other'];
 
 /** UX-08 Create Custom Food. Saving creates the food only; the route continues to Food Detail (NAV-04). */
-export function CreateCustomFoodScreen({ initialName = '', barcode, food, onCancel, onSaved, onDeleted }: Props) {
+export function CreateCustomFoodScreen({
+  initialName = '',
+  barcode,
+  food,
+  onScan,
+  onCancel,
+  onSaved,
+  onDeleted,
+}: Props) {
   const theme = useTheme();
   const settings = useAppSettings();
   return (
@@ -65,6 +76,7 @@ export function CreateCustomFoodScreen({ initialName = '', barcode, food, onCanc
           initialName={initialName}
           barcode={food ? (food.barcode ?? undefined) : barcode}
           food={food}
+          onScan={onScan}
           energyUnit={settings.data.energyUnit}
           initialServingUnit={settings.data.foodWeightUnit}
           onCancel={onCancel}
@@ -80,6 +92,7 @@ function CustomFoodForm({
   initialName,
   barcode,
   food,
+  onScan,
   energyUnit,
   initialServingUnit,
   onCancel,
@@ -89,6 +102,7 @@ function CustomFoodForm({
   initialName: string;
   barcode: string | undefined;
   food: Food | undefined;
+  onScan?: () => void;
   energyUnit: 'kcal' | 'kJ';
   initialServingUnit: 'g' | 'oz';
   onCancel: () => void;
@@ -195,14 +209,28 @@ function CustomFoodForm({
         title={t(food ? 'customFood.editTitle' : 'customFood.title')}
         back={{ label: t('common.back'), onPress: requestCancel }}
         actions={
-          <HeaderAction
-            label={t('customFood.save')}
-            onPress={() => void handleSubmit(submit)()}
-            // UX-00: in edit mode also disabled until something changed.
-            disabled={!isValid || isSubmitting || (food !== undefined && !isDirty)}
-            loading={isSubmitting}
-            testID="custom-food-save"
-          />
+          <>
+            {
+              /* UX-08 create mode: scan a product barcode (UX-24) from the form. */
+              onScan && !food ? (
+                <PressableIcon
+                  icon="barcode-outline"
+                  accessibilityLabel={t('foodSearch.scanBarcode')}
+                  onPress={onScan}
+                  color="onAppBar"
+                  testID="custom-food-scan"
+                />
+              ) : null
+            }
+            <HeaderAction
+              label={t('customFood.save')}
+              onPress={() => void handleSubmit(submit)()}
+              // UX-00: in edit mode also disabled until something changed.
+              disabled={!isValid || isSubmitting || (food !== undefined && !isDirty)}
+              loading={isSubmitting}
+              testID="custom-food-save"
+            />
+          </>
         }
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">

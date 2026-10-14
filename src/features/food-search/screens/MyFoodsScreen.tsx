@@ -17,10 +17,11 @@ type Props = {
   onOpenFood: (food: Food) => void;
   /** UX-27 My recipes lists recipes (DATA-28) with the same rows and swipe-delete. */
   variant?: 'foods' | 'recipes';
+  onImportRecipe?: () => void;
 };
 
 /** UX-25 / NAV-06 My foods (UX-27 My recipes): DATA-25/28 order; tap → details/edit; swipe → Delete + Undo. */
-export function MyFoodsScreen({ onBack, onOpenFood, variant = 'foods' }: Props) {
+export function MyFoodsScreen({ onBack, onOpenFood, onImportRecipe, variant = 'foods' }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const locale = useFormattingLocale();
@@ -67,6 +68,11 @@ export function MyFoodsScreen({ onBack, onOpenFood, variant = 'foods' }: Props) 
           {deleteFailed ? (
             <View style={{ padding: theme.spacing[4] }}>
               <InlineStatus tone="error" message={t('foodSearch.deleteError')} />
+            </View>
+          ) : null}
+          {recipes ? (
+            <View style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[2] }}>
+              <TextAction label={t('myRecipes.import')} onPress={() => onImportRecipe?.()} testID="my-recipes-import" />
             </View>
           ) : null}
           {foods.length === 0 ? (

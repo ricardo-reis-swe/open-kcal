@@ -76,6 +76,59 @@ describe('DATA-27 / DATA-28: recipes repository', () => {
     expect(food.servings.find((s) => s.unit === 'g_raw')!.basisMultiplier * 250).toBeCloseTo(1);
   });
 
+  it('DATA-29: imports kcal-only ingredient snapshots and stores the sender nutrition', async () => {
+    const { recipes, foods } = await setup();
+    const imported = await recipes.createImported({
+      name: 'Imported bowl',
+      servingsCount: 2,
+      cookedServingG: 250,
+      rawServingGOverride: null,
+      labels,
+      nutrition: { energyKcal: 180, carbohydrateG: 40, proteinG: null, fatG: 1, extra: { fibre: 2 } },
+      ingredients: [
+        {
+          name: 'Shared rice',
+          brand: 'Sender brand',
+          basisQuantity: 100,
+          basisUnit: 'g',
+          nutrients: { energyKcal: 360 },
+          servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
+          quantity: 100,
+          servingUnit: 'g',
+          servingBasisMultiplier: 0.01,
+        },
+      ],
+    });
+    const recipe = await recipes.get(imported.id);
+    expect(imported.nutrients).toMatchObject({
+      energyKcal: 180,
+      carbohydrateG: 40,
+      proteinG: null,
+      fatG: 1,
+    });
+    expect(imported.nutrients.extra?.fibre).toBe(2);
+    expect(imported.servings.map((s) => [s.unit, s.isDefault])).toEqual([
+      ['serving', true],
+      ['g_cooked', false],
+      ['oz_cooked', false],
+      ['g_raw', false],
+      ['oz_raw', false],
+    ]);
+    expect(recipe.ingredients[0]?.food).toMatchObject({
+      name: 'Shared rice',
+      brand: 'Sender brand',
+      source: 'custom',
+      kind: 'food',
+    });
+    expect(recipe.ingredients[0]?.food.nutrients).toMatchObject({
+      energyKcal: 360,
+      carbohydrateG: null,
+      proteinG: null,
+      fatG: null,
+    });
+    expect(await foods.countCustom()).toBe(3);
+  });
+
   it('reads the recipe back with its ingredients and computed raw weight', async () => {
     const { recipes, input, rice } = await setup();
     const food = await recipes.create(input);

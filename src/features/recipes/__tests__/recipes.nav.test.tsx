@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import * as Clipboard from 'expo-clipboard';
 
 import { renderApp } from '@/shared/testing/appRoutes';
 
@@ -14,7 +15,8 @@ async function flush() {
 
 const activeDay = () => within(screen.getByTestId('diary-day-list'));
 
-afterEach(() => {
+afterEach(async () => {
+  await Clipboard.setStringAsync('');
   jest.useRealTimers();
 });
 
@@ -51,6 +53,24 @@ async function startRecipe(name: string, servings: string, ingredient: string) {
 }
 
 describe('SCOPE-13 / UX-26: recipes', () => {
+  it('UX-27 / UX-28: offers import from the empty My recipes state', async () => {
+    const app = await renderApp('/profile/my-recipes');
+    expect(await screen.findByText('No recipes yet. Create them from Food Search, or import one.')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('my-recipes-import'));
+    await flush();
+    expect(app.getPathname()).toBe('/profile/my-recipes/import');
+    expect(await screen.findByTestId('import-recipe-text')).toBeOnTheScreen();
+    expect(screen.getByTestId('import-recipe-confirm')).toBeDisabled();
+  });
+
+  it('UX-28: malformed pasted text shows an error and stays on the import screen', async () => {
+    const app = await renderApp('/profile/my-recipes/import');
+    await fireEvent.changeText(await screen.findByTestId('import-recipe-text'), 'not a recipe');
+    await fireEvent.press(screen.getByTestId('import-recipe-confirm'));
+    expect(await screen.findByText('This recipe text is invalid or uses an unsupported version.')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/profile/my-recipes/import');
+  });
+
   it('creates a recipe from ingredients, logs it, and shows it on All only while it is recent', async () => {
     const app = await renderApp('/diary');
     await screen.findByTestId('diary-day-list');
@@ -131,11 +151,26 @@ describe('SCOPE-13 / UX-26: recipes', () => {
     expect(screen.getByTestId('recipe-save')).toBeDisabled(); // UX-00: nothing changed yet
     expect(screen.getByText('Oats')).toBeOnTheScreen();
 
+    await fireEvent.press(screen.getByTestId('recipe-share'));
+    await flush();
+    await fireEvent.press(screen.getByTestId('recipe-copy'));
+    await flush();
+    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(expect.stringContaining('--- OPEN-KCAL-RECIPE v1 ---'));
+
     await fireEvent.changeText(screen.getByTestId('recipe-servings'), '4');
     await waitFor(() => expect(screen.getByTestId('recipe-save')).toBeEnabled());
     await fireEvent.press(screen.getByTestId('recipe-save'));
     await flush();
     expect(app.getPathname()).toBe('/profile/my-recipes');
     expect(await screen.findByText('100')).toBeOnTheScreen(); // 400 kcal ÷ 4 servings
+
+    await fireEvent.press(screen.getByTestId('my-recipes-import'));
+    await flush();
+    expect(app.getPathname()).toBe('/profile/my-recipes/import');
+    expect(await screen.findByText('Porridge')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('import-recipe-confirm'));
+    await waitFor(() => expect(app.getPathname()).toBe('/profile/my-recipes'), { timeout: 3_000 });
+    expect(app.getPathname()).toBe('/profile/my-recipes');
+    expect((await screen.findAllByText('Porridge')).length).toBeGreaterThanOrEqual(2);
   });
 });

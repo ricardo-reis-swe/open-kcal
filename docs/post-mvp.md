@@ -63,4 +63,8 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 
 ## POST-15 Recipe extras
 - Recipes as ingredients of other recipes (nesting). Needs cycle checks and multi-level recompute (DATA-28). Deferred by user decision 2026-10-01.
-- Scan a barcode or create a custom food while picking ingredients (UX-04 ingredient mode hides both).
+- Scan a barcode or create a custom food while picking ingredients. Moved into the MVP 2026-10-14 (user request): the Ingredient Search scan icon (Diary stack) scans a product into the recipe — found → Ingredient Detail, not found → Create Custom Food in ingredient mode (UX-04 ingredient mode, UX-24, NAV-04).
+- Link an imported ingredient snapshot to an existing local food (DATA-29 v1 always creates snapshots).
+
+## POST-16 Recipe text sharing and import
+- Moved into the MVP 2026-10-10 (user request). ID kept so it is not reused.

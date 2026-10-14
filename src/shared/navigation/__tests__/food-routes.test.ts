@@ -42,6 +42,11 @@ describe('ARCH-03 / NAV-04 / NAV-09: food route contracts', () => {
     expect(parseRouteParams('createCustomFood', params)).toEqual({ ...params, origin: 'diary' });
   });
 
+  it('NAV-06 / UX-28: builds and validates the Import Recipe route', () => {
+    expect(routes.importRecipe()).toBe('/profile/my-recipes/import');
+    expect(parseRouteParams('importRecipe', {})).toEqual({});
+  });
+
   it('NAV-04: validates and builds Edit Food Entry with ID + origin only', () => {
     expect(parseRouteParams('editFoodEntry', { entryId: 'entry-1', origin: 'profile' })).toEqual({
       entryId: 'entry-1',

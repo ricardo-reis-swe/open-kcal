@@ -10,6 +10,7 @@ export default function MyRecipesRoute() {
       variant="recipes"
       onBack={() => router.back()}
       onOpenFood={(food) => router.push(routes.editRecipe({ foodId: food.id }))}
+      onImportRecipe={() => router.push(routes.importRecipe())}
     />
   );
 }

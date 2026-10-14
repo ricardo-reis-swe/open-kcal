@@ -103,6 +103,7 @@ FROM diary_entries WHERE diary_date = ?;
 | Create custom food | Tx: validate → insert `custom` food → insert ≥1 default serving. Does not create an entry. |
 | Edit custom food | DATA-26. |
 | Create / edit recipe | DATA-28. |
+| Import recipe | DATA-29. |
 | Update goals | DATA-09. |
 
 ## DATA-17 Initialization and migrations
@@ -221,6 +222,7 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 ## DATA-28 Recipe operations
 | Operation | Rules |
 |---|---|
+| `createImported(input)` | DATA-29. One Tx inserts the recipe and one independent local custom-food snapshot + serving + known nutrient rows for every ingredient, then recomputes nutrition. No name matching, linking or diary entry. Duplicate imports create independent copies. |
 | `createRecipe(input)` | Tx: validate (name, `servings_count > 0`, `cooked_serving_g` / `raw_serving_g_override` NULL or > 0, ≥1 ingredient, no ingredient with `kind = 'recipe'`) → compute (DATA-27) → insert food + servings + nutrient rows + `recipes` + ingredient rows. Does not create an entry. |
 | `updateRecipe(id, input)` | Active recipes only (else not found). Tx: validate as create → update food, `recipes`, recompute → merge servings by `unit` (labels refreshed) → replace nutrient and ingredient rows. Diary entries are never touched (DATA-05). |
 | `getRecipe(id)` | Food + `recipes` + ingredients in `sort_order`, each with its food (deleted ones too) and current factor. |
@@ -229,3 +231,9 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 | `searchRecipes(q)` | PROV-08 local match + rank over active recipes. |
 | Delete recipe | `is_deleted = 1` (DATA-11), Undo as DATA-11. Ingredient rows are kept. |
 | Search | `searchCustom` and `findByBarcode` exclude recipes. The UX-04 `All` › `My foods` section adds matching recipes that are in Recents (DATA-14). |
+## DATA-29 Recipe text envelope & import
+- The entire shared message is the exact envelope `--- OPEN-KCAL-RECIPE v1 ---` + newline + JSON + newline + `--- END OPEN-KCAL-RECIPE ---`. No human-readable text outside it. JSON uses dot-decimal numbers, rounded to 2 decimal places; unknown nutrients are `null`/omitted, never `0` (DATA-06).
+- Payload v1 carries version, recipe name (≤80 chars), servings count, cooked serving g, raw serving override, and per ingredient only name/brand, nutrition basis, kcal and the used serving definition with its quantity (the serving's unit/multiplier are derived from it on parse). The meal-level sender-computed per-serving + total nutrition carries all known nutrients.
+- Parse at the boundary with Zod. Accept only exact v1 markers/version; reject >100,000 characters, malformed payloads, invalid/non-finite values, non-positive counts/weights/quantities/multipliers, and no-ingredient recipes with `ValidationError`. No local writes occur before explicit confirmation.
+- `createImported(input)`: one transaction creates each ingredient as an independent local `custom` food snapshot (`kind = 'food'`, kcal only, no imported marker), writes its servings, inserts recipe/ingredient rows, recomputes (DATA-28) for the recipe's servings and raw weight, then stores the sender's per-serving nutrition on the recipe. Ingredient macros are unknown; because they cannot be recomputed from kcal-only snapshots, editing the recipe later also recomputes its macros as unknown.
+- Imported foods are not linked to existing foods by name. Repeated imports create plain copies; no dedupe or merge. Import works offline and adds no backend/account/network behavior.

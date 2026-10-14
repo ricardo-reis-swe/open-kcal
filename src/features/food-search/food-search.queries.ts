@@ -7,7 +7,7 @@ import type { RecentFood } from '@/data/db/repositories/diaryRepository';
 import type { FoodSearchSections } from '@/domain/food/searchSections';
 import { settingsKeys } from '@/features/diary/diary.queries';
 import type { CustomFoodInput, Food } from '@/data/db/repositories/foodsRepository';
-import type { RecipeInput } from '@/data/db/repositories/recipesRepository';
+import type { ImportedRecipeInput, RecipeInput } from '@/data/db/repositories/recipesRepository';
 import { PARSER_VERSION, type FoodCandidate } from '@/data/api/open-food-facts/mapper';
 import { PARSER_VERSION as USDA_PARSER_VERSION } from '@/data/api/usda/mapper';
 import { nowUtcIso } from '@/shared/dates';
@@ -324,7 +324,11 @@ export function useLocalFoodWrites() {
     mutationFn: ({ id, input }: { id: string; input: RecipeInput }) => services.recipes.update(id, input),
     onSuccess: refresh,
   });
+  const importRecipe = useMutation({
+    mutationFn: (input: ImportedRecipeInput) => services.recipes.createImported(input),
+    onSuccess: refresh,
+  });
   const deleteFood = useMutation({ mutationFn: (id: string) => foods.deleteFood(id), onSuccess: refresh });
   const restoreFood = useMutation({ mutationFn: (id: string) => foods.restoreFood(id), onSuccess: refresh });
-  return { createCustom, updateCustom, createRecipe, updateRecipe, deleteFood, restoreFood };
+  return { createCustom, updateCustom, createRecipe, updateRecipe, importRecipe, deleteFood, restoreFood };
 }

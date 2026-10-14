@@ -598,10 +598,35 @@
       "oz_cooked": "oz cozinhado",
       "g_raw": "g cru",
       "oz_raw": "oz cru"
-    }
+    },
+    "share": "Partilhar receita",
+    "copy": "Copiar texto da receita",
+    "copied": "Texto da receita copiado.",
+    "shareError": "Não foi possível partilhar a receita. Tente novamente."
   },
   "myRecipes": {
     "title": "As minhas receitas",
-    "empty": "Ainda não há receitas. Crie-as na pesquisa de alimentos."
+    "empty": "Ainda não há receitas. Crie-as na pesquisa de alimentos ou importe uma.",
+    "import": "Importar receita"
+  },
+  "importRecipe": {
+    "title": "Importar receita",
+    "readingClipboard": "A verificar a área de transferência…",
+    "pasteHelp": "Cole o texto de uma receita partilhada a partir do Open Kcal.",
+    "textLabel": "Texto da receita",
+    "paste": "Colar",
+    "invalid": "Este texto de receita é inválido ou usa uma versão não suportada.",
+    "saveError": "Não foi possível importar a receita. Tente novamente.",
+    "senderUnverified": "Informação nutricional enviada pelo outro telemóvel. Não verificada.",
+    "servings": "Porções: {{count}}",
+    "cookedWeight": "Porção cozinhada: {{weight}} g",
+    "rawWeight": "Porção crua: {{weight}} g",
+    "ingredientAmount": "{{quantity}} {{unit}}",
+    "senderNutrition": "Informação nutricional enviada pelo outro telemóvel",
+    "perServing": "Por porção: {{value}}",
+    "total": "Receita completa: {{value}}",
+    "editText": "Editar texto da receita",
+    "import": "Importar",
+    "imported": "Receita importada."
   }
 }

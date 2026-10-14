@@ -19,8 +19,8 @@ export type RouteParams = {
   diary: { date?: LocalDate };
   /** `scan`: opened for NAV-03 Scan Barcode (the Barcode Scanner is pushed on top; the field isn't focused). */
   foodSearch: { mealId: Uuid; date: LocalDate; initialQuery?: string; scan?: boolean; origin?: Origin };
-  /** UX-24; always pushed over Food Search (NAV-04). */
-  barcodeScanner: { mealId: Uuid; date: LocalDate; origin?: Origin };
+  /** UX-24; always pushed over Food Search (NAV-04). `ingredientDraftId` switches to ingredient mode (POST-15, Diary stack only): a found food opens Ingredient Detail for that draft, a missing code opens Create Custom Food for it. */
+  barcodeScanner: { mealId?: Uuid; date?: LocalDate; origin?: Origin; ingredientDraftId?: Uuid };
   foodDetail: {
     foodId: Uuid;
     foodSource: FoodSource;
@@ -32,8 +32,15 @@ export type RouteParams = {
   editFoodEntry: { entryId: Uuid; origin?: Origin };
   quickCalories: { mealId: Uuid; date: LocalDate; origin?: Origin };
   editQuickCalories: { entryId: Uuid; origin?: Origin };
-  /** `barcode`: a GTIN-14 from the Barcode Scanner (DATA-24). */
-  createCustomFood: { mealId: Uuid; date: LocalDate; initialName?: string; barcode?: string; origin?: Origin };
+  /** `barcode`: a GTIN-14 from the Barcode Scanner (DATA-24). `ingredientDraftId` switches to ingredient mode (POST-15, Diary stack only): the saved food becomes an ingredient of that draft. */
+  createCustomFood: {
+    mealId?: Uuid;
+    date?: LocalDate;
+    initialName?: string;
+    barcode?: string;
+    origin?: Origin;
+    ingredientDraftId?: Uuid;
+  };
   mealEdit: { mode: 'create' } | { mode: 'edit'; mealId: Uuid };
   weightEntry: { mode: 'create'; date?: LocalDate } | { mode: 'edit'; weightEntryId: Uuid; date?: LocalDate };
   foodDatabases: undefined;
@@ -47,6 +54,8 @@ export type RouteParams = {
   createRecipe: { mealId: Uuid; date: LocalDate; initialName?: string; origin?: Origin };
   /** UX-26 edit, from My recipes (Profile stack). */
   editRecipe: { foodId: Uuid };
+  /** UX-28: import a versioned recipe text from clipboard or paste. */
+  importRecipe: undefined;
   /** UX-04 ingredient mode, in the stack of the editor that opened it (NAV-02). */
   ingredientSearch: { stack: RecipeStack; draftId: string };
   /** UX-05 ingredient mode; `ingredientKey` edits an existing draft ingredient. */
@@ -85,7 +94,19 @@ const paramSchemas = {
       .transform((value) => value === '1'),
     origin: originSchema.default('diary'),
   }),
-  barcodeScanner: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
+  barcodeScanner: z
+    .object({
+      mealId: idSchema.optional(),
+      date: dateSchema.optional(),
+      origin: originSchema.default('diary'),
+      ingredientDraftId: idSchema.optional(),
+    })
+    // POST-15: ingredient mode (Diary stack) carries the draft id instead of a meal and date.
+    .superRefine((value, ctx) => {
+      if (!value.ingredientDraftId && (!value.mealId || !value.date)) {
+        ctx.addIssue({ code: 'custom', message: 'mealId and date are required outside ingredient mode' });
+      }
+    }),
   foodDetail: z.object({
     foodId: idSchema,
     foodSource: z.enum(['custom', 'usda', 'open_food_facts']),
@@ -94,16 +115,27 @@ const paramSchemas = {
     date: dateSchema,
     origin: originSchema.default('diary'),
   }),
-  createCustomFood: z.object({
-    mealId: idSchema,
-    date: dateSchema,
-    initialName: z.string().optional(),
-    barcode: z
-      .string()
-      .regex(/^\d{14}$/)
-      .optional(),
-    origin: originSchema.default('diary'),
-  }),
+  createCustomFood: z
+    .object({
+      mealId: idSchema.optional(),
+      date: dateSchema.optional(),
+      initialName: z.string().optional(),
+      barcode: z
+        .string()
+        .regex(/^\d{14}$/)
+        .optional(),
+      origin: originSchema.default('diary'),
+      ingredientDraftId: idSchema.optional(),
+    })
+    .superRefine((value, ctx) => {
+      if (!value.ingredientDraftId && (!value.mealId || !value.date)) {
+        ctx.addIssue({ code: 'custom', message: 'mealId and date are required outside ingredient mode' });
+      }
+      // POST-15: an ingredient-mode custom food is created from a scanned code.
+      if (value.ingredientDraftId && !value.barcode) {
+        ctx.addIssue({ code: 'custom', message: 'a barcode is required in ingredient mode' });
+      }
+    }),
   quickCalories: z.object({ mealId: idSchema, date: dateSchema, origin: originSchema.default('diary') }),
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
@@ -116,6 +148,7 @@ const paramSchemas = {
     origin: originSchema.default('diary'),
   }),
   editRecipe: z.object({ foodId: idSchema }),
+  importRecipe: z.object({}),
   ingredientSearch: z.object({ draftId: idSchema }),
   ingredientDetail: z.object({
     draftId: idSchema,
@@ -162,6 +195,8 @@ export const routes = {
   /** UX-27 → UX-26 edit mode (DATA-28). */
   editRecipe: (p: RouteParams['editRecipe']): Href =>
     ({ pathname: '/profile/my-recipes/[foodId]', params: { foodId: p.foodId } }) as unknown as Href,
+  /** NAV-06 / UX-28 Import Recipe. */
+  importRecipe: (): Href => '/profile/my-recipes/import' as Href,
   /** NAV-04 Create Recipe (UX-26). */
   createRecipe: (p: RouteParams['createRecipe']): Href =>
     ({
@@ -205,7 +240,12 @@ export const routes = {
   }) as unknown as Href,
   barcodeScanner: (p: RouteParams['barcodeScanner']): Href => ({
     pathname: '/diary/barcode-scanner',
-    params: { mealId: p.mealId, date: p.date, origin: p.origin ?? 'diary' },
+    params: {
+      ...(p.mealId ? { mealId: p.mealId } : {}),
+      ...(p.date ? { date: p.date } : {}),
+      origin: p.origin ?? 'diary',
+      ...(p.ingredientDraftId ? { ingredientDraftId: p.ingredientDraftId } : {}),
+    },
   }) as unknown as Href,
   foodDetail: (p: RouteParams['foodDetail']): Href => ({
     pathname: '/diary/food-detail/[foodId]',
@@ -221,11 +261,12 @@ export const routes = {
   createCustomFood: (p: RouteParams['createCustomFood']): Href => ({
     pathname: '/diary/create-custom-food',
     params: {
-      mealId: p.mealId,
-      date: p.date,
+      ...(p.mealId ? { mealId: p.mealId } : {}),
+      ...(p.date ? { date: p.date } : {}),
       ...(p.initialName ? { initialName: p.initialName } : {}),
       ...(p.barcode ? { barcode: p.barcode } : {}),
       origin: p.origin ?? 'diary',
+      ...(p.ingredientDraftId ? { ingredientDraftId: p.ingredientDraftId } : {}),
     },
   }) as unknown as Href,
   quickCalories: (p: RouteParams['quickCalories']): Href => ({

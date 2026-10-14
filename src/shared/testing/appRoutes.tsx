@@ -21,6 +21,7 @@ import MealsRoute from '@/app/(tabs)/profile/meals/index';
 import MyFoodsRoute from '@/app/(tabs)/profile/my-foods/index';
 import EditCustomFoodRoute from '@/app/(tabs)/profile/my-foods/[foodId]';
 import MyRecipesRoute from '@/app/(tabs)/profile/my-recipes/index';
+import ImportRecipeRoute from '@/app/(tabs)/profile/my-recipes/import';
 import EditRecipeRoute from '@/app/(tabs)/profile/my-recipes/[foodId]';
 import ProfileIngredientSearchRoute from '@/app/(tabs)/profile/ingredient-search';
 import ProfileIngredientDetailRoute from '@/app/(tabs)/profile/ingredient-detail/[foodId]';
@@ -61,6 +62,7 @@ export function appRoutes(extra: Record<string, () => React.ReactElement> = {}) 
     '(tabs)/profile/my-foods/index': MyFoodsRoute,
     '(tabs)/profile/my-foods/[foodId]': EditCustomFoodRoute,
     '(tabs)/profile/my-recipes/index': MyRecipesRoute,
+    '(tabs)/profile/my-recipes/import': ImportRecipeRoute,
     '(tabs)/profile/my-recipes/[foodId]': EditRecipeRoute,
     '(tabs)/profile/ingredient-search': ProfileIngredientSearchRoute,
     '(tabs)/profile/ingredient-detail/[foodId]': ProfileIngredientDetailRoute,

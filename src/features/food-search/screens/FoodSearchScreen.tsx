@@ -79,9 +79,12 @@ type Props = {
   onCreateRecipe?: (initialName: string) => void;
   /**
    * UX-04 ingredient mode (Ingredient Search over a UX-26 editor): tabs All · Recent · My foods, recipes excluded, no
-   * scan / ⚡ / select mode / create / swipe-delete. `mealId` and `date` are unused.
+   * ⚡ / select mode / create / swipe-delete. `mealId` and `date` are unused. `ingredientScan` (POST-15) restores the
+   * scan icon when the stack can open the Barcode Scanner (Diary only).
    */
   ingredientFor?: { recipeName: string };
+  /** POST-15: show the scan icon in ingredient mode (the Diary stack's scanner writes into the draft). */
+  ingredientScan?: boolean;
 };
 
 /** UX-04 M4 subset: focused search, Recents without a query, and local custom-food results after 150 ms. */
@@ -102,6 +105,7 @@ export function FoodSearchScreen({
   useSelectBackGuard = noBackGuard,
   onCreateRecipe,
   ingredientFor,
+  ingredientScan = false,
 }: Props) {
   const ingredientMode = ingredientFor !== undefined;
   const { t, i18n } = useTranslation();
@@ -633,16 +637,19 @@ export function FoodSearchScreen({
                   testID="food-search-clear"
                 />
               ) : null}
-              {ingredientMode ? null : (
-                <PressableIcon
-                  icon="barcode-outline"
-                  accessibilityLabel={t('foodSearch.scanBarcode')}
-                  onPress={onScan}
-                  disabled={selecting}
-                  color="textSecondary"
-                  testID="food-search-scan"
-                />
-              )}
+              {
+                /* POST-15: the scan icon returns in ingredient mode when the stack's scanner writes into the draft. */
+                !ingredientMode || ingredientScan ? (
+                  <PressableIcon
+                    icon="barcode-outline"
+                    accessibilityLabel={t('foodSearch.scanBarcode')}
+                    onPress={onScan}
+                    disabled={selecting}
+                    color="textSecondary"
+                    testID="food-search-scan"
+                  />
+                ) : null
+              }
             </View>
           </View>
         }

@@ -8,12 +8,21 @@ import {
   type RecipeServingLabels,
 } from '@/domain/food/recipe';
 import { scaleNutrients, type Nutrients } from '@/domain/nutrition/nutrients';
+import { isNutrientId } from '@/domain/nutrition/nutrientCatalog';
 import { nowUtcIso } from '@/shared/dates';
 import { NotFoundError, ValidationError } from '@/shared/errors';
 
 import type { SqlExecutor } from '../sql';
 import type { RepositoryDeps } from './deps';
-import { readFood, readRecipeIngredients, recomputeRecipe, type Food, type RecipeRow } from './foodsRepository';
+import {
+  readFood,
+  readRecipeIngredients,
+  recomputeRecipe,
+  writeFoodNutrients,
+  type Food,
+  type FoodInput,
+  type RecipeRow,
+} from './foodsRepository';
 
 export type RecipeIngredientInput = {
   foodId: string;
@@ -32,6 +41,23 @@ export type RecipeInput = {
   ingredients: readonly RecipeIngredientInput[];
   /** Localized serving labels, written at save time (DATA-27). */
   labels: RecipeServingLabels;
+};
+
+export type ImportedRecipeInput = {
+  name: string;
+  servingsCount: number;
+  cookedServingG: number | null;
+  rawServingGOverride: number | null;
+  labels: RecipeServingLabels;
+  /** DATA-29: sender-computed per-serving nutrition, stored as-is (unverified). */
+  nutrition: Nutrients;
+  ingredients: readonly (Omit<FoodInput, 'barcode' | 'nutrients'> & {
+    /** DATA-29: kcal only; imported ingredient snapshots have unknown macros. */
+    nutrients: { energyKcal: number };
+    quantity: number;
+    servingUnit: string;
+    servingBasisMultiplier: number;
+  })[];
 };
 
 export type RecipeIngredient = {
@@ -188,6 +214,141 @@ export function createRecipesRepository({ db, clock, ids }: RepositoryDeps) {
         await writeIngredients(tx, ids, id, ingredients);
         await recomputeRecipe(tx, ids, id, now, input.labels);
         return (await readFood(tx, id))!;
+      });
+    },
+
+    /** DATA-29: create an independent local food snapshot for every ingredient in the same transaction as its recipe. */
+    async createImported(input: ImportedRecipeInput): Promise<Food> {
+      if (
+        input.name.trim().length === 0 ||
+        input.name.trim().length > 80 ||
+        !positive(input.servingsCount) ||
+        !positiveOrNull(input.cookedServingG) ||
+        !positiveOrNull(input.rawServingGOverride) ||
+        input.ingredients.length === 0
+      )
+        throw new ValidationError('Invalid imported recipe', ['recipe']);
+      const invalidNutrition =
+        !Number.isFinite(input.nutrition.energyKcal) ||
+        input.nutrition.energyKcal < 0 ||
+        [input.nutrition.carbohydrateG, input.nutrition.proteinG, input.nutrition.fatG].some(
+          (value) => value !== null && (!Number.isFinite(value) || value < 0),
+        ) ||
+        Object.entries(input.nutrition.extra ?? {}).some(
+          ([id, value]) => !isNutrientId(id) || !Number.isFinite(value) || value < 0,
+        );
+      if (invalidNutrition) throw new ValidationError('Invalid imported nutrition', ['nutrition']);
+      for (const [index, item] of input.ingredients.entries()) {
+        const invalidNutrient = !Number.isFinite(item.nutrients.energyKcal) || item.nutrients.energyKcal < 0;
+        if (
+          item.name.trim().length === 0 ||
+          item.name.trim().length > 80 ||
+          !positive(item.basisQuantity) ||
+          item.basisUnit.trim().length === 0 ||
+          !positive(item.quantity) ||
+          item.servingUnit.trim().length === 0 ||
+          !positive(item.servingBasisMultiplier) ||
+          item.servings.length !== 1 ||
+          item.servings.filter((serving) => serving.isDefault).length !== 1 ||
+          item.servings.some(
+            (serving) =>
+              !serving.label.trim() ||
+              !serving.unit.trim() ||
+              !positive(serving.quantity) ||
+              !positive(serving.basisMultiplier),
+          ) ||
+          item.servings[0]?.unit !== item.servingUnit ||
+          item.servings[0]?.basisMultiplier !== item.servingBasisMultiplier ||
+          invalidNutrient
+        )
+          throw new ValidationError('Invalid imported ingredient', [`ingredients.${index}`]);
+      }
+      return db.transaction(async (tx) => {
+        const now = nowUtcIso(clock);
+        const recipeId = ids.newId();
+        await tx.run(
+          `INSERT INTO foods (id, source, kind, external_id, name, brand, basis_quantity, basis_unit, energy_kcal,
+             is_deleted, created_at, updated_at)
+           VALUES (?, 'custom', 'recipe', NULL, ?, NULL, 1, 'serving', 0, 0, ?, ?)`,
+          [recipeId, input.name.trim(), now, now],
+        );
+        await tx.run(
+          'INSERT INTO recipes (food_id, servings_count, cooked_serving_g, raw_serving_g_override) VALUES (?, ?, ?, ?)',
+          [recipeId, input.servingsCount, input.cookedServingG, input.rawServingGOverride],
+        );
+        for (const [index, item] of input.ingredients.entries()) {
+          const foodInput = {
+            name: item.name,
+            brand: item.brand,
+            basisQuantity: item.basisQuantity,
+            basisUnit: item.basisUnit,
+            nutrients: item.nutrients,
+            servings: item.servings,
+          };
+          const foodId = ids.newId();
+          const servingIds = foodInput.servings.map(() => ids.newId());
+          await tx.run(
+            `INSERT INTO foods (id, source, kind, external_id, name, brand, basis_quantity, basis_unit, energy_kcal,
+               protein_g, carbohydrate_g, fat_g, barcode, is_deleted, created_at, updated_at)
+             VALUES (?, 'custom', 'food', NULL, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, 0, ?, ?)`,
+            [
+              foodId,
+              foodInput.name.trim(),
+              foodInput.brand?.trim() || null,
+              foodInput.basisQuantity,
+              foodInput.basisUnit,
+              foodInput.nutrients.energyKcal,
+              now,
+              now,
+            ],
+          );
+          for (const [servingIndex, serving] of foodInput.servings.entries()) {
+            await tx.run(
+              `INSERT INTO food_servings (id, food_id, label, quantity, unit, basis_multiplier, is_default, sort_order)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                servingIds[servingIndex]!,
+                foodId,
+                serving.label,
+                serving.quantity,
+                serving.unit,
+                serving.basisMultiplier,
+                serving.isDefault ? 1 : 0,
+                servingIndex,
+              ],
+            );
+          }
+          await tx.run(
+            `INSERT INTO recipe_ingredients (id, recipe_id, food_id, serving_id, quantity, serving_unit_snapshot,
+               basis_multiplier_snapshot, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              ids.newId(),
+              recipeId,
+              foodId,
+              servingIds[0]!,
+              item.quantity,
+              item.servingUnit,
+              item.servingBasisMultiplier * item.quantity,
+              index,
+            ],
+          );
+        }
+        await recomputeRecipe(tx, ids, recipeId, now, input.labels);
+        // DATA-29: the recipe keeps the sender's meal-level nutrition. Kcal-only ingredients
+        // cannot reproduce macros locally, so a later edit recomputes them as unknown.
+        await tx.run(
+          `UPDATE foods SET energy_kcal = ?, protein_g = ?, carbohydrate_g = ?, fat_g = ?, updated_at = ? WHERE id = ?`,
+          [
+            input.nutrition.energyKcal,
+            input.nutrition.proteinG,
+            input.nutrition.carbohydrateG,
+            input.nutrition.fatG,
+            now,
+            recipeId,
+          ],
+        );
+        await writeFoodNutrients(tx, recipeId, input.nutrition.extra);
+        return (await readFood(tx, recipeId))!;
       });
     },
 

@@ -45,3 +45,6 @@ yarn-error.*
 
 # test output
 coverage/
+
+# Command Code agent state (taste learning); local only, not project code
+.commandcode/

@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { createTestServices, renderWithServices } from '@/shared/testing/services';
+import type { Food } from '@/data/db/repositories/foodsRepository';
 
 import { CreateCustomFoodScreen } from '../screens/CreateCustomFoodScreen';
 
@@ -62,5 +63,38 @@ describe('UX-08: Create Custom Food', () => {
     await fireEvent(screen.getByTestId('custom-food-nutrient-iron'), 'blur');
     expect(await screen.findByText('Enter an amount from 0 to 1,000,000 mg.')).toBeTruthy();
     expect(screen.getByTestId('custom-food-save')).toBeDisabled();
+  });
+
+  it('UX-08: the scan icon is present in create mode', async () => {
+    const { services } = await createTestServices();
+    await renderWithServices(
+      <CreateCustomFoodScreen onScan={jest.fn()} onCancel={jest.fn()} onSaved={jest.fn()} />,
+      services,
+    );
+    expect(await screen.findByTestId('custom-food-scan')).toBeTruthy();
+  });
+
+  it('UX-08: the scan icon is hidden when editing an existing food', async () => {
+    const { services } = await createTestServices();
+    const food: Food = {
+      id: 'food-1',
+      source: 'custom',
+      kind: 'food',
+      externalId: null,
+      name: 'Carrot',
+      brand: null,
+      basisQuantity: 100,
+      basisUnit: 'g',
+      nutrients: { energyKcal: 40, carbohydrateG: 9, proteinG: 1, fatG: 0 },
+      isDeleted: false,
+      servings: [],
+      barcode: '5601009983179',
+    };
+    await renderWithServices(
+      <CreateCustomFoodScreen food={food} onScan={jest.fn()} onCancel={jest.fn()} onSaved={jest.fn()} />,
+      services,
+    );
+    expect(await screen.findByRole('header', { name: 'Edit food' })).toBeTruthy();
+    expect(screen.queryByTestId('custom-food-scan')).toBeNull();
   });
 });

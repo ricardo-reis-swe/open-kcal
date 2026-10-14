@@ -598,10 +598,35 @@
       "oz_cooked": "oz cooked",
       "g_raw": "g raw",
       "oz_raw": "oz raw"
-    }
+    },
+    "share": "Share recipe",
+    "copy": "Copy recipe text",
+    "copied": "Recipe text copied.",
+    "shareError": "Couldn't share recipe. Try again."
   },
   "myRecipes": {
     "title": "My recipes",
-    "empty": "No recipes yet. Create them from Food Search."
+    "empty": "No recipes yet. Create them from Food Search, or import one.",
+    "import": "Import recipe"
+  },
+  "importRecipe": {
+    "title": "Import recipe",
+    "readingClipboard": "Checking clipboard…",
+    "pasteHelp": "Paste a recipe text shared from Open Kcal.",
+    "textLabel": "Recipe text",
+    "paste": "Paste",
+    "invalid": "This recipe text is invalid or uses an unsupported version.",
+    "saveError": "Couldn't import recipe. Try again.",
+    "senderUnverified": "Nutrition sent by the other phone. Not verified.",
+    "servings": "Servings: {{count}}",
+    "cookedWeight": "Cooked serving: {{weight}} g",
+    "rawWeight": "Raw serving: {{weight}} g",
+    "ingredientAmount": "{{quantity}} {{unit}}",
+    "senderNutrition": "Nutrition sent by the other phone",
+    "perServing": "Per serving: {{value}}",
+    "total": "Whole recipe: {{value}}",
+    "editText": "Edit recipe text",
+    "import": "Import",
+    "imported": "Recipe imported."
   }
 }

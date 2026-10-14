@@ -22,3 +22,6 @@ jest.mock('react-native-android-widget', () => require('./src/shared/testing/and
 
 // ARCH-24: expo-camera's native view and permissions don't exist in Jest.
 jest.mock('expo-camera', () => require('./src/shared/testing/expoCameraMock'));
+
+// Recipe text copy/import uses Expo Clipboard; the test implementation is an in-memory clipboard.
+jest.mock('expo-clipboard', () => require('./src/shared/testing/expoClipboardMock'));

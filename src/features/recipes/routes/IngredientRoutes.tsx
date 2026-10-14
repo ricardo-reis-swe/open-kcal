@@ -20,14 +20,17 @@ export function IngredientSearchRoute({ stack }: { stack: RecipeStack }) {
   if (!params || !draft) return <NotFoundState actionLabel={t('common.back')} onAction={() => router.back()} />;
   const open = (foodId: string, foodSource: 'custom' | 'usda' | 'open_food_facts', externalId?: string) =>
     router.push(routes.ingredientDetail({ stack, draftId: params.draftId, foodId, foodSource, externalId }));
+  // POST-15: only the Diary stack's scanner can write into the draft (its outcomes are Diary routes).
+  const diary = stack === 'diary';
   return (
     <FoodSearchScreen
       mealId=""
       date={today}
       today={today}
       ingredientFor={{ recipeName: draft.recipeName }}
+      ingredientScan={diary}
       onBack={() => router.back()}
-      onScan={noop}
+      onScan={diary ? () => router.push(routes.barcodeScanner({ ingredientDraftId: params.draftId })) : noop}
       onQuickCalories={noop}
       onCreateCustom={noop}
       onAddedSelection={noop}

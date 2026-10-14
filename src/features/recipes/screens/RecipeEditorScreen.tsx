@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, Share, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import type { Recipe, RecipeInput } from '@/data/db/repositories/recipesRepository';
@@ -20,17 +21,22 @@ import { useLocalFoodWrites } from '@/features/food-search/food-search.queries';
 import {
   AppBar,
   AppText,
+  BottomSheet,
   ConfirmationDialog,
   FormField,
   HeaderAction,
   InlineStatus,
+  ListRow,
+  PressableIcon,
   SectionHeader,
   SwipeToDelete,
   TextAction,
+  UndoToast,
 } from '@/shared/components';
 import { FocusablePressable } from '@/shared/components/FocusablePressable';
 import { formatEnergy, formatGrams } from '@/shared/i18n/format';
 import { useFormattingLocale } from '@/shared/i18n/useFormattingLocale';
+import { serializeRecipeText } from '../recipeText';
 import { useTheme } from '@/shared/theme';
 
 import {
@@ -139,6 +145,9 @@ function RecipeForm({
   const [saveFailed, setSaveFailed] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
+  const [shareActionsOpen, setShareActionsOpen] = useState(false);
+  const [shareAction, setShareAction] = useState<'copy' | 'share' | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const parseOptional = (text: string) => (text.trim().length === 0 ? null : parseLocalizedDecimal(text, locale));
   const inRange = (value: number | null) => value !== null && value > 0 && value <= CUSTOM_FOOD_AMOUNT_MAX;
@@ -211,6 +220,22 @@ function RecipeForm({
       setSaving(false);
     }
   };
+  const shareText = recipe ? () => serializeRecipeText(recipe) : undefined;
+  const copyRecipe = async () => {
+    try {
+      await Clipboard.setStringAsync(shareText!());
+      setToast(t('recipe.copied'));
+    } catch {
+      setToast(t('recipe.shareError'));
+    }
+  };
+  const shareRecipe = async () => {
+    try {
+      await Share.share({ message: shareText!() });
+    } catch {
+      setToast(t('recipe.shareError'));
+    }
+  };
   const remove = async () => {
     setConfirmingDelete(false);
     setDeleteFailed(false);
@@ -239,13 +264,24 @@ function RecipeForm({
         title={t(recipe ? 'recipe.editTitle' : 'recipe.title')}
         back={{ label: t('common.back'), onPress: requestCancel }}
         actions={
-          <HeaderAction
-            label={t('recipe.save')}
-            onPress={() => void save()}
-            disabled={!valid || saving || (recipe !== undefined && !dirty)}
-            loading={saving}
-            testID="recipe-save"
-          />
+          <>
+            {recipe ? (
+              <PressableIcon
+                icon="share-outline"
+                accessibilityLabel={t('recipe.share')}
+                onPress={() => setShareActionsOpen(true)}
+                testID="recipe-share"
+                color="onAppBar"
+              />
+            ) : null}
+            <HeaderAction
+              label={t('recipe.save')}
+              onPress={() => void save()}
+              disabled={!valid || saving || (recipe !== undefined && !dirty)}
+              loading={saving}
+              testID="recipe-save"
+            />
+          </>
         }
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
@@ -369,6 +405,41 @@ function RecipeForm({
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+      {recipe ? (
+        <BottomSheet
+          visible={shareActionsOpen}
+          onClose={() => setShareActionsOpen(false)}
+          accessibilityLabel={t('recipe.share')}
+          closeLabel={t('common.close')}
+          onDismissed={() => {
+            const action = shareAction;
+            setShareAction(null);
+            if (action === 'copy') void copyRecipe();
+            if (action === 'share') void shareRecipe();
+          }}
+          testID="recipe-share-sheet"
+        >
+          <ListRow
+            label={t('recipe.copy')}
+            icon="copy-outline"
+            onPress={() => {
+              setShareAction('copy');
+              setShareActionsOpen(false);
+            }}
+            testID="recipe-copy"
+          />
+          <ListRow
+            label={t('recipe.share')}
+            icon="share-outline"
+            onPress={() => {
+              setShareAction('share');
+              setShareActionsOpen(false);
+            }}
+            testID="recipe-share-action"
+          />
+        </BottomSheet>
+      ) : null}
+      {toast ? <UndoToast message={toast} onDismiss={() => setToast(null)} testID="recipe-share-toast" /> : null}
       <ConfirmationDialog
         visible={discarding}
         title={t('customFood.discardTitle')}

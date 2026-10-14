@@ -20,6 +20,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | Barcode scanning (user-requested) | awaiting user device check |
 | My foods (user-requested) | awaiting user device check |
 | Recipes (user-requested) | awaiting user device check |
+| Recipe sharing & import (user-requested) | implemented; device check pending |
 
 Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new UX-23 Theme screen (`System | Light | Dark`, default System) from a Profile `APP › Theme` row (UX-15, NAV-06), DATA-23 `theme_preference` (migration 5), the widget follows the theme too (DS-14: both versions on `System`). Needs a native rebuild (`userInterfaceStyle: automatic`); not checked on a device. 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -49,6 +50,21 @@ Status: **agent work done; device check and pt-PT review are the user's** · Spe
 - [x] Tests: `recipe.test.ts` (math), `recipes.test.ts` (repository), `migrations.test.ts` (v7), `recipes.nav.test.tsx` (create → ingredient → save → log; `All` only while recent; My recipes edit), `servings.test.ts` (`isMeasureLabel`).
 - Notes: recipe serving units are `serving` / `g_cooked` / `oz_cooked` / `g_raw` / `oz_raw` with labels localized at save (DATA-27); the draft is an in-memory store keyed by id (`features/recipes/recipeDraft.ts`); Ingredient Search / Detail reuse `FoodSearchScreen` / `FoodDetailScreen` in ingredient mode. Under full-suite load the existing `select-mode.nav` and Add/Edit Meal delete tests hit the 5 s Jest timeout now and then (pass alone and on rerun).
 - [ ] Device check: the user's (4 tabs on a 360 dp phone incl. pt-PT, recipe editor keyboard + raw weight Reset, ingredient flow in both stacks, Diary rows `350 g cooked`).
+
+## Recipe sharing & import (user-requested, 2026-10-10)
+
+Status: **implemented; device check pending** · Spec: SCOPE-13, NAV-02/04/06/08, DATA-29, UX-26/27/28, POST-15/16 · Device sharing between phones remains to be checked.
+
+### Tasks
+
+- [x] Promote POST-16 to MVP; snapshots only, no marker or name matching, linking deferred to POST-15.
+- [x] Versioned text envelope with validation, size cap and preservation of unknown nutrients.
+- [x] Atomic recipe import with independent kcal-only custom-food snapshots and the sender's stored meal nutrition (user decision 2026-10-10: items carry kcal only to keep the text short; macros become unknown when the imported recipe is edited).
+- [x] Edit Recipe copy/share actions; My recipes import entry in empty and populated states; clipboard paste fallback + preview + confirmation.
+- [x] en + pt-PT strings and specs.
+- [x] Envelope and repository tests.
+- [ ] Device check: copy text into a messaging app, OS share sheet, import on another device, confirm recipe/ingredient foods and the stored sender nutrition, malformed paste leaves data unchanged.
+- [ ] User reviews new pt-PT strings (`recipe.share`, `recipe.copy`, `importRecipe.*`, `myRecipes.import`).
 
 ## Multi-add select mode (user-requested, 2026-10-01)
 

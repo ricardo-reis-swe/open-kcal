@@ -54,7 +54,7 @@ plugins/             # local Expo config plugins
 scripts/             # local tooling: QA capture, device drivers, E2E runner
 src/
 ├── app/                 # Expo Router files only
-├── features/{diary,food-search,meals,goals,profile,settings,weight}/{components,hooks,screens,services} + <feature>.queries.ts
+├── features/{diary,food-search,meals,goals,profile,settings,weight,recipes,widget}/{components,hooks,screens,services} + <feature>.queries.ts
 ├── domain/{diary,food,nutrition,units,weight}/
 ├── data/db/{migrations,repositories,schema}/ + database.ts
 ├── data/api/{usda,open-food-facts}/
@@ -64,7 +64,7 @@ src/
 ```
 - Features may import domain + shared. Domain imports nothing above it. A feature must not reach into another feature's internals; move shared logic to domain/shared behind an interface.
 - Path aliases only for top-level boundaries.
-- Route tree (conceptual): `(tabs)/diary/{index, meal/[mealId], food-search, food/[foodId], entry/[entryId], quick-calories, quick-calories/[entryId], custom-food}`, `(tabs)/profile/{index, goals, meals/{index,[mealId]}, units, weight-goal, weight-history, food-databases, my-foods/{index,[foodId]}}`, top-level modals `date-picker, meal-picker, serving-unit-picker, copy-meal, weight-entry`.
+- Route tree (conceptual): `(tabs)/diary/{index, meal/[mealId], food-search, food/[foodId], entry/[entryId], quick-calories, quick-calories/[entryId], custom-food, recipe/new}`, `(tabs)/profile/{index, goals, meals/{index,[mealId]}, units, weight-goal, weight-history, food-databases, my-foods/{index,[foodId]}, my-recipes/{index,[foodId],import}}`, shared `ingredient-search` / `ingredient-detail/[foodId]`, top-level modals `date-picker, meal-picker, serving-unit-picker, copy-meal, weight-entry`.
 
 ## ARCH-06 Navigation implementation
 - Custom tab bar: Diary + Profile are tab routes; `+` is a custom button opening the Add Action Sheet, never selected.

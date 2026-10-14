@@ -17,7 +17,10 @@ module.exports = {
     '/node_modules/react-native-reanimated/plugin/',
     '/node_modules/@react-native/babel-preset/',
   ],
-  // Full-app navigation tests (*.nav.test.tsx) exceed the 5 s default on a cold cache, as in CI.
-  testTimeout: 30_000,
+  // Full-app navigation tests (*.nav.test.tsx) render the real app over SQLite and
+  // exceed the 5 s default on a cold cache, as in CI. Under full-suite parallel load
+  // the slowest flows (barcode scan, recipe logging) can approach a minute, so allow
+  // headroom instead of failing on CPU contention.
+  testTimeout: 120_000,
   testPathIgnorePatterns: ['/node_modules/', '/ios/', '/android/'],
 };

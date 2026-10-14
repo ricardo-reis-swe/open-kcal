@@ -52,6 +52,7 @@ Scrambled eggs
 
 ## SCOPE-06 Custom foods
 - Required: name, calories, serving amount, serving unit, protein, carbs, fat. Optional: brand, catalog nutrients (DATA-20, UX-08).
+- Create mode offers a barcode scan (UX-24): the scanner's usual outcomes apply (found → Food Detail; not found → this form with the barcode kept, DATA-24).
 - Stored locally; appear in future searches and in recents.
 - Listed in full in the Food Search `My foods` tab (UX-04) and in Profile › My foods (UX-25), most recently used first (DATA-25). User request 2026-10-01.
 - Viewed and edited from Profile › My foods (UX-25, DATA-26; was POST-03). Existing diary entries keep their snapshots (DATA-05).
@@ -90,3 +91,6 @@ Other docs refer to this list instead of repeating it.
 - Nutrition = the sum of the ingredients ÷ servings. Logged like any food in `serving`, plus `g cooked` / `g raw` when that weight is known (DATA-27).
 - Editing an ingredient food updates every recipe that uses it. Diary entries keep their snapshots (DATA-05).
 - Created from Food Search › `Recipes` (UX-04, UX-26); viewed, edited and deleted from Profile › My recipes (UX-27). On Food Search `All` a recipe shows only while it is in Recents.
+- Ingredients can be added by scanning a product barcode (POST-15, UX-04 ingredient mode, Diary stack): a found product becomes an ingredient; a missing code creates a custom food that becomes one.
+- Edit Recipe offers `Copy recipe text` and `Share recipe`; My recipes offers `Import recipe` with paste fallback, preview and confirmation (DATA-29, UX-28). Import creates independent local food snapshots; nutrition is sender-provided and unverified.
+- **Why:** this is offline person-to-person text sharing only; it adds no network, account, cloud or social-feed feature (SCOPE-10).
