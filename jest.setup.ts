@@ -1,8 +1,22 @@
 // Global test setup. Keep it minimal: per-suite mocks live next to the suites that need them.
 import 'react-native-gesture-handler/jestSetup';
+import { timeoutManager } from '@tanstack/react-query';
 import { setUpTests } from 'react-native-reanimated';
 
 setUpTests();
+
+// TanStack Query keeps 5-minute garbage-collection timers, including on queries already dropped from the cache
+// (out of reach of `client.clear()`). Unref them so they never hold a Jest worker open; they still fire normally.
+timeoutManager.setTimeoutProvider({
+  setTimeout: (callback, delay) => {
+    const id = setTimeout(callback, delay);
+    (id as { unref?: () => void }).unref?.();
+    return id;
+  },
+  clearTimeout: (id) => clearTimeout(id),
+  setInterval: (callback, delay) => setInterval(callback, delay),
+  clearInterval: (id) => clearInterval(id),
+});
 
 // The app logger writes info/debug to the console in dev; keep test output readable. warn/error stay visible.
 jest.spyOn(console, 'info').mockImplementation(() => undefined);
