@@ -58,6 +58,8 @@ export type ParsedRecipe = Omit<z.infer<typeof payloadSchema>, 'ingredients'> & 
 };
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
+/** DATA-29: multipliers keep 6 significant digits; 2 dp turns e.g. 1 g of a 330 g basis (0.00303) into 0. */
+const roundMultiplier = (value: number) => Number(value.toPrecision(6));
 const roundNullable = (value: number | null) => (value === null ? null : round2(value));
 function roundedNutrients(value: Nutrients) {
   const extra = Object.fromEntries(Object.entries(value.extra ?? {}).map(([key, amount]) => [key, round2(amount)]));
@@ -99,7 +101,7 @@ export function serializeRecipeText(recipe: Recipe): string {
             label: serving.label,
             quantity: round2(serving.quantity),
             unit: serving.unit,
-            basisMultiplier: round2(servingBasisMultiplier),
+            basisMultiplier: roundMultiplier(servingBasisMultiplier),
             isDefault: true,
           },
         ],
@@ -132,7 +134,10 @@ export function serializeRecipeText(recipe: Recipe): string {
 
 export function parseRecipeText(text: string): ParsedRecipe {
   if (text.length > RECIPE_TEXT_MAX_CHARS) throw new ValidationError('Recipe text is too large', ['text']);
-  const match = /^--- OPEN-KCAL-RECIPE v(\d+) ---\n([\s\S]+)\n--- END OPEN-KCAL-RECIPE ---$/.exec(text);
+  // DATA-29: tolerate what share sheets and messaging apps add (CRLF, surrounding whitespace or text).
+  const match = /--- OPEN-KCAL-RECIPE v(\d+) ---\s*([\s\S]+)\s*--- END OPEN-KCAL-RECIPE ---/.exec(
+    text.replace(/\r\n?/g, '\n'),
+  );
   if (!match || match[1] !== '1') throw new ValidationError('Unsupported or malformed recipe text', ['text']);
   let json: unknown;
   try {

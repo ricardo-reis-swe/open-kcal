@@ -80,9 +80,38 @@ describe('DATA-29 recipe text', () => {
   it.each([
     '--- OPEN-KCAL-RECIPE v2 ---\n{}\n--- END OPEN-KCAL-RECIPE ---',
     '--- OPEN-KCAL-RECIPE v1 ---\nnot-json\n--- END OPEN-KCAL-RECIPE ---',
-    'heading\n--- OPEN-KCAL-RECIPE v1 ---\n{}\n--- END OPEN-KCAL-RECIPE ---',
+    '--- OPEN-KCAL-RECIPE v1 ---\n{"version":1}',
   ])('rejects malformed or unsupported envelopes', (text) => {
     expect(() => parseRecipeText(text)).toThrow();
+  });
+
+  it.each([
+    ['a trailing newline', (t: string) => `${t}\n`],
+    ['CRLF line breaks', (t: string) => t.replace(/\n/g, '\r\n')],
+    ['text around the envelope', (t: string) => `Here is my recipe:\n\n${t}\n\nEnjoy!`],
+  ])('accepts an envelope with %s', (_, wrap) => {
+    expect(parseRecipeText(wrap(serializeRecipeText(recipe))).name).toBe('Rice bowl');
+  });
+
+  it('keeps small serving multipliers instead of rounding them to 0', () => {
+    const food = recipe.ingredients[0]!.food;
+    const perGram = 1 / 330;
+    const large: Recipe = {
+      ...recipe,
+      ingredients: [
+        {
+          ...recipe.ingredients[0]!,
+          food: {
+            ...food,
+            basisQuantity: 330,
+            servings: [{ ...food.servings[0]!, basisMultiplier: perGram }],
+          },
+        },
+      ],
+    };
+    const multiplier = parseRecipeText(serializeRecipeText(large)).ingredients[0]!.servingBasisMultiplier;
+    expect(multiplier).toBeGreaterThan(0);
+    expect(Math.abs(multiplier - perGram) / perGram).toBeLessThan(1e-5);
   });
 
   it('rejects oversized text and non-positive values', () => {
