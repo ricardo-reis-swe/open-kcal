@@ -128,6 +128,7 @@ Local checks and builds. Hosted CI is ROAD-05 and sideload releases are ROAD-06.
 - Runs on every push to `main` and every PR. It is also the Release gate (ROAD-06, `workflow_call`).
 - Steps: `npm ci` → `npm run format:check` → `npm run check`. Ubuntu, Node 24.
 - No native builds or Maestro in CI. Maestro in CI stays deferred (POST-11).
+- Weekly live provider check: `.github/workflows/live-providers.yml` (schedule + manual), `npm run test:live`, secret `USDA_API_KEY` (falls back to `DEMO_KEY`). Never on push/PR; a scheduled failure opens or updates one issue (POST-08).
 
 ## ROAD-06 Releases
 Sideload releases on GitHub Releases. No store, no paid Apple or Google account (store release: POST-10). Copy-paste steps: `docs/releasing.md`.

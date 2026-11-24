@@ -22,5 +22,6 @@ module.exports = {
   // the slowest flows (barcode scan, recipe logging) can approach a minute, so allow
   // headroom instead of failing on CPU contention.
   testTimeout: 120_000,
-  testPathIgnorePatterns: ['/node_modules/', '/ios/', '/android/'],
+  // `__live__` is the POST-08 live provider suite: only `npm run test:live` (jest.live.config.js) runs it.
+  testPathIgnorePatterns: ['/node_modules/', '/ios/', '/android/', '/__live__/'],
 };

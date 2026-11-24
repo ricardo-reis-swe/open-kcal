@@ -32,7 +32,7 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 
 ## POST-08 Scheduled live API contract check
 - A weekly CI job runs the provider Zod schemas (PROV-13) against the live USDA and OFF APIs, with a CI-secret USDA key. A failure opens an issue and never blocks PRs or normal test runs.
-- Deferred: during the MVP, fixtures alone cover contract tests.
+- Moved into the MVP 2026-11-24 (user request): `.github/workflows/live-providers.yml`, `npm run test:live`. ID kept so it is not reused.
 
 ## POST-09 Over-the-air updates
 - EAS Update (`expo-updates`) to ship JS fixes without a store build. Needs a runtime-version policy and update channels per build profile. Depends on POST-12.

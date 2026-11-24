@@ -4,6 +4,8 @@ Single place for implementation status. Updated in the same commit as the work i
 
 2026-10-09 release readiness: the user confirms device validation through daily app use; earlier outstanding device-check handoffs below are satisfied by that confirmation. Maestro remains deferred; no automated device-test results are claimed. CI fix (ARCH-18, ROAD-05): recipe navigation tests now inherit the shared 30 s timeout instead of overriding it with 20 s; `npm run format:check` + `npm run check` pass (104 suites / 724 tests).
 
+2026-11-24 POST-08 weekly live provider check (moved into the MVP, user request): `.github/workflows/live-providers.yml` (Mondays 06:17 UTC + manual; a scheduled failure opens or updates one issue), `npm run test:live` (`jest.live.config.js`, `src/data/api/__live__/providers.live.ts`, real USDA/OFF clients), ARCH-14 test-only CI key. Evidence: local `npm run test:live` on `DEMO_KEY` passed 5/5; a forced failure (OFF hit minimum 100) went red with a readable message. Known gaps: secret `USDA_API_KEY` not added yet (falls back to `DEMO_KEY`, reduced set); `DEMO_KEY` is now 10/h, not PROV-02's 30/h; GitHub pauses scheduled workflows after 60 days without repo activity (re-enable from the Actions tab).
+
 | Milestone | Status |
 |---|---|
 | M0 Skeleton | done |

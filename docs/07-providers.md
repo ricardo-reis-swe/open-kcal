@@ -281,7 +281,7 @@ Implements ARCH-18's API contract tests. Fixtures live in `src/data/api/{usda,op
 | OFF | synthetic: kJ-only; numeric strings; 0 kcal and no macros; `status: 0`; 503 HTML body; 429 | fallbacks, drop rule, not found, rate limit |
 | OFF | synthetic: catalog nutrients in g, salt only, `alcohol_100g`, a `*_serving`-only vitamin | PROV-14 conversion, salt derivation, alcohol ignored |
 
-No live API calls in tests during the MVP. A scheduled live contract check is post-MVP (POST-08).
+No live API calls in `npm test`. The weekly live contract check (POST-08, ROAD-05) runs separately via `npm run test:live`.
 
 ## PROV-14 Catalog nutrient mapping
 Output: one amount per DATA-20 catalog id the source supplies, converted to the catalog unit, per the food's basis. Missing or invalid → no value (unknown), never 0; a present 0 stays 0. Salt/sodium derivation: DATA-20.

@@ -351,7 +351,7 @@ function candidate(food: UsdaFood, values: Nutrient[], servings: ServingInput[])
 /** Maps a single search hit; invalid individual hits are silently dropped (PROV-07). */
 export function mapUsdaSearchFood(payload: unknown): FoodCandidate | null {
   const parsed = searchFoodSchema.safeParse(payload);
-  if (!parsed.success) throw new ProviderResponseError('USDA search schema error');
+  if (!parsed.success) throw schemaError('USDA search schema error', parsed.error);
   return candidate(
     parsed.data,
     parsed.data.foodNutrients.map((n) => ({ number: n.nutrientNumber, unit: n.unitName, value: n.value })),

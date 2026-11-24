@@ -27,6 +27,11 @@ export function schemaError(message: string, error: ZodError): ProviderResponseE
   return typed;
 }
 
+/** POST-08 live check: reads the out-of-band details so it can tell schema failures from transient ones without parsing messages. */
+export function providerFailureDetails(error: unknown): Details | undefined {
+  return typeof error === 'object' && error !== null ? details.get(error) : undefined;
+}
+
 /**
  * The error record (type + provider) survives release builds; the details go in a `debug` record, which the
  * logger drops outside dev builds (ARCH-15).

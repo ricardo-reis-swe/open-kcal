@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "check": "npm run lint && npm run typecheck && npm test",
+    "test:live": "jest --config jest.live.config.js --runInBand",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "patch-package"
