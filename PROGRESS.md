@@ -11,5 +11,5 @@
 | T7 | Run Maestro E2E suite (ARCH-18) | BLOCKED | Needs a device/emulator; none here. |
 | T8 | `m8-weight` SIGSEGV on Android launch | BLOCKED | Seen once, not reproduced; needs a device. |
 | T9 | Performance: limit `weight.history()` | DONE | history(limit) reads LIMIT+1 with same-day count in SQL; Weight History pages 100 at a time; docs updated. |
-| T10 | Performance: Food Search uses a virtualized list instead of `ScrollView` | TODO | |
+| T10 | Performance: Food Search uses a virtualized list instead of `ScrollView` | DONE | Food Search body is one SectionList (sticky labels per UX-04, testIDs kept); tests read list data; docs updated. |
 | T11 | POST-08: weekly CI check of USDA + Open Food Facts schemas against live APIs | TODO | |

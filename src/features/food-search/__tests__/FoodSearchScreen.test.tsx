@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { onlineManager } from '@tanstack/react-query';
@@ -18,6 +19,30 @@ const almonds: CustomFoodInput = {
   nutrients: { energyKcal: 420, carbohydrateG: 60, proteinG: 12, fatG: 14 },
   servings: [{ label: 'g', quantity: 1, unit: 'g', basisMultiplier: 0.01, isDefault: true }],
 };
+
+/**
+ * ARCH-19: the list is virtualized and Jest cells never get a layout, so only `initialNumToRender` rows mount.
+ * Assertions about rows past the first window read the sections the list was given (the host exposes them as `data`) (as T9's history test does).
+ */
+type ListRow = {
+  kind: 'food' | 'node';
+  key: string;
+  food?: { id: string; name: string };
+  node?: { props: { onPress: () => void } };
+};
+type ListSection = { key: string; header?: string; data: ListRow[] };
+const listSections = (): ListSection[] => screen.getByTestId('food-search-list').props.data;
+const listRows = (sectionKey?: string) =>
+  listSections()
+    .filter((section) => sectionKey === undefined || section.key === sectionKey)
+    .flatMap((section) => section.data);
+const foodRowsOf = (sectionKey?: string) => listRows(sectionKey).filter((row) => row.kind === 'food');
+const pressListNode = (key: string) =>
+  act(() => {
+    listRows()
+      .find((row) => row.key === key)!
+      .node!.props.onPress();
+  });
 
 async function setup(
   options: {
@@ -341,14 +366,34 @@ describe('UX-04: local Food Search screen', () => {
 
   it('PROV-08 / UX-04: pages each local section in twenty-row increments', async () => {
     await setup({ initialQuery: 'al', localPaging: true });
-    expect(await screen.findByTestId('food-search-custom-show-more')).toBeTruthy();
-    expect(screen.getByTestId('food-search-saved-show-more')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('food-search-custom-show-more'));
-    await fireEvent.press(screen.getByTestId('food-search-saved-show-more'));
-    await waitFor(() => expect(screen.getByText('Al custom 19')).toBeTruthy());
-    await waitFor(() => expect(screen.getByText('Al saved 20')).toBeTruthy());
-    expect(screen.queryByTestId('food-search-custom-show-more')).toBeNull();
-    expect(screen.queryByTestId('food-search-saved-show-more')).toBeNull();
+    await waitFor(() => expect(listRows().map((row) => row.key)).toEqual(expect.arrayContaining(['custom-show-more'])));
+    expect(listRows().map((row) => row.key)).toContain('saved-show-more');
+    expect(foodRowsOf('custom')).toHaveLength(20);
+    expect(foodRowsOf('saved')).toHaveLength(20);
+    await pressListNode('custom-show-more');
+    await pressListNode('saved-show-more');
+    await waitFor(() => expect(foodRowsOf('custom').map((row) => row.food!.name)).toContain('Al custom 19'));
+    await waitFor(() => expect(foodRowsOf('saved').map((row) => row.food!.name)).toContain('Al saved 20'));
+    expect(listRows().map((row) => row.key)).not.toContain('custom-show-more');
+    expect(listRows().map((row) => row.key)).not.toContain('saved-show-more');
+  });
+
+  it('ARCH-19: results render in a virtualized SectionList', async () => {
+    await setup({ initialQuery: 'al', localPaging: true });
+    await waitFor(() => expect(foodRowsOf().length).toBe(40));
+    const list = screen.getByTestId('food-search-list');
+    expect(list.props.keyboardShouldPersistTaps).toBe('handled');
+    expect(list.props.keyboardDismissMode).toBe('on-drag');
+    // Only the first window is mounted, though every row is in the list's data.
+    expect(screen.queryAllByTestId(/^food-result-/).length).toBeLessThan(40);
+  });
+
+  it('UX-04: section labels are sticky', async () => {
+    // Android, where RN's default is not sticky: only the explicit prop makes the headers sticky (Jest defaults to iOS).
+    jest.replaceProperty(Platform, 'OS', 'android');
+    await setup({ initialQuery: 'al', localPaging: true });
+    await waitFor(() => expect(foodRowsOf().length).toBeGreaterThan(0));
+    expect(screen.getByTestId('food-search-list').props.stickyHeaderIndices?.length).toBeGreaterThan(0);
   });
 
   const hit = (externalId: string, name: string) => ({ externalId, input: { ...almonds, name, brand: null } });
@@ -361,12 +406,18 @@ describe('UX-04: local Food Search screen', () => {
       usdaPageCount: 3,
       offSearch: async () => ({ candidates: tenHits('o'), page: 1, pageCount: 2 }),
     });
-    expect(await screen.findByTestId('food-search-off-show-more', {}, { timeout: 3_000 })).toBeTruthy();
-    expect(await screen.findByTestId('food-search-usda-show-more')).toBeTruthy();
-    const headers = screen.getAllByRole('header', { name: /^(My foods|Saved|Open Food Facts|USDA)$/ });
-    expect(headers.map((node) => node.props.children)).toEqual(['Open Food Facts', 'USDA']);
-    expect(screen.getAllByTestId(/^food-result-off-/)).toHaveLength(10);
-    expect(screen.getAllByTestId(/^food-result-usda-/)).toHaveLength(10);
+    await waitFor(
+      () => {
+        expect(listRows().map((row) => row.key)).toEqual(expect.arrayContaining(['off-show-more', 'usda-show-more']));
+      },
+      { timeout: 3_000 },
+    );
+    expect(listSections().flatMap((section) => (section.header ? [section.header] : []))).toEqual([
+      'Open Food Facts',
+      'USDA',
+    ]);
+    expect(foodRowsOf('open_food_facts')).toHaveLength(10);
+    expect(foodRowsOf('usda')).toHaveLength(10);
   });
 
   it('PROV-11 / UX-04: a rate-limited OFF section shows its own busy status while USDA still lists hits', async () => {
@@ -462,6 +513,13 @@ describe('UX-18 / DATA-19: Food Search section order and visibility', () => {
     expect(await screen.findByText('Almond oats')).toBeTruthy();
     expect(screen.getAllByText('Offline. Showing saved foods only.')).toHaveLength(1);
   });
+
+  it('UX-18: the offline row is its own section above the first visible remote section', async () => {
+    onlineManager.setOnline(false);
+    await setup({ initialQuery: 'almond', sections: sections('custom,saved,open_food_facts,usda') });
+    await waitFor(() => expect(listSections().map((section) => section.key)).toContain('offline'));
+    expect(listSections().map((section) => section.key)).toEqual(['custom', 'offline', 'open_food_facts', 'usda']);
+  });
 });
 
 describe('UX-04: Food Search tabs', () => {
@@ -486,11 +544,11 @@ describe('UX-04: Food Search tabs', () => {
       sections: sections('custom,saved,open_food_facts,usda', ['custom']),
     });
     await pressTab('custom');
-    expect(await screen.findByTestId('food-search-custom-show-more')).toBeTruthy();
-    expect(screen.getAllByTestId(/^food-result-/)).toHaveLength(20);
-    expect(screen.queryByText('Al saved 0')).toBeNull();
-    fireEvent.press(screen.getByTestId('food-search-custom-show-more'));
-    await waitFor(() => expect(screen.getAllByTestId(/^food-result-/)).toHaveLength(21));
+    await waitFor(() => expect(listRows().map((row) => row.key)).toContain('tab-custom-show-more'));
+    expect(foodRowsOf()).toHaveLength(20);
+    expect(listRows().some((row) => row.food?.name === 'Al saved 0')).toBe(false);
+    await pressListNode('tab-custom-show-more');
+    await waitFor(() => expect(foodRowsOf()).toHaveLength(21));
     fireEvent.press(screen.getByTestId(`food-result-${food.id}`));
     expect(onSelectFood).toHaveBeenCalledWith(expect.objectContaining({ id: food.id }));
   });

@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { SectionList, StyleSheet, TextInput, View } from 'react-native';
 
 import type { Food } from '@/data/db/repositories/foodsRepository';
 import { matchesFoodQuery } from '@/domain/food/foodQuery';
@@ -56,6 +56,12 @@ type SearchTab = 'all' | 'recent' | 'custom' | 'recipes';
 /** UX-04 select mode: Back (system back, swipe-back) while it's on leaves select mode instead of the screen. */
 export type SelectBackGuard = (enabled: boolean, onAttempt: () => void) => void;
 const noBackGuard: SelectBackGuard = () => {};
+
+/** ARCH-19: Food Search is one virtualized SectionList over these rows (heavy food rows typed, status rows as nodes). */
+type RowProps = { onPress: () => void; onDelete?: () => Promise<boolean>; selected?: boolean; dimmed?: boolean };
+type SearchRow =
+  { kind: 'food'; key: string; food: Food; rowProps: RowProps } | { kind: 'node'; key: string; node: ReactElement };
+type SearchSection = { key: string; header?: string; data: SearchRow[] };
 
 type Props = {
   mealId: string;
@@ -282,311 +288,390 @@ export function FoodSearchScreen({
   // UX-18: the offline row shows once, above the first visible remote section, only while one is visible.
   const firstVisibleRemote = visibleSections.find((id) => REMOTE_FOOD_SEARCH_SECTIONS.includes(id));
   const remoteLoading = (shows('open_food_facts') && off.isLoading) || (shows('usda') && usda.isLoading);
-  const sectionContent: Record<FoodSearchSectionId, ReactNode> = {
-    custom: (
-      <>
-        {customFoods.length > 0 ? <SectionHeader label={t('foodSearch.myFoods')} uppercase /> : null}
-        {customFoods.map((food) => (
-          <FoodResultRow
-            key={food.id}
-            food={food}
-            locale={locale}
-            energyUnit={settings.data.energyUnit}
-            {...storedRowProps(
+  const padded = { paddingHorizontal: theme.spacing[4] };
+  const energyUnit = settings.data.energyUnit;
+  const foodRow = (food: Food, rowProps: RowProps, key: string = food.id): SearchRow => ({
+    kind: 'food',
+    key,
+    food,
+    rowProps,
+  });
+  const nodeRow = (key: string, node: ReactElement): SearchRow => ({ kind: 'node', key, node });
+  const searchingNode = (key: string) =>
+    nodeRow(
+      key,
+      <AppText color="textSecondary" style={padded}>
+        {t('foodSearch.searching')}
+      </AppText>,
+    );
+  const noResultsNode = (key: string) =>
+    nodeRow(key, <AppText style={padded}>{t('foodSearch.noResults', { query: query.trim() })}</AppText>);
+  const showMoreNode = (key: string, testID: string, onPress: () => void) =>
+    nodeRow(key, <TextAction icon="add" label={t('foodSearch.showMore')} onPress={onPress} testID={testID} />);
+  const remoteFood = (
+    source: 'usda' | 'open_food_facts',
+    candidate: (typeof offFoods)[number] | (typeof usdaFoods)[number],
+  ): SearchRow => {
+    const id = `${source === 'usda' ? 'usda' : 'off'}-${candidate.externalId}`;
+    return foodRow(
+      {
+        ...candidate.input,
+        kind: 'food',
+        brand: candidate.input.brand ?? null,
+        barcode: candidate.input.barcode ?? null,
+        id,
+        source,
+        externalId: candidate.externalId,
+        isDeleted: false,
+        servings: [],
+      },
+      { dimmed: selecting, onPress: () => onSelectExternal(source, candidate.externalId) },
+      id,
+    );
+  };
+  const recentRowProps = (food: Food) =>
+    storedRowProps(
+      food,
+      () => {
+        void refreshSavedFood(services, food); // PROV-09: Recent opens refresh too
+        onSelectFood(food);
+      },
+      () => deleteFood(food),
+    );
+  const recentRow = (food: Food) => foodRow(food, recentRowProps(food));
+  const plainRow = (food: Food) =>
+    foodRow(
+      food,
+      storedRowProps(
+        food,
+        () => onSelectFood(food),
+        () => deleteFood(food),
+      ),
+    );
+  const sectionData: Record<FoodSearchSectionId, SearchSection> = {
+    custom: {
+      key: 'custom',
+      header: customFoods.length > 0 ? t('foodSearch.myFoods') : undefined,
+      data: [
+        ...customFoods.map((food) =>
+          foodRow(
+            food,
+            storedRowProps(
               food,
               () => onSelectFood(food),
               food.source === 'custom' ? () => deleteFood(food) : undefined,
-            )}
-          />
-        ))}
-        {searchedCustom.length === customPages * 20 ? (
-          <TextAction
-            icon="add"
-            label={t('foodSearch.showMore')}
-            onPress={() => setCustomPages((current) => current + 1)}
-            testID="food-search-custom-show-more"
-          />
-        ) : null}
-      </>
-    ),
-    saved: (
-      <>
-        {savedFoods.length > 0 ? <SectionHeader label={t('foodSearch.saved')} uppercase /> : null}
-        {savedFoods.map((food) => (
-          <FoodResultRow
-            key={food.id}
-            food={food}
-            locale={locale}
-            energyUnit={settings.data.energyUnit}
-            {...storedRowProps(
-              food,
-              () => {
-                void refreshSavedFood(services, food);
-                onSelectFood(food);
-              },
-              () => deleteFood(food),
-            )}
-          />
-        ))}
-        {savedFoods.length === savedPages * 20 ? (
-          <TextAction
-            icon="add"
-            label={t('foodSearch.showMore')}
-            onPress={() => setSavedPages((current) => current + 1)}
-            testID="food-search-saved-show-more"
-          />
-        ) : null}
-      </>
-    ),
-    open_food_facts: (
-      <>
-        {query.trim().length >= 3 ? <SectionHeader label={t('foodSearch.openFoodFacts')} uppercase /> : null}
-        {query.trim().length >= 3 && query.trim() !== offQuery ? (
-          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-            {t('foodSearch.searching')}
-          </AppText>
-        ) : null}
-        {online && off.isLoading && query.trim() === offQuery ? (
-          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-            {t('foodSearch.searching')}
-          </AppText>
-        ) : null}
-        {off.isError ? (
-          <ProviderError provider="open_food_facts" error={off.error} onRetry={() => void off.refetch()} />
-        ) : null}
-        {offFoods.map((candidate) => (
-          <FoodResultRow
-            key={`off-${candidate.externalId}`}
-            food={{
-              ...candidate.input,
-              kind: 'food',
-              brand: candidate.input.brand ?? null,
-              barcode: candidate.input.barcode ?? null,
-              id: `off-${candidate.externalId}`,
-              source: 'open_food_facts',
-              externalId: candidate.externalId,
-              isDeleted: false,
-              servings: [],
-            }}
-            locale={locale}
-            energyUnit={settings.data.energyUnit}
-            dimmed={selecting}
-            onPress={() => onSelectExternal('open_food_facts', candidate.externalId)}
-          />
-        ))}
-        {off.hasMore && query.trim() === offQuery ? (
-          <TextAction
-            icon="add"
-            label={t('foodSearch.showMore')}
-            onPress={() => setOffPages((current) => current + 1)}
-            testID="food-search-off-show-more"
-          />
-        ) : null}
-        {off.isSuccess && query.trim() === offQuery && offFoods.length === 0 ? (
-          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-            {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
-          </AppText>
-        ) : null}
-      </>
-    ),
-    usda: (
-      <>
-        {query.trim().length >= 2 ? <SectionHeader label={t('foodSearch.usda')} uppercase /> : null}
-        {query.trim().length >= 2 && usdaQuery !== query.trim() ? (
-          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-            {t('foodSearch.searching')}
-          </AppText>
-        ) : null}
-        {online && usda.isLoading ? (
-          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-            {t('foodSearch.searching')}
-          </AppText>
-        ) : null}
-        {usda.isError ? (
-          <ProviderError
-            provider="usda"
-            error={usda.error}
-            onRetry={() => void usda.refetch()}
-            onFoodDatabases={onFoodDatabases}
-          />
-        ) : null}
-        {usdaFoods.map((candidate) => (
-          <FoodResultRow
-            key={`usda-${candidate.externalId}`}
-            food={{
-              ...candidate.input,
-              kind: 'food',
-              brand: candidate.input.brand ?? null,
-              barcode: candidate.input.barcode ?? null,
-              id: `usda-${candidate.externalId}`,
-              source: 'usda',
-              externalId: candidate.externalId,
-              isDeleted: false,
-              servings: [],
-            }}
-            locale={locale}
-            energyUnit={settings.data.energyUnit}
-            dimmed={selecting}
-            onPress={() => onSelectExternal('usda', candidate.externalId)}
-          />
-        ))}
-        {usda.hasMore && usdaQuery === query.trim() ? (
-          <TextAction
-            icon="add"
-            label={t('foodSearch.showMore')}
-            onPress={() => setUsdaPages((current) => current + 1)}
-            testID="food-search-usda-show-more"
-          />
-        ) : null}
-        {usda.isSuccess && usdaQuery === query.trim() && usdaFoods.length === 0 ? (
-          <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-            {t('foodSearch.providerNoResults', { provider: t('foodSearch.usda') })}
-          </AppText>
-        ) : null}
-      </>
-    ),
+            ),
+          ),
+        ),
+        ...(searchedCustom.length === customPages * 20
+          ? [
+              showMoreNode('custom-show-more', 'food-search-custom-show-more', () =>
+                setCustomPages((current) => current + 1),
+              ),
+            ]
+          : []),
+      ],
+    },
+    saved: {
+      key: 'saved',
+      header: savedFoods.length > 0 ? t('foodSearch.saved') : undefined,
+      data: [
+        ...savedFoods.map(recentRow),
+        ...(savedFoods.length === savedPages * 20
+          ? [
+              showMoreNode('saved-show-more', 'food-search-saved-show-more', () =>
+                setSavedPages((current) => current + 1),
+              ),
+            ]
+          : []),
+      ],
+    },
+    open_food_facts: {
+      key: 'open_food_facts',
+      header: query.trim().length >= 3 ? t('foodSearch.openFoodFacts') : undefined,
+      data: [
+        ...(query.trim().length >= 3 && query.trim() !== offQuery ? [searchingNode('off-searching-typing')] : []),
+        ...(online && off.isLoading && query.trim() === offQuery ? [searchingNode('off-searching-loading')] : []),
+        ...(off.isError
+          ? [
+              nodeRow(
+                'off-error',
+                <ProviderError provider="open_food_facts" error={off.error} onRetry={() => void off.refetch()} />,
+              ),
+            ]
+          : []),
+        ...offFoods.map((candidate) => remoteFood('open_food_facts', candidate)),
+        ...(off.hasMore && query.trim() === offQuery
+          ? [showMoreNode('off-show-more', 'food-search-off-show-more', () => setOffPages((current) => current + 1))]
+          : []),
+        ...(off.isSuccess && query.trim() === offQuery && offFoods.length === 0
+          ? [
+              nodeRow(
+                'off-no-results',
+                <AppText color="textSecondary" style={padded}>
+                  {t('foodSearch.providerNoResults', { provider: t('foodSearch.openFoodFacts') })}
+                </AppText>,
+              ),
+            ]
+          : []),
+      ],
+    },
+    usda: {
+      key: 'usda',
+      header: query.trim().length >= 2 ? t('foodSearch.usda') : undefined,
+      data: [
+        ...(query.trim().length >= 2 && usdaQuery !== query.trim() ? [searchingNode('usda-searching-typing')] : []),
+        ...(online && usda.isLoading ? [searchingNode('usda-searching-loading')] : []),
+        ...(usda.isError
+          ? [
+              nodeRow(
+                'usda-error',
+                <ProviderError
+                  provider="usda"
+                  error={usda.error}
+                  onRetry={() => void usda.refetch()}
+                  onFoodDatabases={onFoodDatabases}
+                />,
+              ),
+            ]
+          : []),
+        ...usdaFoods.map((candidate) => remoteFood('usda', candidate)),
+        ...(usda.hasMore && usdaQuery === query.trim()
+          ? [showMoreNode('usda-show-more', 'food-search-usda-show-more', () => setUsdaPages((current) => current + 1))]
+          : []),
+        ...(usda.isSuccess && usdaQuery === query.trim() && usdaFoods.length === 0
+          ? [
+              nodeRow(
+                'usda-no-results',
+                <AppText color="textSecondary" style={padded}>
+                  {t('foodSearch.providerNoResults', { provider: t('foodSearch.usda') })}
+                </AppText>,
+              ),
+            ]
+          : []),
+      ],
+    },
   };
 
-  const recentRow = (food: Food) => (
-    <FoodResultRow
-      key={food.id}
-      food={food}
-      locale={locale}
-      energyUnit={settings.data.energyUnit}
-      {...storedRowProps(
-        food,
-        () => {
-          void refreshSavedFood(services, food); // PROV-09: Recent opens refresh too
-          onSelectFood(food);
-        },
-        () => deleteFood(food),
-      )}
-    />
-  );
-  const padded = { paddingHorizontal: theme.spacing[4] };
-  const searchingRow = (
-    <AppText color="textSecondary" style={padded}>
-      {t('foodSearch.searching')}
-    </AppText>
-  );
-  const noResults = <AppText style={padded}>{t('foodSearch.noResults', { query: query.trim() })}</AppText>;
   // UX-04 Recent tab: the ≤20 Recents (DATA-14), filtered in memory with the PROV-08 token rule.
-  const recentTab = searching ? (
-    searchingRow
-  ) : recentFoods.length === 0 ? (
-    <AppText color="textSecondary" style={padded}>
-      {t('foodSearch.emptyRecentTab')}
-    </AppText>
-  ) : hasQuery && !recentFoods.some((food) => matchesFoodQuery(food, debouncedQuery)) ? (
-    noResults
-  ) : (
-    recentFoods.filter((food) => matchesFoodQuery(food, debouncedQuery)).map(recentRow)
-  );
+  const recentTabData: SearchRow[] = searching
+    ? [searchingNode('tab-recent-searching')]
+    : recentFoods.length === 0
+      ? [
+          nodeRow(
+            'tab-recent-empty',
+            <AppText color="textSecondary" style={padded}>
+              {t('foodSearch.emptyRecentTab')}
+            </AppText>,
+          ),
+        ]
+      : hasQuery && !recentFoods.some((food) => matchesFoodQuery(food, debouncedQuery))
+        ? [noResultsNode('tab-recent-no-results')]
+        : recentFoods.filter((food) => matchesFoodQuery(food, debouncedQuery)).map(recentRow);
   // UX-04 My foods tab: every custom food (DATA-25) without a query; the PROV-08 custom search with one.
   const myFoods = (hasQuery ? custom.data : customList.data) ?? [];
   const myFoodsLoaded = hasQuery ? custom.isSuccess : customList.isSuccess;
-  // UX-04: `Create custom food` lives on this tab only, always first (initialName = current query).
-  const createCustom = (
-    <View style={padded}>
-      <TextAction
-        icon="add"
-        label={t('foodSearch.createCustom')}
-        onPress={() => onCreateCustom(query.trim())}
-        testID="food-create-custom"
-      />
-    </View>
-  );
-  const customRows = searching ? (
-    searchingRow
-  ) : !myFoodsLoaded ? null : myFoods.length === 0 ? (
-    hasQuery ? (
-      noResults
-    ) : (
-      <AppText color="textSecondary" style={padded}>
-        {t('foodSearch.emptyCustom')}
-      </AppText>
-    )
-  ) : (
-    <>
-      {myFoods.map((food) => (
-        <FoodResultRow
-          key={food.id}
-          food={food}
-          locale={locale}
-          energyUnit={settings.data.energyUnit}
-          {...storedRowProps(
-            food,
-            () => onSelectFood(food),
-            () => deleteFood(food),
-          )}
-        />
-      ))}
-      {myFoods.length === customPages * 20 ? (
-        <TextAction
-          icon="add"
-          label={t('foodSearch.showMore')}
-          onPress={() => setCustomPages((current) => current + 1)}
-          testID="food-search-custom-show-more"
-        />
-      ) : null}
-    </>
-  );
-  const customTab = (
-    <>
-      {selecting || ingredientMode ? null : createCustom}
-      {customRows}
-    </>
-  );
+  const customTabData: SearchRow[] = [
+    // UX-04: `Create custom food` lives on this tab only, always first (initialName = current query).
+    ...(selecting || ingredientMode
+      ? []
+      : [
+          nodeRow(
+            'custom-create',
+            <View style={padded}>
+              <TextAction
+                icon="add"
+                label={t('foodSearch.createCustom')}
+                onPress={() => onCreateCustom(query.trim())}
+                testID="food-create-custom"
+              />
+            </View>,
+          ),
+        ]),
+    ...(searching
+      ? [searchingNode('tab-custom-searching')]
+      : !myFoodsLoaded
+        ? []
+        : myFoods.length === 0
+          ? [
+              hasQuery
+                ? noResultsNode('tab-custom-no-results')
+                : nodeRow(
+                    'tab-custom-empty',
+                    <AppText color="textSecondary" style={padded}>
+                      {t('foodSearch.emptyCustom')}
+                    </AppText>,
+                  ),
+            ]
+          : [
+              ...myFoods.map(plainRow),
+              ...(myFoods.length === customPages * 20
+                ? [
+                    showMoreNode('tab-custom-show-more', 'food-search-custom-show-more', () =>
+                      setCustomPages((current) => current + 1),
+                    ),
+                  ]
+                : []),
+            ]),
+  ];
   // UX-04 Recipes tab: every recipe (DATA-28 order) without a query; `searchRecipes` with one.
   const recipes = (hasQuery ? recipeSearch.data : recipeList.data) ?? [];
   const recipesLoaded = hasQuery ? recipeSearch.isSuccess : recipeList.isSuccess;
-  const recipesTab = (
+  const recipesTabData: SearchRow[] = [
+    ...(selecting
+      ? []
+      : [
+          nodeRow(
+            'recipes-create',
+            <View style={padded}>
+              <TextAction
+                icon="add"
+                label={t('foodSearch.createRecipe')}
+                onPress={() => onCreateRecipe?.(query.trim())}
+                testID="food-create-recipe"
+              />
+            </View>,
+          ),
+        ]),
+    ...(searching
+      ? [searchingNode('tab-recipes-searching')]
+      : !recipesLoaded
+        ? []
+        : recipes.length === 0
+          ? [
+              hasQuery
+                ? noResultsNode('tab-recipes-no-results')
+                : nodeRow(
+                    'tab-recipes-empty',
+                    <AppText color="textSecondary" style={padded}>
+                      {t('foodSearch.emptyRecipes')}
+                    </AppText>,
+                  ),
+            ]
+          : [
+              ...recipes.map(plainRow),
+              ...(recipes.length === recipePages * 20
+                ? [
+                    showMoreNode('tab-recipes-show-more', 'food-search-recipes-show-more', () =>
+                      setRecipePages((current) => current + 1),
+                    ),
+                  ]
+                : []),
+            ]),
+  ];
+
+  // ARCH-19: one virtualized SectionList; every body below is a list of sections over typed rows.
+  const listSections: SearchSection[] = [];
+  if (tab === 'recent') listSections.push({ key: 'tab-recent', data: recentTabData });
+  else if (tab === 'custom') listSections.push({ key: 'tab-custom', data: customTabData });
+  else if (tab === 'recipes') listSections.push({ key: 'tab-recipes', data: recipesTabData });
+  else if (hasQuery) {
+    if (searching) listSections.push({ key: 'searching', data: [searchingNode('searching')] });
+    else {
+      for (const id of visibleSections) {
+        if (id === firstVisibleRemote && !online) {
+          // Header-less, so it stays above the remote section's sticky label.
+          listSections.push({
+            key: 'offline',
+            data: [nodeRow('offline', <InlineStatus tone="info" message={t('foodSearch.offline')} />)],
+          });
+        }
+        const section = sectionData[id];
+        if (section.header !== undefined || section.data.length > 0) listSections.push(section);
+      }
+      if (
+        customFoods.length === 0 &&
+        savedFoods.length === 0 &&
+        offFoods.length === 0 &&
+        usdaFoods.length === 0 &&
+        !remoteLoading
+      )
+        listSections.push({ key: 'no-results', data: [noResultsNode('no-results')] });
+    }
+  } else {
+    listSections.push({
+      key: 'recent',
+      header: t('foodSearch.recent'),
+      data:
+        recentFoods.length > 0
+          ? recentFoods.map(recentRow)
+          : [
+              nodeRow(
+                'recent-empty',
+                <AppText color="textSecondary" style={padded}>
+                  {t('foodSearch.emptyRecent')}
+                </AppText>,
+              ),
+            ],
+    });
+  }
+  const renderRow = ({ item }: { item: SearchRow }) =>
+    item.kind === 'node' ? (
+      item.node
+    ) : (
+      <FoodResultRow food={item.food} locale={locale} energyUnit={energyUnit} {...item.rowProps} />
+    );
+  // The three tab bodies had a spacer above them (the former `paddingTop` wrapper).
+  const listHeader = (
     <>
-      {selecting ? null : (
-        <View style={padded}>
-          <TextAction
-            icon="add"
-            label={t('foodSearch.createRecipe')}
-            onPress={() => onCreateRecipe?.(query.trim())}
-            testID="food-create-recipe"
-          />
+      {/* UX-04: the select-mode toggle, then quick calories ⚡, trail the meal/date context line. */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingLeft: theme.spacing[4],
+          paddingRight: theme.spacing[2],
+          paddingTop: theme.spacing[1],
+        }}
+      >
+        <AppText variant="compact" color="textSecondary" style={{ flex: 1 }} testID="food-search-context">
+          {ingredientFor
+            ? ingredientFor.recipeName
+              ? t('foodSearch.ingredientContext', { recipe: ingredientFor.recipeName })
+              : t('foodSearch.ingredientContextNew')
+            : t('foodSearch.context', { meal: meal!.name, date: dateLabel })}
+        </AppText>
+        {ingredientMode ? null : (
+          <>
+            <PressableIcon
+              icon={selecting ? 'checkmark-done-circle' : 'checkmark-done-outline'}
+              accessibilityLabel={t('foodSearch.select.toggle')}
+              onPress={() => (selecting ? leaveSelectMode() : setSelecting(true))}
+              selected={selecting}
+              color={selecting ? 'primary' : 'textSecondary'}
+              testID="food-search-select"
+            />
+            <PressableIcon
+              icon="flash-outline"
+              accessibilityLabel={t('foodSearch.quickCalories')}
+              onPress={onQuickCalories}
+              disabled={selecting}
+              color="textSecondary"
+              testID="food-search-quick-calories"
+            />
+          </>
+        )}
+      </View>
+      <View style={{ paddingTop: theme.spacing[2] }}>
+        <TabStrip
+          tabs={[
+            { id: 'all', label: t('foodSearch.tabs.all') },
+            { id: 'recent', label: t('foodSearch.tabs.recent') },
+            { id: 'custom', label: t('foodSearch.tabs.custom') },
+            ...(ingredientMode ? [] : [{ id: 'recipes' as const, label: t('foodSearch.tabs.recipes') }]),
+          ]}
+          selected={tab}
+          onSelect={chooseTab}
+          accessibilityLabel={t('foodSearch.tabs.label')}
+          testID="food-search-tab"
+        />
+      </View>
+      {deleteFailed ? (
+        <View style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3] }}>
+          <InlineStatus tone="error" message={t('foodSearch.deleteError')} />
         </View>
-      )}
-      {searching ? (
-        searchingRow
-      ) : !recipesLoaded ? null : recipes.length === 0 ? (
-        hasQuery ? (
-          noResults
-        ) : (
-          <AppText color="textSecondary" style={padded}>
-            {t('foodSearch.emptyRecipes')}
-          </AppText>
-        )
-      ) : (
-        <>
-          {recipes.map((food) => (
-            <FoodResultRow
-              key={food.id}
-              food={food}
-              locale={locale}
-              energyUnit={settings.data.energyUnit}
-              {...storedRowProps(
-                food,
-                () => onSelectFood(food),
-                () => deleteFood(food),
-              )}
-            />
-          ))}
-          {recipes.length === recipePages * 20 ? (
-            <TextAction
-              icon="add"
-              label={t('foodSearch.showMore')}
-              onPress={() => setRecipePages((current) => current + 1)}
-              testID="food-search-recipes-show-more"
-            />
-          ) : null}
-        </>
-      )}
+      ) : null}
+      {tab === 'all' ? null : <View style={{ height: theme.spacing[2] }} />}
     </>
   );
 
@@ -654,113 +739,26 @@ export function FoodSearchScreen({
           </View>
         }
       />
-      <ScrollView
+      <SectionList
+        testID="food-search-list"
+        sections={listSections}
+        keyExtractor={(row) => row.key}
+        renderItem={renderRow}
+        renderSectionHeader={({ section }) =>
+          section.header ? (
+            // Opaque, so rows scrolling under the sticky label don't show through it.
+            <View style={{ backgroundColor: theme.colors.canvas }}>
+              <SectionHeader label={section.header} uppercase />
+            </View>
+          ) : null
+        }
+        stickySectionHeadersEnabled // UX-04 sticky section labels (RN's default is iOS-only)
+        ListHeaderComponent={listHeader}
+        extraData={selection}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: theme.spacing[6] }}
-      >
-        {/* UX-04: the select-mode toggle, then quick calories ⚡, trail the meal/date context line. */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingLeft: theme.spacing[4],
-            paddingRight: theme.spacing[2],
-            paddingTop: theme.spacing[1],
-          }}
-        >
-          <AppText variant="compact" color="textSecondary" style={{ flex: 1 }} testID="food-search-context">
-            {ingredientFor
-              ? ingredientFor.recipeName
-                ? t('foodSearch.ingredientContext', { recipe: ingredientFor.recipeName })
-                : t('foodSearch.ingredientContextNew')
-              : t('foodSearch.context', { meal: meal!.name, date: dateLabel })}
-          </AppText>
-          {ingredientMode ? null : (
-            <>
-              <PressableIcon
-                icon={selecting ? 'checkmark-done-circle' : 'checkmark-done-outline'}
-                accessibilityLabel={t('foodSearch.select.toggle')}
-                onPress={() => (selecting ? leaveSelectMode() : setSelecting(true))}
-                selected={selecting}
-                color={selecting ? 'primary' : 'textSecondary'}
-                testID="food-search-select"
-              />
-              <PressableIcon
-                icon="flash-outline"
-                accessibilityLabel={t('foodSearch.quickCalories')}
-                onPress={onQuickCalories}
-                disabled={selecting}
-                color="textSecondary"
-                testID="food-search-quick-calories"
-              />
-            </>
-          )}
-        </View>
-        <View style={{ paddingTop: theme.spacing[2] }}>
-          <TabStrip
-            tabs={[
-              { id: 'all', label: t('foodSearch.tabs.all') },
-              { id: 'recent', label: t('foodSearch.tabs.recent') },
-              { id: 'custom', label: t('foodSearch.tabs.custom') },
-              ...(ingredientMode ? [] : [{ id: 'recipes' as const, label: t('foodSearch.tabs.recipes') }]),
-            ]}
-            selected={tab}
-            onSelect={chooseTab}
-            accessibilityLabel={t('foodSearch.tabs.label')}
-            testID="food-search-tab"
-          />
-        </View>
-        {deleteFailed ? (
-          <View style={{ paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3] }}>
-            <InlineStatus tone="error" message={t('foodSearch.deleteError')} />
-          </View>
-        ) : null}
-        {tab === 'recent' ? (
-          <View style={{ paddingTop: theme.spacing[2] }}>{recentTab}</View>
-        ) : tab === 'custom' ? (
-          <View style={{ paddingTop: theme.spacing[2] }}>{customTab}</View>
-        ) : tab === 'recipes' ? (
-          <View style={{ paddingTop: theme.spacing[2] }}>{recipesTab}</View>
-        ) : hasQuery ? (
-          <>
-            {searching ? (
-              <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                {t('foodSearch.searching')}
-              </AppText>
-            ) : (
-              <>
-                {visibleSections.map((id) => (
-                  <Fragment key={id}>
-                    {id === firstVisibleRemote && !online ? (
-                      <InlineStatus tone="info" message={t('foodSearch.offline')} />
-                    ) : null}
-                    {sectionContent[id]}
-                  </Fragment>
-                ))}
-                {customFoods.length === 0 &&
-                savedFoods.length === 0 &&
-                offFoods.length === 0 &&
-                usdaFoods.length === 0 &&
-                !remoteLoading
-                  ? noResults
-                  : null}
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            <SectionHeader label={t('foodSearch.recent')} uppercase />
-            {recentFoods.length > 0 ? (
-              recentFoods.map(recentRow)
-            ) : (
-              <AppText color="textSecondary" style={{ paddingHorizontal: theme.spacing[4] }}>
-                {t('foodSearch.emptyRecent')}
-              </AppText>
-            )}
-          </>
-        )}
-      </ScrollView>
+      />
       {selecting ? (
         <View
           style={{
