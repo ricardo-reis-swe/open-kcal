@@ -39,3 +39,7 @@ jest.mock('expo-camera', () => require('./src/shared/testing/expoCameraMock'));
 
 // Recipe text copy/import uses Expo Clipboard; the test implementation is an in-memory clipboard.
 jest.mock('expo-clipboard', () => require('./src/shared/testing/expoClipboardMock'));
+
+// ARCH-25: file operations run on real temp files; the share sheet and document picker are system UI.
+jest.mock('@/data/db/transfer/files', () => require('./src/shared/testing/nodeFiles'));
+jest.mock('@/shared/files/fileTransfer', () => require('./src/shared/testing/fileTransferMock'));

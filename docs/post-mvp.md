@@ -68,3 +68,6 @@ Format: one item per heading. Say what it is, why it's deferred, and any known d
 
 ## POST-16 Recipe text sharing and import
 - Moved into the MVP 2026-10-10 (user request). ID kept so it is not reused.
+
+## POST-17 Backup extras
+- Encrypted export (password), scheduled/automatic export to a user-chosen folder, merge import, CSV/JSON export for other apps, a "last exported" date. Deferred by user decision 2026-11-24: v1 is a plain manual file (SCOPE-14).

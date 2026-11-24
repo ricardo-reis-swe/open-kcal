@@ -1,14 +1,21 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import fs from 'node:fs';
 import { Text } from 'react-native';
 
 import { sequentialIds } from '@/data/db/ids';
+import { exportDirectory } from '@/data/db/transfer/exportDatabase';
+import * as files from '@/data/db/transfer/files';
+import { closeForSwap, swapIn } from '@/data/db/transfer/replaceDatabase';
+import { importDirectory, stageImport } from '@/data/db/transfer/validateImport';
 import { settingsKeys } from '@/features/diary/diary.queries';
 import { parseConfig } from '@/shared/config/env';
 import { fixedClock } from '@/shared/dates';
 import { DatabaseError, MigrationError } from '@/shared/errors';
 import { initI18n } from '@/shared/i18n/i18n';
+import * as appNotice from '@/shared/notices/appNotice';
 import { renderWithProviders } from '@/shared/testing/render';
+import { makeDbFile, makeTempDir, queryFile } from '@/shared/testing/transferFixtures';
 
 import { diagnosticInfo, RecoveryScreen } from '../RecoveryScreen';
 import { useServices, type AppServices } from '../services';
@@ -168,5 +175,72 @@ describe('UX-20: RecoveryScreen', () => {
     expect(screen.getByRole('header', { name: 'Não foi possível abrir o seu diário.' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Copiar informações de diagnóstico' })).toBeOnTheScreen();
+  });
+});
+
+describe('DATA-32 / ARCH-17: launch recovery of an interrupted import', () => {
+  let dir: string;
+  const clock = fixedClock('2026-09-25T10:00:00.000Z');
+  const logger = { info: () => undefined, error: () => undefined };
+  beforeAll(() => initI18n({ language: 'en', formattingLocale: 'en', regionCode: 'US' }));
+  beforeEach(() => {
+    dir = makeTempDir();
+  });
+  afterEach(async () => {
+    jest.restoreAllMocks();
+    fs.rmSync(dir, { recursive: true, force: true });
+    await files.removeDir(importDirectory());
+    await files.removeDir(exportDirectory());
+  });
+
+  /** An app that "died" right after the swap: marker + safety copy + the imported file as the database. */
+  async function interruptedImport() {
+    const location = { directory: dir, name: 'calorie-tracker.db' };
+    const live = await startServices({ location, clock, ids: sequentialIds() });
+    const source = await makeDbFile(dir, 'export.db', { mealName: 'Ceia' });
+    const { stagedPath } = await stageImport(files.toUri(source), { clock, logger });
+    await closeForSwap(live.db);
+    await swapIn(location, stagedPath);
+    return location;
+  }
+
+  it('a marker rolls the import back, announces importInterrupted once and opens the original data', async () => {
+    const location = await interruptedImport();
+    const announce = jest.spyOn(appNotice, 'announceAppNotice');
+    const services = await startServices({ location, clock, ids: sequentialIds() });
+    expect((await services.meals.list())[0]?.name).toBe('Breakfast');
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith('importInterrupted');
+    expect(fs.existsSync(`${dir}/import-pending`)).toBe(false);
+    expect(fs.existsSync(`${dir}/calorie-tracker.pre-import.db`)).toBe(false);
+    await services.db.close();
+  });
+
+  it('a normal start announces nothing and removes stale export/ and import/ folders', async () => {
+    await files.ensureDir(exportDirectory());
+    await files.ensureDir(importDirectory());
+    fs.writeFileSync(`${exportDirectory()}/open-kcal-2026-09-24.db`, 'x');
+    const announce = jest.spyOn(appNotice, 'announceAppNotice');
+    const services = await startServices({ location: { directory: dir, name: 'calorie-tracker.db' }, clock });
+    expect(announce).not.toHaveBeenCalled();
+    expect(fs.existsSync(exportDirectory())).toBe(false);
+    expect(fs.existsSync(importDirectory())).toBe(false);
+    await services.db.close();
+  });
+
+  it('a recovery failure rejects startup and the gate shows the recovery screen (never a reset)', async () => {
+    const location = await interruptedImport();
+    jest.spyOn(files, 'move').mockRejectedValue(new DatabaseError('File operation failed'));
+    await expect(startServices({ location, clock })).rejects.toBeInstanceOf(DatabaseError);
+    await renderWithProviders(
+      <StartupGate start={() => startServices({ location, clock })} appVersion="0.1.0" copyText={jest.fn()}>
+        <MealCount />
+      </StartupGate>,
+    );
+    await act(async () => undefined);
+    expect(screen.getByRole('header', { name: "Couldn't open your diary." })).toBeOnTheScreen();
+    // The imported file is still the database and the marker is still there for the next Retry.
+    expect(fs.existsSync(`${dir}/import-pending`)).toBe(true);
+    expect(queryFile(`${dir}/calorie-tracker.pre-import.db`, 'SELECT name FROM meals LIMIT 1')).toHaveLength(1);
   });
 });

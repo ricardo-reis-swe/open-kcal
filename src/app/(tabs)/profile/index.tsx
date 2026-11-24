@@ -18,6 +18,7 @@ export default function ProfileRoute() {
       onMyRecipes={() => router.push(routes.myRecipes())}
       onFoodDatabases={() => router.push(routes.foodDatabases())}
       onTheme={() => router.push(routes.theme())}
+      onDataTransfer={() => router.push(routes.dataTransfer())}
     />
   );
 }

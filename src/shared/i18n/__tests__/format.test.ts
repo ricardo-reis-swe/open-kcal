@@ -1,4 +1,12 @@
-import { formatEnergy, formatGrams, formatNutrientAmount, formatShortDate, formatWeight, relativeDay } from '../format';
+import {
+  formatEnergy,
+  formatFullDate,
+  formatGrams,
+  formatNutrientAmount,
+  formatShortDate,
+  formatWeight,
+  relativeDay,
+} from '../format';
 
 describe('UX-00 number display', () => {
   it('UX-00: energy is a grouped integer in the locale', () => {
@@ -62,5 +70,12 @@ describe('DATA-20 / DS-09: nutrient amounts', () => {
     expect(formatNutrientAmount(1234.4, 0, 'en-GB')).toBe('1,234');
     expect(formatNutrientAmount(0.004, 1, 'en-GB')).toBe('<0.1');
     expect(formatNutrientAmount(0, 1, 'en-GB')).toBe('0');
+  });
+});
+
+describe('UX-29: full date', () => {
+  it('formats a date in any year with Intl in the app locale', () => {
+    expect(formatFullDate('2025-03-04', 'en-GB')).toBe('4 March 2025');
+    expect(formatFullDate('2025-03-04', 'pt-PT')).toMatch(/^4 de março de 2025$/);
   });
 });

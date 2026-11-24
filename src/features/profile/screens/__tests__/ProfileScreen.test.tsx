@@ -58,6 +58,7 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       onMyRecipes: jest.fn(),
       onFoodDatabases: jest.fn(),
       onTheme: jest.fn(),
+      onDataTransfer: jest.fn(),
     };
     await renderWithServices(<ProfileScreen {...nav} />, services);
     await fireEvent.press(await screen.findByTestId('profile-update-weight'));
@@ -72,10 +73,22 @@ describe('UX-15 / NAV-06: Profile hub', () => {
       'my-recipes',
       'food-databases',
       'theme',
+      'data-transfer',
     ]) {
       await fireEvent.press(screen.getByTestId(`profile-${id}`));
     }
     for (const handler of Object.values(nav)) expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('UX-15 / DATA-02: the Export & import row has no value text (no "last backup")', async () => {
+    const services = await setup();
+    const onDataTransfer = jest.fn();
+    await renderWithServices(<ProfileScreen onDataTransfer={onDataTransfer} />, services);
+    const row = await screen.findByTestId('profile-data-transfer');
+    expect(screen.getByRole('button', { name: 'Export & import' })).toBe(row);
+    expect(screen.getByText('Export & import')).toBeOnTheScreen();
+    await fireEvent.press(row);
+    expect(onDataTransfer).toHaveBeenCalledTimes(1);
   });
 
   it('NAV-06: rows without a destination are not buttons (no placeholder screens)', async () => {

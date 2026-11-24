@@ -122,3 +122,11 @@ export function formatShortDate(date: LocalDate, today: LocalDate, locale: strin
     ...(sameYear ? {} : { year: 'numeric' }),
   }).format(instant);
 }
+
+/** UX-29: a full date such as `25 September 2026` (en) / `25 de setembro de 2026` (pt-PT), for dates in any year. */
+export function formatFullDate(date: LocalDate, locale: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(y, m - 1, d)),
+  );
+}

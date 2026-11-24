@@ -221,9 +221,11 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 [Food databases              USDA on     › ]
 [APP                                      ]
 [Theme                          System   › ]
+[Export & import                        › ]
 ```
 - No weight yet: `No weight logged yet`. No goal: `Goal —`.
 - `My foods` value: `<n> food(s)` (DATA-25 count); none → `None`. `My recipes` value: `<n> recipe(s)` (DATA-28 count); none → `None`.
+- `Export & import`: no value text (DATA-02: no "last backup").
 
 ## UX-16 Calories & Macros
 - Fields: Calories, Carbs, Protein, Fat. `Set macros by` toggles `Fixed grams` / `Percentages` and is persisted with the goal.
@@ -262,12 +264,14 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 | Delete custom food (UX-25 edit) | `Delete <food>?` | `Your diary entries keep their nutrition.` | `Delete food` |
 | Delete recipe (UX-26 edit) | `Delete <recipe>?` | `Your diary entries keep their nutrition.` | `Delete recipe` |
 | Remove USDA key | `Remove USDA API key?` | `USDA search will stop. Saved foods stay.` | `Remove key` |
+| Import data (UX-29) | `Replace all data?` | `This phone's diary, foods, recipes, meals, goals and weight will be replaced by the file (<n> entries, latest <date>). This can't be undone.` | `Replace data` |
 | Dirty exit (UX-00) | `Discard changes?` | — | `Discard` (other button: `Keep editing`) |
 - **Delete meal with entries** uses a sheet, not a dialog: `Delete <meal>? It has <n> entries. Move them to:` + radio list of the other meals + danger `Delete and move entries` (disabled until a meal is picked). Implements NAV-08 and DATA-10.
 
 ## UX-20 System screens
 - Launch screen until config + migrations finish (ARCH-17).
 - Startup/migration failure: `Couldn't open your diary.` + `Retry` + `Copy diagnostic info` (versions and error category only, ARCH-15). Never a reset.
+- An interrupted import is rolled back before this screen could appear (DATA-32).
 
 ## UX-21 Dashboard nutrients
 ```text
@@ -388,3 +392,23 @@ Rows: label + conversion hint (`1 egg · 50 g`); check on the current unit. Tap 
 - Preview includes recipe name, servings, cooked/raw weights, ingredient quantities, and sender nutrition labeled “sent by the other phone, unverified”.
 - `Import` confirms the preview and writes the recipe plus independent kcal-only ingredient snapshots in one transaction (DATA-29); the recipe keeps the sender's meal-level nutrition, so its macros stay unknown until the recipe is edited (which recomputes them as unknown). Success returns to My recipes with a toast. Invalid text or write failure shows an inline recovery message and keeps the text.
 - Back with non-empty text → `Discard changes?` (NAV-08).
+
+## UX-29 Export & Import
+```text
+[Export & import                          ]
+[Your data is stored only on this phone.  ]
+[EXPORT                                   ]
+[Export data                              ]
+[  One file with all your data. …         ]
+[  The file isn't encrypted. …            ]
+[IMPORT                                   ]
+[Import data                              ]
+[  Replaces all data on this phone. …     ]
+```
+- Two `ListRow`s with helper text under each; no app-bar primary action (UX-00 exception: actions, not a form).
+- Export: row shows an inline spinner `Preparing file…` until the share sheet opens; the row is disabled meanwhile. Failure → inline error under the row `Couldn't export. Try again.` Sharing unavailable → `Sharing isn't available on this device.`
+- Import: picker → inline `Checking file…` → validation error inline under the row (DATA-31 message per `reason`), or the UX-19 dialog → `Importing…` full-screen state with the app bar back disabled (NAV-11) → Diary root on today + toast `Data imported.` (NAV-11); a swap failure → rollback → Diary + toast `Couldn't import. Your data wasn't changed.` (DATA-32)
+- Leaving the screen during `Checking file…` or cancelling the dialog discards the staged copy (DATA-32).
+- Picker or dialog cancelled → nothing shown.
+- `importInterrupted` toast once on the Diary after a launch rollback (DATA-32).
+- Haptics: none (DS-10).

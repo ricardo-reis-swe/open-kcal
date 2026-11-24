@@ -11,10 +11,14 @@ import { createSettingsRepository } from '@/data/db/repositories/settingsReposit
 import { createWeightRepository } from '@/data/db/repositories/weightRepository';
 import { OpenFoodFactsClient } from '@/data/api/open-food-facts/client';
 import { UsdaClient } from '@/data/api/usda/client';
+import { appDatabaseLocation, type DatabaseLocation } from '@/data/db/database';
 import type { SqlDatabase } from '@/data/db/sql';
+import { exportDatabase } from '@/data/db/transfer/exportDatabase';
+import { discardPickedFile, discardStagedImport, stageImport } from '@/data/db/transfer/validateImport';
 import { createCredentialsService, type CredentialsService } from '@/data/secure-storage/credentialsService';
 import type { AppConfig } from '@/shared/config/env';
 import type { Clock } from '@/shared/dates';
+import { logger } from '@/shared/logging/logger';
 
 export function createServices({
   db,
@@ -22,12 +26,14 @@ export function createServices({
   ids,
   config,
   credentials,
+  databaseLocation = appDatabaseLocation(),
 }: {
   db: SqlDatabase;
   clock: Clock;
   ids: IdGenerator;
   config: AppConfig;
   credentials?: CredentialsService;
+  databaseLocation?: DatabaseLocation;
 }) {
   const deps = { db, clock, ids };
   const resolvedCredentials = credentials ?? createCredentialsService();
@@ -35,6 +41,14 @@ export function createServices({
     db,
     clock,
     config,
+    databaseLocation,
+    /** SCOPE-14 export/import entry points (DATA-30/31); the swap itself belongs to StartupGate (DATA-32). */
+    transfer: {
+      exportSnapshot: () => exportDatabase({ db, clock }),
+      stageImport: (uri: string, size?: number | null) => stageImport(uri, { clock, logger, size }),
+      discardStaged: discardStagedImport,
+      discardPicked: discardPickedFile,
+    },
     settings: createSettingsRepository(deps),
     goals: createGoalsRepository(deps),
     meals: createMealsRepository(deps),

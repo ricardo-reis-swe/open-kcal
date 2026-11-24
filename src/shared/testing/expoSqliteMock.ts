@@ -1,13 +1,19 @@
 /// <reference types="node" />
 // Jest stand-in for expo-sqlite (jest.setup.ts): the same async API over Node's built-in SQLite, so app startup
-// and route tests run real SQL (ARCH-18). Each `openDatabaseAsync` call gets a fresh in-memory database.
+// and route tests run real SQL (ARCH-18). `openDatabaseAsync` gets a fresh in-memory database, unless a real
+// directory is passed (ARCH-25 import/export tests): then it opens that file.
+import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+
+/** Sentinel for "the app's own database directory": in Jest that is always in memory. */
+export const defaultDatabaseDirectory = 'jest-memory://SQLite';
 
 type Params = (string | number | null)[];
 const plain = (row: unknown) => (row === undefined ? null : { ...(row as Record<string, unknown>) });
 
-export async function openDatabaseAsync(_name: string, _options?: unknown) {
-  const db = new DatabaseSync(':memory:');
+export async function openDatabaseAsync(name: string, _options?: unknown, directory?: string) {
+  const inMemory = name === ':memory:' || directory === undefined || directory === defaultDatabaseDirectory;
+  const db = new DatabaseSync(inMemory ? ':memory:' : path.join(directory, name));
   return {
     execAsync: async (sql: string) => void db.exec(sql),
     runAsync: async (sql: string, params: Params = []) => {

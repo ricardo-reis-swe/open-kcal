@@ -17,7 +17,7 @@ App Root
 │   └── Profile Stack: Profile, Calories & Macros, Meals, Add / Edit Meal, Units,
 │                      Weight Goal, Weight History, Food Databases / USDA API Key,
 │                      My Foods, Edit Custom Food, My Recipes, Edit Recipe, Import Recipe,
-│                      Ingredient Search, Ingredient Detail
+│                      Export & Import, Ingredient Search, Ingredient Detail
 └── App-level overlays: Add Action Sheet, Date Picker, Meal Picker, Serving Unit Picker,
                         Dashboard Action Sheet, Copy Sheet, Weight Entry Sheet, Confirmation Dialogs
 ```
@@ -63,7 +63,7 @@ App Root
 ## NAV-06 Profile stack screens
 | Screen | Behavior |
 |---|---|
-| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, My Foods, My Recipes, Food Databases, Theme. |
+| Profile | Current weight, goal weight, Update Weight, link to Weight History, rows: Calories & Macros, Meals, Units, Dashboard Nutrients, Weight Goal, My Foods, My Recipes, Food Databases, Theme, Export & Import. |
 | Calories & Macros | Edit kcal/carb/protein/fat goals. Save → Profile; diary targets update immediately. |
 | Meals | Meals in saved order. Reorder in the list; tap → Add/Edit Meal; add new; delete via confirmation. Defaults are ordinary records. |
 | Add / Edit Meal | Create or rename. Save → Meals. Delete only in edit mode (protected, NAV-08). |
@@ -78,6 +78,7 @@ App Root
 | Edit Recipe | UX-26 editor filled with the recipe. Add ingredient → Ingredient Search (Profile stack). Save → My Recipes. `Delete recipe` (confirmed) → My Recipes. Dirty back → `Discard changes?`. |
 | Import Recipe | UX-28: clipboard read after tap; paste fallback; validated preview. Confirm → creates local snapshots + recipe → My recipes with toast. Back with text → `Discard changes?`. |
 | Food Databases | Lists Open Food Facts + USDA. Add, replace or remove USDA key; shows whether USDA search is available. Key goes to secure storage; never shown in full after saving. |
+| Export & Import | UX-29. `Export data` → share sheet; stays on this screen. `Import data` → document picker → validation → `Replace all data?` (NAV-08) → replace (DATA-32) → Diary root on today with `Data imported.`. Cancel anywhere → this screen, nothing changed. Back → Profile (disabled while an import runs). |
 
 ## NAV-07 Sheets
 - **Meal Picker**: current meals in user order. Used for global add and for changing an entry's meal. Never assumes fixed names.
@@ -87,7 +88,7 @@ App Root
 - **Weight Entry Sheet** (from `+`, Profile, Weight History): date, weight, configured unit, Save, Delete (edit only). Date ≤ today. Create mode defaults to today and the configured unit; edit mode loads the record. Save → close, refresh Profile/History.
 
 ## NAV-08 Confirmation required before
-Deleting a food entry from its edit screen · deleting a Quick Calories entry from its edit screen · deleting a custom food from its edit screen · deleting a recipe from its edit screen · deleting a weight entry · deleting a meal · removing the USDA key.
+Deleting a food entry from its edit screen · deleting a Quick Calories entry from its edit screen · deleting a custom food from its edit screen · deleting a recipe from its edit screen · deleting a weight entry · deleting a meal · removing the USDA key · replacing all data with an imported file.
 - The dialog names the object; the destructive action is visually distinct.
 - Deleting a meal that has entries MUST require picking another existing meal to reassign them to. Never silently delete diary history.
 - Not in this list, so no dialog: the swipe-revealed Delete on a Diary entry or saved food. The row deletes immediately and offers a temporary Undo toast.
@@ -107,3 +108,8 @@ Deleting a food entry from its edit screen · deleting a Quick Calories entry fr
   - Anywhere else (deeper Diary screen, Profile tab, any overlay) → app comes to front on the current screen, unchanged.
 - **Why:** jumping away from an open form would silently lose input (UX-00); the user returns to the Diary in one tap anyway.
 - The link carries no data. Unknown/malformed paths under `diary/` → Diary root, no date change.
+
+## NAV-11 Import restart
+- A successful import remounts the Router (DATA-32): every stack resets, both tabs return to root, the Diary shows today. No route carries import state.
+- System back and the Android back button are ignored while an import replaces data (an in-place progress state, no route).
+- Unsaved edits on any other screen (either tab) are discarded without a `Discard changes?` dialog; the UX-19 `Replace all data?` dialog covers it (user decision 2026-11-24). No cross-screen dirty tracking.

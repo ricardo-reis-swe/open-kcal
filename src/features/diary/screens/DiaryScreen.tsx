@@ -8,6 +8,7 @@ import { AppBar, isOverlayOpen, PressableIcon } from '@/shared/components';
 import { addDays, todayLocal } from '@/shared/dates';
 import { DatePicker } from '@/shared/navigation/DatePicker';
 import { onWidgetTodayRequest } from '@/shared/navigation/widgetLink';
+import { clearAppNotice, useAppNotice } from '@/shared/notices/appNotice';
 import { useTheme } from '@/shared/theme';
 
 import { DiaryDateStrip } from '../components/DiaryDateStrip';
@@ -27,6 +28,15 @@ export function DiaryScreen() {
   // Keep the adjacent dates mounted and data-loaded. When selection moves one day, its page is already rendered;
   // only the newly-adjacent page needs to start loading.
   const pageDates = [addDays(date, -1), date, addDays(date, 1)];
+  // DATA-32 / UX-29: bootstrap leaves a one-shot notice (import finished, rolled back or interrupted). Only the active
+  // page shows it as its toast, then it's cleared, so it appears once.
+  const appNotice = useAppNotice();
+  const notice = appNotice
+    ? {
+        key: appNotice.key,
+        message: t(`dataTransfer.${appNotice.kind === 'dataImported' ? 'imported' : appNotice.kind}`),
+      }
+    : undefined;
   useEffect(() => {
     const tabs = navigation.getParent();
     if (!tabs) return;
@@ -70,7 +80,13 @@ export function DiaryScreen() {
               importantForAccessibility={active ? 'auto' : 'no-hide-descendants'}
               style={active ? { flex: 1 } : { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0 }}
             >
-              <DiaryDay date={pageDate} active={active} scrollToTop={active ? scrollToTop : 0} />
+              <DiaryDay
+                date={pageDate}
+                active={active}
+                scrollToTop={active ? scrollToTop : 0}
+                notice={active ? notice : undefined}
+                onNoticeShown={clearAppNotice}
+              />
             </View>
           );
         })}

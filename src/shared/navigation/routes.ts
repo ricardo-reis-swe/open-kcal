@@ -47,6 +47,8 @@ export type RouteParams = {
   caloriesMacros: undefined;
   units: undefined;
   theme: undefined;
+  /** UX-29 Export & Import (Profile stack, NAV-06). */
+  dataTransfer: undefined;
   dashboardNutrients: undefined;
   editCustomFood: { foodId: Uuid };
   weightGoal: undefined;
@@ -140,6 +142,7 @@ const paramSchemas = {
   editQuickCalories: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   editFoodEntry: z.object({ entryId: idSchema, origin: originSchema.default('diary') }),
   foodDatabases: z.object({}),
+  dataTransfer: z.object({}),
   editCustomFood: z.object({ foodId: idSchema }),
   createRecipe: z.object({
     mealId: idSchema,
@@ -179,6 +182,8 @@ export const routes = {
   units: (): Href => '/profile/units' as Href,
   /** NAV-06 / UX-23 Theme (DATA-23). */
   theme: (): Href => '/profile/theme' as Href,
+  /** NAV-06 / UX-29 Export & Import (SCOPE-14). */
+  dataTransfer: (): Href => '/profile/data-transfer' as Href,
   /** NAV-06 / UX-21 Dashboard nutrients (DATA-21). */
   dashboardNutrients: (): Href => '/profile/dashboard-nutrients' as Href,
   /** NAV-06 / UX-18 Weight Goal. */

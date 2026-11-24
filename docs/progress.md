@@ -6,6 +6,8 @@ Single place for implementation status. Updated in the same commit as the work i
 
 2026-11-24 POST-08 weekly live provider check (moved into the MVP, user request): `.github/workflows/live-providers.yml` (Mondays 06:17 UTC + manual; a scheduled failure opens or updates one issue), `npm run test:live` (`jest.live.config.js`, `src/data/api/__live__/providers.live.ts`, real USDA/OFF clients), ARCH-14 test-only CI key. Evidence: local `npm run test:live` on `DEMO_KEY` passed 5/5; a forced failure (OFF hit minimum 100) went red with a readable message. Known gaps: secret `USDA_API_KEY` not added yet (falls back to `DEMO_KEY`, reduced set); `DEMO_KEY` is now 10/h, not PROV-02's 30/h; GitHub pauses scheduled workflows after 60 days without repo activity (re-enable from the Actions tab).
 
+2026-11-24 spec (user-approved): SCOPE-14 export/import, DATA-02 reworded, DATA-30–32, NAV-11, ARCH-25, UX-29, POST-17; code follows.
+
 | Milestone | Status |
 |---|---|
 | M0 Skeleton | done |
@@ -199,3 +201,5 @@ Status: **implemented; device check pending** · Spec: SCOPE-06/13, NAV-04, DATA
 ## App icon and display name (2026-10-14)
 
 - Applied the approved white apple icon to the app and Android launcher assets; changed the launcher display name to Open Kcal, and removed the old product name from the widget fallback label. Package ID remains stable for updates. Obtainium continues to use the signed GitHub Release APK workflow (ROAD-06).
+- 2026-11-24 T1 (SCOPE-14 / DATA-30–32 / NAV-11 / UX-29): Profile › Export & import. Export = `VACUUM INTO` a cache file + share sheet; import = pick → staged validation (9 checks, typed `reason`) → `Replace all data?` → StartupGate `replacing` swap with marker + safety copy, rollback and launch recovery. New: `src/data/db/transfer/`, `src/shared/files/fileTransfer.ts`, `src/shared/notices/appNotice.ts`, `DataTransferScreen`, `expo-sharing` / `expo-document-picker` / `expo-file-system` (pinned). Evidence: `npm run check` green, 829 tests (34 new: export, every DATA-31 reason, v1–v6 fixtures, DATA-32 rollback byte-for-byte, StartupGate replace, screen, end-to-end nav on real files). Deviation: a failed marker delete in step 7 rolls back (`importFailed`) instead of only logging (plan D2), so a later launch can't undo a completed import; safety copy and cache removal stay best-effort.
+  - Known gaps: needs a native rebuild (3 new native modules, `npm run android` / `ios`); device check pending on both platforms (export → save to Files/Drive → reinstall → import; an export from an older build; cancel the share sheet and the picker; kill the app during `Importing…` → relaunch shows `importInterrupted` and the old data); `files.ts` / `fileTransfer.ts` run only on a device (Jest uses Node doubles).

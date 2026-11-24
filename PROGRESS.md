@@ -2,7 +2,7 @@
 
 | ID | Task | Status | Note |
 |---|---|---|---|
-| T1 | Backup / export of the diary | TODO | User approved 2026-11-24 the spec proposal in .plans/task-T1-spec.md (SQLite file export/import; SCOPE-14 + DATA-02 reword; unencrypted v1, encryption → POST-17; row "Export & import" under Profile › APP; import allowed with unsaved edits elsewhere, they are lost). |
+| T1 | Backup / export of the diary | DONE | Profile › APP "Export & import": SQLite export via VACUUM INTO + share sheet; import validates a staged copy, migrates it, swaps with safety copy + crash-marker rollback; specs SCOPE-14, DATA-30–32, NAV-11, ARCH-25, UX-29, POST-17. Needs native rebuild + device check. |
 | T2 | Release v0.2.0 | BLOCKED | Cancelled for now by user (2026-11-24); no push or release until they say. |
 | T3 | ROAD-04 release smoke test + accept M9 | BLOCKED | Needs a device and user acceptance. |
 | T4 | Device checks (recipe share between phones, ingredient barcode scan, widget cold start + midnight rollover) | BLOCKED | Needs physical devices. |

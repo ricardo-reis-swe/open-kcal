@@ -160,6 +160,6 @@ The release notes show the Android signing certificate SHA-256.
 - One release key for the app's lifetime. It MUST NOT be committed (`*.jks` is gitignored) and MUST have a backup outside GitHub. **Why:** a new key means users must uninstall to update, which deletes their diary.
 - GitHub secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The workflow fails if the keystore is missing or the APK is debug-signed.
 - `plugins/withAndroidReleaseSigning.js` reads the `ANDROID_KEYSTORE_*` env vars at build time.
-- The release and local builds share the app ID (ROAD-04), so a release can't install over a local debug-key build. Uninstalling first deletes local data.
+- The release and local builds share the app ID (ROAD-04), so a release can't install over a local debug-key build. Uninstalling first deletes local data. Export data first (SCOPE-14) and import it after reinstalling.
 
 **Build config.** CI copies `.env.example` to `.env` (public values only, ARCH-14). There are no app secrets. Runners: `ubuntu-latest` (Android), `macos-26` (iOS).

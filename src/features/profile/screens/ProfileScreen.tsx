@@ -32,6 +32,7 @@ export type ProfileNavigation = {
   onMyFoods?: () => void;
   onMyRecipes?: () => void;
   onTheme?: () => void;
+  onDataTransfer?: () => void;
 };
 
 /** UX-15 Profile hub: weight summary, Update weight, and the settings rows with their current values (DS-09). */
@@ -161,6 +162,8 @@ export function ProfileScreen(nav: ProfileNavigation) {
           nav.onTheme,
           'profile-theme',
         )}
+        {/* DATA-02: no value text, nothing that reads like a backup status. */}
+        {row(t('profile.dataTransfer'), undefined, nav.onDataTransfer, 'profile-data-transfer')}
       </ScrollView>
     </View>
   );

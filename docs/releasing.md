@@ -110,4 +110,4 @@ Request an IzzyOnDroid listing once: open an issue at `https://gitlab.com/IzzyOn
 - Install AltStore or SideStore, then add the source `https://github.com/ricardo-reis-swe/open-kcal/releases/latest/download/altstore-source.json` and install Open Kcal from it.
 - Or sideload `open-kcal-<version>.ipa` with Sideloadly.
 
-**Note:** a release can't install over a local development build on the same phone (different signing keys). Uninstall the local build first; that deletes its data.
+**Note:** a release can't install over a local development build on the same phone (different signing keys). Uninstall the local build first; that deletes its data. Export data first (SCOPE-14) and import it after reinstalling.

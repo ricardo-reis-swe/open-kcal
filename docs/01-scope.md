@@ -19,6 +19,7 @@ Read when: deciding whether a feature belongs in the MVP. Local-first React Nati
 - Nutrient details beyond macros (user decision 2026-09-30): Food Detail lists every catalog nutrient a food carries; the Diary opens the day's totals for user-chosen nutrients; custom foods may carry them (DATA-20/21, UX-02, UX-05, UX-21).
 - Android home-screen widget showing today's calories left (user decision 2026-09-30; UX-22). iOS widget not in scope.
 - Barcode scanning (user decision 2026-09-30): scan a product's EAN/UPC from Food Search or the `+` sheet to open it in Food Detail. Lookup: saved foods first, then the visible, available remote providers in the UX-18 order (PROV-15); a hidden or unavailable provider gets no request. A custom food created from a scan keeps the barcode (DATA-24).
+- Export and import all data as one file (user decision 2026-11-24; SCOPE-14).
 
 ## SCOPE-02 Configurable meals
 - Defaults: Breakfast, Lunch, Dinner, Snacks.
@@ -70,7 +71,7 @@ Scrambled eggs
 - Weight history is stored from day one, even if the first UI is simple.
 
 ## SCOPE-10 Out of MVP — MUST NOT build or add placeholders for
-Accounts · cloud sync · social · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
+Accounts · cloud sync or automatic/cloud backup · social · meal plans · exercise tracking · Apple Health / Health Connect · AI food recognition · subscriptions · nutrition scoring · restaurant database · nutrient goals beyond kcal/macros · micronutrient reports or trends · automatic calorie-goal calculation · gamification/streaks.
 
 Other docs refer to this list instead of repeating it.
 
@@ -94,3 +95,11 @@ Other docs refer to this list instead of repeating it.
 - Ingredients can be added by scanning a product barcode (POST-15, UX-04 ingredient mode, Diary stack): a found product becomes an ingredient; a missing code creates a custom food that becomes one.
 - Edit Recipe offers `Copy recipe text` and `Share recipe`; My recipes offers `Import recipe` with paste fallback, preview and confirmation (DATA-29, UX-28). Import creates independent local food snapshots; nutrition is sender-provided and unverified.
 - **Why:** this is offline person-to-person text sharing only; it adds no network, account, cloud or social-feed feature (SCOPE-10).
+
+## SCOPE-14 Export and import
+- User decision 2026-11-24. Profile › APP › `Export & import` (UX-29).
+- Export: one file holding the whole local database, handed to the OS share sheet. The user picks where it goes (Files, Drive, email, another app). The app never uploads anything itself.
+- Import: pick an exported file → validate → confirm → it **replaces** all data on this phone → migrations bring it to this app version. No merge.
+- Not exported: the USDA API key (secure storage, DATA-01). It stays on the phone that has it.
+- **Why:** with no backend (SCOPE-09), uninstalling (e.g. a ROAD-06 signing-key change) or losing the phone deletes the diary. A manual file is the only backup; it adds no account, server or sync (SCOPE-10).
+- Deferred (user decision 2026-11-24): encryption (v1 file is unencrypted), scheduled/automatic export, merge import, CSV (POST-17).

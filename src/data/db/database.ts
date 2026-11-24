@@ -1,6 +1,6 @@
 // Opens the app database (ARCH-09): expo-sqlite connection → foreign keys ON → WAL → migrations + idempotent seed.
 // Failures surface as typed errors for the recovery screen (UX-20); the database is never deleted or reset.
-import { openDatabaseAsync, type SQLiteBindValue, type SQLiteOpenOptions } from 'expo-sqlite';
+import { defaultDatabaseDirectory, openDatabaseAsync, type SQLiteBindValue, type SQLiteOpenOptions } from 'expo-sqlite';
 
 import { DatabaseError, MigrationError } from '@/shared/errors';
 
@@ -10,10 +10,23 @@ import { applyConnectionPragmas, createSqlDatabase, type SqlDatabase, type SqlDr
 
 export const DATABASE_NAME = 'calorie-tracker.db';
 
+/** Where a database file lives: a plain absolute directory path (no `file://`) and the file name. */
+export type DatabaseLocation = { directory: string; name: string };
+
+/** ARCH-25: the app database's location. A plain path on both platforms (Android `filesDir/SQLite`, iOS `Documents/SQLite`). */
+export function appDatabaseLocation(): DatabaseLocation {
+  return { directory: String(defaultDatabaseDirectory).replace(/\/+$/, ''), name: DATABASE_NAME };
+}
+
 const bind = (params: SqlParams | undefined): SQLiteBindValue[] => (params ? [...params] : []);
 
-async function openExpoSqliteDriver(databaseName: string, options?: SQLiteOpenOptions): Promise<SqlDriver> {
-  const db = await openDatabaseAsync(databaseName, options);
+/** The expo-sqlite driver adapter. Also used by the DATA-31 import checks on a staged file (`directory`). */
+export async function openExpoSqliteDriver(
+  databaseName: string,
+  options?: SQLiteOpenOptions,
+  directory?: string,
+): Promise<SqlDriver> {
+  const db = await openDatabaseAsync(databaseName, options, directory);
   return {
     exec: (sql) => db.execAsync(sql),
     run: async (sql, params) => {
@@ -36,10 +49,13 @@ export async function prepareDatabase(db: SqlDatabase, options: MigrationOptions
   return migrate(db, MIGRATIONS, options);
 }
 
-export async function openAppDatabase(options: MigrationOptions): Promise<SqlDatabase> {
+export async function openAppDatabase(
+  options: MigrationOptions,
+  location: DatabaseLocation = appDatabaseLocation(),
+): Promise<SqlDatabase> {
   let db: SqlDatabase;
   try {
-    db = createSqlDatabase(await openExpoSqliteDriver(DATABASE_NAME));
+    db = createSqlDatabase(await openExpoSqliteDriver(location.name, undefined, location.directory));
   } catch (error) {
     throw new DatabaseError('Could not open the database', { cause: error });
   }

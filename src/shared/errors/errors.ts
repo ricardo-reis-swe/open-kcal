@@ -25,14 +25,25 @@ export abstract class AppError extends Error {
   }
 }
 
+/** DATA-31: why an import file was rejected. Callers branch on this, never on the message. */
+export type ImportRejectReason =
+  'empty' | 'tooLarge' | 'notSqlite' | 'corrupt' | 'notOpenKcal' | 'newerVersion' | 'migrationFailed';
+
 export class ValidationError extends AppError {
   readonly category = 'validation';
   /** Field paths that failed, e.g. `['energyKcal']`. Never the offending values. */
   readonly fields: readonly string[];
+  /** Typed rejection reason where callers must branch on it (DATA-31 import checks). */
+  readonly reason?: ImportRejectReason;
 
-  constructor(message: string, fields: readonly string[] = [], options?: { cause?: unknown }) {
+  constructor(
+    message: string,
+    fields: readonly string[] = [],
+    options?: { cause?: unknown; reason?: ImportRejectReason },
+  ) {
     super(message, options);
     this.fields = fields;
+    this.reason = options?.reason;
   }
 }
 

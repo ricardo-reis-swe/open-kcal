@@ -64,7 +64,8 @@ src/
 ```
 - Features may import domain + shared. Domain imports nothing above it. A feature must not reach into another feature's internals; move shared logic to domain/shared behind an interface.
 - Path aliases only for top-level boundaries.
-- Route tree (conceptual): `(tabs)/diary/{index, meal/[mealId], food-search, food/[foodId], entry/[entryId], quick-calories, quick-calories/[entryId], custom-food, recipe/new}`, `(tabs)/profile/{index, goals, meals/{index,[mealId]}, units, weight-goal, weight-history, food-databases, my-foods/{index,[foodId]}, my-recipes/{index,[foodId],import}}`, shared `ingredient-search` / `ingredient-detail/[foodId]`, top-level modals `date-picker, meal-picker, serving-unit-picker, copy-meal, weight-entry`.
+- Route tree (conceptual): `(tabs)/diary/{index, meal/[mealId], food-search, food/[foodId], entry/[entryId], quick-calories, quick-calories/[entryId], custom-food, recipe/new}`, `(tabs)/profile/{index, goals, meals/{index,[mealId]}, units, weight-goal, weight-history, food-databases, my-foods/{index,[foodId]}, my-recipes/{index,[foodId],import}, data-transfer}`, shared `ingredient-search` / `ingredient-detail/[foodId]`, top-level modals `date-picker, meal-picker, serving-unit-picker, copy-meal, weight-entry`.
+- Export/import (ARCH-25): `src/data/db/transfer/` (data), screen `src/features/profile/screens/DataTransferScreen.tsx`.
 
 ## ARCH-06 Navigation implementation
 - Custom tab bar: Diary + Profile are tab routes; `+` is a custom button opening the Add Action Sheet, never selected.
@@ -117,6 +118,7 @@ src/
 - Typed: `ValidationError, NotFoundError, ConflictError, DatabaseError, MigrationError, SecureStorageError, OfflineError, TimeoutError, RateLimitError, ProviderConfigurationError, ProviderResponseError, UnexpectedError`. Map infra errors to these before feature code sees them; never parse message strings.
 - User messages describe recovery; they never expose SQL, credentialed URLs, payloads or stacks.
 - Fatal startup/migration failure → safe recovery screen with retry + diagnostic guidance; never an auto reset. React error boundaries isolate unexpected screen-render failures with a route-safe retry/return.
+- `ValidationError` MAY carry a typed `reason` (DATA-31 import checks); callers branch on it, never on the message. Import copy/rename/move failures → `DatabaseError`. No new error type.
 
 ## ARCH-14 Config
 - Public build-time config via Expo env (`EXPO_PUBLIC_*`): provider base URLs, build channel/variant, non-secret diagnostics IDs. Treat all client env as public.
@@ -127,6 +129,7 @@ src/
 ## ARCH-15 Logging and privacy
 - All logging goes through the app logger interface (`debug/info/warn/error`). Release builds redact/omit: USDA key, search terms (when not needed), diary contents, body weights, Quick Calories notes, raw payloads, full rows.
 - Migrations log only version, duration and outcome category.
+- Export/import log only outcome category, `reason`, schema version, size bucket and duration. Never file URIs or names (cloud-provider URIs can hold account names).
 - No analytics in the MVP. An optional crash reporter (pre-release) goes behind the logger interface, excludes health data and secrets, gets its privacy impact documented, and nothing may depend on it.
 
 ## ARCH-16 Gestures and haptics
@@ -142,7 +145,7 @@ Validate config → logger → open SQLite → pragmas → migrate + seed → se
 | Layer | Tool | Must cover |
 |---|---|---|
 | Domain unit | Jest, no RN/network | Unit conversion, serving/nutrition math, unknown-macro aggregation, effective goals, local dates across month/year/DST/leap day, Zod schemas, provider mapping, retry classification |
-| Repository/migration | Real SQL on a disposable SQLite DB (never mock the repository) | Init + idempotent seed, every forward migration, FK/constraints, rollback, meal delete+reassign, snapshot preservation, unknown-macro aggregation, cache upsert/expiry |
+| Repository/migration | Real SQL on a disposable SQLite DB (never mock the repository) | Init + idempotent seed, every forward migration, FK/constraints, rollback, meal delete+reassign, snapshot preservation, unknown-macro aggregation, cache upsert/expiry, export snapshot, every DATA-31 reason, DATA-32 rollback + interrupted-import recovery |
 | Component | RNTL + `jest-expo`; query by role/label/text/user-event; no snapshot-first tests | Loading/empty/populated/error, a11y labels and actions, form validation, direct entry navigation, configurable meals, Quick Calories unknown macros |
 | Navigation | Expo Router in-memory testing | Tabs, modal dismiss, param validation, direct edit paths, return after save/delete/reassign, date preservation |
 | API contract | Sanitized fixtures (PROV-13); no live calls in tests (weekly live check: ROAD-05, `npm run test:live`) | Known shapes + edge cases, missing fields |
@@ -188,3 +191,14 @@ Check the current versions: Expo [dev builds](https://docs.expo.dev/develop/deve
 - Only `src/features/food-search/components/BarcodeCamera.tsx` imports `expo-camera`. Pure code rules: `src/domain/food/barcode.ts` (DATA-24). Lookup: `barcodeLookup.ts` (PROV-15).
 - `CameraView.isAvailableAsync` exists on web only (it throws on iOS/Android), so native assumes a camera and `onMountError` → UX-24 camera unavailable.
 - Tests: `expo-camera` is mocked in `jest.setup.ts`; tests fire `onBarcodeScanned` / `onMountError` through the mock and cover permission states. No camera or device tests.
+
+## ARCH-25 Export and import (SCOPE-14)
+- Libraries (Expo-maintained, `npx expo install`, pinned; ARCH-20):
+  - `expo-sharing` (new): share sheet with a file. Rejected: RN `Share` (Android shares text only, not a file URI).
+  - `expo-document-picker` (new): pick the file, `copyToCacheDirectory: true`, `type: '*/*'`. **Why `*/*`:** providers report `.db` files as `application/octet-stream`; validation decides (DATA-31).
+  - `expo-file-system` (new direct dep; today only a transitive dep of `expo`): read the 16-byte header, size, copy/move/delete files, cache paths.
+  - `expo-sqlite` (installed): `VACUUM INTO`, staged connection via `openDatabaseAsync(name, { useNewConnection: true }, directory)`, `defaultDatabaseDirectory`.
+- No config plugins or permissions: the picker and share sheet are system UI. Needs a native rebuild (new native modules).
+- Only `src/data/db/transfer/files.ts` imports `expo-file-system`; only `src/shared/files/fileTransfer.ts` (`shareFile`, `pickFile`) imports `expo-sharing` / `expo-document-picker`. Jest replaces both with Node implementations (real files in a temp dir, ARCH-18).
+- StartupGate gets a `replacing` state and a `replaceDatabase(stagedPath)` entry point; it owns stop → swap → restart (DATA-32) so no screen holds a closed DB.
+- The widget handler (ARCH-23) needs no change: during a swap it may fail to open → unavailable state; the post-import `refreshWidget()` redraws it.

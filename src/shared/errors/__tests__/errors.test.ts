@@ -40,6 +40,8 @@ describe('ARCH-13: typed errors', () => {
   it('keeps structured details instead of values in messages', () => {
     expect(new ValidationError('Invalid entry', ['energyKcal']).fields).toEqual(['energyKcal']);
     expect(new MigrationError('Migration failed', 3).version).toBe(3);
+    expect(new ValidationError('Import rejected', [], { reason: 'newerVersion' }).reason).toBe('newerVersion');
+    expect(new ValidationError('Invalid entry', ['energyKcal']).reason).toBeUndefined();
     expect(new RateLimitError('Too many requests').retryAfterMs).toBeNull();
   });
 

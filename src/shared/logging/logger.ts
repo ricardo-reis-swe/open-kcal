@@ -43,7 +43,10 @@ const RELEASE_CONTEXT_KEYS: ReadonlySet<string> = new Set([
   'platform',
   'pluralRules',
   'provider',
+  'reason',
   'retryAfterMs',
+  'schemaVersion',
+  'sizeBucket',
   'status',
   'version',
 ]);

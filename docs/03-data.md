@@ -9,7 +9,8 @@ Read when: touching SQLite, repositories, migrations, nutrition math, dates or s
 - SQLite may keep a non-secret "USDA configured" flag, but availability MUST be checked against secure storage.
 
 ## DATA-02 No backend, no sync
-- No user IDs, server revisions or sync state. UUIDs and timestamps are kept so a future migration stays possible. Nothing may imply backup/sync exists.
+- No user IDs, server revisions or sync state. UUIDs and timestamps are kept so a future migration stays possible.
+- The only backup is the manual file export/import (SCOPE-14, DATA-30–32). Nothing may imply automatic backup or sync exists: no "backed up", "synced" or "last backup" status, no reminders.
 
 ## DATA-03 Identifiers
 - All local records use app-generated UUID strings. Routes and relations use IDs, never names or list positions.
@@ -114,6 +115,7 @@ FROM diary_entries WHERE diary_date = ?;
 - Migration 5 adds DATA-23 `theme_preference`; existing installs get `system`.
 - Migration 6 adds DATA-24 `foods.barcode` + its index and backfills saved OFF foods.
 - Migration 7 adds DATA-27 `foods.kind`, `recipes` and `recipe_ingredients`. Existing foods get `kind = 'food'`.
+- An imported file is migrated like an older install (DATA-31). A file newer than the app is refused, never downgraded.
 - MUST NEVER recover from a failed migration by deleting/recreating the DB. A reset command may exist in dev builds only.
 - Test each migration: from every supported prior version, with representative data, app startup afterwards, and rollback on failure where possible.
 
@@ -237,3 +239,49 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
 - Parse at the boundary with Zod. Accept only v1 markers/version; tolerate CRLF line breaks and whitespace or text around the envelope (messaging apps add them); reject >100,000 characters, malformed payloads, invalid/non-finite values, non-positive counts/weights/quantities/multipliers, and no-ingredient recipes with `ValidationError`. No local writes occur before explicit confirmation.
 - `createImported(input)`: one transaction creates each ingredient as an independent local `custom` food snapshot (`kind = 'food'`, kcal only, no imported marker), writes its servings, inserts recipe/ingredient rows, recomputes (DATA-28) for the recipe's servings and raw weight, then stores the sender's per-serving nutrition on the recipe. Ingredient macros are unknown; because they cannot be recomputed from kcal-only snapshots, editing the recipe later also recomputes its macros as unknown.
 - Imported foods are not linked to existing foods by name. Repeated imports create plain copies; no dedupe or merge. Import works offline and adds no backend/account/network behavior.
+
+## DATA-30 Export
+- `exportDatabase()` in the data layer (DATA-18). Steps:
+  1. `VACUUM INTO ?` on the app connection, to a new file in `<cache>/export/`. **Why:** one consistent snapshot, WAL contents included, no `-wal`/`-shm` side files, free pages dropped. It reads only; concurrent app writes wait or land after the snapshot.
+  2. Hand the file to the share sheet (ARCH-25), MIME `application/vnd.sqlite3`, iOS UTI `public.database`.
+- File name: `open-kcal-YYYY-MM-DD.db`, the local date (DATA-08). A second export the same day overwrites the cached file.
+- The cached file is kept until the next export or the next app start, then deleted. **Why:** Android returns from the share sheet before some targets finish reading the file.
+- Contents: the whole DB as is, including `schema_version`, cached provider foods and soft-deleted rows. No extra header, manifest or encryption (POST-17).
+- Share sheet dismissed or cancelled → not an error, nothing shown.
+
+## DATA-31 Import validation
+- The picked file is copied to `<cache>/import/staged.db` first; the live DB is not touched until DATA-32. All checks run on the staged copy, on its own connection (`useNewConnection`, switched to `journal_mode = DELETE` so it stays one file), in this order; the first failure stops with `ValidationError` + `reason`:
+
+| # | Check | `reason` |
+|---|---|---|
+| 1 | Size > 0 and ≤ 200 MB | `empty` / `tooLarge` |
+| 2 | First 16 bytes = `SQLite format 3\0` | `notSqlite` |
+| 3 | Opens; `PRAGMA integrity_check` = `ok`; `PRAGMA foreign_key_check` returns no rows | `corrupt` |
+| 4 | `schema_version` exists with a version ≥ 1 | `notOpenKcal` |
+| 5 | Version ≤ `LATEST_SCHEMA_VERSION` | `newerVersion` |
+| 6 | Every table its version requires exists (`schema_version, app_settings, nutrition_goals, meals, foods, food_servings, diary_entries, weight_entries, recent_foods, food_cache_metadata`; ≥ v4 also `food_nutrients, diary_entry_nutrients`; ≥ v7 also `recipes, recipe_ingredients`) | `notOpenKcal` |
+| 7 | Migrate the staged copy with `migrate()` (DATA-17, no seed) | `migrationFailed` |
+| 8 | Its schema (tables, columns, indexes from `sqlite_master` + `table_info`) equals a fresh DB built from `MIGRATIONS` | `notOpenKcal` |
+| 9 | Exactly 1 `app_settings` row and ≥ 1 meal (DATA-10) | `notOpenKcal` |
+
+- `reason` is a typed field, never parsed from the message (ARCH-13).
+- After check 9, read a summary for the confirm dialog (UX-19): diary entry count and latest `diary_date`.
+- **Why migrate before the swap:** a migration failure then never touches the live DB.
+- Unknown extra tables or columns fail check 8. **Why:** an Open Kcal export never has them; anything else isn't ours.
+
+## DATA-32 Replace and rollback
+- Runs only after the user confirms (UX-19). One app-level operation, never concurrent with app reads/writes:
+  1. Close the staged connection.
+  2. Stop the app: StartupGate leaves `ready` (Router, services and the Query client unmount), `PRAGMA wal_checkpoint(TRUNCATE)` (must report busy = 0, else stop before step 3 with `importFailed`), close the app connection.
+  3. Write marker `<db dir>/import-pending`.
+  4. Rename `calorie-tracker.db` → `calorie-tracker.pre-import.db` (safety copy); delete leftover `-wal`/`-shm`.
+  5. Move `staged.db` → `calorie-tracker.db`.
+  6. Normal startup (ARCH-17: pragmas → migrate (no-op) → idempotent seed).
+  7. Success → delete the marker, then the safety copy.
+- Failure in steps 4–6 → close, delete the new file, rename the safety copy back, delete the marker, normal startup. The user sees `importFailed` (data unchanged). If that startup also fails → UX-20 recovery screen (never a reset, DATA-17).
+- After a rollback the Router remounts as on success (NAV-11) and the Diary shows `importFailed` as a toast. **Why:** the Export & Import screen no longer exists once the Router has unmounted.
+- Launch with `import-pending` present (the app died mid-import) → roll back as above before opening, and show UX-29 `importInterrupted` once on the Diary. **Why:** an import applies completely or not at all.
+- Launch with `calorie-tracker.pre-import.db` but no marker (the app died during step 7) → delete the safety copy; the import had succeeded.
+- The staged copy and the cache folders are deleted after success, failure or cancel.
+- After success: a new Query client (no stale cache, ARCH-07), Diary root on today (NAV-05 fresh launch), `refreshWidget()` (DATA-22: not a mutation, so call it explicitly). Also call it after a rollback.
+- The USDA key and its secure-storage availability are untouched; availability is still read from secure storage (DATA-01).

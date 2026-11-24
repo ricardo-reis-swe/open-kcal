@@ -42,10 +42,13 @@ export type DiaryDayProps = {
   active: boolean;
   /** Bumped when the Diary tab is tapped at the root; the active page scrolls to the top (NAV-02). */
   scrollToTop?: number;
+  /** A one-shot app notice (DATA-32) to show as this page's toast; `onNoticeShown` then clears it. */
+  notice?: { key: number; message: string };
+  onNoticeShown?: (key: number) => void;
 };
 
 /** One diary day: overview (ring + macros), the default-goals row, and every meal in saved order (UX-02). */
-export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
+export function DiaryDay({ date, active, scrollToTop = 0, notice, onNoticeShown }: DiaryDayProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const day = useDiaryDay(date);
@@ -59,6 +62,15 @@ export function DiaryDay({ date, active, scrollToTop = 0 }: DiaryDayProps) {
     toastSeq.current += 1;
     setToast({ key: toastSeq.current, message, undo });
   };
+
+  const noticeKey = notice?.key;
+  const noticeMessage = notice?.message;
+  useEffect(() => {
+    if (noticeKey === undefined || noticeMessage === undefined) return;
+    showToast(noticeMessage);
+    onNoticeShown?.(noticeKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per notice
+  }, [noticeKey, noticeMessage]);
 
   // UX-02 / DATA-12: a committed swipe deletes immediately; resolving `false` springs the row back.
   const removeEntry = async (entry: DiaryMeal['entries'][number]): Promise<boolean> => {
