@@ -278,6 +278,7 @@ WHERE e.diary_date = ? GROUP BY n.nutrient_id;   -- unknown_count = entry_count 
   5. Move `staged.db` → `calorie-tracker.db`.
   6. Normal startup (ARCH-17: pragmas → migrate (no-op) → idempotent seed).
   7. Success → delete the marker, then the safety copy.
+     - Failing to delete the marker MUST roll back like steps 4–6 (`importFailed`). **Why:** a leftover marker would make a later launch undo a completed import. Failing to delete the safety copy or the cache folders is best-effort (ignored).
 - Failure in steps 4–6 → close, delete the new file, rename the safety copy back, delete the marker, normal startup. The user sees `importFailed` (data unchanged). If that startup also fails → UX-20 recovery screen (never a reset, DATA-17).
 - After a rollback the Router remounts as on success (NAV-11) and the Diary shows `importFailed` as a toast. **Why:** the Export & Import screen no longer exists once the Router has unmounted.
 - Launch with `import-pending` present (the app died mid-import) → roll back as above before opening, and show UX-29 `importInterrupted` once on the Diary. **Why:** an import applies completely or not at all.
