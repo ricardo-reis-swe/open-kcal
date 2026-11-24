@@ -12,4 +12,4 @@
 | T8 | `m8-weight` SIGSEGV on Android launch | BLOCKED | Seen once, not reproduced; needs a device. |
 | T9 | Performance: limit `weight.history()` | DONE | history(limit) reads LIMIT+1 with same-day count in SQL; Weight History pages 100 at a time; docs updated. |
 | T10 | Performance: Food Search uses a virtualized list instead of `ScrollView` | DONE | Food Search body is one SectionList (sticky labels per UX-04, testIDs kept); tests read list data; docs updated. |
-| T11 | POST-08: weekly CI check of USDA + Open Food Facts schemas against live APIs | TODO | |
+| T11 | POST-08: weekly CI check of USDA + Open Food Facts schemas against live APIs | BLOCKED | Plan ready (.plans/task-T11.md). Needs user: approve moving POST-08 into MVP + ARCH-14 change allowing a test-only USDA key as CI secret; then add USDA_API_KEY repo secret. |
