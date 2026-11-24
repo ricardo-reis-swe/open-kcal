@@ -1,0 +1,3 @@
+# T5 (SMALL): progress.md section for ingredient barcode scan
+- Using `git log` (commit ee34d4b "feat: barcode scan in custom food & recipe creation") and the spec rule IDs that mention ingredient/custom-food barcode scanning (grep docs/ for "barcode"), add a short "## Ingredient barcode scan (user-requested, 2026-10-14)" section to docs/progress.md in the same style as the neighbouring sections (one-line task entries, status "implemented; device check pending"), and add the matching row to the milestone status table at the top.
+- Doc-only; follow AGENTS.md spec format (terse, link rule IDs, no renumbering). Verify: `npm run format:check` passes (if it covers md) and the file renders sensibly.

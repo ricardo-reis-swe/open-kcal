@@ -21,6 +21,7 @@ Single place for implementation status. Updated in the same commit as the work i
 | My foods (user-requested) | awaiting user device check |
 | Recipes (user-requested) | awaiting user device check |
 | Recipe sharing & import (user-requested) | implemented; device check pending |
+| Ingredient barcode scan (user-requested) | implemented; device check pending |
 
 Spec changes: 2026-09-30 (user-requested) themes back: DS-03 light + dark, new UX-23 Theme screen (`System | Light | Dark`, default System) from a Profile `APP › Theme` row (UX-15, NAV-06), DATA-23 `theme_preference` (migration 5), the widget follows the theme too (DS-14: both versions on `System`). Needs a native rebuild (`userInterfaceStyle: automatic`); not checked on a device. 2026-09-28 DS-13 reduced to light theme · iOS + Android · one phone size · default text; the matrix moved to POST-13. ROAD-03: one-line task entries, accepted milestones archived. 2026-09-28 (user-requested, commit below "feat(diary): scrollable date strip") UX-02 date strip is a windowed horizontal scroll of day buttons that re-centers on every selection change; scrolling it never changes the day (`DiaryDateStrip.tsx`, `dateStripWindow.ts`, tests `DiaryDateStrip.test.tsx`/`dateStripWindow.test.ts`; `m2-swipe-date` PASS Android + iOS, `m2-launch-today` PASS iOS, Android fails only at `Lunch, .*` because the emulator's Lunch meal was deleted in the M8 by-hand review; strip scroll then page swipe re-centered checked by hand on Android).
 
@@ -178,6 +179,19 @@ Left for the user:
 
 - None.
 
+
+## Ingredient barcode scan (user-requested, 2026-10-14)
+
+Status: **implemented; device check pending** · Spec: SCOPE-06/13, NAV-04, DATA-24, UX-04/24/26, PROV-15, POST-15 · Commit `ee34d4b`.
+
+### Tasks
+
+- [x] Promote the ingredient-scan part of POST-15 to MVP (SCOPE-13, UX-04 ingredient mode).
+- [x] `barcodeScanner` / `createCustomFood` routes take an optional `ingredientDraftId` that retargets their outcomes to the recipe draft (NAV-04): found → Ingredient Detail; not found → Create Custom Food in ingredient mode, whose save opens Ingredient Detail.
+- [x] Ingredient Search scan icon (Diary stack only); lookup unchanged (PROV-15), a custom food from a scan keeps the barcode (DATA-24).
+- [x] Create Custom Food (create mode) scan icon (UX-24, SCOPE-06): found → Food Detail; not found → the form with the barcode kept.
+- [x] Specs: UX-04/08/24/26, NAV-04, SCOPE-06/13, POST-15.
+- [ ] Device check: scan from Ingredient Search (found and not found), scan icon in the New Food form, Back returns to Ingredient Search with the draft intact.
 
 ## App icon and display name (2026-10-14)
 
