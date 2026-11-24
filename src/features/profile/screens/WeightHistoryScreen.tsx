@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, View } from 'react-native';
 
@@ -36,8 +37,9 @@ export function WeightHistoryScreen({ onBack, onAdd, onEdit }: Props) {
   const locale = useFormattingLocale();
   const { today } = useDiaryDate();
   const settings = useAppSettings().data;
-  const history = useWeightHistory();
-  const rows = history.data ? weightHistoryRows(history.data) : null;
+  const [pages, setPages] = useState(1);
+  const history = useWeightHistory(pages);
+  const rows = history.data ? weightHistoryRows(history.data.entries, history.data.older) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.canvas }}>
@@ -64,7 +66,12 @@ export function WeightHistoryScreen({ onBack, onAdd, onEdit }: Props) {
           </View>
         ) : (
           <FlatList
+            testID="weight-history-list"
             data={rows}
+            onEndReached={() => {
+              if (history.data?.older && !history.isFetching) setPages((p) => p + 1);
+            }}
+            onEndReachedThreshold={0.5}
             keyExtractor={(row) => row.entry.id}
             renderItem={({ item, index }) => (
               <HistoryRow

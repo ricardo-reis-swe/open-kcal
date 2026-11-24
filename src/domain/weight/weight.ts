@@ -84,15 +84,22 @@ export type WeightHistoryRow<T extends WeightEntry = WeightEntry> = {
   changeKg: number | null;
 };
 
-/** UX-18 Weight History rows from entries sorted newest first (the repository order). */
-export function weightHistoryRows<T extends WeightEntry>(newestFirst: readonly T[]): WeightHistoryRow<T>[] {
+/**
+ * UX-18 Weight History rows from entries sorted newest first (the repository order). `older` is the entry just
+ * after the last one (not shown); it gives the last row its change. An entry with `sameDayCount` (counted in SQL)
+ * uses it for `showTime`; plain entries use the count within the list.
+ */
+export function weightHistoryRows<T extends WeightEntry & { sameDayCount?: number }>(
+  newestFirst: readonly T[],
+  older: WeightEntry | null = null,
+): WeightHistoryRow<T>[] {
   const perDate = new Map<string, number>();
   for (const e of newestFirst) perDate.set(e.localDate, (perDate.get(e.localDate) ?? 0) + 1);
   return newestFirst.map((entry, i) => {
-    const previous = newestFirst[i + 1];
+    const previous = newestFirst[i + 1] ?? older;
     return {
       entry,
-      showTime: (perDate.get(entry.localDate) ?? 0) > 1,
+      showTime: (entry.sameDayCount ?? perDate.get(entry.localDate) ?? 0) > 1,
       changeKg: previous ? entry.weightKg - previous.weightKg : null,
     };
   });

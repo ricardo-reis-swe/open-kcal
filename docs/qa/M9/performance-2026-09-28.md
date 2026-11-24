@@ -16,3 +16,4 @@ Code-level review. No device profiling, because the user ruled out device tests 
 ## Known gaps (minor, not fixed)
 - `weight.history()` has no `LIMIT`, because each row's change needs its predecessor. That's fine at realistic sizes (about 365 rows a year) since the list is virtualized. Page it (fetch limit + 1) if history grows large.
 - Food Search renders its sections in a `ScrollView`, not a virtualized `SectionList`. Rows are bounded by paging (remote at most 50 per section, local 20 per `Show more`). Convert it if a heavy user's `Show more` depth makes it slow.
+- Fixed 2026-11-24 (T9): Weight History paged by growing LIMIT + 1; same-day count in SQL.

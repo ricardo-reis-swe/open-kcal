@@ -173,7 +173,8 @@ Left for the user:
 ### Known gaps
 
 - `m8-weight` native SIGSEGV on Android launch seen once, not reproduced.
-- ARCH-19 (minor): `weight.history()` unbounded; Food Search sections in a `ScrollView` (bounded by paging). See `docs/qa/M9/performance-2026-09-28.md`.
+- ARCH-19 (minor): Food Search sections in a `ScrollView` (bounded by paging). See `docs/qa/M9/performance-2026-09-28.md`.
+- 2026-11-24 T9 (ARCH-19 / UX-18): Weight History reads are now paged (growing `LIMIT + 1`, 100 per page, same-day count in SQL) (this commit).
 
 ### Open questions
 

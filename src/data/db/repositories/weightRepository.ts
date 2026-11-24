@@ -18,6 +18,11 @@ const toWeight = (r: WeightRow): WeightEntry => ({
 // DATA-13: current = latest measured_at, tie-break created_at.
 const ORDER = 'ORDER BY measured_at DESC, created_at DESC';
 
+/** Page size for Weight History reads; only bounds the query, users never see it (ARCH-19). */
+export const WEIGHT_HISTORY_PAGE = 100;
+
+export type WeightHistoryEntry = WeightEntry & { sameDayCount: number };
+
 export type WeightInput = { localDate: LocalDate; weightKg: number };
 
 export function createWeightRepository({ db, clock, ids }: RepositoryDeps) {
@@ -60,13 +65,25 @@ export function createWeightRepository({ db, clock, ids }: RepositoryDeps) {
       ).map(toWeight);
     },
 
-    /** Every entry, newest first: Weight History needs the full list to compute each change (UX-18). */
-    async history(): Promise<WeightEntry[]> {
-      return (
-        await db.getAll<WeightRow>(
-          `SELECT id, measured_at, local_date, weight_kg, created_at FROM weight_entries ${ORDER}`,
-        )
-      ).map(toWeight);
+    /**
+     * Newest first, bounded (ARCH-19, UX-18 Weight History). One query with `limit + 1` rows: the extra row is never
+     * shown; it gives the oldest shown row its change and tells the caller there is more (`older !== null`).
+     * `sameDayCount` is computed in SQL (idx_weight_local_date) so a day split by the limit still shows its time.
+     * Grow `limit` for the next page instead of using OFFSET, so writes in between cannot skip or repeat a row.
+     */
+    async history(limit: number): Promise<{ entries: WeightHistoryEntry[]; older: WeightEntry | null }> {
+      if (!Number.isInteger(limit) || limit < 1) throw new ValidationError('Invalid limit', ['limit']);
+      const rows = await db.getAll<WeightRow & { same_day: number }>(
+        `SELECT id, measured_at, local_date, weight_kg, created_at,
+                (SELECT COUNT(*) FROM weight_entries d WHERE d.local_date = w.local_date) AS same_day
+         FROM weight_entries w ${ORDER} LIMIT ?`,
+        [limit + 1],
+      );
+      const extra = rows.length > limit ? rows[limit] : undefined;
+      return {
+        entries: rows.slice(0, limit).map((r) => ({ ...toWeight(r), sameDayCount: r.same_day })),
+        older: extra ? toWeight(extra) : null,
+      };
     },
 
     async add(input: WeightInput): Promise<WeightEntry> {

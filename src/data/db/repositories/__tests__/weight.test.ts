@@ -58,3 +58,42 @@ describe('DATA-13: weight repository', () => {
     await expect(weight.delete(w.id)).rejects.toMatchObject({ category: 'not_found' });
   });
 });
+
+describe('ARCH-19 / UX-18: history is bounded', () => {
+  it('returns limit entries newest first plus the next older one', async () => {
+    const { weight } = await setup();
+    for (let d = 1; d <= 5; d++) await weight.add({ localDate: `2026-09-0${d}`, weightKg: 70 + d });
+    const page = await weight.history(3);
+    expect(page.entries.map((w) => w.weightKg)).toEqual([75, 74, 73]);
+    expect(page.older?.weightKg).toBe(72);
+  });
+
+  it('older is null when everything fits', async () => {
+    const { weight } = await setup();
+    for (let d = 1; d <= 5; d++) await weight.add({ localDate: `2026-09-0${d}`, weightKg: 70 + d });
+    expect((await weight.history(5)).older).toBeNull();
+    const empty = await (await setup()).weight.history(5);
+    expect(empty).toEqual({ entries: [], older: null });
+  });
+
+  it('counts same-day entries in SQL even when the limit splits the day', async () => {
+    const { deps, weight } = await setup();
+    await weight.add({ localDate: '2026-09-10', weightKg: 74 });
+    await weight.add({ localDate: '2026-09-25', weightKg: 72 });
+    deps.clock.advance(1000);
+    await weight.add({ localDate: '2026-09-25', weightKg: 71.9 });
+    deps.clock.advance(1000);
+    await weight.add({ localDate: '2026-09-25', weightKg: 71.8 });
+    const page = await weight.history(1);
+    expect(page.entries).toHaveLength(1);
+    expect(page.entries[0]!.sameDayCount).toBe(3);
+    expect(page.older?.localDate).toBe('2026-09-25');
+  });
+
+  it('rejects a limit that is not a positive integer', async () => {
+    const { weight } = await setup();
+    for (const bad of [0, -1, 1.5, NaN]) {
+      await expect(weight.history(bad)).rejects.toMatchObject({ fields: ['limit'] });
+    }
+  });
+});

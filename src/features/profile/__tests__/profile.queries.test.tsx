@@ -110,11 +110,11 @@ describe('M8 Profile query hooks (ARCH-08: commit → invalidate → UI)', () =>
     const older = await act(() => result.current.writes.add.mutateAsync({ localDate: '2026-09-20', weightKg: 83 }));
     const latest = await act(() => result.current.writes.add.mutateAsync({ localDate: '2026-09-25', weightKg: 82.4 }));
     await waitFor(() => expect(result.current.current.data?.id).toBe(latest.id));
-    expect(result.current.history.data?.map((w) => w.id)).toEqual([latest.id, older.id]);
+    expect(result.current.history.data?.entries.map((w) => w.id)).toEqual([latest.id, older.id]);
 
     await act(() => result.current.writes.update.mutateAsync({ id: older.id, localDate: '2026-09-20', weightKg: 84 }));
     await act(() => result.current.writes.remove.mutateAsync(latest.id));
     await waitFor(() => expect(result.current.current.data).toMatchObject({ id: older.id, weightKg: 84 }));
-    expect(result.current.history.data).toHaveLength(1);
+    expect(result.current.history.data?.entries).toHaveLength(1);
   });
 });

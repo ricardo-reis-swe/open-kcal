@@ -1,11 +1,11 @@
 // Profile screen models (ARCH-07/08): goals, units, goal weight, meals and weight history through repositories.
 // Writes commit first, then invalidate every query that shows the changed data (no optimistic display).
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { useServices } from '@/bootstrap/services';
 import type { NutritionTargets } from '@/domain/nutrition/goals';
 import type { UnitPreferences } from '@/domain/units/units';
-import type { WeightInput } from '@/data/db/repositories/weightRepository';
+import { WEIGHT_HISTORY_PAGE, type WeightInput } from '@/data/db/repositories/weightRepository';
 import { diaryKeys, mealKeys, settingsKeys } from '@/features/diary/diary.queries';
 import { foodSearchKeys } from '@/features/food-search/food-search.queries';
 import { todayLocal } from '@/shared/dates';
@@ -152,10 +152,17 @@ export function useCurrentWeight() {
   return useQuery({ queryKey: weightKeys.current, queryFn: () => weight.current() });
 }
 
-/** UX-18 Weight History, newest first. Pair with `weightHistoryRows` for time + change display. */
-export function useWeightHistory() {
+/**
+ * UX-18 Weight History, newest first, bounded (ARCH-19): `pages` grows the LIMIT of one query (no OFFSET, so writes
+ * cannot skip or repeat rows). Pair with `weightHistoryRows` for time + change display.
+ */
+export function useWeightHistory(pages = 1) {
   const { weight } = useServices();
-  return useQuery({ queryKey: weightKeys.history, queryFn: () => weight.history() });
+  return useQuery({
+    queryKey: [...weightKeys.history, pages],
+    queryFn: () => weight.history(pages * WEIGHT_HISTORY_PAGE),
+    placeholderData: keepPreviousData,
+  });
 }
 
 /** One weight entry (UX-14 edit); a deleted ID rejects with `NotFoundError`. */

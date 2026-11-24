@@ -62,6 +62,16 @@ describe('UX-18: weight history rows', () => {
     expect(weightHistoryRows([])).toEqual([]);
   });
 
+  it('ARCH-19: `older` gives the last row its change; sameDayCount overrides the in-list count', () => {
+    const older = e('z', '2026-09-01', 85);
+    const [row] = weightHistoryRows([e('a', '2026-09-20', 83)], older);
+    expect(row!.changeKg).toBeCloseTo(-2);
+    expect(row!.showTime).toBe(false);
+    const [split] = weightHistoryRows([{ ...e('a', '2026-09-20', 83), sameDayCount: 3 }]);
+    expect(split!.showTime).toBe(true);
+    expect(split!.changeKg).toBeNull();
+  });
+
   it('UX-00: body and goal weight must be 20–500 kg', () => {
     expect([19.9, 20, 500, 500.1, NaN].map(isValidWeightKg)).toEqual([false, true, true, false, false]);
   });
